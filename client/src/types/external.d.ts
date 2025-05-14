@@ -1,0 +1,72 @@
+// React和React相关库的类型声明
+declare module 'react-helmet' {
+  import * as React from 'react';
+  export interface HelmetProps {
+    htmlAttributes?: any;
+    title?: string;
+    titleTemplate?: string;
+    defaultTitle?: string;
+    base?: any;
+    meta?: any[];
+    link?: any[];
+    script?: any[];
+    noscript?: any[];
+    style?: any[];
+    onChangeClientState?: (newState: any) => void;
+  }
+  export class Helmet extends React.Component<HelmetProps> {}
+}
+
+// Mermaid类型声明
+declare module 'mermaid' {
+  export function initialize(config: any): void;
+  export function run(options: { suppressErrors: boolean; nodes: NodeListOf<Element> }): Promise<void>;
+}
+
+// Lodash类型声明
+declare module 'lodash' {
+  export function debounce<T extends (...args: any[]) => any>(
+    func: T,
+    wait: number,
+    options?: { leading?: boolean; trailing?: boolean; maxWait?: number }
+  ): T;
+}
+
+// i18next和react-i18next类型声明
+declare module 'i18next' {
+  export default {
+    t(key: string, options?: object): string;
+  };
+}
+
+declare module 'react-i18next' {
+  import * as React from 'react';
+  export function useTranslation(): { t: (key: string, options?: object) => string; i18n: any };
+  export function withTranslation(): (Component: React.ComponentType<any>) => React.ComponentType<any>;
+  export const Trans: React.ComponentType<any>;
+}
+
+// react-loading类型声明
+declare module 'react-loading' {
+  import * as React from 'react';
+  
+  export interface LoadingProps {
+    color?: string;
+    delay?: number;
+    height?: number | string;
+    width?: number | string;
+    type?: 'blank' | 'balls' | 'bars' | 'bubbles' | 'cubes' | 'cylon' | 'spin' | 'spinningBubbles' | 'spokes';
+    className?: string;
+  }
+  
+  export default class Loading extends React.Component<LoadingProps> {}
+}
+
+// 环境变量类型声明
+declare namespace NodeJS {
+  interface ProcessEnv {
+    NAME: string;
+    AVATAR: string;
+    [key: string]: string | undefined;
+  }
+} 
