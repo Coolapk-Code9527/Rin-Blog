@@ -221,35 +221,26 @@ export function FeedsPage() {
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
                                         <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'draft' 
-                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
+                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'draft' 
+                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30 hover:bg-theme/20" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                             <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('draft_bin')}</span>
-                                    </Link>
+                                        </Link>
                                         <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'unlisted' 
-                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
+                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'unlisted' 
+                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30 hover:bg-theme/20" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                             <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('unlisted')}</span>
-                                    </Link>
-                                </div>
-                            }
+                                        </Link>
+                                    </div>
+                                }
                             </div>
                             
                             <div className="flex justify-between items-center -mt-2 sm:mt-0">
-                                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
-                                    {listState === 'draft' 
-                                        ? t('draft_description') || "文章草稿区，仅自己可见" 
-                                        : listState === 'unlisted' 
-                                            ? t('unlisted_description') || "未列出的文章，有链接才能访问" 
-                                            : t('article.description') || "所有已发布的公开文章"}
-                                </div>
-                                <div className="flex space-x-2">
-                                    {/* 未来可添加排序按钮、视图切换按钮等 */}
-                        </div>
-                    </div>
+                                {/* 移除文章描述区域 */}
+                            </div>
                         </div>
                         
                         <Waiting for={status === 'idle'}>

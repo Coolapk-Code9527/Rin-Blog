@@ -208,12 +208,12 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 </div>
                 
                 {/* 文章摘要 - 优化显示效果 */}
-                <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 min-h-[3.6rem] sm:min-h-[4.5rem] group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors bg-gradient-to-b from-gray-50/0 to-gray-50/30 dark:from-gray-800/0 dark:to-gray-800/30 p-2 rounded-md">
+                <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 min-h-[3.6rem] sm:min-h-[4.5rem] group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors bg-gradient-to-b from-gray-50/0 to-gray-50/30 dark:from-gray-800/0 dark:to-gray-800/30 p-2 rounded-md overflow-ellipsis whitespace-normal">
                     <SimplifiedMarkdown content={cleanedSummary} />
                 </div>
                     
                 {/* 标签区域 - 统一分割线样式和对齐方式 */}
-                <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30 mt-3 sm:mt-4">
+                <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30 mt-3 sm:mt-4 min-h-[3rem]">
                     {hashtags.length > 0 ? (
                         <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
                             {hashtags.map(({id, name}) => (
