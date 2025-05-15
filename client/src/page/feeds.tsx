@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useRef, useEffect, useContext, useCallback } from "react"
 import { Helmet } from 'react-helmet'
 import { Link, useLocation } from "wouter"
 import { FeedCard } from "../components/feed_card"
@@ -31,8 +31,8 @@ type FeedsMap = {
 
 // 懒加载Feed卡片组件
 function LazyFeedCard({ id, ...props }: any) {
-    const [isVisible, setIsVisible] = React.useState(false);
-    const cardRef = React.useRef<HTMLDivElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+    const cardRef = useRef<HTMLDivElement>(null);
     const { t } = useTranslation();
     
     // 为占位符生成渐变背景
@@ -62,7 +62,7 @@ function LazyFeedCard({ id, ...props }: any) {
     
     const placeholderGradient = generatePlaceholderGradient();
 
-    React.useEffect(() => {
+    useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
@@ -133,41 +133,39 @@ function LazyFeedCard({ id, ...props }: any) {
 export function FeedsPage() {
     const { t } = useTranslation()
     const query = new URLSearchParams(useSearch());
-    const profile = React.useContext(ProfileContext);
-    const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
-    const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
-    const [feeds, setFeeds] = React.useState<FeedsMap>({
+    const profile = useContext(ProfileContext);
+    const [listState, _setListState] = useState<FeedType>(query.get("type") as FeedType || 'normal')
+    const [status, setStatus] = useState<'loading' | 'idle'>('idle')
+    const [feeds, setFeeds] = useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
         unlisted: { size: 0, data: [], hasNext: false },
         normal: { size: 0, data: [], hasNext: false }
     })
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
-    const ref = React.useRef("")
+    const ref = useRef("")
     const [, navigate] = useLocation();
     
-    // 使用useCallback优化函数
-    const fetchFeeds = React.useCallback((type: FeedType) => {
+    const fetchFeeds = useCallback((type: FeedType, currentPage: number) => {
         client.feed.index.get({
             query: {
-                page: page,
+                page: currentPage,
                 limit: limit,
                 type: type
             },
             headers: headersWithAuth()
         }).then(({ data }) => {
             if (data && typeof data !== 'string') {
-                setFeeds({
-                    ...feeds,
+                setFeeds(prevFeeds => ({
+                    ...prevFeeds,
                     [type]: data
-                })
+                }));
                 
-                // 预加载下一页数据
                 if (data.hasNext) {
                     setTimeout(() => {
                         client.feed.index.get({
                             query: {
-                                page: page + 1,
+                                page: currentPage + 1,
                                 limit: limit,
                                 type: type
                             },
@@ -175,29 +173,40 @@ export function FeedsPage() {
                         });
                     }, 2000);
                 }
-                
-                setStatus('idle')
+                setStatus('idle');
+            } else {
+                setStatus('idle');
             }
-        })
-    }, [page, limit, feeds]);
+        }).catch(() => {
+            setStatus('idle');
+        });
+    }, [limit]);
     
-    // 处理类型切换
-    const handleTypeChange = React.useCallback((type: FeedType) => {
-        if (type === listState) return; // 如果点击当前类型则不处理
-        navigate(`/?type=${type}`);
-    }, [listState, navigate]);
-    
-    React.useEffect(() => {
-        const key = `${query.get("page")} ${query.get("type")}`
-        if (ref.current == key) return
-        const type = query.get("type") as FeedType || 'normal'
-        if (type !== listState) {
-            _setListState(type)
+    const handleTypeChange = useCallback((type: FeedType) => {
+        if (type === listState) {
+            if (page !== 1) {
+                navigate(`/?type=${type}&page=1`);
+            }
+            return;
         }
-        setStatus('loading')
-        fetchFeeds(type)
-        ref.current = key
-    }, [query.get("page"), query.get("type"), fetchFeeds, listState])
+        navigate(`/?type=${type}&page=1`);
+    }, [listState, navigate, page]);
+    
+    useEffect(() => {
+        const currentTypeFromQuery = query.get("type") as FeedType || 'normal';
+        const currentPageFromQuery = tryInt(1, query.get("page"));
+        
+        const key = `${currentPageFromQuery}-${currentTypeFromQuery}`;
+        if (ref.current === key && listState === currentTypeFromQuery) return;
+
+        if (currentTypeFromQuery !== listState) {
+            _setListState(currentTypeFromQuery);
+        }
+        
+        setStatus('loading');
+        fetchFeeds(currentTypeFromQuery, currentPageFromQuery);
+        ref.current = key;
+    }, [query, fetchFeeds, listState]);
     
     return (
         <>
@@ -230,7 +239,7 @@ export function FeedsPage() {
                                         <button 
                                             onClick={() => handleTypeChange('draft')} 
                                             className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'draft' 
-                                            ? "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 ring-1 ring-amber-300 dark:ring-amber-700/50 hover:bg-amber-100 dark:hover:bg-amber-800/50" 
+                                            ? "bg-amber-100 text-amber-700 dark:bg-amber-700/30 dark:text-amber-400 ring-1 ring-amber-400 dark:ring-amber-600 hover:bg-amber-200 dark:hover:bg-amber-700/40" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"} shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2 dark:focus:ring-offset-gray-900`}>
                                             <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('draft_bin')}</span>
@@ -238,7 +247,7 @@ export function FeedsPage() {
                                         <button 
                                             onClick={() => handleTypeChange('unlisted')} 
                                             className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'unlisted' 
-                                            ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 ring-1 ring-indigo-300 dark:ring-indigo-700/50 hover:bg-indigo-100 dark:hover:bg-indigo-800/50" 
+                                            ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-700/30 dark:text-indigo-400 ring-1 ring-indigo-400 dark:ring-indigo-600 hover:bg-indigo-200 dark:hover:bg-indigo-700/40" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"} shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 dark:focus:ring-offset-gray-900`}>
                                             <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('unlisted')}</span>
