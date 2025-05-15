@@ -232,13 +232,14 @@ export function FeedsPage() {
                                 }
                             </div>
                             
-                            <div className="flex justify-between items-center -mt-2 sm:mt-0">
+                            {/* 类型描述区 - 改进文字显示 */}
+                            <div className="flex justify-between items-center sm:mt-0">
                                 <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
                                     {listState === 'draft' 
                                         ? t('draft_description') || "文章草稿区，仅自己可见" 
                                         : listState === 'unlisted' 
                                             ? t('unlisted_description') || "未列出的文章，有链接才能访问" 
-                                            : t('article_description') || "所有已发布的公开文章"}
+                                            : t('article_description') || "已发布的公开文章"}
                                 </div>
                                 <div className="flex space-x-2">
                                     {/* 未来可添加排序按钮、视图切换按钮等 */}

@@ -71,21 +71,21 @@ export function HashTag({ name }: { name: string }) {
             onFocus={() => setIsHovered(true)}
             onBlur={() => setIsHovered(false)}
             onTouchStart={onTouchStart}
-            className={`text-base text-pretty overflow-hidden px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full transition-all duration-200 border border-transparent transform 
-                ${isHovered ? '-translate-y-0.5 shadow-md' : 'shadow-sm'} 
+            className={`text-base text-pretty overflow-hidden px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full transition-all duration-300 border border-transparent transform 
+                ${isHovered ? '-translate-y-0.5 shadow-md scale-105' : 'shadow-sm'} 
                 ${tagColor} 
                 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} 
             aria-label={`标签: ${name}`}
             title={`查看标签: ${name}`}
             role="link"
         >
-            <div className="flex gap-0.5 items-center">
-                <div className={`text-xs sm:text-sm font-medium opacity-90 italic transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`}>#</div>
+            <div className="flex gap-1 items-center">
+                <div className={`text-sm sm:text-base font-medium opacity-90 italic transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`}>#</div>
                 <div className="text-xs sm:text-sm font-medium">
                     {displayName}
                 </div>
                 {isHovered && (
-                    <span className="ml-0.5 hidden sm:inline-block animate-pulse">
+                    <span className="ml-0.5 sm:inline-block animate-pulse">
                         <i className="ri-arrow-right-s-line text-xs"></i>
                     </span>
                 )}
