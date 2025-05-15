@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
+import React from "react";
 
 export interface PaginationProps {
   /**
@@ -55,6 +56,7 @@ export function Pagination({
   className = "",
 }: PaginationProps) {
   const { t } = useTranslation();
+  const [_, setLocation] = useLocation();
   
   // 处理页码点击
   const handlePageClick = (page: number) => {
@@ -83,6 +85,8 @@ export function Pagination({
     const fullClasses = `${commonClasses} ${isCurrentPage ? activeClasses : inactiveClasses}`;
     const ariaLabel = label || t("pagination.page", { page: pageNumber });
     
+    const pageUrl = getPageUrl(pageNumber);
+    
     return onPageChange ? (
       // 客户端分页模式
       <button
@@ -96,15 +100,19 @@ export function Pagination({
       </button>
     ) : (
       // URL分页模式
-      <Link
+      <a
         key={pageNumber}
-        href={getPageUrl(pageNumber)}
+        href={pageUrl}
+        onClick={(e) => {
+          e.preventDefault();
+          setLocation(pageUrl);
+        }}
         className={fullClasses}
         aria-label={ariaLabel}
         aria-current={isCurrentPage ? "page" : undefined}
       >
         {label || pageNumber}
-      </Link>
+      </a>
     );
   };
   
@@ -116,6 +124,8 @@ export function Pagination({
         ? 'text-gray-300 cursor-not-allowed'
         : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200'
     }`;
+    
+    const prevPageUrl = getPageUrl(currentPage - 1);
     
     if (onPageChange) {
       // 客户端分页模式
@@ -141,13 +151,17 @@ export function Pagination({
         <i className="ri-arrow-left-s-line"></i>
       </button>
     ) : (
-      <Link
-        href={getPageUrl(currentPage - 1)}
+      <a
+        href={prevPageUrl}
+        onClick={(e) => {
+          e.preventDefault();
+          setLocation(prevPageUrl);
+        }}
         className={classes}
         aria-label={t("pagination.previous")}
       >
         <i className="ri-arrow-left-s-line"></i>
-      </Link>
+      </a>
     );
   };
   
@@ -159,6 +173,8 @@ export function Pagination({
         ? 'text-gray-300 cursor-not-allowed'
         : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200'
     }`;
+    
+    const nextPageUrl = getPageUrl(currentPage + 1);
     
     if (onPageChange) {
       // 客户端分页模式
@@ -184,13 +200,17 @@ export function Pagination({
         <i className="ri-arrow-right-s-line"></i>
       </button>
     ) : (
-      <Link
-        href={getPageUrl(currentPage + 1)}
+      <a
+        href={nextPageUrl}
+        onClick={(e) => {
+          e.preventDefault();
+          setLocation(nextPageUrl);
+        }}
         className={classes}
         aria-label={t("pagination.next")}
       >
         <i className="ri-arrow-right-s-line"></i>
-      </Link>
+      </a>
     );
   };
   

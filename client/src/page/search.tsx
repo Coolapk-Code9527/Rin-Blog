@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Helmet } from 'react-helmet'
 import { useTranslation } from "react-i18next"
-import { Link, useSearch } from "wouter"
+import { useLocation } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
@@ -18,11 +18,13 @@ type FeedsData = {
 
 export function SearchPage({ keyword }: { keyword: string }) {
     const { t } = useTranslation()
-    const query = new URLSearchParams(useSearch());
+    const [location] = useLocation()
+    // 手动解析 URL 查询参数
+    const searchParams = new URLSearchParams(location.split('?')[1] || '')
     const [status, setStatus] = useState<'loading' | 'idle'>('idle')
     const [feeds, setFeeds] = useState<FeedsData>()
-    const page = tryInt(1, query.get("page"))
-    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
+    const page = tryInt(1, searchParams.get("page"))
+    const limit = tryInt(10, searchParams.get("limit"), process.env.PAGE_SIZE)
     const ref = useRef("")
     function fetchFeeds() {
         if (!keyword) return

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useSearch } from "wouter";
+import React, { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { tryInt } from "../utils/int";
 
 interface PaginationConfig {
@@ -55,8 +55,8 @@ export function usePaginationState({
   };
   
   // 读取URL参数
-  const query = useSearch();
-  const urlParams = new URLSearchParams(query);
+  const [location] = useLocation();
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
   
   // 确定初始页码和每页条数
   const initialPage = readFromUrl && urlParams.get("page") 
@@ -103,7 +103,7 @@ export function usePaginationState({
         }
       }
     }
-  }, [query]);
+  }, [location]);
   
   return {
     page,

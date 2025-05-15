@@ -222,22 +222,30 @@ export function FeedsPage() {
                                 
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
-                                        <Link 
+                                        <a 
                                             href={`/?type=${listState === 'draft' ? 'normal' : 'draft'}`}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setLocation(`/?type=${listState === 'draft' ? 'normal' : 'draft'}`);
+                                            }}
                                             className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'draft' 
                                             ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 ring-1 ring-amber-500/30 hover:bg-amber-100 dark:hover:bg-amber-800/30" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                             <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('draft_bin')}</span>
-                                        </Link>
-                                        <Link 
+                                        </a>
+                                        <a 
                                             href={`/?type=${listState === 'unlisted' ? 'normal' : 'unlisted'}`}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setLocation(`/?type=${listState === 'unlisted' ? 'normal' : 'unlisted'}`);
+                                            }}
                                             className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'unlisted' 
                                             ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 ring-1 ring-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/30" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                             <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('unlisted')}</span>
-                                        </Link>
+                                        </a>
                                     </div>
                                 }
                             </div>
