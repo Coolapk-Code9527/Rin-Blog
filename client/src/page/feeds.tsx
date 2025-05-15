@@ -80,45 +80,45 @@ export function FeedsPage() {
                 <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
                     <div className="wauto w-full max-w-6xl">
                         <div className="flex flex-col space-y-4 mb-8">
-                            <div className="flex items-center justify-between py-6 border-b border-gray-200/50 dark:border-gray-700/50">
-                                <div className="flex items-center space-x-4">
-                                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white relative group">
+                            <div className="flex items-center justify-between py-4 sm:py-6 border-b border-gray-200/50 dark:border-gray-700/50">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+                                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group">
                                         {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                                     </h1>
-                                    <div className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm">
+                                    <div className="px-2 py-1 mt-1 sm:mt-0 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm self-start sm:self-auto">
                                         <i className="ri-article-line mr-1.5"></i>
                                         {t('article.total$count', { count: feeds[listState]?.size })}
                                     </div>
                                 </div>
                                 
                                 {profile?.permission &&
-                                    <div className="flex flex-row space-x-3 items-center">
+                                    <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
                                         <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center ${listState === 'draft' 
+                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'draft' 
                                             ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                            <i className="ri-draft-line mr-1.5"></i>
-                                            {t('draft_bin')}
+                                            <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
+                                            <span className="hidden xs:inline">{t('draft_bin')}</span>
                                         </Link>
                                         <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center ${listState === 'unlisted' 
+                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'unlisted' 
                                             ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                            <i className="ri-eye-off-line mr-1.5"></i>
-                                            {t('unlisted')}
+                                            <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
+                                            <span className="hidden xs:inline">{t('unlisted')}</span>
                                         </Link>
                                     </div>
                                 }
                             </div>
                             
-                            <div className="flex justify-between items-center">
-                                <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                            <div className="flex justify-between items-center -mt-2 sm:mt-0">
+                                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
                                     {listState === 'draft' 
-                                        ? t('draft_description') 
+                                        ? t('draft_description') || "文章草稿区，仅自己可见" 
                                         : listState === 'unlisted' 
-                                            ? t('unlisted_description') 
-                                            : t('article_description')}
+                                            ? t('unlisted_description') || "未列出的文章，有链接才能访问" 
+                                            : t('article_description') || "所有已发布的公开文章"}
                                 </div>
                                 <div className="flex space-x-2">
                                     {/* 未来可添加排序按钮、视图切换按钮等 */}

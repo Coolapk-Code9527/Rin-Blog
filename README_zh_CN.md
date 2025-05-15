@@ -11,6 +11,9 @@
 ![GitHub License](https://img.shields.io/github/license/openRin/Rin?style=for-the-badge)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/openRin/Rin/deploy.yaml?style=for-the-badge)
 
+[![Discord](https://img.shields.io/badge/Discord-openRin-red?style=for-the-badge&color=%236e7acc)](https://discord.gg/JWbSTHvAPN)
+[![Telegram](https://img.shields.io/badge/Telegram-openRin-red?style=for-the-badge&color=%233390EC)](https://t.me/openRin)
+
 # 介绍
 
 Rin 是一个基于 Cloudflare Pages + Workers + D1 + R2 全家桶的博客，无需服务器无需备案，只需要一个解析到 Cloudflare 的域名即可部署。
@@ -41,7 +44,8 @@ Rin 是一个基于 Cloudflare Pages + Workers + D1 + R2 全家桶的博客，�
 18. 优化的文章卡片设计，具有一致的高度、优雅的视觉风格和改进的可访问性
 19. 智能标签着色系统，自动为不同标签分配视觉上独特的颜色
 20. 丰富的内容元数据，包含文章新鲜度、状态和重要性的有用指示器
-21. 更多特性请参考 https://xeu.life
+21. 移动端优化UI，紧凑设计和自适应元素
+22. 更多特性请参考 https://xeu.life
 
 # 用户界面
 - **响应式导航**：无缝适配不同屏幕尺寸，为桌面端、平板和移动设备优化布局
@@ -60,6 +64,9 @@ Rin 是一个基于 Cloudflare Pages + Workers + D1 + R2 全家桶的博客，�
 - **内容新鲜度指示器**：为新发布的内容提供特殊的视觉提示
 - **交互式标签系统**：具有改进的可用性和视觉反馈的高级标签交互
 - **优化的暗色模式**：精心调整的暗色主题，具有适当的对比度和颜色平衡
+- **移动优先实现**：小屏幕上的紧凑UI元素和简化交互
+- **自适应内容呈现**：基于视口尺寸的动态元素大小和间距
+- **渐进增强**：桌面端提供功能丰富的体验，移动端保留基本功能
 
 # 文档
 

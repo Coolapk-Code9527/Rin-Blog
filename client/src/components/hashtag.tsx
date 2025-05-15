@@ -35,6 +35,9 @@ export function HashTag({ name }: { name: string }) {
         setLocation(`/hashtag/${name}`);
     };
     
+    // 标签名过长时截断显示
+    const displayName = name.length > 12 ? `${name.substring(0, 10)}...` : name;
+    
     return (
         <button 
             onClick={handleClick}
@@ -42,19 +45,21 @@ export function HashTag({ name }: { name: string }) {
             onMouseLeave={() => setIsHovered(false)}
             onFocus={() => setIsHovered(true)}
             onBlur={() => setIsHovered(false)}
-            className={`text-base text-pretty overflow-hidden px-2.5 py-1 rounded-full transition-all duration-200 border border-transparent transform ${isHovered ? '-translate-y-0.5 shadow-md' : 'shadow-sm'} ${tagColor}`} 
+            className={`text-base text-pretty overflow-hidden px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full transition-all duration-200 border border-transparent transform ${isHovered ? '-translate-y-0.5 shadow-md' : 'shadow-sm'} ${tagColor}`} 
             aria-label={`标签: ${name}`}
             title={`查看标签: ${name}`}
             role="link"
         >
             <div className="flex gap-0.5 items-center">
-                <div className={`text-sm font-medium opacity-90 italic transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`}>#</div>
-                <div className="text-sm font-medium">
-                    {name}
+                <div className={`text-xs sm:text-sm font-medium opacity-90 italic transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`}>#</div>
+                <div className="text-xs sm:text-sm font-medium">
+                    {displayName}
                 </div>
-                <span className={`ml-1 transform transition-all duration-300 ${isHovered ? 'translate-x-0 opacity-100' : 'translate-x-2 opacity-0'}`}>
-                    <i className="ri-arrow-right-s-line text-xs"></i>
-                </span>
+                {isHovered && (
+                    <span className="ml-0.5 hidden sm:inline-block">
+                        <i className="ri-arrow-right-s-line text-xs"></i>
+                    </span>
+                )}
             </div>
         </button>
     )
