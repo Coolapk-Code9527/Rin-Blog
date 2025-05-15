@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState, useCallback } from "react"
+import React, {useState, useEffect, useRef, useContext, useCallback} from "react";
 import { Helmet } from 'react-helmet'
 import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
@@ -82,8 +82,8 @@ function LazyFeedCard({ id, ...props }: any) {
                 <FeedCard id={id} {...props} />
             ) : (
                 <div className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
-                    {/* 占位符卡片顶部 */}
-                    <div className={`w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`}>
+                    {/* 占位符卡片顶部 - 增加高度以匹配卡片高度 */}
+                    <div className={`w-full h-44 xs:h-52 sm:h-56 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`}>
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-10 h-10 rounded-full bg-white/20 dark:bg-gray-700/30 flex items-center justify-center">
                                 <i className="ri-image-line text-white/50 dark:text-gray-500/70 text-xl"></i>
@@ -100,7 +100,10 @@ function LazyFeedCard({ id, ...props }: any) {
                         {/* 日期和状态占位 */}
                         <div className="flex justify-between mb-3">
                             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/4 animate-pulse"></div>
-                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/5 animate-pulse"></div>
+                            <div className="flex gap-1.5">
+                                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-12 animate-pulse"></div>
+                                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-12 animate-pulse"></div>
+                            </div>
                         </div>
                         
                         {/* 摘要占位 */}
@@ -111,10 +114,11 @@ function LazyFeedCard({ id, ...props }: any) {
                         </div>
                         
                         {/* 标签占位 */}
-                        <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30">
+                        <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/50">
                             <div className="flex gap-2">
                                 <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
-                                <div className="h-6 w-10 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
+                                <div className="h-6 w-14 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
+                                <div className="h-6 w-12 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
                             </div>
                         </div>
                     </div>
@@ -215,31 +219,30 @@ export function FeedsPage() {
                                 {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
                                         <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'draft' 
+                                            className={`px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'draft' 
                                             ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                            <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
+                                            <i className="ri-draft-line text-sm mr-1.5 sm:mr-2"></i>
                                             <span className="hidden xs:inline">{t('draft_bin')}</span>
                                         </Link>
                                         <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'unlisted' 
+                                            className={`px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'unlisted' 
                                             ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                            <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
+                                            <i className="ri-eye-off-line text-sm mr-1.5 sm:mr-2"></i>
                                             <span className="hidden xs:inline">{t('unlisted')}</span>
                                         </Link>
                                     </div>
                                 }
                             </div>
                             
-                            {/* 类型描述区 - 改进文字显示 */}
-                            <div className="flex justify-between items-center sm:mt-0">
+                            <div className="flex justify-between items-center -mt-2 sm:mt-0">
                                 <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
                                     {listState === 'draft' 
                                         ? t('draft_description') || "文章草稿区，仅自己可见" 
                                         : listState === 'unlisted' 
                                             ? t('unlisted_description') || "未列出的文章，有链接才能访问" 
-                                            : t('article_description') || "已发布的公开文章"}
+                                            : t('article_description') || "所有已发布的公开文章"}
                                 </div>
                                 <div className="flex space-x-2">
                                     {/* 未来可添加排序按钮、视图切换按钮等 */}

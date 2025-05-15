@@ -3,7 +3,7 @@ import {useTranslation} from "react-i18next";
 import {timeago} from "../utils/timeago";
 import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
-import {useState, useEffect, useMemo} from "react";
+import React, {useState, useMemo} from "react";
 
 export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt }:
     {
@@ -86,8 +86,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             aria-labelledby={`article-title-${id}`}
             onMouseEnter={prefetchArticle}
         >
-            {/* 卡片顶部区域 */}
-            <div className={`w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative`}>
+            {/* 卡片顶部区域 - 增加高度 */}
+            <div className={`w-full h-44 xs:h-52 sm:h-56 overflow-hidden rounded-t-xl relative`}>
                 {/* 渐变背景占位 - 根据文章标题生成的稳定渐变色 */}
                 <div 
                     className="absolute inset-0 w-full h-full z-0"
@@ -142,19 +142,19 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     </div>
                 )}
                 
-                {/* 置顶标识 - 已优化居中对齐 */}
+                {/* 置顶标识 - 修复居中问题 */}
                 {top === 1 && (
-                    <div className="absolute top-3 right-3 bg-theme text-white text-xs sm:text-sm font-medium px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full shadow-md z-20 flex items-center justify-center">
-                        <i className="ri-pushpin-fill mr-1.5"></i>
-                        <span>{t('article.top.title') || '置顶'}</span>
+                    <div className="absolute top-3 right-3 bg-theme text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-md z-20 flex items-center justify-center">
+                        <i className="ri-pushpin-fill mr-1"></i>
+                        <span className="hidden xs:inline">{t('article.top.title')}</span>
                     </div>
                 )}
                 
                 {/* 今日发布标识 */}
                 {isToday() && (
-                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs sm:text-sm font-medium px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full shadow-md z-20 flex items-center justify-center">
-                        <i className="ri-time-line mr-1.5"></i>
-                        <span>{t('today') || '今日'}</span>
+                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-md z-20 flex items-center justify-center">
+                        <i className="ri-time-line mr-1"></i>
+                        <span className="hidden xs:inline">{t('today')}</span>
                     </div>
                 )}
             </div>
@@ -166,32 +166,32 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     {title}
                 </h2>
                 
-                {/* 日期和状态区域 - 移动端紧凑设计 */}
-                <div className="flex flex-wrap justify-between items-center gap-1 mb-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                {/* 日期和状态区域 - 调整图标大小 */}
+                <div className="flex flex-wrap justify-between items-center gap-1 mb-2 text-xs text-gray-500 dark:text-gray-400">
                     {/* 左侧日期显示 */}
                     <div className="flex items-center">
-                        <i className="ri-calendar-line mr-1.5"></i>
+                        <i className="ri-calendar-line mr-1"></i>
                         {formatDate(createdAt)}
                         {createdAt !== updatedAt && 
                             <span className="ml-2 flex items-center" title={new Date(updatedAt).toLocaleString()}>
-                                <i className="ri-history-line mr-1.5"></i>
+                                <i className="ri-history-line mr-1"></i>
                                 {formatDate(updatedAt)}
                             </span>
                         }
                     </div>
                     
-                    {/* 右侧状态显示 - 已优化图标大小 */}
-                    <div className="flex flex-wrap items-center gap-2">
+                    {/* 右侧状态显示 - 增大图标尺寸 */}
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
                         {draft === 1 && 
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300">
-                                <i className="ri-draft-line mr-1.5 text-base"></i>
-                                <span>{t("draft") || "草稿"}</span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300">
+                                <i className="ri-draft-line text-sm mr-1"></i>
+                                <span className="hidden xs:inline">{t("draft")}</span>
                             </span>
                         }
                         {listed === 0 && 
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300">
-                                <i className="ri-eye-off-line mr-1.5 text-base"></i>
-                                <span>{t("unlisted") || "未列出"}</span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300">
+                                <i className="ri-eye-off-line text-sm mr-1"></i>
+                                <span className="hidden xs:inline">{t("unlisted")}</span>
                             </span>
                         }
                     </div>
@@ -202,8 +202,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     <SimplifiedMarkdown content={cleanedSummary} />
                 </div>
                 
-                {/* 标签区域 - 统一分割线 */}
-                <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30 mt-3 sm:mt-4">
+                {/* 标签区域 - 统一分隔线样式 */}
+                <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/50 mt-2 sm:mt-4">
                     {hashtags.length > 0 ? (
                         <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
                             {hashtags.map(({id, name}) => (
