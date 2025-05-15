@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react"
+import { useContext, useEffect, useRef, useState, useCallback } from "react"
 import { Helmet } from 'react-helmet'
 import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
@@ -23,6 +23,42 @@ type FeedsMap = {
     [key in FeedType]: FeedsData
 }
 
+// 懒加载Feed卡片组件
+function LazyFeedCard({ id, ...props }: any) {
+    const [isVisible, setIsVisible] = useState(false);
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.1, rootMargin: '200px 0px' }
+        );
+
+        if (cardRef.current) {
+            observer.observe(cardRef.current);
+        }
+
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
+
+    return (
+        <div ref={cardRef} className="w-full h-full">
+            {isVisible ? (
+                <FeedCard id={id} {...props} />
+            ) : (
+                <div className="w-full h-[260px] xs:h-[280px] bg-gray-50 dark:bg-gray-800/20 rounded-2xl animate-pulse shadow-sm border border-gray-100 dark:border-gray-700"></div>
+            )}
+        </div>
+    );
+}
+
 export function FeedsPage() {
     const { t } = useTranslation()
     const query = new URLSearchParams(useSearch());
@@ -37,7 +73,9 @@ export function FeedsPage() {
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = useRef("")
-    function fetchFeeds(type: FeedType) {
+    
+    // 使用useCallback优化函数
+    const fetchFeeds = useCallback((type: FeedType) => {
         client.feed.index.get({
             query: {
                 page: page,
@@ -51,10 +89,26 @@ export function FeedsPage() {
                     ...feeds,
                     [type]: data
                 })
+                
+                // 预加载下一页数据
+                if (data.hasNext) {
+                    setTimeout(() => {
+                        client.feed.index.get({
+                            query: {
+                                page: page + 1,
+                                limit: limit,
+                                type: type
+                            },
+                            headers: headersWithAuth()
+                        });
+                    }, 2000);
+                }
+                
                 setStatus('idle')
             }
         })
-    }
+    }, [page, limit, feeds]);
+    
     useEffect(() => {
         const key = `${query.get("page")} ${query.get("type")}`
         if (ref.current == key) return
@@ -65,7 +119,8 @@ export function FeedsPage() {
         setStatus('loading')
         fetchFeeds(type)
         ref.current = key
-    }, [query.get("page"), query.get("type")])
+    }, [query.get("page"), query.get("type"), fetchFeeds])
+    
     return (
         <>
             <Helmet>
@@ -130,7 +185,7 @@ export function FeedsPage() {
                             <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
                                 {feeds[listState].data.length > 0 ? (
                                     feeds[listState].data.map(({ id, ...feed }: any) => (
-                                        <FeedCard key={id} id={id} {...feed} />
+                                        <LazyFeedCard key={id} id={id} {...feed} />
                                     ))
                                 ) : (
                                     <div className="col-span-full text-center py-20 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">

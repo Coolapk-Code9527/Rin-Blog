@@ -3,6 +3,7 @@ import {useTranslation} from "react-i18next";
 import {timeago} from "../utils/timeago";
 import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
+import {useState} from "react";
 
 export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt }:
     {
@@ -12,7 +13,9 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         hashtags: { id: number, name: string }[],
         createdAt: Date, updatedAt: Date
     }) {
-    const { t } = useTranslation()
+    const { t } = useTranslation();
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     // 预处理 summary，移除 Markdown 图片链接
     const cleanedSummary = summary ? summary.replace(/!\[.*?\]\(.*?\)/g, "") : ""; 
@@ -32,6 +35,14 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         return `${d.getMonth()+1}-${d.getDate()}`;
     };
 
+    // 预加载文章详情页（当用户悬停卡片时）
+    const prefetchArticle = () => {
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = `/feed/${id}`;
+        document.head.appendChild(link);
+    };
+
     return (
         <Link href={`/feed/${id}`} 
             className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
@@ -39,17 +50,41 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
                 flex flex-col min-h-[260px] xs:min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
             aria-labelledby={`article-title-${id}`}
+            onMouseEnter={prefetchArticle}
         >
             {/* 卡片顶部区域 */}
             {avatar ? (
                 <div className="w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-40 group-hover:opacity-60 transition-opacity duration-300 z-10"></div>
-                    <img src={avatar} alt={title}
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700" 
-                        onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
+                    
+                    {/* 图片加载状态指示器 */}
+                    {!imageLoaded && !imageError && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800/80 animate-pulse z-0">
+                            <div className="w-8 h-8 border-2 border-theme/60 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    )}
+                    
+                    {/* 图片加载错误占位符 */}
+                    {imageError && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800/80 z-0">
+                            <i className="ri-image-line text-3xl text-gray-400 dark:text-gray-500 mb-2"></i>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{t('image_load_error')}</span>
+                        </div>
+                    )}
+                    
+                    <img 
+                        src={avatar} 
+                        alt={title}
+                        loading="lazy"
+                        decoding="async"
+                        className={`object-cover w-full h-full group-hover:scale-105 transition-all duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        onLoad={() => setImageLoaded(true)}
+                        onError={() => {
+                            setImageError(true);
+                            setImageLoaded(true);
                         }}
                     />
+                    
                     {/* 置顶标识 */}
                     {top === 1 && (
                         <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-theme text-white text-xs font-medium px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-md z-20 flex items-center">
