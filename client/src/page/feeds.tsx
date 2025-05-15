@@ -190,7 +190,7 @@ export function FeedsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
-                <main className="w-full min-h-[80vh] flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
+                <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
                     <div className="wauto w-full max-w-6xl">
                         {/* 页面标题和过滤器区域 */}
                         <div className="flex flex-col space-y-4 mb-8 animate-fadeIn">
@@ -226,6 +226,16 @@ export function FeedsPage() {
                                             <span>{t('unlisted')}</span>
                                         </Link>
                                     </div>
+                                )}
+                            </div>
+                            
+                            {/* 描述和工具栏区域 - 修改这部分，去掉文字描述 */}
+                            <div className="flex justify-end items-center flex-wrap gap-2">
+                                {profile?.permission && (
+                                    <Link href="/edit" className="inline-flex items-center px-4 py-2 bg-theme text-white rounded-full text-sm font-medium transition-all hover:bg-theme-dark focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                                        <i className="ri-add-line mr-1.5"></i>
+                                        {t('new_article')}
+                                    </Link>
                                 )}
                             </div>
                         </div>

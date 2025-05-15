@@ -140,10 +140,16 @@ export const createPlaceholder = (
     height: number, 
     color: string = '#f3f4f6'
 ): string => {
-    // 创建一个SVG占位符
+    // 创建一个SVG占位符，使用渐变而不是纯色
     const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-            <rect width="${width}" height="${height}" fill="${color}" />
+            <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="${color}" />
+                    <stop offset="100%" stop-color="${color === '#f3f4f6' ? '#e5e7eb' : '#d1d5db'}" />
+                </linearGradient>
+            </defs>
+            <rect width="${width}" height="${height}" fill="url(#gradient)" />
         </svg>
     `;
     
@@ -154,10 +160,10 @@ export const createPlaceholder = (
 // 生成低质量图片预览
 export const generateLowQualityPreview = async (url: string): Promise<string> => {
     try {
-        // 使用优化参数生成低质量预览图，但提高质量和尺寸参数
+        // 使用优化参数生成低质量预览图，提高预览图质量
         return await optimizeImageUrl(url, {
-            width: 40, // 增加预览尺寸，使预览更清晰
-            quality: 40, // 提高预览质量
+            width: 40, // 稍微增加预览图尺寸
+            quality: 40, // 提高质量，减少模糊感
             format: 'auto' // 自动选择最佳格式
         });
     } catch (error) {
