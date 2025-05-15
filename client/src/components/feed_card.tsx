@@ -20,14 +20,23 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     return (
         <>
             <Link href={`/feed/${id}`} 
-                className="block w-full rounded-2xl bg-w h-full duration-300 bg-button overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border border-gray-100 dark:border-gray-800 shadow-sm"
+                className="group block w-full rounded-2xl bg-w h-full duration-300 bg-button overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                aria-labelledby={`article-title-${id}`}
             >
-                {avatar &&
-                    <div className="w-full h-48 overflow-hidden rounded-t-2xl">
+                {avatar ? (
+                    <div className="w-full h-48 overflow-hidden rounded-t-2xl relative">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
                         <img src={avatar} alt={title}
-                            className="object-cover w-full h-full hover:scale-105 transition-transform duration-700" />
-                    </div>}
-                <div className="p-5">
+                            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700" 
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <div className="h-3"></div>
+                )}
+                <div className="p-5 flex-1 flex flex-col">
                     {/* 文章状态指示 */}
                     {(top === 1 || draft === 1 || listed === 0) && 
                         <div className="flex flex-wrap gap-2 mb-2">
@@ -53,9 +62,9 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     }
                     
                     {/* 文章标题 */}
-                    <h1 className="text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-2 leading-tight hover:text-theme dark:hover:text-theme transition-colors line-clamp-2">
+                    <h2 id={`article-title-${id}`} className="text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors line-clamp-2">
                         {title}
-                    </h1>
+                    </h2>
                     
                     {/* 时间信息 */}
                     <div className="flex flex-wrap items-center gap-x-3 text-xs text-gray-500 dark:text-gray-400 mb-3">
@@ -78,11 +87,11 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                         <SimplifiedMarkdown content={cleanedSummary} />
                     </div>
                     
-                    {/* 标签 */}
+                    {/* 标签 - 使用mt-auto将标签推到底部 */}
                     {hashtags.length > 0 &&
-                        <div className="mt-3 flex flex-row flex-wrap items-center gap-2">
+                        <div className="mt-auto pt-3 flex flex-row flex-wrap items-center gap-2 border-t border-gray-100 dark:border-gray-800">
                             {hashtags.map(({id, name}) => (
-                                <div key={id}>
+                                <div key={id} className="animate-fadeIn">
                                     <HashTag name={name} />
                                 </div>
                             ))}

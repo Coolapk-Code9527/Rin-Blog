@@ -78,34 +78,51 @@ export function FeedsPage() {
             </Helmet>
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
                 <main className="w-full flex flex-col justify-center items-center mb-8">
-                    <div className="wauto text-start text-black dark:text-white py-4 text-4xl font-bold">
-                        <p>
-                            {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
-                        </p>
-                        <div className="flex flex-row justify-between">
-                            <p className="text-sm mt-4 text-neutral-500 font-normal">
-                                {t('article.total$count', { count: feeds[listState]?.size })}
-                            </p>
+                    <div className="wauto w-full max-w-6xl text-start text-black dark:text-white py-4 border-b border-gray-200/50 dark:border-gray-700/50 mb-6">
+                        <div className="flex flex-wrap items-center justify-between mb-2">
+                            <h1 className="text-3xl font-bold">
+                                {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
+                            </h1>
+                            
                             {profile?.permission &&
-                                <div className="flex flex-row space-x-4">
-                                    <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} className={`text-sm mt-4 text-neutral-500 font-normal ${listState === 'draft' ? "text-theme" : ""}`}>
+                                <div className="flex flex-row space-x-3 items-center mt-2 sm:mt-0">
+                                    <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
+                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${listState === 'draft' 
+                                        ? "bg-theme/10 text-theme" 
+                                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
+                                        <i className="ri-draft-line mr-1.5"></i>
                                         {t('draft_bin')}
                                     </Link>
-                                    <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} className={`text-sm mt-4 text-neutral-500 font-normal ${listState === 'unlisted' ? "text-theme" : ""}`}>
+                                    <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
+                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${listState === 'unlisted' 
+                                        ? "bg-theme/10 text-theme" 
+                                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
+                                        <i className="ri-eye-off-line mr-1.5"></i>
                                         {t('unlisted')}
                                     </Link>
                                 </div>
                             }
                         </div>
+                        <p className="text-sm text-neutral-500 font-normal flex items-center">
+                            <i className="ri-article-line mr-1.5"></i>
+                            {t('article.total$count', { count: feeds[listState]?.size })}
+                        </p>
                     </div>
                     <Waiting for={status === 'idle'}>
                         <div className="wauto grid grid-cols-1 md:grid-cols-2 gap-6 ani-show max-w-6xl w-full">
-                            {feeds[listState].data.map(({ id, ...feed }: any) => (
-                                <FeedCard key={id} id={id} {...feed} />
-                            ))}
+                            {feeds[listState].data.length > 0 ? (
+                                feeds[listState].data.map(({ id, ...feed }: any) => (
+                                    <FeedCard key={id} id={id} {...feed} />
+                                ))
+                            ) : (
+                                <div className="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
+                                    <i className="ri-inbox-line text-5xl mb-3 block"></i>
+                                    <p>{t('no_articles')}</p>
+                                </div>
+                            )}
                         </div>
                         
-                        {(page > 1 || feeds[listState]?.hasNext) && (
+                        {(page > 1 || feeds[listState]?.hasNext) && feeds[listState].data.length > 0 && (
                             <Pagination 
                                 currentPage={page}
                                 totalPages={Math.ceil(feeds[listState]?.size / limit) || 1}
