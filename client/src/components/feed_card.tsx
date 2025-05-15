@@ -86,7 +86,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
 
     return (
             <Link href={`/feed/${id}`} 
-            className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
+            className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 hover:scale-[1.01] border ${top === 1 
                 ? 'border-theme/30 dark:border-theme/20 shadow-md' 
                 : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
                 flex flex-col min-h-[260px] xs:min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
@@ -98,7 +98,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             <div className={`w-full h-44 xs:h-52 sm:h-56 md:h-60 overflow-hidden rounded-t-xl relative`}>
                 {/* 渐变背景占位 - 根据文章标题生成的稳定渐变色 */}
                 <div 
-                    className="absolute inset-0 w-full h-full z-0"
+                    className="absolute inset-0 w-full h-full z-0 transition-opacity duration-700"
                     style={{
                         background: `linear-gradient(${generateGradient.angle}deg, ${generateGradient.colors.join(', ')})`,
                         opacity: avatar && imageLoaded ? 0 : 0.8
@@ -144,7 +144,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 {!avatar && (
                     <div className="absolute inset-0 flex items-center justify-center z-5">
                         <div className="text-white/90 text-center px-4">
-                            <i className="ri-article-line text-4xl mb-2 drop-shadow-md"></i>
+                            <i className="ri-article-line text-4xl mb-2 drop-shadow-md group-hover:scale-110 transition-transform duration-300"></i>
                             <p className="text-sm font-medium drop-shadow-md">{title.substring(0, 20)}{title.length > 20 ? '...' : ''}</p>
                         </div>
                     </div>
@@ -213,7 +213,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 </div>
                     
                 {/* 标签区域 - 统一分割线样式和对齐方式 */}
-                <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30 mt-3 sm:mt-4 min-h-[3rem]">
+                <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30 flex items-center min-h-[3.5rem]">
                     {hashtags.length > 0 ? (
                         <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
                             {hashtags.map(({id, name}) => (

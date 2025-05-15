@@ -72,7 +72,7 @@ export function HashTag({ name }: { name: string }) {
             onBlur={() => setIsHovered(false)}
             onTouchStart={onTouchStart}
             className={`group text-base text-pretty overflow-hidden px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full transition-all duration-300 border border-transparent transform 
-                ${isHovered ? '-translate-y-0.5 shadow-md scale-105' : 'shadow-sm'} 
+                ${isHovered ? '-translate-y-0.5 shadow-md scale-105' : 'shadow-sm hover:shadow'} 
                 ${tagColor} 
                 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} 
                 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-opacity-50`} 

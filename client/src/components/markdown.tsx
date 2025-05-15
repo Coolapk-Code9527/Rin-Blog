@@ -651,6 +651,12 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
     // 替换复杂的多行代码块为简单提示
     processed = processed.replace(/```[\s\S]*?```/g, '[代码块]');
     
+    // 限制长度，确保摘要不会太长
+    const maxLength = 280;
+    if (processed.length > maxLength) {
+      processed = processed.substring(0, maxLength) + '...';
+    }
+    
     return processed;
   }, [content]);
   
@@ -665,7 +671,7 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
       components={{
         // 简化的组件渲染
         p({ children }) {
-          return <p className="my-2 text-gray-800 dark:text-gray-200 overflow-hidden overflow-ellipsis">{children}</p>;
+          return <p className="my-2 text-gray-800 dark:text-gray-200 overflow-hidden overflow-ellipsis line-clamp-3">{children}</p>;
         },
         a({ children, href }) {
           return (
