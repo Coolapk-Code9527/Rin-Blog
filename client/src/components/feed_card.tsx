@@ -153,7 +153,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 {/* 置顶标识 - 优化位置居中 */}
                 {top === 1 && (
                     <div className="absolute top-3 right-3 z-20 flex items-center justify-center">
-                        <div className="bg-theme text-white text-xs font-medium px-2.5 py-1.5 rounded-full shadow-md flex items-center">
+                        <div className="bg-theme text-white text-xs font-medium px-2.5 py-1.5 rounded-full shadow-md flex items-center backdrop-blur-sm">
                             <i className="ri-pushpin-line mr-1"></i>
                             <span>{t('article.top.title')}</span>
                         </div>
@@ -162,7 +162,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 
                 {/* 今日发布标识 */}
                 {isToday() && (
-                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-md z-20 flex items-center justify-center">
+                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-md z-20 flex items-center justify-center backdrop-blur-sm">
                         <i className="ri-time-line mr-1.5"></i>
                         <span className="hidden xs:inline">{t('today')}</span>
                     </div>
@@ -207,8 +207,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     </div>
                 </div>
                 
-                {/* 文章摘要 - 无需显示"文章描述"文字 */}
-                <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 min-h-[3.6rem] sm:min-h-[4.5rem] group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
+                {/* 文章摘要 - 优化显示效果 */}
+                <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 min-h-[3.6rem] sm:min-h-[4.5rem] group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors bg-gradient-to-b from-gray-50/0 to-gray-50/30 dark:from-gray-800/0 dark:to-gray-800/30 p-2 rounded-md">
                     <SimplifiedMarkdown content={cleanedSummary} />
                 </div>
                     

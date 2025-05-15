@@ -1,6 +1,6 @@
 import React from "react"
 import { Helmet } from 'react-helmet'
-import { Link, useSearch } from "wouter"
+import { Link, useLocation } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
@@ -10,6 +10,12 @@ import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { useTranslation } from "react-i18next";
+
+// 添加useSearch hook
+const useSearch = () => {
+    const [location] = useLocation();
+    return location.split('?')[1] || '';
+};
 
 type FeedsData = {
     size: number,
@@ -81,11 +87,11 @@ function LazyFeedCard({ id, ...props }: any) {
             {isVisible ? (
                 <FeedCard id={id} {...props} />
             ) : (
-                <div className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
+                <div className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px] transition-all">
                     {/* 占位符卡片顶部 */}
-                    <div className={`w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`}>
+                    <div className={`w-full h-44 xs:h-52 sm:h-56 md:h-60 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`}>
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-10 h-10 rounded-full bg-white/20 dark:bg-gray-700/30 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-full bg-white/20 dark:bg-gray-700/30 flex items-center justify-center backdrop-blur-sm">
                                 <i className="ri-image-line text-white/50 dark:text-gray-500/70 text-xl"></i>
                             </div>
                         </div>
@@ -104,7 +110,7 @@ function LazyFeedCard({ id, ...props }: any) {
                         </div>
                         
                         {/* 摘要占位 */}
-                        <div className="space-y-2 mb-4">
+                        <div className="space-y-2 mb-4 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-md">
                             <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                             <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                             <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-4/5 animate-pulse"></div>
@@ -238,7 +244,7 @@ export function FeedsPage() {
                                         ? t('draft_description') || "文章草稿区，仅自己可见" 
                                         : listState === 'unlisted' 
                                             ? t('unlisted_description') || "未列出的文章，有链接才能访问" 
-                                            : t('article_description') || "所有已发布的公开文章"}
+                                            : t('article.description') || "所有已发布的公开文章"}
                                 </div>
                                 <div className="flex space-x-2">
                                     {/* 未来可添加排序按钮、视图切换按钮等 */}
@@ -247,7 +253,7 @@ export function FeedsPage() {
                         </div>
                         
                         <Waiting for={status === 'idle'}>
-                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
+                            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 md:gap-7 ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
                                 {feeds[listState].data.length > 0 ? (
                                     feeds[listState].data.map(({ id, ...feed }: any) => (
                                         <LazyFeedCard key={id} id={id} {...feed} />
