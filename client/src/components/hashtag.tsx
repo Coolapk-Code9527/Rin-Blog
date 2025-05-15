@@ -1,6 +1,6 @@
 import { useLocation } from "wouter"
 
-export function HashTag({ name }: { name: string }) {
+export function HashTag({ name, key }: { name: string, key?: number }) {
     const [_, setLocation] = useLocation()
     return (
         <button onClick={(e) => { e.preventDefault(); setLocation(`/hashtag/${name}`) }}
