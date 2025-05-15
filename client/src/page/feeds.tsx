@@ -18,18 +18,6 @@ const useSearch = () => {
     return location.includes('?') ? location.split('?')[1] : '';
 };
 
-type FeedsData = {
-    size: number,
-    data: any[],
-    hasNext: boolean
-}
-
-type FeedType = 'draft' | 'unlisted' | 'normal'
-
-type FeedsMap = {
-    [key in FeedType]: FeedsData
-}
-
 // 懒加载Feed卡片组件
 function LazyFeedCard({ id, ...props }: any) {
     const [isVisible, setIsVisible] = React.useState(false);
@@ -129,6 +117,18 @@ function LazyFeedCard({ id, ...props }: any) {
             )}
         </div>
     );
+}
+
+type FeedsData = {
+    size: number,
+    data: any[],
+    hasNext: boolean
+}
+
+type FeedType = 'draft' | 'unlisted' | 'normal'
+
+type FeedsMap = {
+    [key in FeedType]: FeedsData
 }
 
 export function FeedsPage() {
