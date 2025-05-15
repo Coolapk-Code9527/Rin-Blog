@@ -11,8 +11,6 @@
       "title": "删除文章"
     },
     "search": {
-      "clear_history": "清除历史",
-      "history": "搜索历史",
       "placeholder": "请输入关键字",
       "title": "搜索",
       "title$keyword": "搜索：{{keyword}}"
@@ -140,7 +138,6 @@
   "last_updated": "最近更新",
   "listed": "展示在文章列表",
   "loading": "加载中",
-  "logged_in": "已登录",
   "login": {
     "oauth_only": "请登录后继续",
     "password": {
@@ -154,8 +151,6 @@
   },
   "logout": "退出登录",
   "main_content": "正文",
-  "menu": "菜单",
-  "mobile_menu": "移动菜单",
   "next": "下一页",
   "no_more": "没有更多了",
   "preview": "预览",
@@ -390,6 +385,5 @@
   "code": {
     "copy": "复制",
     "copied": "已复制!"
-  },
-  "user": "用户"
+  }
 }

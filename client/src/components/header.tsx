@@ -528,7 +528,7 @@ function MobileMenu() {
                                                 aria-expanded={showLanguages}
                                             >
                                                 <div className="flex items-center">
-                                                    <i className="ri-translate-2 mr-2.5 text-gray-500 dark:text-gray-400 text-base"></i>
+                                                    <i className="ri-translate-2 mr-2 text-gray-500 dark:text-gray-400"></i>
                                                     <span className="font-medium">
                                                         {languages.find(lang => lang.code === i18n.language)?.name || t('languages')}
                                                     </span>
@@ -537,7 +537,7 @@ function MobileMenu() {
                                             </button>
 
                                             <div className={`mt-1 overflow-hidden transition-all duration-200 ease-in-out ${showLanguages ? 'max-h-60' : 'max-h-0'}`}>
-                                                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden animate-slideDown">
+                                                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-slideDown">
                                                     {languages.map(({ code, name, flag }) => (
                                                         <button 
                                                             key={code} 
@@ -545,10 +545,10 @@ function MobileMenu() {
                                                             className={`w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 ${i18n.language === code ? 'bg-theme/10 text-theme font-medium' : 'text-gray-700 dark:text-gray-300'}`}
                                                         >
                                                             <div className="flex items-center">
-                                                                <span className="mr-2.5 text-base">{flag}</span>
+                                                                <span className="mr-2 text-base">{flag}</span>
                                                                 <span>{name}</span>
                                                             </div>
-                                                            {i18n.language === code && <i className="ri-check-line text-theme"></i>}
+                                                            {i18n.language === code && <i className="ri-check-line"></i>}
                                                         </button>
                                                     ))}
                                                 </div>
@@ -666,7 +666,7 @@ function LanguageSwitch({ className }: { className?: string }) {
                                 role="menuitem"
                             >
                                 <div className="flex items-center">
-                                    <span className="mr-2.5 text-base">{flag}</span>
+                                    <span className="mr-2 text-base">{flag}</span>
                                     <span>{name}</span>
                                 </div>
                                 {i18n.language === code && <i className="ri-check-line text-theme"></i>}
@@ -847,4 +847,269 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
     };
 
     return (
-        <div ref={searchContainerRef} className={`
+        <div ref={searchContainerRef} className={`${className || ""} search-container relative flex items-center`} role="search">
+            {!isExpanded ? (
+                <button 
+                    onClick={() => setIsExpanded(true)} 
+                    title={label} 
+                    aria-label={label}
+                    className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-110"
+                >
+                    <i className="ri-search-line text-xl"></i>
+                </button>
+            ) : (
+                <div className="flex items-center relative">
+                    <div className="relative flex items-center animate-expandWidth">
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            value={value}
+                            onChange={(e) => setValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder={getTranslatedText('article.search.placeholder', '搜索文章...')}
+                            className={`${getSearchInputWidthClass()} py-2 pl-9 pr-10 bg-gray-100 dark:bg-gray-800 border-0 rounded-lg text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/30 focus:bg-white dark:focus:bg-gray-700 focus:outline-none transition-all duration-200`}
+                            aria-expanded={isExpanded}
+                            autoComplete="off"
+                            aria-autocomplete="list"
+                            aria-controls={searchHistory.length > 0 ? "search-history-dropdown" : undefined}
+                        />
+                        <i className="ri-search-line absolute left-3 text-gray-400 text-base"></i>
+                        <div className="absolute right-2 flex space-x-1">
+                            {value.trim() && (
+                                <button 
+                                    onClick={() => setValue('')}
+                                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-150"
+                                    aria-label={getTranslatedText('clear', '清除')}
+                                    type="button"
+                                >
+                                    <i className="ri-close-circle-line text-sm"></i>
+                                </button>
+                            )}
+                            <button 
+                                onClick={() => {
+                                    if (value.trim()) {
+                                        onSearch();
+                                    } else {
+                                        setIsExpanded(false);
+                                    }
+                                }}
+                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-theme dark:hover:text-theme transition-colors duration-150"
+                                aria-label={value.trim() ? getTranslatedText('search', '搜索') : getTranslatedText('close', '关闭')}
+                                type="button"
+                            >
+                                {value.trim() ? (
+                                    <i className="ri-arrow-right-circle-line text-sm"></i>
+                                ) : (
+                                    <i className="ri-close-line text-sm"></i>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* 搜索历史下拉框 */}
+                    {isExpanded && searchHistory.length > 0 && (
+                        <div 
+                            id="search-history-dropdown"
+                            className={`absolute top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 overflow-hidden animate-slideDown ${getHistoryDropdownPositionClass()}`}
+                            role="listbox"
+                        >
+                            <div className="max-h-48 overflow-y-auto">
+                                <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10 border-b border-gray-100 dark:border-gray-700">
+                                    <span>{getTranslatedText('article.search.history', '搜索历史')}</span>
+                                    <button 
+                                        onClick={() => {
+                                            setSearchHistory([]);
+                                            localStorage.removeItem('search_history');
+                                        }}
+                                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-150"
+                                        aria-label={getTranslatedText('article.search.clear_history', '清除搜索历史')}
+                                        type="button"
+                                    >
+                                        {getTranslatedText('article.search.clear_history', '清除')}
+                                    </button>
+                                </div>
+                                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                                    {searchHistory.map((term, index) => (
+                                        <button 
+                                            key={index}
+                                            className="w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-left flex items-center transition-colors duration-150"
+                                            onClick={() => handleHistoryClick(term)}
+                                            role="option"
+                                            aria-selected={value === term}
+                                            type="button"
+                                        >
+                                            <i className="ri-history-line mr-2 text-gray-400"></i>
+                                            <span className="truncate">{term}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
+
+function UserAvatar({ className, profile, onClose }: { className?: string, profile?: Profile, onClose?: () => void }) {
+    const { t } = useTranslation()
+    const { LoginModal, setIsOpened } = useLoginModal(onClose)
+    const label = t('github_login')
+    const config = useContext(ClientConfigContext);
+    const [isOpen, setIsOpen] = useState(false);
+    const userMenuRef = useRef<HTMLDivElement>(null);
+    
+    // 监听点击外部关闭菜单
+    useEffect(() => {
+        if (!isOpen) return;
+        
+        const handleClickOutside = (event: MouseEvent) => {
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen]);
+    
+    // 处理退出登录
+    const handleLogout = () => {
+        removeCookie("token");
+        window.location.reload();
+    };
+
+    if (!config.get<boolean>('login.enabled')) return null;
+
+    return (
+        <div ref={userMenuRef} className={(className || "") + " relative flex items-center"}>
+            {profile?.avatar ? (
+                <>
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="relative rounded-full overflow-hidden hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
+                        aria-expanded={isOpen}
+                        aria-haspopup="true"
+                    >
+                        <img 
+                            src={profile.avatar} 
+                            alt={profile.name || t('user')} 
+                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm" 
+                        />
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></span>
+                    </button>
+                    
+                    {isOpen && (
+                        <div 
+                            className="absolute top-full right-0 mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl shadow-xl p-2 w-64 border border-gray-200/50 dark:border-gray-700/50 z-20 animate-slideDown"
+                            role="menu"
+                            aria-orientation="vertical"
+                            aria-labelledby="user-menu"
+                        >
+                            <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center space-x-3">
+                                <img 
+                                    src={profile.avatar} 
+                                    alt={profile.name || t('user')} 
+                                    className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm" 
+                                />
+                                <div>
+                                    <p className="font-medium text-gray-800 dark:text-gray-200">{profile.name}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('logged_in')}</p>
+                                </div>
+                            </div>
+                            
+                            <div className="mt-1 space-y-1">
+                                <button 
+                                    onClick={handleLogout}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-all duration-150 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 group"
+                                    role="menuitem"
+                                >
+                                    <i className="ri-logout-circle-line text-red-400 group-hover:text-red-500 transition-colors"></i>
+                                    <span>{t('logout')}</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
+            ) : (
+                <button 
+                    onClick={() => setIsOpened(true)} 
+                    title={label} 
+                    aria-label={label}
+                    className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
+                >
+                    <i className="ri-user-line text-xl"></i>
+                </button>
+            )}
+            <LoginModal />
+        </div>
+    )
+}
+
+// 折叠式菜单组件，用于中等尺寸屏幕
+function CollapsedMenu() {
+    const [isOpen, setIsOpen] = useState(false);
+    const { t } = useTranslation();
+    const [location] = useLocation();
+    const menuRef = useRef<HTMLDivElement>(null);
+    
+    // 监听点击外部关闭菜单
+    useEffect(() => {
+        if (!isOpen) return;
+        
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen]);
+    
+    return (
+        <div ref={menuRef}>
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
+                aria-expanded={isOpen}
+                aria-label={t('menu')}
+            >
+                <i className="ri-menu-line text-xl"></i>
+            </button>
+            
+            {isOpen && (
+                <div className="absolute right-0 mt-2 py-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 animate-slideDown">
+                    <NavBar menu={true} onClick={() => setIsOpen(false)} />
+                </div>
+            )}
+        </div>
+    );
+}
+
+// 添加CSS动画类
+if (typeof document !== "undefined") {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slideInRight {
+            animation: slideInRight 0.3s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    `;
+    document.head.appendChild(style);
+}

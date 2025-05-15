@@ -1,73 +1,5 @@
 @import "./base.css";
 
-/* 主题色变量 */
-:root {
-  /* 主题色变量 */
-  --theme-color: #6366f1;
-  --theme-color-light: rgba(99, 102, 241, 0.1);
-  --theme-color-medium: rgba(99, 102, 241, 0.3);
-  --theme-color-dark: #4f46e5;
-  
-  /* 背景色 */
-  --bg-white: #ffffff;
-  --bg-gray-50: #f9fafb;
-  --bg-gray-100: #f3f4f6;
-  --bg-popup: rgba(255, 255, 255, 0.95);
-  --bg-popup-hover: #f3f4f6;
-  
-  /* 文本色 */
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-tertiary: #6b7280;
-  --text-placeholder: #9ca3af;
-  
-  /* 过渡时间 */
-  --transition-fast: 0.15s;
-  --transition-normal: 0.25s;
-  --transition-slow: 0.4s;
-  
-  /* 阴影 */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  
-  /* 圆角 */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
-  --radius-full: 9999px;
-}
-
-/* 深色模式变量 */
-.dark {
-  --theme-color: #818cf8; /* 稍微亮一点的主题色 */
-  --theme-color-light: rgba(129, 140, 248, 0.15);
-  --theme-color-medium: rgba(129, 140, 248, 0.3);
-  --theme-color-dark: #6366f1;
-  
-  /* 背景色 */
-  --bg-white: #111827;
-  --bg-gray-50: #1f2937;
-  --bg-gray-100: #374151;
-  --bg-popup: rgba(31, 41, 55, 0.95);
-  --bg-popup-hover: #374151;
-  
-  /* 文本色 */
-  --text-primary: #f9fafb;
-  --text-secondary: #e5e7eb;
-  --text-tertiary: #d1d5db;
-  --text-placeholder: #9ca3af;
-  
-  /* 阴影 - 深色模式下要更深一些 */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-}
-
 /* 优化的字体方案 */
 :root {
   /* 无衬线字体优先级 */
@@ -336,37 +268,12 @@ ul {
 /* 搜索按钮焦点状态样式 */
 .search-container button:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--theme-color-light, rgba(99, 102, 241, 0.1));
-  border-radius: var(--radius-md, 0.375rem);
 }
 
 /* 搜索历史下拉菜单优化 */
 .search-container [role="listbox"] {
   max-height: min(400px, calc(100vh - 200px));
-  box-shadow: var(--shadow-xl, 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08));
-  animation: scaleIn var(--transition-normal, 0.25s) ease-out forwards;
-  transform-origin: top center;
-  border-radius: var(--radius-xl, 0.75rem);
-  overflow: hidden;
-}
-
-/* 增强搜索历史项 */
-.search-container [role="listbox"] button {
-  transition: all 0.15s ease-out;
-}
-
-.search-container [role="listbox"] button:hover i,
-.search-container [role="listbox"] button:focus i {
-  color: var(--theme-color, #6366f1);
-}
-
-/* 改进搜索历史标题样式 */
-.search-container [role="listbox"] .sticky {
-  background-color: rgba(255, 255, 255, 0.95);
-}
-
-.dark .search-container [role="listbox"] .sticky {
-  background-color: rgba(31, 41, 55, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* 响应式调整 */
@@ -872,42 +779,31 @@ a[aria-current="page"]::after {
 
 [role="menu"], 
 [role="listbox"] {
-  animation: scaleIn var(--transition-normal, 0.25s) ease-out forwards;
+  animation: scaleIn 0.2s ease-out forwards;
   transform-origin: top right;
-  box-shadow: var(--shadow-xl, 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08));
-  background-color: var(--bg-popup, rgba(255, 255, 255, 0.95));
-  border-radius: var(--radius-xl, 0.75rem);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.dark [role="menu"],
-.dark [role="listbox"] {
-  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* 按钮交互效果 */
 button:focus-visible {
-  outline: 2px solid var(--theme-color-light, rgba(99, 102, 241, 0.2));
+  outline: 2px solid rgba(var(--theme-rgb, 99, 102, 241), 0.5);
   outline-offset: 2px;
 }
 
 /* 增强头像交互 */
 button img.rounded-full {
-  transition: all var(--transition-fast, 0.2s) ease-out;
+  transition: all 0.2s ease-out;
 }
 
 button:hover img.rounded-full,
 button:focus img.rounded-full {
   transform: scale(1.05);
-  box-shadow: var(--shadow-md, 0 3px 10px rgba(0, 0, 0, 0.1));
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* 导航条吸顶效果 */
 .fixed.z-\[10000\] {
-  transition: background-color var(--transition-normal, 0.3s) ease, 
-              backdrop-filter var(--transition-normal, 0.3s) ease, 
-              box-shadow var(--transition-normal, 0.3s) ease, 
-              border-color var(--transition-normal, 0.3s) ease;
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 /* 导航项共享样式 */
@@ -923,11 +819,11 @@ button:focus img.rounded-full {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: var(--theme-color, #6366f1);
+  background-color: currentColor;
   border-radius: inherit;
   opacity: 0;
   transform: scale(0.8);
-  transition: transform var(--transition-fast, 0.2s) ease, opacity var(--transition-fast, 0.2s) ease;
+  transition: transform 0.2s ease, opacity 0.2s ease;
   z-index: -1;
 }
 
@@ -966,40 +862,4 @@ input.focus\:ring-2:focus {
 
 .search-container button:active i {
   transform: translateY(1px);
-}
-
-/* 语言菜单优化 */
-[role="menu"] {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
-  transform-origin: top right;
-  animation: scaleIn 0.25s ease-out forwards;
-}
-
-/* 语言项悬停效果 */
-[role="menu"] button, 
-[role="listbox"] button {
-  position: relative;
-  overflow: hidden;
-}
-
-[role="menu"] button::before,
-[role="listbox"] button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: currentColor;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: transform 0.2s ease, opacity 0.2s ease;
-  z-index: -1;
-  border-radius: inherit;
-}
-
-[role="menu"] button:hover::before,
-[role="listbox"] button:hover::before {
-  opacity: 0.05;
-  transform: scale(1);
 }
