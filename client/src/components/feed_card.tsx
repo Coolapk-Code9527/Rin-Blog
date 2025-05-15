@@ -148,14 +148,14 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                         <div className="flex flex-col gap-2">
                             {/* 今日发布标识 */}
                             {isToday() && (
-                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-emerald-500/90 text-white text-xs font-medium rounded-full shadow-sm">
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-emerald-500/90 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
                                     <i className="ri-time-line mr-1"></i>
                                     <span className="hidden xs:inline">{t('today')}</span>
                                 </div>
                             )}
                             
                             {/* 阅读时间指示器 */}
-                            <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-700/70 text-white text-xs font-medium rounded-full shadow-sm">
+                            <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-700/70 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
                                 <i className="ri-book-read-line mr-1"></i>
                                 <span>{readTime} {t('min_read')}</span>
                             </div>
@@ -165,7 +165,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                         <div className="flex flex-col gap-2 items-end">
                             {/* 置顶标识 */}
                             {top === 1 && (
-                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-theme/90 text-white text-xs font-medium rounded-full shadow-sm">
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-theme/90 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
                                     <i className="ri-pushpin-fill mr-1"></i>
                                     <span className="hidden xs:inline">{t('article.top.title')}</span>
                                 </div>
@@ -173,7 +173,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                             
                             {/* 草稿标识 */}
                             {draft === 1 && (
-                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-amber-500/90 text-white text-xs font-medium rounded-full shadow-sm">
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-amber-500/90 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
                                     <i className="ri-draft-line mr-1"></i>
                                     <span className="hidden xs:inline">{t('draft')}</span>
                                 </div>
@@ -181,7 +181,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                             
                             {/* 未列出标识 */}
                             {listed === 0 && (
-                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-500/90 text-white text-xs font-medium rounded-full shadow-sm">
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-500/90 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
                                     <i className="ri-eye-off-line mr-1"></i>
                                     <span className="hidden xs:inline">{t('unlisted')}</span>
                                 </div>
@@ -190,7 +190,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     </div>
                     
                     <div className={`text-gray-400 dark:text-gray-500 ${top === 1 ? 'opacity-30' : 'opacity-20'}`}>
-                        <i className="ri-article-line text-3xl"></i>
+                        <i className="ri-article-line text-4xl"></i>
                     </div>
                 </div>
             )}
@@ -218,13 +218,13 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 </div>
                 
                 {/* 文章摘要 */}
-                <div className={`text-pretty overflow-hidden text-gray-600 dark:text-gray-300 text-xs sm:text-sm leading-relaxed line-clamp-3 min-h-[3.6rem] sm:min-h-[4.5rem] 
+                <div className={`text-pretty overflow-hidden text-gray-600 dark:text-gray-300 text-xs sm:text-sm leading-relaxed line-clamp-3 min-h-[3.6rem] sm:min-h-[4.5rem] mb-auto 
                     ${hovered ? 'text-gray-800 dark:text-gray-200' : 'group-hover:text-gray-700 dark:group-hover:text-gray-200'} transition-colors`}>
                     <SimplifiedMarkdown content={cleanedSummary || t('no_summary')} />
                 </div>
                 
                 {/* 标签区域 */}
-                <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-100 dark:border-gray-700/30 mt-3 sm:mt-4">
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100 dark:border-gray-700/30">
                     {hashtags.length > 0 ? (
                         <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
                             {hashtags.map(({id, name}) => (

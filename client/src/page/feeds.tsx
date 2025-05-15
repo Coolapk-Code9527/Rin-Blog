@@ -229,15 +229,8 @@ export function FeedsPage() {
                                 )}
                             </div>
                             
-                            {/* 描述和工具栏区域 */}
-                            <div className="flex justify-between items-center flex-wrap gap-2">
-                                <div className="text-sm text-gray-500 dark:text-gray-400 italic max-w-xl">
-                                    {listState === 'draft' 
-                                        ? t('draft_description') || "文章草稿区，仅自己可见" 
-                                        : listState === 'unlisted' 
-                                            ? t('unlisted_description') || "未列出的文章，有链接才能访问" 
-                                            : t('article_description') || "所有已发布的公开文章"}
-                                </div>
+                            {/* 描述和工具栏区域 - 不显示静态文本 */}
+                            <div className="flex justify-end items-center flex-wrap gap-2">
                                 <div className="flex space-x-2">
                                     {profile?.permission && (
                                         <Link href="/edit" className="inline-flex items-center px-4 py-2 bg-theme text-white rounded-full text-sm font-medium transition-all hover:bg-theme-dark focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900">
@@ -274,6 +267,13 @@ export function FeedsPage() {
                                 <EmptyState type={listState} />
                             )}
                         </Waiting>
+                    </div>
+                    
+                    {/* 添加页脚区域，代替之前的分割线 */}
+                    <div className="w-full max-w-6xl mt-12 pt-8 border-t border-gray-100 dark:border-gray-800">
+                        <div className="text-center text-xs text-gray-400 dark:text-gray-500">
+                            <p>© {new Date().getFullYear()} Rin Blog</p>
+                        </div>
                     </div>
                 </main>
             </Waiting>

@@ -101,7 +101,7 @@ export function OptimizedImage({
     const imageStyle = {
         objectFit,
         opacity: isLoading ? 0 : 1,
-        transition: 'opacity 0.3s ease-in-out',
+        transition: 'opacity 0.4s ease-out',
         width: width ? `${width}px` : '100%',
         height: height ? `${height}px` : '100%'
     };
@@ -116,9 +116,9 @@ export function OptimizedImage({
         left: 0,
         right: 0,
         bottom: 0,
-        filter: 'blur(10px)',
+        filter: 'blur(5px)',
         opacity: isLoading ? 1 : 0,
-        transition: 'opacity 0.3s ease-in-out'
+        transition: 'opacity 0.4s ease-out'
     };
 
     return (
