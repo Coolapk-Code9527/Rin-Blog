@@ -831,22 +831,24 @@ i[class^="ri-"]::before, i[class*=" ri-"]::before {
   to { opacity: 1; }
 }
 
-/* 导航项悬停效果 */
-a[aria-current="page"]::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60%;
-  height: 3px;
-  background: linear-gradient(to right, 
-    rgba(var(--theme-rgb, 99, 102, 241), 0.2), 
-    rgba(var(--theme-rgb, 99, 102, 241), 1), 
-    rgba(var(--theme-rgb, 99, 102, 241), 0.2)
-  );
-  border-radius: 2px 2px 0 0;
-  animation: borderPulse 2s infinite;
+/* 导航项选中效果 - 桌面端的下划线 */
+@media (min-width: 1024px) {
+  a[aria-current="page"]::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(to right, 
+      rgba(var(--theme-rgb, 99, 102, 241), 0.2), 
+      rgba(var(--theme-rgb, 99, 102, 241), 1), 
+      rgba(var(--theme-rgb, 99, 102, 241), 0.2)
+    );
+    border-radius: 2px;
+    transform: translateX(-50%);
+    animation: borderPulse 2s infinite;
+  }
 }
 
 @keyframes borderPulse {
@@ -864,13 +866,30 @@ a[aria-current="page"]::after {
   }
 }
 
+/* 侧边栏导航项选中效果 */
+div[aria-modal="true"] a[aria-current="page"] {
+  background-color: rgba(var(--theme-rgb, 99, 102, 241), 0.08);
+  position: relative;
+}
+
+div[aria-modal="true"] a[aria-current="page"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: rgba(var(--theme-rgb, 99, 102, 241), 1);
+  border-radius: 0 4px 4px 0;
+}
+
 /* 用户菜单和语言菜单动画 */
 @keyframes scaleIn {
-  from {
+  0% {
     opacity: 0;
     transform: scale(0.95);
   }
-  to {
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -992,85 +1011,12 @@ button img.rounded-full:hover {
   box-shadow: 0 0 0 4px rgba(var(--theme-rgb, 99, 102, 241), 0.3);
 }
 
-/* 菜单位置样式 */
-.absolute.z-20.inset-x-0 {
-  max-height: 300px;
-  overflow-y: auto;
-  transform-origin: top center;
-  animation: scaleIn 0.25s ease-out forwards;
-}
-
-/* 菜单项左边框样式 */
-.border-l-theme {
-  border-left-color: rgba(var(--theme-rgb, 99, 102, 241), 1) !important;
-  border-left-width: 3px !important;
-}
-
-/* 侧边栏导航项样式 */
-.border-l-2.border-l-theme {
-  border-left-color: rgba(var(--theme-rgb, 99, 102, 241), 1) !important;
-  border-left-width: 3px !important;
-  padding-left: calc(1rem - 1px) !important;
-}
-
-/* 移除菜单活动项动画 */
-a.border-l-theme[aria-current="page"]::after {
-  display: none;
-}
-
-/* 新增菜单动画和样式统一 */
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-scaleIn {
-  animation: scaleIn 0.2s ease-out forwards;
-}
-
-/* 菜单样式统一 */
-div[role="menu"], div[role="listbox"] {
-  max-height: 300px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: theme('colors.gray.400') theme('colors.gray.100');
-}
-
-div[role="menu"]::-webkit-scrollbar, div[role="listbox"]::-webkit-scrollbar {
-  width: 5px;
-}
-
-div[role="menu"]::-webkit-scrollbar-track, div[role="listbox"]::-webkit-scrollbar-track {
-  background: theme('colors.gray.100');
-  border-radius: 10px;
-}
-
-div[role="menu"]::-webkit-scrollbar-thumb, div[role="listbox"]::-webkit-scrollbar-thumb {
-  background-color: theme('colors.gray.400');
-  border-radius: 10px;
-}
-
-/* 导航栏选中项下划线样式 */
-.text-theme span[class*="absolute bottom-0"] {
-  height: 3px;
-  border-radius: 2px 2px 0 0;
-  background: linear-gradient(to right, theme('colors.rose.500'), theme('colors.pink.400'));
-}
-
-/* 侧边栏导航项选中样式 */
-a[aria-current="page"].border-l-theme, 
-button.border-l-theme {
-  border-left-color: theme('colors.rose.500');
-  border-left-width: 2px;
-}
-
-/* 移除活动菜单项的动画 */
-.animate-fadeIn {
-  display: none;
+/* 修复侧边菜单中的语言选择器 */
+.fixed[aria-modal="true"] .relative .max-h-60 {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-height: 300px; /* 限制最大高度 */
 }

@@ -12,14 +12,6 @@ import { Padding } from "./padding";
 import { ClientConfigContext } from "../state/config";
 import React from 'react';
 
-interface NavItemProps {
-  href: string;
-  text: string;
-  selected: boolean;
-  menu?: boolean;
-  icon?: React.ReactNode;
-  onClick?: () => void;
-}
 
 export function Header({ children }: { children?: React.ReactNode }) {
     const profile = useContext(ProfileContext);
@@ -99,37 +91,56 @@ export function Header({ children }: { children?: React.ReactNode }) {
     ), [profile, children, isScrolled, t])
 }
 
-export function NavItem({ href, text, selected, menu, icon, onClick }: NavItemProps) {
+function NavItem({ menu, title, selected, href, when = true, onClick }: {
+    title: string,
+    selected: boolean,
+    href: string,
+    menu?: boolean,
+    when?: boolean,
+    onClick?: () => void
+}) {
+    // 阻止默认链接行为并使用编程式导航
+    const [_, setLocation] = useLocation();
+    
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        e.preventDefault(); // 阻止默认链接行为
+        
+        if (onClick) {
+            onClick(); // 执行传入的onClick回调
+        }
+        
+        // 使用编程式导航而不改变滚动位置
+        setLocation(href, { animate: true, replace: false });
+    }, [href, onClick, setLocation]);
+    
     return (
-        <Link
-            href={href}
-            onClick={(e) => {
-                if (onClick) {
-                    e.preventDefault()
-                    onClick()
-                }
-            }}
-            className={`group relative flex items-center rounded-lg px-3 py-2.5 transition-all duration-150 ${
-                menu
-                    ? `${
-                        selected
-                            ? 'border-l-2 border-l-theme bg-theme/5 dark:bg-theme/10 text-theme font-medium'
-                            : 'border-l-2 border-l-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`
-                    : `${
-                        selected
-                            ? 'text-theme font-medium'
-                            : 'text-gray-700 dark:text-gray-200 hover:text-theme dark:hover:text-theme'
-                    }`
-            }`}
-            aria-current={selected ? 'page' : undefined}
-        >
-            {icon && <span className="mr-2.5">{icon}</span>}
-            <span>{text}</span>
-            {!menu && selected && (
-                <span className="absolute bottom-0 left-0 h-[3px] w-full rounded-t-sm bg-gradient-to-r from-theme to-rose-400 dark:from-theme dark:to-rose-500" />
-            )}
-        </Link>
+        <>
+            {when &&
+                <a href={href}
+                    className={`
+                        ${menu 
+                            ? "block w-full relative px-4 py-2.5" 
+                            : "inline-flex items-center relative px-3 py-2"} 
+                        text-sm font-medium rounded-lg transition-all duration-200 NavItem-common
+                        ${selected 
+                            ? menu 
+                                ? "text-theme dark:text-theme bg-theme/5 dark:bg-theme/10" 
+                                : "text-theme dark:text-theme" 
+                            : menu 
+                                ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white" 
+                                : "text-gray-700 dark:text-gray-300 hover:text-theme dark:hover:text-theme hover:bg-gray-100/70 dark:hover:bg-gray-800/70"}
+                    `}
+                    onClick={handleClick}
+                    aria-current={selected ? 'page' : undefined}
+                >
+                    {title}
+                    {menu && selected && (
+                        <span className="absolute right-3 text-theme">
+                            <i className="ri-arrow-right-s-line"></i>
+                        </span>
+                    )}
+                </a>}
+        </>
     )
 }
 
@@ -512,7 +523,7 @@ function MobileMenu() {
                                         </div>
                                         
                                         {/* 语言切换 */}
-                                        <div className="relative">
+                                        <div className="relative mb-3">
                                             <button 
                                                 onClick={() => setShowLanguages(!showLanguages)}
                                                 className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-theme/30 shadow-sm"
@@ -527,27 +538,23 @@ function MobileMenu() {
                                                 <i className={`ri-arrow-${showLanguages ? 'up' : 'down'}-s-line transition-transform duration-200`}></i>
                                             </button>
 
-                                            {showLanguages && (
-                                                <div className="absolute z-20 inset-x-0 top-[calc(100%+4px)] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden animate-scaleIn">
+                                            <div className={`absolute w-full z-30 overflow-hidden transition-all duration-200 ease-in-out ${showLanguages ? 'max-h-60' : 'max-h-0'}`}>
+                                                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-slideDown mt-1">
                                                     {languages.map(({ code, name, flag }) => (
                                                         <button 
                                                             key={code} 
                                                             onClick={() => changeLanguage(code)}
-                                                            className={`w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 border-l-2 transition-colors duration-150 ${
-                                                                i18n.language === code 
-                                                                ? 'border-l-theme bg-theme/5 dark:bg-theme/10 text-theme font-medium' 
-                                                                : 'border-l-transparent text-gray-700 dark:text-gray-300'
-                                                            }`}
+                                                            className={`w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 ${i18n.language === code ? 'bg-theme/10 text-theme font-medium' : 'text-gray-700 dark:text-gray-300'}`}
                                                         >
                                                             <div className="flex items-center">
                                                                 <span className="mr-3 text-lg">{flag}</span>
                                                                 <span>{name}</span>
                                                             </div>
-                                                            {i18n.language === code && <i className="ri-check-line text-theme"></i>}
+                                                            {i18n.language === code && <i className="ri-check-line"></i>}
                                                         </button>
                                                     ))}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -640,7 +647,7 @@ function LanguageSwitch({ className }: { className?: string }) {
             
             {isOpen && (
                 <div 
-                    className="absolute top-full right-0 mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/50 dark:border-gray-700/50 z-20 animate-scaleIn"
+                    className="absolute top-full right-0 mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/50 dark:border-gray-700/50 z-20 animate-slideDown"
                     role="menu"
                     aria-orientation="vertical"
                     aria-labelledby="language-menu"
@@ -649,16 +656,15 @@ function LanguageSwitch({ className }: { className?: string }) {
                         <i className="ri-translate-2 mr-1.5 text-theme"></i>
                         {t('languages')}
                     </p>
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
                         {languages.map(({ code, name, flag }) => (
                             <button 
                                 key={code} 
                                 onClick={() => changeLanguage(code)}
-                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-150 flex items-center justify-between border-l-2 ${
-                                    i18n.language === code 
-                                    ? 'border-l-theme bg-theme/5 dark:bg-theme/10 text-theme font-medium' 
-                                    : 'border-l-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                }`}
+                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-150 flex items-center justify-between gap-2
+                                    ${i18n.language === code 
+                                        ? 'bg-theme/10 text-theme font-medium' 
+                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                                 role="menuitem"
                             >
                                 <div className="flex items-center">
