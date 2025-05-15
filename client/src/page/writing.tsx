@@ -402,7 +402,7 @@ const MarkdownToolbar = React.memo(({ editor }: { editor?: editor.IStandaloneCod
       <div className="ml-auto flex items-center gap-1">
         <button 
           onClick={() => setDraftDialogOpen?.(true)} 
-          className="p-1.5 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-md flex items-center border border-blue-200 dark:border-blue-800 transition-all hover:shadow-sm px-3" 
+          className="p-1.5 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-md flex items-center border border-blue-200 dark:border-blue-800" 
           title={t('drafts.title')}
         >
           <i className="ri-draft-line text-base mr-1" />
@@ -697,10 +697,10 @@ const MobileToolbar = React.memo(({
           <div className="flex gap-2 mt-4 border-t border-gray-200 dark:border-gray-700 pt-3">
             <button
               onClick={() => setDraftDialogOpen?.(true)}
-              className="flex-1 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-md flex items-center justify-center py-2 border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow"
+              className="flex-1 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-md flex items-center justify-center py-2 border border-blue-200 dark:border-blue-800"
             >
-              <i className="ri-draft-line mr-1 text-lg" />
-              {t('drafts.title')}
+              <i className="ri-draft-line mr-1" />
+              {t('draft_bin')}
             </button>
             
             <button
@@ -1561,7 +1561,7 @@ export function WritingPage({ id }: { id?: number }) {
         <div className="ml-auto flex items-center gap-1">
           <button 
             onClick={() => setDraftDialogOpen?.(true)} 
-            className="p-1.5 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-md flex items-center border border-blue-200 dark:border-blue-800 transition-all hover:shadow-sm px-3" 
+            className="p-1.5 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-md flex items-center border border-blue-200 dark:border-blue-800" 
             title={t('drafts.title')}
           >
             <i className="ri-draft-line text-base mr-1" />
@@ -1768,14 +1768,10 @@ export function WritingPage({ id }: { id?: number }) {
             className="mt-4"
           />
           <div
-            className="select-none flex flex-row justify-between items-center mt-6 mb-2 px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 rounded-md py-2"
+            className="select-none flex flex-row justify-between items-center mt-6 mb-2 px-4"
             onClick={() => setDraft(!draft)}
           >
-            <p className="flex items-center">
-              <i className="ri-draft-line mr-2 text-gray-500" />
-              {t('visible.self_only')}
-              <span className="ml-1 text-xs text-gray-500">({t('draft')})</span>
-            </p>
+            <p>{t('visible.self_only')}</p>
             <Checkbox
               id="draft"
               value={draft}
@@ -1784,14 +1780,10 @@ export function WritingPage({ id }: { id?: number }) {
             />
           </div>
           <div
-            className="select-none flex flex-row justify-between items-center mt-6 mb-2 px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 rounded-md py-2"
+            className="select-none flex flex-row justify-between items-center mt-6 mb-2 px-4"
             onClick={() => setListed(!listed)}
           >
-            <p className="flex items-center">
-              <i className="ri-global-line mr-2 text-gray-500" />
-              {t('listed')}
-              <span className="ml-1 text-xs text-gray-500">({t('visible.feed')})</span>
-            </p>
+            <p>{t('listed')}</p>
             <Checkbox
               id="listed"
               value={listed}

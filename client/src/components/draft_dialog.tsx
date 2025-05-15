@@ -21,7 +21,7 @@ export function DraftDialog({
   onClear,
   onSaveCurrent
 }: DraftDialogProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedDraft, setSelectedDraft] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,7 +50,7 @@ export function DraftDialog({
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white dark:bg-gray-800 w-full max-w-4xl h-3/4 rounded-lg shadow-xl overflow-hidden flex flex-col animate-fadeIn">
+      <div className="bg-white dark:bg-gray-800 w-full max-w-4xl h-3/4 rounded-lg shadow-xl overflow-hidden flex flex-col">
         <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center">
             <h3 className="font-medium text-lg">{t('drafts.title')}</h3>
@@ -60,7 +60,7 @@ export function DraftDialog({
           </div>
           <div className="flex items-center gap-3">
             <button
-              className="text-theme hover:text-theme-dark text-sm flex items-center px-2 py-1 rounded hover:bg-theme-50 dark:hover:bg-theme-900/20 transition-colors"
+              className="text-theme hover:text-theme-dark text-sm"
               onClick={onSaveCurrent}
               title={t('drafts.save_current')}
             >
@@ -68,7 +68,7 @@ export function DraftDialog({
               {t('drafts.save_current')}
             </button>
             <button
-              className="text-red-500 hover:text-red-700 text-sm flex items-center px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="text-red-500 hover:text-red-700 text-sm"
               onClick={() => setShowConfirm(true)}
               title={t('drafts.clear_all')}
             >
@@ -76,7 +76,7 @@ export function DraftDialog({
               {t('drafts.clear_all')}
             </button>
             <button 
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors" 
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full" 
               onClick={onClose}
               title={t('close')}
             >
@@ -143,21 +143,15 @@ export function DraftDialog({
                 return (
                   <div 
                     key={draft.id} 
-                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500' : 'border-l-4 border-transparent'
+                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer ${
+                      isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                     }`}
                     onClick={() => setSelectedDraft(isSelected ? null : draft.id)}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h4 className="font-medium flex items-center">
+                        <h4 className="font-medium">
                           {draft.title || t('drafts.untitled')}
-                          <span className="ml-2 text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
-                            {new Intl.DateTimeFormat(i18n.language, {
-                              month: 'short',
-                              day: 'numeric',
-                            }).format(new Date(draft.lastEditTime))}
-                          </span>
                         </h4>
                         <div className="flex flex-wrap gap-2 mt-1">
                           <p className="text-xs text-gray-500">
@@ -174,7 +168,7 @@ export function DraftDialog({
                       </div>
                       <div className="flex gap-1">
                         <button
-                          className="p-1.5 hover:bg-green-100 dark:hover:bg-green-900/30 rounded text-green-600 dark:text-green-400 transition-colors"
+                          className="p-1 hover:bg-green-100 dark:hover:bg-green-900/30 rounded text-green-600 dark:text-green-400"
                           onClick={(e) => {
                             e.stopPropagation();
                             onLoad(draft);
@@ -182,10 +176,9 @@ export function DraftDialog({
                           title={t('drafts.load')}
                         >
                           <i className="ri-file-edit-line" />
-                          <span className="sr-only">{t('drafts.load')}</span>
                         </button>
                         <button
-                          className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600 dark:text-red-400 transition-colors"
+                          className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600 dark:text-red-400"
                           onClick={(e) => {
                             e.stopPropagation();
                             onDelete(draft.id);
@@ -193,7 +186,6 @@ export function DraftDialog({
                           title={t('drafts.delete')}
                         >
                           <i className="ri-delete-bin-line" />
-                          <span className="sr-only">{t('drafts.delete')}</span>
                         </button>
                       </div>
                     </div>
@@ -217,7 +209,7 @@ export function DraftDialog({
         
         <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end">
           <button
-            className="px-4 py-2 bg-theme text-white rounded-md hover:bg-theme-dark transition-colors"
+            className="px-4 py-2 bg-theme text-white rounded-md"
             onClick={onClose}
           >
             {t('close')}

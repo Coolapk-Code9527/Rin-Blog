@@ -193,13 +193,13 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     {/* 右侧状态显示 - 改进草稿和未列出标签样式 */}
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {draft === 1 && 
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50 shadow-sm hover:bg-amber-100 dark:hover:bg-amber-800/40 transition-colors">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50 shadow-sm">
                                 <i className="ri-draft-line mr-1.5 text-amber-500 dark:text-amber-400"></i>
                                 <span>{t("draft")}</span>
                             </span>
                         }
                         {listed === 0 && 
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-700/50 shadow-sm hover:bg-indigo-100 dark:hover:bg-indigo-800/40 transition-colors">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-700/50 shadow-sm">
                                 <i className="ri-eye-off-line mr-1.5 text-indigo-500 dark:text-indigo-400"></i>
                                 <span>{t("unlisted")}</span>
                             </span>
