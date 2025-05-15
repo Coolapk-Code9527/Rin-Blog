@@ -1020,3 +1020,160 @@ button img.rounded-full:hover {
   z-index: 30;
   max-height: 300px; /* 限制最大高度 */
 }
+
+/* 文章卡片样式增强 */
+.wauto a[href^="/feed/"] {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  will-change: transform, box-shadow;
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+}
+
+.wauto a[href^="/feed/"]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.wauto a[href^="/feed/"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(130deg, rgba(var(--theme-rgb, 99, 102, 241), 0.15), transparent);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.wauto a[href^="/feed/"]:hover::before {
+  opacity: 1;
+}
+
+.wauto a[href^="/feed/"] img {
+  transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.wauto a[href^="/feed/"]:hover img {
+  transform: scale(1.05);
+}
+
+/* 文章列表空状态动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wauto .flex.flex-col.items-center.justify-center {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* 文章列表进入动画 */
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.space-y-6 > a {
+  opacity: 0;
+  animation: fadeInStagger 0.5s ease-out forwards;
+}
+
+@keyframes fadeInStagger {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.space-y-6 > a:nth-child(1) { animation-delay: 0.1s; }
+.space-y-6 > a:nth-child(2) { animation-delay: 0.2s; }
+.space-y-6 > a:nth-child(3) { animation-delay: 0.3s; }
+.space-y-6 > a:nth-child(4) { animation-delay: 0.4s; }
+.space-y-6 > a:nth-child(5) { animation-delay: 0.5s; }
+.space-y-6 > a:nth-child(n+6) { animation-delay: 0.6s; }
+
+/* 文章页面标题区域 */
+.py-6.border-b {
+  animation: fadeInDown 0.6s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 增强标签交互效果 */
+button.inline-flex.items-center.px-2\.5.py-1.rounded-full {
+  will-change: transform;
+  transition: all 0.2s ease-out;
+}
+
+button.inline-flex.items-center.px-2\.5.py-1.rounded-full:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px -2px rgba(var(--theme-rgb, 99, 102, 241), 0.15);
+}
+
+/* 文章列表页布局优化 */
+@media (min-width: 768px) {
+  .wauto.w-full.max-w-4xl {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .wauto.w-full.max-w-4xl {
+    max-width: 5xl;
+  }
+}
+
+/* 分页控件优化 */
+.pagination {
+  transition: opacity 0.3s ease;
+}
+
+.pagination:hover {
+  opacity: 0.9;
+}
+
+.pagination button {
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* 低性能设备考虑 */
+@media (prefers-reduced-motion: reduce) {
+  .wauto a[href^="/feed/"],
+  .wauto a[href^="/feed/"] img,
+  .animate-fadeIn,
+  .space-y-6 > a,
+  .py-6.border-b,
+  .pagination button {
+    animation: none;
+    transition: none;
+  }
+}
