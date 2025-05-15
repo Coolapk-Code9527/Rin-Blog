@@ -11,6 +11,7 @@ import { Input } from "./input";
 import { Padding } from "./padding";
 import { ClientConfigContext } from "../state/config";
 import React from 'react';
+import Cookies from 'js-cookie';
 
 
 export function Header({ children }: { children?: React.ReactNode }) {
@@ -91,56 +92,37 @@ export function Header({ children }: { children?: React.ReactNode }) {
     ), [profile, children, isScrolled, t])
 }
 
-function NavItem({ menu, title, selected, href, when = true, onClick }: {
-    title: string,
-    selected: boolean,
-    href: string,
-    menu?: boolean,
-    when?: boolean,
-    onClick?: () => void
-}) {
-    // 阻止默认链接行为并使用编程式导航
-    const [_, setLocation] = useLocation();
-    
-    const handleClick = useCallback((e: React.MouseEvent) => {
-        e.preventDefault(); // 阻止默认链接行为
-        
-        if (onClick) {
-            onClick(); // 执行传入的onClick回调
-        }
-        
-        // 使用编程式导航而不改变滚动位置
-        setLocation(href, { animate: true, replace: false });
-    }, [href, onClick, setLocation]);
-    
-    return (
-        <>
-            {when &&
-                <a href={href}
-                    className={`
-                        ${menu 
-                            ? "block w-full relative px-4 py-2.5" 
-                            : "inline-flex items-center relative px-3 py-2"} 
-                        text-sm font-medium rounded-lg transition-all duration-200 NavItem-common
-                        ${selected 
-                            ? menu 
-                                ? "text-theme dark:text-theme bg-theme/5 dark:bg-theme/10" 
-                                : "text-theme dark:text-theme" 
-                            : menu 
-                                ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white" 
-                                : "text-gray-700 dark:text-gray-300 hover:text-theme dark:hover:text-theme hover:bg-gray-100/70 dark:hover:bg-gray-800/70"}
-                    `}
-                    onClick={handleClick}
-                    aria-current={selected ? 'page' : undefined}
-                >
-                    {title}
-                    {selected && !menu && (
-                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2/3 h-0.5 bg-gradient-to-r from-theme/60 via-theme to-theme/60 rounded-full mt-0.5 animate-fadeIn"></span>
-                    )}
-                </a>}
-        </>
-    )
-}
+const NavItem = ({
+  to,
+  menu = false,
+  selected,
+  onClick,
+  children,
+}: {
+  to: string;
+  menu?: boolean;
+  selected?: boolean;
+  onClick?: (e: React.MouseEvent) => void;
+  children: React.ReactNode;
+}) => {
+  return (
+    <li className={`nav-item ${menu ? 'w-full' : 'inline-block'} ${selected ? 'active' : ''}`}>
+      <Link
+        href={to}
+        onClick={onClick}
+        className={`
+          flex items-center ${menu ? 'dropdown-nav-item p-2.5' : 'px-3 py-2'} 
+          text-gray-800 dark:text-gray-200 font-medium 
+          transition-colors duration-200 active-underline
+          ${selected ? 'text-theme dark:text-theme' : 'hover:text-theme dark:hover:text-theme'}
+        `}
+        aria-current={selected ? 'page' : undefined}
+      >
+        {children}
+      </Link>
+    </li>
+  );
+};
 
 // 移动端菜单组件
 function MobileMenu() {
@@ -536,23 +518,43 @@ function MobileMenu() {
                                                 <i className={`ri-arrow-${showLanguages ? 'up' : 'down'}-s-line transition-transform duration-200`}></i>
                                             </button>
 
-                                            <div className={`mt-1 overflow-hidden transition-all duration-200 ease-in-out ${showLanguages ? 'max-h-60' : 'max-h-0'}`}>
-                                                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-slideDown">
-                                                    {languages.map(({ code, name, flag }) => (
-                                                        <button 
-                                                            key={code} 
-                                                            onClick={() => changeLanguage(code)}
-                                                            className={`w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 ${i18n.language === code ? 'bg-theme/10 text-theme font-medium' : 'text-gray-700 dark:text-gray-300'}`}
-                                                        >
-                                                            <div className="flex items-center">
-                                                                <span className="mr-3 text-lg">{flag}</span>
-                                                                <span>{name}</span>
+                                            {showLanguages && (
+                                                <div className="fixed inset-0 z-[9995] bg-black/30 backdrop-blur-sm" onClick={() => setShowLanguages(false)}>
+                                                    <div 
+                                                        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden animate-scaleIn max-w-[300px] w-[85%]"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                                                            <div className="flex items-center font-medium text-gray-800 dark:text-gray-200">
+                                                                <i className="ri-translate-2 mr-2 text-theme text-lg"></i>
+                                                                {t('languages')}
                                                             </div>
-                                                            {i18n.language === code && <i className="ri-check-line"></i>}
-                                                        </button>
-                                                    ))}
+                                                            <button 
+                                                                onClick={() => setShowLanguages(false)} 
+                                                                className="p-1 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                                                aria-label={t('close')}
+                                                            >
+                                                                <i className="ri-close-line text-lg"></i>
+                                                            </button>
+                                                        </div>
+                                                        <div className="p-2">
+                                                            {languages.map(({ code, name, flag }) => (
+                                                                <button 
+                                                                    key={code} 
+                                                                    onClick={() => changeLanguage(code)}
+                                                                    className={`w-full flex items-center justify-between p-3 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-700 mb-1 last:mb-0 transition-colors duration-150 ${i18n.language === code ? 'bg-theme/10 text-theme font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                                                                >
+                                                                    <div className="flex items-center">
+                                                                        <span className="mr-3 text-lg">{flag}</span>
+                                                                        <span>{name}</span>
+                                                                    </div>
+                                                                    {i18n.language === code && <i className="ri-check-line"></i>}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -593,91 +595,133 @@ function NavBar({ menu, onClick }: { menu: boolean, onClick?: () => void }) {
     )
 }
 
-function LanguageSwitch({ className }: { className?: string }) {
-    const { t, i18n } = useTranslation()
-    const [isOpen, setIsOpen] = useState(false);
+const LanguageSwitch: React.FC<{ mobile?: boolean }> = ({ mobile = false }) => {
+    const { i18n } = useTranslation();
+    const [langMenuOpen, setLangMenuOpen] = useState(false);
     const langMenuRef = useRef<HTMLDivElement>(null);
-    const label = t('languages')
-    const languages = [
-        { code: 'en', name: 'English', flag: '🇺🇸' },
-        { code: 'zh-CN', name: '简体中文', flag: '🇨🇳' },
-        { code: 'zh-TW', name: '繁體中文', flag: '🇹🇼' },
-        { code: 'ja', name: '日本語', flag: '🇯🇵' }
-    ]
-    
-    // 监听点击外部关闭菜单
+
+    const handleChangeLanguage = (lng: string) => {
+        i18n.changeLanguage(lng);
+        Cookies.set('i18next', lng);
+        setLangMenuOpen(false);
+    };
+
     useEffect(() => {
-        if (!isOpen) return;
-        
         const handleClickOutside = (event: MouseEvent) => {
             if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
+                setLangMenuOpen(false);
             }
         };
-        
-        document.addEventListener('mousedown', handleClickOutside);
+
+        if (langMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isOpen]);
+    }, [langMenuOpen]);
+
+    const currentLang = i18n.language || 'en';
     
-    // 处理语言切换
-    const changeLanguage = (code: string) => {
-        i18n.changeLanguage(code);
-        setIsOpen(false);
+    // 获取当前语言的国旗图标和名称
+    const getCurrentFlag = () => {
+        switch (currentLang) {
+            case 'zh-CN':
+                return { flag: '🇨🇳', name: '中文' };
+            case 'zh-TW':
+                return { flag: '🇹🇼', name: '繁體中文' };
+            case 'ja':
+                return { flag: '🇯🇵', name: '日本語' };
+            default:
+                return { flag: '🇺🇸', name: 'English' };
+        }
     };
-    
-    // 获取当前语言
-    const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
-    
+
     return (
-        <div ref={langMenuRef} className={(className || "") + " relative flex items-center"}>
-            <button 
-                onClick={() => setIsOpen(!isOpen)} 
-                title={label} 
-                aria-label={label}
-                aria-expanded={isOpen}
-                aria-haspopup="true"
-                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
-            >
-                <i className="ri-translate-2 text-xl"></i>
-            </button>
-            
-            {isOpen && (
-                <div 
-                    className="absolute top-full right-0 mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/50 dark:border-gray-700/50 z-20 animate-slideDown"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="language-menu"
+        <>
+            <div className={`relative ${mobile ? 'mt-4' : ''}`}>
+                <button
+                    aria-label="Change language"
+                    aria-expanded={langMenuOpen}
+                    aria-haspopup="true"
+                    onClick={() => setLangMenuOpen(!langMenuOpen)}
+                    className={`flex items-center justify-center space-x-2 rounded-full ${
+                        mobile 
+                            ? 'py-2 px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 w-full transition-colors' 
+                            : 'h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
+                    }`}
                 >
-                    <p className='font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center'>
-                        <i className="ri-translate-2 mr-1.5 text-theme"></i>
-                        {t('languages')}
-                    </p>
-                    <div className="space-y-1">
-                        {languages.map(({ code, name, flag }) => (
+                    <span className="text-lg">{getCurrentFlag().flag}</span>
+                    {mobile && <span>{getCurrentFlag().name}</span>}
+                </button>
+            </div>
+
+            {/* 语言选择弹出层 - 固定定位 */}
+            {langMenuOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center language-selector-backdrop" ref={langMenuRef}>
+                    <div 
+                        className="language-menu bg-white dark:bg-gray-800 rounded-lg p-2 max-w-[250px] w-full animate-scaleIn"
+                    >
+                        <div className="flex justify-between items-center mb-2 px-2">
+                            <h3 className="font-medium text-gray-900 dark:text-gray-100">选择语言</h3>
                             <button 
-                                key={code} 
-                                onClick={() => changeLanguage(code)}
-                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-150 flex items-center justify-between gap-2
-                                    ${i18n.language === code 
-                                        ? 'bg-theme/10 text-theme font-medium' 
-                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-                                role="menuitem"
+                                onClick={() => setLangMenuOpen(false)}
+                                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                aria-label="关闭"
                             >
-                                <div className="flex items-center">
-                                    <span className="mr-2.5 text-lg">{flag}</span>
-                                    <span>{name}</span>
-                                </div>
-                                {i18n.language === code && <i className="ri-check-line text-theme"></i>}
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                             </button>
-                        ))}
+                        </div>
+                        
+                        <div className="space-y-1">
+                            <button
+                                className={`language-option flex items-center px-3 py-2 text-left w-full ${
+                                    currentLang === 'en' ? 'active' : ''
+                                }`}
+                                onClick={() => handleChangeLanguage('en')}
+                            >
+                                <span className="text-xl mr-3 flag-icon">🇺🇸</span>
+                                <span>English</span>
+                            </button>
+                            
+                            <button
+                                className={`language-option flex items-center px-3 py-2 text-left w-full ${
+                                    currentLang === 'zh-CN' ? 'active' : ''
+                                }`}
+                                onClick={() => handleChangeLanguage('zh-CN')}
+                            >
+                                <span className="text-xl mr-3 flag-icon">🇨🇳</span>
+                                <span>中文</span>
+                            </button>
+                            
+                            <button
+                                className={`language-option flex items-center px-3 py-2 text-left w-full ${
+                                    currentLang === 'zh-TW' ? 'active' : ''
+                                }`}
+                                onClick={() => handleChangeLanguage('zh-TW')}
+                            >
+                                <span className="text-xl mr-3 flag-icon">🇹🇼</span>
+                                <span>繁體中文</span>
+                            </button>
+                            
+                            <button
+                                className={`language-option flex items-center px-3 py-2 text-left w-full ${
+                                    currentLang === 'ja' ? 'active' : ''
+                                }`}
+                                onClick={() => handleChangeLanguage('ja')}
+                            >
+                                <span className="text-xl mr-3 flag-icon">🇯🇵</span>
+                                <span>日本語</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
-        </div>
-    )
-}
+        </>
+    );
+};
 
 function SearchButton({ className, onClose }: { className?: string, onClose?: () => void }) {
     const { t } = useTranslation()
