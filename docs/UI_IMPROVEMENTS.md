@@ -3,7 +3,7 @@
 ## 草稿箱与未列出文章按钮修复
 
 ### 问题描述
-在原有实现中，草稿箱和未列出文章按钮点击无效，无法正常切换到相应的视图。主要原因是wouter库升级后，`useSearch`钩子不再被导出，导致URL查询参数无法被正确解析。
+在原有实现中，草稿箱和未列出文章按钮点击无效，无法正常切换到相应的视图。主要原因是wouter库升级后，`useSearch`钩子不再被导出，导致URL查询参数无法被正确解析。另外，按钮链接也从条件链接变成了固定链接，无法实现视图切换功能。
 
 ### 解决方案
 1. 创建了一个自定义的`useSearch`钩子函数，兼容wouter的最新版本：
@@ -19,6 +19,26 @@ const useSearch = () => {
 ```typescript
 import { Link, useLocation } from "wouter"
 ```
+
+3. 还原按钮的条件链接，实现点击切换功能：
+```jsx
+<Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
+    className={...}>
+    <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
+    <span className="hidden xs:inline">{t('draft_bin')}</span>
+</Link>
+
+<Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
+    className={...}>
+    <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
+    <span className="hidden xs:inline">{t('unlisted')}</span>
+</Link>
+```
+
+这样实现的切换逻辑：
+- 当用户在草稿箱视图时，点击草稿箱按钮会返回普通文章列表
+- 当用户在普通文章列表时，点击草稿箱按钮会进入草稿箱
+- 未列出按钮的逻辑同理
 
 ### 样式优化
 为了使草稿箱和未列出文章按钮更契合整体设计，我们优化了按钮样式：
@@ -39,10 +59,10 @@ import { Link, useLocation } from "wouter"
    - 使用了一致的圆角和内边距，与网站其他UI元素保持一致
 
 ### 代码变更
-修改了`feeds.tsx`文件中的按钮样式：
+修改了`feeds.tsx`文件中的按钮样式和链接逻辑：
 
 ```jsx
-<Link href="/?type=draft" 
+<Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
     className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'draft' 
     ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 ring-1 ring-amber-500/30 hover:bg-amber-100 dark:hover:bg-amber-800/30" 
     : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
@@ -50,7 +70,7 @@ import { Link, useLocation } from "wouter"
     <span className="hidden xs:inline">{t('draft_bin')}</span>
 </Link>
 
-<Link href="/?type=unlisted" 
+<Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
     className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'unlisted' 
     ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 ring-1 ring-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/30" 
     : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
