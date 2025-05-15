@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 // 创建自定义useSearch hook以兼容wouter的最新版本
 const useSearch = () => {
     const [location] = useLocation();
+    // 获取?后面的所有内容，如果没有?则返回空字符串
     return location.includes('?') ? location.split('?')[1] : '';
 };
 
@@ -135,6 +136,7 @@ export function FeedsPage() {
     const query = new URLSearchParams(useSearch());
     const profile = React.useContext(ProfileContext);
     const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
+    const [_, setLocation] = useLocation();
     const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
     const [feeds, setFeeds] = React.useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
@@ -220,14 +222,16 @@ export function FeedsPage() {
                                 
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
-                                        <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
+                                        <Link 
+                                            href={`/?type=${listState === 'draft' ? 'normal' : 'draft'}`}
                                             className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'draft' 
                                             ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 ring-1 ring-amber-500/30 hover:bg-amber-100 dark:hover:bg-amber-800/30" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                             <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('draft_bin')}</span>
                                         </Link>
-                                        <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
+                                        <Link 
+                                            href={`/?type=${listState === 'unlisted' ? 'normal' : 'unlisted'}`}
                                             className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'unlisted' 
                                             ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 ring-1 ring-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/30" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
