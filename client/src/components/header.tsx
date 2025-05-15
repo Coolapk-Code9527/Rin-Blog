@@ -421,7 +421,7 @@ function MobileMenu() {
                                             {!isSearchExpanded ? (
                                                 <button 
                                                     onClick={() => setIsSearchExpanded(true)}
-                                                    className="flex items-center w-full p-2.5 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
+                                                    className="flex items-center w-full p-2.5 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
                                                     aria-label={t('article.search.title')}
                                                 >
                                                     <i className="ri-search-line text-gray-400 mr-2"></i>
@@ -438,7 +438,7 @@ function MobileMenu() {
                                                         onChange={(e) => setSearchValue(e.target.value)}
                                                         onKeyDown={(e) => e.key === 'Enter' && onSearch()}
                                                         placeholder={t('article.search.placeholder')}
-                                                        className="w-full py-2.5 pl-9 pr-9 bg-gray-100 dark:bg-gray-800 border-0 rounded-lg text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-theme/30 focus:bg-white dark:focus:bg-gray-700 focus:outline-none transition-all text-sm"
+                                                        className="w-full py-2.5 pl-9 pr-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-sm hover:shadow focus:shadow-md focus:outline-none transition-all duration-200 text-sm"
                                                         aria-controls={searchHistory.length > 0 ? "mobile-search-history" : undefined}
                                                         aria-expanded={isSearchExpanded}
                                                         autoComplete="off"
@@ -481,29 +481,36 @@ function MobileMenu() {
                                             {isSearchExpanded && searchHistory.length > 0 && (
                                                 <div 
                                                     id="mobile-search-history"
-                                                    className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden animate-slideDown"
+                                                    className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg z-20 overflow-hidden animate-slideDown"
                                                     role="listbox"
+                                                    style={{boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)'}}
                                                 >
                                                     <div className="max-h-36 overflow-y-auto">
-                                                        <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10 border-b border-gray-100 dark:border-gray-700">
-                                                            <span>{t('article.search.history')}</span>
+                                                        <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-gray-700">
+                                                            <span className="flex items-center">
+                                                                <i className="ri-history-line mr-1.5 text-theme/70"></i>
+                                                                {t('article.search.history')}
+                                                            </span>
                                                             <button 
                                                                 onClick={() => {
                                                                     setSearchHistory([]);
                                                                     localStorage.removeItem('search_history');
                                                                 }}
-                                                                className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-150"
+                                                                className="text-xs px-1.5 py-0.5 rounded text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
                                                                 aria-label={t('article.search.clear_history')}
                                                                 type="button"
                                                             >
-                                                                {t('article.search.clear_history')}
+                                                                <span className="flex items-center">
+                                                                    <i className="ri-delete-bin-line mr-0.5 text-xs"></i>
+                                                                    {t('article.search.clear_history')}
+                                                                </span>
                                                             </button>
                                                         </div>
                                                         <div className="divide-y divide-gray-100 dark:divide-gray-700">
                                                             {searchHistory.map((term, index) => (
                                                                 <button 
                                                                     key={index}
-                                                                    className="w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-left flex items-center transition-colors duration-150"
+                                                                    className="w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/70 text-left flex items-center transition-colors duration-150 group"
                                                                     onClick={() => {
                                                                         setSearchValue(term);
                                                                         setTimeout(() => onSearch(), 10);
@@ -512,8 +519,11 @@ function MobileMenu() {
                                                                     aria-selected={searchValue === term}
                                                                     type="button"
                                                                 >
-                                                                    <i className="ri-history-line mr-2 text-gray-400"></i>
-                                                                    <span className="truncate">{term}</span>
+                                                                    <i className="ri-time-line mr-2 text-gray-400 group-hover:text-theme transition-colors duration-150"></i>
+                                                                    <span className="truncate flex-1">{term}</span>
+                                                                    <span className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded transition-opacity duration-150">
+                                                                        {t('search.use', '使用')}
+                                                                    </span>
                                                                 </button>
                                                             ))}
                                                         </div>
@@ -870,7 +880,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={getTranslatedText('article.search.placeholder', '搜索文章...')}
-                            className={`${getSearchInputWidthClass()} py-2 pl-9 pr-10 bg-gray-100 dark:bg-gray-800 border-0 rounded-lg text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/30 focus:bg-white dark:focus:bg-gray-700 focus:outline-none transition-all duration-200`}
+                            className={`${getSearchInputWidthClass()} py-2.5 pl-9 pr-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-sm hover:shadow focus:shadow-md transition-all duration-200`}
                             aria-expanded={isExpanded}
                             autoComplete="off"
                             aria-autocomplete="list"
@@ -913,36 +923,46 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                     {isExpanded && searchHistory.length > 0 && (
                         <div 
                             id="search-history-dropdown"
-                            className={`absolute top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 overflow-hidden animate-slideDown ${getHistoryDropdownPositionClass()}`}
+                            className={`absolute top-full mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg z-50 overflow-hidden animate-slideDown ${getHistoryDropdownPositionClass()}`}
                             role="listbox"
+                            style={{boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)'}}
                         >
                             <div className="max-h-48 overflow-y-auto">
-                                <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10 border-b border-gray-100 dark:border-gray-700">
-                                    <span>{getTranslatedText('article.search.history', '搜索历史')}</span>
+                                <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-gray-700">
+                                    <span className="flex items-center">
+                                        <i className="ri-history-line mr-1.5 text-theme/70"></i>
+                                        {getTranslatedText('article.search.history', '搜索历史')}
+                                    </span>
                                     <button 
                                         onClick={() => {
                                             setSearchHistory([]);
                                             localStorage.removeItem('search_history');
                                         }}
-                                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-150"
+                                        className="text-xs px-1.5 py-0.5 rounded text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
                                         aria-label={getTranslatedText('article.search.clear_history', '清除搜索历史')}
                                         type="button"
                                     >
-                                        {getTranslatedText('article.search.clear_history', '清除')}
+                                        <span className="flex items-center">
+                                            <i className="ri-delete-bin-line mr-0.5 text-xs"></i>
+                                            {getTranslatedText('article.search.clear_history', '清除')}
+                                        </span>
                                     </button>
                                 </div>
                                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
                                     {searchHistory.map((term, index) => (
                                         <button 
                                             key={index}
-                                            className="w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-left flex items-center transition-colors duration-150"
+                                            className="w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/70 text-left flex items-center transition-colors duration-150 group"
                                             onClick={() => handleHistoryClick(term)}
                                             role="option"
                                             aria-selected={value === term}
                                             type="button"
                                         >
-                                            <i className="ri-history-line mr-2 text-gray-400"></i>
-                                            <span className="truncate">{term}</span>
+                                            <i className="ri-time-line mr-2 text-gray-400 group-hover:text-theme transition-colors duration-150"></i>
+                                            <span className="truncate flex-1">{term}</span>
+                                            <span className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded transition-opacity duration-150">
+                                                {getTranslatedText('search.use', '使用')}
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
