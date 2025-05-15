@@ -3,7 +3,7 @@ import {useTranslation} from "react-i18next";
 import {timeago} from "../utils/timeago";
 import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
-import {useState} from "react";
+import React, {useState} from "react";
 import {OptimizedImage} from "./optimized-image";
 
 export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt }:
@@ -55,21 +55,6 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         document.head.appendChild(link);
     };
 
-    // 根据标题生成随机颜色（用于无图片卡片的背景）
-    const generateColorFromTitle = () => {
-        if (!title) return '#f3f4f6';
-        
-        // 计算标题字符串的哈希值
-        let hash = 0;
-        for (let i = 0; i < title.length; i++) {
-            hash = title.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        
-        // 将哈希转换为柔和的浅色
-        const hue = Math.abs(hash) % 360;
-        return `hsl(${hue}, 70%, 97%)`;
-    };
-
     return (
         <Link href={`/feed/${id}`} 
             className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden 
@@ -78,7 +63,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 ? 'border-theme/30 dark:border-theme/20' 
                 : 'border-gray-100 dark:border-gray-700'} 
                 flex flex-col min-h-[260px] xs:min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900
-                transition-all transform relative`}
+                transition-all transform`}
             aria-labelledby={`article-title-${id}`}
             onMouseEnter={() => {
                 setHovered(true);
@@ -100,15 +85,15 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                         className="w-full h-full"
                         objectFit="cover"
                         lazyLoad={true}
-                        blur={true}
-                        quality={85} // 提高图片质量
+                        blur={false}
+                        quality={90}
                         onLoad={() => setImageLoaded(true)}
                         onError={() => setImageError(true)}
                     />
                     
                     {/* 卡片标识和状态指示器容器 - 统一样式并添加毛玻璃效果 */}
                     <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-2 sm:p-3 z-20">
-                        {/* 左侧指示器组：今日发布、阅读时间 */}
+                        {/* 左侧指示器组：今日发布 */}
                         <div className="flex flex-col gap-2">
                             {/* 今日发布标识 */}
                             {isToday() && (
@@ -117,12 +102,6 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                                     <span className="hidden xs:inline">{t('today')}</span>
                                 </div>
                             )}
-                            
-                            {/* 阅读时间指示器 */}
-                            <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-700/70 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
-                                <i className="ri-book-read-line mr-1"></i>
-                                <span>{readTime} {t('min_read')}</span>
-                            </div>
                         </div>
                         
                         {/* 右侧指示器组：置顶、草稿、未列出 */}
@@ -154,30 +133,9 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     </div>
                 </div>
             ) : (
-                <div 
-                    className={`h-28 sm:h-32 rounded-t-xl flex items-center justify-center relative`}
-                    style={{
-                        background: top === 1 
-                            ? `linear-gradient(135deg, rgba(var(--theme-color-rgb), 0.05), rgba(var(--theme-color-rgb), 0.1))`
-                            : `linear-gradient(135deg, ${generateColorFromTitle()}, ${generateColorFromTitle()}40)`
-                    }}
-                >
-                    {/* 美观的图案装饰 */}
-                    <div className="absolute inset-0 overflow-hidden opacity-10">
-                        <div className="absolute -inset-4 grid grid-cols-8 gap-1">
-                            {Array(64).fill(0).map((_, i) => (
-                                <div 
-                                    key={i} 
-                                    className="w-full aspect-square rounded-full"
-                                    style={{
-                                        opacity: Math.random() * 0.3 + 0.1,
-                                        transform: `scale(${Math.random() * 0.5 + 0.5})`,
-                                        background: top === 1 ? 'var(--theme-color)' : '#000'
-                                    }}
-                                ></div>
-                            ))}
-                        </div>
-                    </div>
+                <div className={`h-40 xs:h-48 ${top === 1 
+                    ? 'bg-gradient-to-r from-theme/5 via-theme/10 to-theme/5' 
+                    : 'bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-800/80 dark:to-gray-800/30'} rounded-t-xl flex items-center justify-center relative`}>
                     
                     {/* 卡片标识和状态指示器容器 - 统一样式 */}
                     <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-2 sm:p-3 z-20">
@@ -190,12 +148,6 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                                     <span className="hidden xs:inline">{t('today')}</span>
                                 </div>
                             )}
-                            
-                            {/* 阅读时间指示器 */}
-                            <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-700/70 text-white text-xs font-medium rounded-full shadow-sm">
-                                <i className="ri-book-read-line mr-1"></i>
-                                <span>{readTime} {t('min_read')}</span>
-                            </div>
                         </div>
                         
                         {/* 右侧指示器组：置顶、草稿、未列出 */}
@@ -210,7 +162,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                             
                             {/* 草稿标识 */}
                             {draft === 1 && (
-                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-amber-500/90 text-white text-xs font-medium rounded-full shadow-sm">
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-amber-500/90 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
                                     <i className="ri-draft-line mr-1"></i>
                                     <span className="hidden xs:inline">{t('draft')}</span>
                                 </div>
@@ -218,7 +170,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                             
                             {/* 未列出标识 */}
                             {listed === 0 && (
-                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-500/90 text-white text-xs font-medium rounded-full shadow-sm">
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-500/90 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
                                     <i className="ri-eye-off-line mr-1"></i>
                                     <span className="hidden xs:inline">{t('unlisted')}</span>
                                 </div>
@@ -226,8 +178,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                         </div>
                     </div>
                     
-                    <div className={`text-gray-400 dark:text-gray-500 ${top === 1 ? 'opacity-50' : 'opacity-30'} transition-all group-hover:scale-110 duration-300 z-10`}>
-                        <i className="ri-article-line text-4xl"></i>
+                    <div className={`text-gray-400 dark:text-gray-500 ${top === 1 ? 'opacity-30' : 'opacity-20'}`}>
+                        <i className="ri-article-line text-3xl"></i>
                     </div>
                 </div>
             )}
@@ -276,9 +228,9 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 </div>
             </div>
             
-            {/* 卡片状态指示线 - 修复位置，绝对定位到底部 */}
+            {/* 卡片状态指示线 - 为不同状态的文章添加视觉区分 */}
             {(top === 1 || draft === 1 || listed === 0) && (
-                <div className={`h-1 w-full absolute bottom-0 left-0 right-0 ${
+                <div className={`h-1 w-full ${
                     top === 1 ? 'bg-theme' : 
                     draft === 1 ? 'bg-amber-500' : 
                     'bg-gray-500'

@@ -31,6 +31,14 @@ const getDevicePixelRatio = (): number => {
     return window.devicePixelRatio || 1;
 };
 
+// 判断图片URL是否来自R2图床或其他不需要处理的源
+export const isCloudflareR2Image = (url: string): boolean => {
+    return url.includes('r2.cloudflarestorage.com') || 
+           url.includes('imagedelivery.net') || 
+           url.startsWith('/') ||
+           url.includes('r2.dev');
+};
+
 // 优化图片URL，根据浏览器支持添加格式转换参数
 export const optimizeImageUrl = async (
     url: string, 
@@ -43,8 +51,10 @@ export const optimizeImageUrl = async (
 ): Promise<string> => {
     if (!url) return url;
     
-    // 如果使用的是Cloudflare R2或其他支持图像处理的服务
-    // 这里可以添加相应的参数来请求优化的图片
+    // 如果是R2图床图片，直接返回原始URL
+    if (isCloudflareR2Image(url)) {
+        return url;
+    }
     
     // 检查URL是否为相对路径
     if (url.startsWith('/')) {
@@ -107,6 +117,11 @@ export const generateSrcSet = async (
 ): Promise<string> => {
     if (!url) return '';
     
+    // 如果是R2图床图片，不生成srcset
+    if (isCloudflareR2Image(url)) {
+        return '';
+    }
+    
     // 对每个尺寸生成优化后的URL
     const srcSetPromises = sizes.map(async (size) => {
         const optimizedUrl = await optimizeImageUrl(url, {
@@ -140,16 +155,17 @@ export const createPlaceholder = (
     height: number, 
     color: string = '#f3f4f6'
 ): string => {
-    // 创建一个SVG占位符，使用渐变而不是纯色
+    // 创建一个渐变SVG占位符，更美观
     const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
             <defs>
-                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="${color}" />
-                    <stop offset="100%" stop-color="${color === '#f3f4f6' ? '#e5e7eb' : '#d1d5db'}" />
+                <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:${color};stop-opacity:0.7" />
+                    <stop offset="50%" style="stop-color:${color};stop-opacity:0.9" />
+                    <stop offset="100%" style="stop-color:${color};stop-opacity:0.7" />
                 </linearGradient>
             </defs>
-            <rect width="${width}" height="${height}" fill="url(#gradient)" />
+            <rect width="${width}" height="${height}" fill="url(#grad)" />
         </svg>
     `;
     
@@ -160,10 +176,15 @@ export const createPlaceholder = (
 // 生成低质量图片预览
 export const generateLowQualityPreview = async (url: string): Promise<string> => {
     try {
-        // 使用优化参数生成低质量预览图，提高预览图质量
+        // 如果是R2图床图片，直接返回原始URL
+        if (isCloudflareR2Image(url)) {
+            return url;
+        }
+        
+        // 使用优化参数生成低质量预览图
         return await optimizeImageUrl(url, {
-            width: 40, // 稍微增加预览图尺寸
-            quality: 40, // 提高质量，减少模糊感
+            width: 20, // 非常小的宽度
+            quality: 30, // 提高一点质量，减少模糊
             format: 'auto' // 自动选择最佳格式
         });
     } catch (error) {

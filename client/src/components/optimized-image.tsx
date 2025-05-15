@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { optimizeImageUrl, generateSrcSet, createPlaceholder, generateLowQualityPreview } from '../utils/image-optimization';
 
 interface OptimizedImageProps {
@@ -23,9 +23,9 @@ export function OptimizedImage({
     height,
     className = '',
     objectFit = 'cover',
-    quality = 75,
+    quality = 90,
     lazyLoad = true,
-    blur = true,
+    blur = false,
     placeholder: customPlaceholder,
     onLoad,
     onError
@@ -38,12 +38,8 @@ export function OptimizedImage({
     const [placeholder, setPlaceholder] = useState<string>(
         customPlaceholder || createPlaceholder(width || 100, height || 100)
     );
-    // 高分辨率设备检测
-    const [isHighRes] = useState<boolean>(() => 
-        typeof window !== 'undefined' && window.devicePixelRatio >= 2
-    );
 
-    // 优化图片URL
+    // 优化图片URL - 考虑到R2图床特性
     useEffect(() => {
         if (!src) return;
 
@@ -54,32 +50,35 @@ export function OptimizedImage({
         // 优化主图片URL
         const optimizeImage = async () => {
             try {
-                // 设置优化的图片URL，高分辨率设备使用更高质量
-                const optimized = await optimizeImageUrl(src, {
-                    width,
-                    height,
-                    quality: isHighRes ? Math.min(90, quality + 10) : quality,
-                    format: 'auto'
-                });
-                setOptimizedSrc(optimized);
-
-                // 生成srcset
-                if (width) {
-                    const set = await generateSrcSet(src, undefined, {
-                        quality: isHighRes ? Math.min(90, quality + 10) : quality,
+                // 如果是R2图床的URL，直接使用原图片
+                if (src.includes('r2.cloudflarestorage.com') || src.includes('imagedelivery.net') || src.startsWith('/')) {
+                    setOptimizedSrc(src);
+                    // 对于R2图片，不生成srcset
+                    setSrcSet('');
+                } else {
+                    // 对于非R2图床的图片，应用标准优化
+                    const optimized = await optimizeImageUrl(src, {
+                        width,
+                        height,
+                        quality,
                         format: 'auto'
                     });
-                    setSrcSet(set);
+                    setOptimizedSrc(optimized);
+
+                    // 生成srcset
+                    if (width) {
+                        const set = await generateSrcSet(src, undefined, {
+                            quality,
+                            format: 'auto'
+                        });
+                        setSrcSet(set);
+                    }
                 }
 
-                // 生成低质量预览 - 调整预览质量提高清晰度
+                // 生成低质量预览 - 仅当启用blur时
                 if (blur) {
                     const lowQualityPreview = await generateLowQualityPreview(src);
                     setBlurSrc(lowQualityPreview);
-                    
-                    // 预加载高质量图片
-                    const img = new Image();
-                    img.src = optimized;
                 }
             } catch (error) {
                 console.error('Failed to optimize image:', error);
@@ -90,15 +89,12 @@ export function OptimizedImage({
         };
 
         optimizeImage();
-    }, [src, width, height, quality, blur, onError, isHighRes]);
+    }, [src, width, height, quality, blur, onError]);
 
     // 处理图片加载完成事件
     const handleImageLoad = () => {
-        // 使用setTimeout确保过渡更平滑
-        setTimeout(() => {
-            setIsLoading(false);
-            onLoad?.();
-        }, 50); // 添加短暂延迟使过渡更加平滑
+        setIsLoading(false);
+        onLoad?.();
     };
 
     // 处理图片加载错误事件
@@ -112,14 +108,16 @@ export function OptimizedImage({
     const imageStyle = {
         objectFit,
         opacity: isLoading ? 0 : 1,
-        transition: 'opacity 0.5s ease-in-out', // 调整过渡时间，更平滑
+        transition: 'opacity 0.3s ease-in-out',
         width: width ? `${width}px` : '100%',
         height: height ? `${height}px` : '100%'
     };
 
-    // 构建模糊背景样式
-    const blurStyle = {
-        backgroundImage: blurSrc ? `url(${blurSrc})` : undefined,
+    // 构建占位符样式 - 修改为柔和的渐变效果
+    const placeholderStyle = {
+        backgroundImage: blurSrc && blur 
+            ? `url(${blurSrc})` 
+            : 'linear-gradient(to right, var(--tw-gradient-stops))',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         position: 'absolute',
@@ -127,25 +125,22 @@ export function OptimizedImage({
         left: 0,
         right: 0,
         bottom: 0,
-        filter: 'blur(8px)', // 减少模糊度
         opacity: isLoading ? 1 : 0,
-        transition: 'opacity 0.5s ease-out' // 同步过渡时间，更平滑
+        transition: 'opacity 0.3s ease-in-out'
     };
 
     return (
         <div className={`relative overflow-hidden ${className}`} style={{ width: width, height: height }}>
-            {/* 加载中模糊效果或占位符 */}
+            {/* 加载中占位符 */}
             {isLoading && (
-                <>
-                    {blurSrc ? (
-                        <div style={blurStyle as React.CSSProperties} />
-                    ) : (
-                        <div 
-                            className="absolute inset-0 bg-gray-100 dark:bg-gray-800 animate-pulse" 
-                            style={{ backgroundImage: `url(${placeholder})` }}
-                        />
-                    )}
-                </>
+                <div 
+                    className={`absolute inset-0 ${
+                        blurSrc && blur 
+                            ? 'filter blur-[5px]' 
+                            : 'bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 animate-pulse'
+                    }`} 
+                    style={placeholderStyle as React.CSSProperties}
+                />
             )}
 
             {/* 图片加载错误显示 */}
@@ -181,10 +176,7 @@ export function OptimizedImage({
                     onLoad={handleImageLoad}
                     onError={handleImageError}
                     style={imageStyle as React.CSSProperties}
-                    className={`w-full h-full transition-transform duration-500 ${
-                        !isLoading ? 'transform-gpu scale-100' : 'transform-gpu scale-105'
-                    }`}
-                    fetchPriority={lazyLoad ? "auto" : "high"}
+                    className={`w-full h-full transition-transform duration-500 ${!isLoading ? 'transform-gpu scale-100' : 'transform-gpu scale-105'}`}
                 />
             )}
         </div>

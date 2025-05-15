@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState, useCallback } from "react"
+import React, { useContext, useEffect, useRef, useState, useCallback } from "react"
 import { Helmet } from 'react-helmet'
 import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
@@ -197,7 +197,7 @@ export function FeedsPage() {
                             {/* 标题和篇数统计区域 */}
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200/50 dark:border-gray-700/50">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-4 sm:mb-0">
-                                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group">
+                                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group inline-block">
                                         {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                                     </h1>
@@ -229,14 +229,25 @@ export function FeedsPage() {
                                 )}
                             </div>
                             
-                            {/* 描述和工具栏区域 - 修改这部分，去掉文字描述 */}
-                            <div className="flex justify-end items-center flex-wrap gap-2">
-                                {profile?.permission && (
-                                    <Link href="/edit" className="inline-flex items-center px-4 py-2 bg-theme text-white rounded-full text-sm font-medium transition-all hover:bg-theme-dark focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                                        <i className="ri-add-line mr-1.5"></i>
-                                        {t('new_article')}
-                                    </Link>
-                                )}
+                            {/* 描述和工具栏区域 */}
+                            <div className="flex justify-between items-center flex-wrap gap-2">
+                                {/* 以下代码块整个移除 */}
+                                {/* <div className="text-sm text-gray-500 dark:text-gray-400 italic max-w-xl">
+                                    {listState === 'draft' 
+                                        ? t('draft_description') || "文章草稿区，仅自己可见" 
+                                        : listState === 'unlisted' 
+                                            ? t('unlisted_description') || "未列出的文章，有链接才能访问" 
+                                            : t('article_description') || "所有已发布的公开文章"}
+                                </div> */}
+                                <div className="flex space-x-2">
+                                    {/* 移除new_article按钮 */}
+                                    {/* {profile?.permission && (
+                                        <Link href="/edit" className="inline-flex items-center px-4 py-2 bg-theme text-white rounded-full text-sm font-medium transition-all hover:bg-theme-dark focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                                            <i className="ri-add-line mr-1.5"></i>
+                                            {t('new_article')}
+                                        </Link>
+                                    )} */}
+                                </div>
                             </div>
                         </div>
                         
