@@ -10,7 +10,12 @@ import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { useTranslation } from "react-i18next";
-import { useSearch } from "../utils/hooks";
+
+// 添加自定义useSearch hook
+const useSearch = () => {
+    const [location] = useLocation();
+    return location.split('?')[1] || '';
+};
 
 type FeedsData = {
     size: number,
@@ -128,21 +133,20 @@ function LazyFeedCard({ id, ...props }: any) {
 export function FeedsPage() {
     const { t } = useTranslation()
     const query = new URLSearchParams(useSearch());
-    const [location, setLocation] = useLocation();
-    const profile = React.useContext(ProfileContext);
-    const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
-    const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
-    const [feeds, setFeeds] = React.useState<FeedsMap>({
+    const profile = useContext(ProfileContext);
+    const [listState, _setListState] = useState<FeedType>(query.get("type") as FeedType || 'normal')
+    const [status, setStatus] = useState<'loading' | 'idle'>('idle')
+    const [feeds, setFeeds] = useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
         unlisted: { size: 0, data: [], hasNext: false },
         normal: { size: 0, data: [], hasNext: false }
     })
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
-    const ref = React.useRef("")
+    const ref = useRef("")
     
     // 使用useCallback优化函数
-    const fetchFeeds = React.useCallback((type: FeedType) => {
+    const fetchFeeds = useCallback((type: FeedType) => {
         client.feed.index.get({
             query: {
                 page: page,
@@ -176,7 +180,7 @@ export function FeedsPage() {
         })
     }, [page, limit, feeds]);
     
-    React.useEffect(() => {
+    useEffect(() => {
         const key = `${query.get("page")} ${query.get("type")}`
         if (ref.current == key) return
         const type = query.get("type") as FeedType || 'normal'
@@ -186,7 +190,7 @@ export function FeedsPage() {
         setStatus('loading')
         fetchFeeds(type)
         ref.current = key
-    }, [query.get("page"), query.get("type"), fetchFeeds])
+    }, [query, fetchFeeds])
     
     return (
         <>
@@ -216,19 +220,26 @@ export function FeedsPage() {
                                 
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
-                                        <Link href={`/?type=draft${page > 1 ? '&page=1' : ''}`} 
+                                        <Link href="/?type=draft" 
                                             className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'draft' 
-                                            ? "btn-active" 
-                                            : "btn-secondary"}`}>
+                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30 hover:bg-theme/20" 
+                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                             <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('draft_bin')}</span>
                                         </Link>
-                                        <Link href={`/?type=unlisted${page > 1 ? '&page=1' : ''}`} 
+                                        <Link href="/?type=unlisted" 
                                             className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'unlisted' 
-                                            ? "btn-active" 
-                                            : "btn-secondary"}`}>
+                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30 hover:bg-theme/20" 
+                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                             <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('unlisted')}</span>
+                                        </Link>
+                                        <Link href={listState !== 'normal' ? "/?type=normal" : "/"}
+                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'normal' 
+                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30 hover:bg-theme/20" 
+                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
+                                            <i className="ri-list-check mr-1 sm:mr-1.5"></i>
+                                            <span className="hidden xs:inline">{t('article.title')}</span>
                                         </Link>
                                     </div>
                                 }

@@ -78,7 +78,7 @@ export function Pagination({
     const isCurrentPage = pageNumber === currentPage;
     const commonClasses = `w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium transition-all`;
     const activeClasses = "bg-theme text-white shadow-sm";
-    const inactiveClasses = "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200 dark:border-gray-700 hover:border-theme/30 dark:hover:border-theme/30";
+    const inactiveClasses = "bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200";
     
     const fullClasses = `${commonClasses} ${isCurrentPage ? activeClasses : inactiveClasses}`;
     const ariaLabel = label || t("pagination.page", { page: pageNumber });
@@ -113,8 +113,8 @@ export function Pagination({
     const disabled = currentPage === 1;
     const classes = `w-8 h-8 flex items-center justify-center rounded-full transition-all ${
       disabled
-        ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200 dark:border-gray-700 hover:border-theme/30 dark:hover:border-theme/30'
+        ? 'text-gray-300 cursor-not-allowed'
+        : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200'
     }`;
     
     if (onPageChange) {
@@ -156,8 +156,8 @@ export function Pagination({
     const disabled = currentPage === totalPages;
     const classes = `w-8 h-8 flex items-center justify-center rounded-full transition-all ${
       disabled
-        ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200 dark:border-gray-700 hover:border-theme/30 dark:hover:border-theme/30'
+        ? 'text-gray-300 cursor-not-allowed'
+        : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200'
     }`;
     
     if (onPageChange) {

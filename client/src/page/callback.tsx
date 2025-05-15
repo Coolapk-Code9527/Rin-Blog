@@ -1,19 +1,17 @@
 import {useEffect} from "react";
 import {setCookie} from "typescript-cookie";
-import {useLocation} from "wouter";
-import { client } from "../main";
-import { useSearch } from "../utils/hooks";
+import {useLocation, useSearch} from "wouter";
 
 export function CallbackPage() {
-    const query = new URLSearchParams(useSearch());
+    const searchParams = new URLSearchParams(useSearch());
     const [, setLocation] = useLocation();
     useEffect(() => {
-        const token = query.get('token');
+        const token = searchParams.get('token');
         if (token) {
             setCookie('token', token, { expires: 7, path: '/' })
             setLocation("/");
         }
-    }, [query]);
+    }, [searchParams]);
     return (<>
         <div className="w-screen h-screen flex justify-center items-center">
             <div className="text-center text-black p-4 text-xl font-bold">

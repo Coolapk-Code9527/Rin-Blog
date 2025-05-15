@@ -103,14 +103,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
-## 最近更新
-
-### 分页和UI优化
-
-- **分页问题修复**: 修复了分页功能，现在可以正常浏览所有页面
-- **草稿箱和未列出按钮修复**: 修复了草稿箱和未列出按钮的点击功能
-- **样式改进**: 改进了按钮样式，使其更契合整体页面风格
-- **性能优化**: 添加了预加载功能和懒加载卡片组件，提高了页面加载速度
-- **暗黑模式**: 优化了暗黑模式下的UI元素显示
-- **动画效果**: 添加了平滑的过渡动画，提升用户体验

@@ -19,6 +19,8 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
     const contentElementRef = useRef<Element | null>(null);
     const mutationObserverRef = useRef<MutationObserver | null>(null);
     const attemptCountRef = useRef<number>(0);
+    const [ref, setRef] = useState("-1") 
+    const lastRef = useRef("")
 
     const ensureValidIds = useCallback((headers: NodeListOf<HTMLElement>) => {
         headers.forEach((header, index) => {
@@ -229,6 +231,25 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
         };
     }, [selector, contentReadySignal, attemptGetHeadersAndContent]);
 
+    // 添加cleanup函数
+    const cleanup = (newId: string) => {
+        if (lastRef.current === newId) return
+        setRef(newId)
+        if (io.current) io.current.disconnect()
+        
+        // 清理额外资源
+        if (mutationObserverRef.current) {
+            mutationObserverRef.current.disconnect();
+            mutationObserverRef.current = null;
+        }
+        if (attemptTimeoutRef.current) {
+            clearTimeout(attemptTimeoutRef.current);
+        }
+        setTableOfContents([]); // 重置目录
+        contentElementRef.current = null;
+        attemptCountRef.current = 0; // 重置尝试计数
+    }
+
     return {
         TOC: () => (
             <div className='rounded-2xl bg-w py-4 px-4 t-primary'>
@@ -249,23 +270,15 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
                                     // 使用ID导航，更可靠
                                     const element = document.getElementById(item.element.id);
                                     if (element) {
-                                        // 计算位置，考虑顶部导航栏
-                                        const yOffset = -80;
-                                        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                                        
-                                        window.scrollTo({
-                                            top: y,
-                                            behavior: 'smooth'
+                                        element.scrollIntoView({
+                                            behavior: 'smooth',
+                                            block: 'start'
                                         });
                                     }
                                 } else {
-                                    // 备用：直接使用元素导航
-                                    const yOffset = -80;
-                                    const y = item.element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                                    
-                                    window.scrollTo({
-                                        top: y,
-                                        behavior: 'smooth'
+                                    item.element.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'start'
                                     });
                                 }
                             }}
@@ -275,8 +288,9 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
                     ))}
                 </ul>
             </div>
-        )
-    };
-};
+        ),
+        cleanup
+    }
+}
 
 export default useTableOfContents

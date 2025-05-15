@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Helmet } from 'react-helmet'
-import { Link } from "wouter"
+import { useTranslation } from "react-i18next"
+import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
@@ -8,8 +9,6 @@ import { client } from "../main"
 import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
-import { useTranslation } from "react-i18next"
-import { useSearch } from "../utils/hooks"
 
 type FeedsData = {
     size: number,
