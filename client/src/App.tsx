@@ -190,7 +190,7 @@ function RouteMe({ path, children, headerComponent, paddingClassName }:
 
 
 function RouteWithIndex({ path, children }:
-  { path: PathPattern, children: (params: DefaultParams, TOC: () => JSX.Element, clean: (id: string) => void) => React.ReactNode }) {
+  { path: PathPattern, children: (params: DefaultParams, TOC: () => JSX.Element) => React.ReactNode }) {
   const paramsRef = useRef<DefaultParams | null>(null);
   const [routeMatch, params] = useRoute(path);
   
@@ -199,11 +199,11 @@ function RouteWithIndex({ path, children }:
     paramsRef.current = params;
   }
   
-  const { TOC, cleanup } = useTableOfContents(".toc-content", paramsRef.current?.id);
+  const { TOC } = useTableOfContents(".toc-content", paramsRef.current?.id);
   
   return (<RouteMe path={path} headerComponent={TOCHeader({ TOC: TOC })} paddingClassName='mx-4'>
     {params => {
-      return children(params, TOC, cleanup)
+      return children(params, TOC)
     }}
   </RouteMe>)
 }

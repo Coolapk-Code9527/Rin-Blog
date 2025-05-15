@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useContext, useCallback } from "react"
+import React from "react"
 import { Helmet } from 'react-helmet'
-import { Link, useLocation } from "wouter"
+import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
@@ -10,12 +10,6 @@ import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { useTranslation } from "react-i18next";
-
-// 添加自定义useSearch hook
-const useSearch = () => {
-    const [location] = useLocation();
-    return location.split('?')[1] || '';
-};
 
 type FeedsData = {
     size: number,
@@ -87,11 +81,11 @@ function LazyFeedCard({ id, ...props }: any) {
             {isVisible ? (
                 <FeedCard id={id} {...props} />
             ) : (
-                <div className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px] transition-all">
+                <div className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
                     {/* 占位符卡片顶部 */}
-                    <div className={`w-full h-44 xs:h-52 sm:h-56 md:h-60 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`}>
+                    <div className={`w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`}>
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-10 h-10 rounded-full bg-white/20 dark:bg-gray-700/30 flex items-center justify-center backdrop-blur-sm">
+                            <div className="w-10 h-10 rounded-full bg-white/20 dark:bg-gray-700/30 flex items-center justify-center">
                                 <i className="ri-image-line text-white/50 dark:text-gray-500/70 text-xl"></i>
                             </div>
                         </div>
@@ -110,7 +104,7 @@ function LazyFeedCard({ id, ...props }: any) {
                         </div>
                         
                         {/* 摘要占位 */}
-                        <div className="space-y-2 mb-4 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-md">
+                        <div className="space-y-2 mb-4">
                             <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                             <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                             <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-4/5 animate-pulse"></div>
@@ -133,20 +127,20 @@ function LazyFeedCard({ id, ...props }: any) {
 export function FeedsPage() {
     const { t } = useTranslation()
     const query = new URLSearchParams(useSearch());
-    const profile = useContext(ProfileContext);
-    const [listState, _setListState] = useState<FeedType>(query.get("type") as FeedType || 'normal')
-    const [status, setStatus] = useState<'loading' | 'idle'>('idle')
-    const [feeds, setFeeds] = useState<FeedsMap>({
+    const profile = React.useContext(ProfileContext);
+    const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
+    const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
+    const [feeds, setFeeds] = React.useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
         unlisted: { size: 0, data: [], hasNext: false },
         normal: { size: 0, data: [], hasNext: false }
     })
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
-    const ref = useRef("")
+    const ref = React.useRef("")
     
     // 使用useCallback优化函数
-    const fetchFeeds = useCallback((type: FeedType) => {
+    const fetchFeeds = React.useCallback((type: FeedType) => {
         client.feed.index.get({
             query: {
                 page: page,
@@ -180,7 +174,7 @@ export function FeedsPage() {
         })
     }, [page, limit, feeds]);
     
-    useEffect(() => {
+    React.useEffect(() => {
         const key = `${query.get("page")} ${query.get("type")}`
         if (ref.current == key) return
         const type = query.get("type") as FeedType || 'normal'
@@ -190,7 +184,7 @@ export function FeedsPage() {
         setStatus('loading')
         fetchFeeds(type)
         ref.current = key
-    }, [query, fetchFeeds])
+    }, [query.get("page"), query.get("type"), fetchFeeds])
     
     return (
         <>
@@ -220,38 +214,40 @@ export function FeedsPage() {
                                 
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
-                                        <Link href="/?type=draft" 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'draft' 
-                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30 hover:bg-theme/20" 
+                                        <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
+                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'draft' 
+                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                             <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('draft_bin')}</span>
-                                        </Link>
-                                        <Link href="/?type=unlisted" 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'unlisted' 
-                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30 hover:bg-theme/20" 
+                                    </Link>
+                                        <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
+                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'unlisted' 
+                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
                                             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                             <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('unlisted')}</span>
-                                        </Link>
-                                        <Link href={listState !== 'normal' ? "/?type=normal" : "/"}
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'normal' 
-                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30 hover:bg-theme/20" 
-                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                            <i className="ri-list-check mr-1 sm:mr-1.5"></i>
-                                            <span className="hidden xs:inline">{t('article.title')}</span>
-                                        </Link>
-                                    </div>
-                                }
+                                    </Link>
+                                </div>
+                            }
                             </div>
                             
                             <div className="flex justify-between items-center -mt-2 sm:mt-0">
-                                {/* 移除文章描述区域 */}
-                            </div>
+                                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
+                                    {listState === 'draft' 
+                                        ? t('draft_description') || "文章草稿区，仅自己可见" 
+                                        : listState === 'unlisted' 
+                                            ? t('unlisted_description') || "未列出的文章，有链接才能访问" 
+                                            : t('article_description') || "所有已发布的公开文章"}
+                                </div>
+                                <div className="flex space-x-2">
+                                    {/* 未来可添加排序按钮、视图切换按钮等 */}
+                        </div>
+                    </div>
                         </div>
                         
                         <Waiting for={status === 'idle'}>
-                            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 md:gap-7 ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
+                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
                                 {feeds[listState].data.length > 0 ? (
                                     feeds[listState].data.map(({ id, ...feed }: any) => (
                                         <LazyFeedCard key={id} id={id} {...feed} />

@@ -6,7 +6,6 @@
   "alert": "提示",
   "alias": "别名",
   "article": {
-    "description": "所有已发布的公开文章",
     "delete": {
       "confirm": "确定删除这篇文章吗？",
       "title": "删除文章"

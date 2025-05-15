@@ -651,12 +651,6 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
     // 替换复杂的多行代码块为简单提示
     processed = processed.replace(/```[\s\S]*?```/g, '[代码块]');
     
-    // 限制长度，确保摘要不会太长
-    const maxLength = 280;
-    if (processed.length > maxLength) {
-      processed = processed.substring(0, maxLength) + '...';
-    }
-    
     return processed;
   }, [content]);
   
@@ -671,16 +665,15 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
       components={{
         // 简化的组件渲染
         p({ children }) {
-          return <p className="my-2 text-gray-800 dark:text-gray-200 overflow-hidden overflow-ellipsis line-clamp-3">{children}</p>;
+          return <p className="my-2 text-gray-800 dark:text-gray-200">{children}</p>;
         },
         a({ children, href }) {
           return (
             <a
               href={href}
-              className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-800 dark:hover:text-blue-300 inline-block max-w-full truncate"
+              className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-800 dark:hover:text-blue-300"
               target="_blank"
               rel="noopener noreferrer"
-              title={typeof children === 'string' ? children : ''}
             >
               {children}
             </a>
@@ -693,7 +686,7 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
         code({ children, className }) {
           // 简化的代码显示
           return (
-            <code className="font-mono text-xs px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700 max-w-full truncate inline-block">
+            <code className="font-mono text-xs px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700">
               {children}
             </code>
           );
