@@ -271,9 +271,9 @@ ul {
 }
 
 .search-container input:focus {
-  box-shadow: 0 0 0 3px rgba(var(--theme-rgb, 99, 102, 241), 0.2),
+  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.2),
               0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: rgba(var(--theme-rgb, 99, 102, 241), 0.5);
+  border-color: rgba(244, 114, 182, 0.5);
   background-image: none;
 }
 
@@ -285,11 +285,14 @@ ul {
 /* 搜索历史下拉菜单样式优化 */
 #mobile-search-history,
 #search-history-dropdown {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(244, 114, 182, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-color: rgba(244, 114, 182, 0.15);
+  border-width: 1px;
   max-height: min(320px, calc(100vh - 180px));
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--theme-rgb, 99, 102, 241), 0.3) transparent;
+  scrollbar-color: rgba(244, 114, 182, 0.15) transparent;
 }
 
 #mobile-search-history::-webkit-scrollbar,
@@ -304,14 +307,20 @@ ul {
 
 #mobile-search-history::-webkit-scrollbar-thumb,
 #search-history-dropdown::-webkit-scrollbar-thumb {
-  background-color: rgba(var(--theme-rgb, 99, 102, 241), 0.3);
+  background-color: rgba(244, 114, 182, 0.3);
   border-radius: 4px;
+}
+
+#mobile-search-history::-webkit-scrollbar-thumb:hover,
+#search-history-dropdown::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(244, 114, 182, 0.5);
 }
 
 /* 搜索历史项样式增强 */
 button[role="option"] {
   position: relative;
   overflow: hidden;
+  transition: all 0.2s ease;
 }
 
 button[role="option"]::before {
@@ -325,8 +334,8 @@ button[role="option"]::before {
   z-index: 0;
   background-image: linear-gradient(
     to right,
-    rgba(var(--theme-rgb, 99, 102, 241), 0.05),
-    rgba(var(--theme-rgb, 99, 102, 241), 0.02)
+    rgba(244, 114, 182, 0.08),
+    rgba(244, 114, 182, 0.03)
   );
   transform: translateX(-100%);
   transition: transform 0.3s ease, opacity 0.2s ease;
@@ -346,12 +355,12 @@ button[role="option"] > * {
 /* 移动端菜单滚动条样式 */
 .fixed[aria-modal="true"] .overflow-y-auto {
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--theme-rgb, 99, 102, 241), 0.3) transparent;
+  scrollbar-color: rgba(244, 114, 182, 0.15) transparent;
   background-image: linear-gradient(
     to bottom,
     transparent 0%,
     transparent 95%,
-    rgba(var(--theme-rgb, 99, 102, 241), 0.05) 100%
+    rgba(244, 114, 182, 0.05) 100%
   );
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -367,7 +376,7 @@ button[role="option"] > * {
 }
 
 .fixed[aria-modal="true"] .overflow-y-auto::-webkit-scrollbar-thumb {
-  background-color: rgba(var(--theme-rgb, 99, 102, 241), 0.3);
+  background-color: rgba(244, 114, 182, 0.15);
   border-radius: 4px;
 }
 
@@ -1205,9 +1214,9 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 }
 
 .search-container input:focus {
-  box-shadow: 0 0 0 3px rgba(var(--theme-rgb, 99, 102, 241), 0.2),
+  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.2),
               0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: rgba(var(--theme-rgb, 99, 102, 241), 0.5);
+  border-color: rgba(244, 114, 182, 0.5);
   background-image: none;
 }
 
@@ -1228,8 +1237,8 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   z-index: 0;
   background-image: linear-gradient(
     to right,
-    rgba(var(--theme-rgb, 99, 102, 241), 0.05),
-    rgba(var(--theme-rgb, 99, 102, 241), 0.02)
+    rgba(244, 114, 182, 0.08),
+    rgba(244, 114, 182, 0.03)
   );
   transform: translateX(-100%);
   transition: transform 0.3s ease, opacity 0.2s ease;
@@ -1284,4 +1293,47 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   #mobile-search-history {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1) !important;
   }
+}
+
+/* 粉色主题搜索框样式 */
+.search-container button i {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.search-container button:hover i.ri-search-line {
+  color: rgb(244, 114, 182);
+  transform: translateY(-1px);
+}
+
+.search-container button:active i.ri-search-line {
+  transform: translateY(1px);
+}
+
+.search-container button[aria-label="清除"]:hover i,
+.search-container button[aria-label="clear"]:hover i {
+  color: rgb(244, 114, 182);
+  transform: scale(1.2) rotate(90deg);
+}
+
+/* 搜索历史项的粉色风格增强 */
+[role="option"]:hover i.ri-time-line,
+[role="option"][aria-selected="true"] i.ri-time-line {
+  color: rgb(244, 114, 182) !important;
+}
+
+/* 特殊动画效果：输入时的波纹 */
+@keyframes searchPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 114, 182, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(244, 114, 182, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 114, 182, 0);
+  }
+}
+
+.search-container input:focus {
+  animation: searchPulse 2s infinite;
 }

@@ -421,10 +421,10 @@ function MobileMenu() {
                                             {!isSearchExpanded ? (
                                                 <button 
                                                     onClick={() => setIsSearchExpanded(true)}
-                                                    className="flex items-center w-full p-2.5 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
+                                                    className="flex items-center w-full p-2 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-full border border-pink-300 dark:border-pink-500/40 hover:border-pink-400 dark:hover:border-pink-400/60 hover:shadow focus:outline-none focus:ring-2 focus:ring-pink-400/30 transition-all duration-200"
                                                     aria-label={t('article.search.title')}
                                                 >
-                                                    <i className="ri-search-line text-gray-400 mr-2"></i>
+                                                    <i className="ri-search-line text-gray-400 mr-2 text-sm"></i>
                                                     <span className="text-gray-500 dark:text-gray-400">
                                                         {t('article.search.placeholder')}
                                                     </span>
@@ -438,17 +438,17 @@ function MobileMenu() {
                                                         onChange={(e) => setSearchValue(e.target.value)}
                                                         onKeyDown={(e) => e.key === 'Enter' && onSearch()}
                                                         placeholder={t('article.search.placeholder')}
-                                                        className="w-full py-2.5 pl-9 pr-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-sm hover:shadow focus:shadow-md focus:outline-none transition-all duration-200 text-sm"
+                                                        className="w-full py-2 pl-8 pr-9 bg-white dark:bg-gray-800 border border-pink-300 dark:border-pink-500/40 rounded-full text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-pink-400/30 focus:border-pink-400 dark:focus:border-pink-400 shadow-sm hover:shadow focus:shadow-md focus:outline-none transition-all duration-200 text-xs"
                                                         aria-controls={searchHistory.length > 0 ? "mobile-search-history" : undefined}
                                                         aria-expanded={isSearchExpanded}
                                                         autoComplete="off"
                                                     />
-                                                    <i className="ri-search-line absolute left-3 text-gray-400 text-base"></i>
+                                                    <i className="ri-search-line absolute left-3 text-gray-400 text-sm"></i>
                                                     <div className="absolute right-2 flex space-x-1">
                                                         {searchValue.trim() && (
                                                             <button 
                                                                 onClick={() => setSearchValue('')}
-                                                                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-150"
+                                                                className="p-1 text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
                                                                 aria-label={t('clear')}
                                                                 type="button"
                                                             >
@@ -463,7 +463,7 @@ function MobileMenu() {
                                                                     setIsSearchExpanded(false);
                                                                 }
                                                             }}
-                                                            className="p-1 text-gray-500 dark:text-gray-400 hover:text-theme dark:hover:text-theme transition-colors duration-150"
+                                                            className="p-1 text-gray-500 dark:text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
                                                             aria-label={searchValue.trim() ? t('search') : t('close')}
                                                             type="button"
                                                         >
@@ -488,7 +488,7 @@ function MobileMenu() {
                                                     <div className="max-h-36 overflow-y-auto">
                                                         <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-gray-700">
                                                             <span className="flex items-center">
-                                                                <i className="ri-history-line mr-1.5 text-theme/70"></i>
+                                                                <i className="ri-history-line mr-1.5 text-pink-400/70"></i>
                                                                 {t('article.search.history')}
                                                             </span>
                                                             <button 
@@ -880,18 +880,18 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={getTranslatedText('article.search.placeholder', '搜索文章...')}
-                            className={`${getSearchInputWidthClass()} py-2.5 pl-9 pr-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-sm hover:shadow focus:shadow-md transition-all duration-200`}
+                            className={`${getSearchInputWidthClass()} py-2 pl-8 pr-9 bg-white dark:bg-gray-800 border border-pink-300 dark:border-pink-500/40 rounded-full text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-pink-400/30 focus:border-pink-400 dark:focus:border-pink-400 shadow-sm hover:shadow focus:shadow-md transition-all duration-200 text-xs`}
                             aria-expanded={isExpanded}
                             autoComplete="off"
                             aria-autocomplete="list"
                             aria-controls={searchHistory.length > 0 ? "search-history-dropdown" : undefined}
                         />
-                        <i className="ri-search-line absolute left-3 text-gray-400 text-base"></i>
+                        <i className="ri-search-line absolute left-3 text-gray-400 text-sm"></i>
                         <div className="absolute right-2 flex space-x-1">
                             {value.trim() && (
                                 <button 
                                     onClick={() => setValue('')}
-                                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-150"
+                                    className="p-1 text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
                                     aria-label={getTranslatedText('clear', '清除')}
                                     type="button"
                                 >
@@ -906,7 +906,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                                         setIsExpanded(false);
                                     }
                                 }}
-                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-theme dark:hover:text-theme transition-colors duration-150"
+                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
                                 aria-label={value.trim() ? getTranslatedText('search', '搜索') : getTranslatedText('close', '关闭')}
                                 type="button"
                             >
@@ -930,7 +930,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                             <div className="max-h-48 overflow-y-auto">
                                 <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-gray-700">
                                     <span className="flex items-center">
-                                        <i className="ri-history-line mr-1.5 text-theme/70"></i>
+                                        <i className="ri-history-line mr-1.5 text-pink-400/70"></i>
                                         {getTranslatedText('article.search.history', '搜索历史')}
                                     </span>
                                     <button 
