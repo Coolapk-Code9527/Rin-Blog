@@ -4,6 +4,7 @@ import {timeago} from "../utils/timeago";
 import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
 import {useState} from "react";
+import {OptimizedImage} from "./optimized-image";
 
 export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt }:
     {
@@ -16,9 +17,20 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     const { t } = useTranslation();
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
+    const [hovered, setHovered] = useState(false);
 
     // 预处理 summary，移除 Markdown 图片链接
-    const cleanedSummary = summary ? summary.replace(/!\[.*?\]\(.*?\)/g, "") : ""; 
+    const cleanedSummary = summary ? summary.replace(/!\[.*?\]\(.*?\)/g, "").trim() : ""; 
+
+    // 计算阅读时间（假设平均阅读速度为每分钟200字）
+    const calculateReadTime = () => {
+        if (!cleanedSummary) return 1;
+        const wordCount = cleanedSummary.split(/\s+/).length;
+        const readTime = Math.ceil(wordCount / 200);
+        return Math.max(1, readTime); // 至少1分钟
+    };
+    
+    const readTime = calculateReadTime();
 
     // 判断是否为"今天"发布的文章
     const isToday = () => {
@@ -45,81 +57,137 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
 
     return (
         <Link href={`/feed/${id}`} 
-            className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
-                ? 'border-theme/30 dark:border-theme/20 shadow-md' 
-                : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
-                flex flex-col min-h-[260px] xs:min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
+            className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden 
+                ${hovered ? 'shadow-xl translate-y-[-4px]' : 'shadow-sm hover:shadow-lg hover:-translate-y-1'} 
+                border ${top === 1 
+                ? 'border-theme/30 dark:border-theme/20' 
+                : 'border-gray-100 dark:border-gray-700'} 
+                flex flex-col min-h-[260px] xs:min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900
+                transition-all transform`}
             aria-labelledby={`article-title-${id}`}
-            onMouseEnter={prefetchArticle}
+            onMouseEnter={() => {
+                setHovered(true);
+                prefetchArticle();
+            }}
+            onMouseLeave={() => setHovered(false)}
+            onFocus={() => setHovered(true)}
+            onBlur={() => setHovered(false)}
         >
             {/* 卡片顶部区域 */}
             {avatar ? (
                 <div className="w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-40 group-hover:opacity-60 transition-opacity duration-300 z-10"></div>
+                    <div className={`absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-40 ${hovered ? 'opacity-60' : 'group-hover:opacity-60'} transition-opacity duration-300 z-10`}></div>
                     
-                    {/* 图片加载状态指示器 */}
-                    {!imageLoaded && !imageError && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800/80 animate-pulse z-0">
-                            <div className="w-8 h-8 border-2 border-theme/60 border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    )}
-                    
-                    {/* 图片加载错误占位符 */}
-                    {imageError && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800/80 z-0">
-                            <i className="ri-image-line text-3xl text-gray-400 dark:text-gray-500 mb-2"></i>
-                            <span className="text-xs text-gray-400 dark:text-gray-500">{t('image_load_error')}</span>
-                        </div>
-                    )}
-                    
-                    <img 
+                    {/* 使用优化的图片组件 */}
+                    <OptimizedImage 
                         src={avatar} 
                         alt={title}
-                        loading="lazy"
-                        decoding="async"
-                        className={`object-cover w-full h-full group-hover:scale-105 transition-all duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        className="w-full h-full"
+                        objectFit="cover"
+                        lazyLoad={true}
+                        blur={true}
                         onLoad={() => setImageLoaded(true)}
-                        onError={() => {
-                            setImageError(true);
-                            setImageLoaded(true);
-                        }}
+                        onError={() => setImageError(true)}
                     />
                     
-                    {/* 置顶标识 */}
-                    {top === 1 && (
-                        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-theme text-white text-xs font-medium px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-md z-20 flex items-center">
-                            <i className="ri-pushpin-fill mr-1"></i>
-                            <span className="hidden xs:inline">{t('article.top.title')}</span>
+                    {/* 卡片标识和状态指示器容器 - 统一样式并添加毛玻璃效果 */}
+                    <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-2 sm:p-3 z-20">
+                        {/* 左侧指示器组：今日发布、阅读时间 */}
+                        <div className="flex flex-col gap-2">
+                            {/* 今日发布标识 */}
+                            {isToday() && (
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-emerald-500/90 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
+                                    <i className="ri-time-line mr-1"></i>
+                                    <span className="hidden xs:inline">{t('today')}</span>
+                                </div>
+                            )}
+                            
+                            {/* 阅读时间指示器 */}
+                            <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-700/70 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
+                                <i className="ri-book-read-line mr-1"></i>
+                                <span>{readTime} {t('min_read')}</span>
+                            </div>
                         </div>
-                    )}
-                    
-                    {/* 今日发布标识 */}
-                    {isToday() && (
-                        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-emerald-500 text-white text-xs font-medium px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-md z-20 flex items-center">
-                            <i className="ri-time-line mr-1"></i>
-                            <span className="hidden xs:inline">{t('today')}</span>
+                        
+                        {/* 右侧指示器组：置顶、草稿、未列出 */}
+                        <div className="flex flex-col gap-2 items-end">
+                            {/* 置顶标识 */}
+                            {top === 1 && (
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-theme/90 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
+                                    <i className="ri-pushpin-fill mr-1"></i>
+                                    <span className="hidden xs:inline">{t('article.top.title')}</span>
+                                </div>
+                            )}
+                            
+                            {/* 草稿标识 */}
+                            {draft === 1 && (
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-amber-500/90 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
+                                    <i className="ri-draft-line mr-1"></i>
+                                    <span className="hidden xs:inline">{t('draft')}</span>
+                                </div>
+                            )}
+                            
+                            {/* 未列出标识 */}
+                            {listed === 0 && (
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-500/90 text-white text-xs font-medium rounded-full shadow-sm backdrop-blur-sm">
+                                    <i className="ri-eye-off-line mr-1"></i>
+                                    <span className="hidden xs:inline">{t('unlisted')}</span>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             ) : (
-                <div className={`h-16 sm:h-20 ${top === 1 
+                <div className={`h-20 sm:h-24 ${top === 1 
                     ? 'bg-gradient-to-r from-theme/5 via-theme/10 to-theme/5' 
                     : 'bg-gray-50 dark:bg-gray-800/40'} rounded-t-xl flex items-center justify-center relative`}>
-                    {/* 置顶标识 */}
-                    {top === 1 && (
-                        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-theme text-white text-xs font-medium px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-md z-20 flex items-center">
-                            <i className="ri-pushpin-fill mr-1"></i>
-                            <span className="hidden xs:inline">{t('article.top.title')}</span>
-                        </div>
-                    )}
                     
-                    {/* 今日发布标识 */}
-                    {isToday() && (
-                        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-emerald-500 text-white text-xs font-medium px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-md z-20 flex items-center">
-                            <i className="ri-time-line mr-1"></i>
-                            <span className="hidden xs:inline">{t('today')}</span>
+                    {/* 卡片标识和状态指示器容器 - 统一样式 */}
+                    <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-2 sm:p-3 z-20">
+                        {/* 左侧指示器组：今日发布 */}
+                        <div className="flex flex-col gap-2">
+                            {/* 今日发布标识 */}
+                            {isToday() && (
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-emerald-500/90 text-white text-xs font-medium rounded-full shadow-sm">
+                                    <i className="ri-time-line mr-1"></i>
+                                    <span className="hidden xs:inline">{t('today')}</span>
+                                </div>
+                            )}
+                            
+                            {/* 阅读时间指示器 */}
+                            <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-700/70 text-white text-xs font-medium rounded-full shadow-sm">
+                                <i className="ri-book-read-line mr-1"></i>
+                                <span>{readTime} {t('min_read')}</span>
+                            </div>
                         </div>
-                    )}
+                        
+                        {/* 右侧指示器组：置顶、草稿、未列出 */}
+                        <div className="flex flex-col gap-2 items-end">
+                            {/* 置顶标识 */}
+                            {top === 1 && (
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-theme/90 text-white text-xs font-medium rounded-full shadow-sm">
+                                    <i className="ri-pushpin-fill mr-1"></i>
+                                    <span className="hidden xs:inline">{t('article.top.title')}</span>
+                                </div>
+                            )}
+                            
+                            {/* 草稿标识 */}
+                            {draft === 1 && (
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-amber-500/90 text-white text-xs font-medium rounded-full shadow-sm">
+                                    <i className="ri-draft-line mr-1"></i>
+                                    <span className="hidden xs:inline">{t('draft')}</span>
+                                </div>
+                            )}
+                            
+                            {/* 未列出标识 */}
+                            {listed === 0 && (
+                                <div className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-500/90 text-white text-xs font-medium rounded-full shadow-sm">
+                                    <i className="ri-eye-off-line mr-1"></i>
+                                    <span className="hidden xs:inline">{t('unlisted')}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                     
                     <div className={`text-gray-400 dark:text-gray-500 ${top === 1 ? 'opacity-30' : 'opacity-20'}`}>
                         <i className="ri-article-line text-3xl"></i>
@@ -130,48 +198,33 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             {/* 卡片内容区域 */}
             <div className="p-4 sm:p-5 flex-1 flex flex-col">
                 {/* 文章标题 */}
-                <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors line-clamp-2">
+                <h2 id={`article-title-${id}`} className={`text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-2 leading-tight 
+                    ${hovered ? 'text-theme' : 'group-hover:text-theme'} transition-colors line-clamp-2`}>
                     {title}
                 </h2>
                 
-                {/* 日期和状态区域 - 移动端紧凑设计 */}
-                <div className="flex flex-wrap justify-between items-center gap-1 mb-2 text-xs text-gray-500 dark:text-gray-400">
-                    {/* 左侧日期显示 */}
-                    <div className="flex items-center">
+                {/* 日期区域 - 简化设计，提升可读性 */}
+                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <div className="flex items-center mr-3">
                         <i className="ri-calendar-line mr-1"></i>
                         {formatDate(createdAt)}
-                        {createdAt !== updatedAt && 
-                            <span className="ml-2 flex items-center" title={new Date(updatedAt).toLocaleString()}>
-                                <i className="ri-history-line mr-1"></i>
-                                {formatDate(updatedAt)}
-                            </span>
-                        }
                     </div>
-                    
-                    {/* 右侧状态显示 */}
-                    <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                        {draft === 1 && 
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300">
-                                <i className="ri-draft-line mr-0.5 sm:mr-1"></i>
-                                <span className="hidden xs:inline">{t("draft")}</span>
-                            </span>
-                        }
-                        {listed === 0 && 
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300">
-                                <i className="ri-eye-off-line mr-0.5 sm:mr-1"></i>
-                                <span className="hidden xs:inline">{t("unlisted")}</span>
-                            </span>
-                        }
-                    </div>
+                    {createdAt !== updatedAt && 
+                        <div className="flex items-center" title={new Date(updatedAt).toLocaleString()}>
+                            <i className="ri-history-line mr-1"></i>
+                            {formatDate(updatedAt)}
+                        </div>
+                    }
                 </div>
                 
                 {/* 文章摘要 */}
-                <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 min-h-[3.6rem] sm:min-h-[4.5rem] group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
-                    <SimplifiedMarkdown content={cleanedSummary} />
+                <div className={`text-pretty overflow-hidden text-gray-600 dark:text-gray-300 text-xs sm:text-sm leading-relaxed line-clamp-3 min-h-[3.6rem] sm:min-h-[4.5rem] 
+                    ${hovered ? 'text-gray-800 dark:text-gray-200' : 'group-hover:text-gray-700 dark:group-hover:text-gray-200'} transition-colors`}>
+                    <SimplifiedMarkdown content={cleanedSummary || t('no_summary')} />
                 </div>
                 
                 {/* 标签区域 */}
-                <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-100 dark:border-gray-700/30 mt-2 sm:mt-4">
+                <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-100 dark:border-gray-700/30 mt-3 sm:mt-4">
                     {hashtags.length > 0 ? (
                         <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
                             {hashtags.map(({id, name}) => (
@@ -185,6 +238,15 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     )}
                 </div>
             </div>
+            
+            {/* 卡片状态指示线 - 为不同状态的文章添加视觉区分 */}
+            {(top === 1 || draft === 1 || listed === 0) && (
+                <div className={`h-1 w-full ${
+                    top === 1 ? 'bg-theme' : 
+                    draft === 1 ? 'bg-amber-500' : 
+                    'bg-gray-500'
+                }`}></div>
+            )}
         </Link>
     )
 }

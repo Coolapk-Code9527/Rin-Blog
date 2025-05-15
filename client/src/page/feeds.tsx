@@ -59,6 +59,54 @@ function LazyFeedCard({ id, ...props }: any) {
     );
 }
 
+// 空状态组件 - 提供更友好的空数据显示
+function EmptyState({ type }: { type: FeedType }) {
+    const { t } = useTranslation();
+    
+    // 不同类型文章的空状态展示
+    const getEmptyStateContent = () => {
+        switch(type) {
+            case 'draft':
+                return {
+                    icon: 'ri-draft-line',
+                    title: t('no_drafts'),
+                    description: t('no_drafts_description') || '你还没有创建任何草稿。开始写作，系统会自动保存你的草稿。'
+                };
+            case 'unlisted':
+                return {
+                    icon: 'ri-eye-off-line',
+                    title: t('no_unlisted'),
+                    description: t('no_unlisted_description') || '你还没有未列出的文章。设置文章为"未列出"可以隐藏它们不在首页显示。'
+                };
+            default:
+                return {
+                    icon: 'ri-article-line',
+                    title: t('no_articles'),
+                    description: t('no_articles_description') || '还没有发布任何文章。发布你的第一篇文章，与世界分享你的想法！'
+                };
+        }
+    };
+    
+    const content = getEmptyStateContent();
+    
+    return (
+        <div className="col-span-full py-16 sm:py-20 flex flex-col items-center justify-center text-center rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 animate-fadeIn">
+            <div className="w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-gray-800/50 flex items-center justify-center">
+                <i className={`${content.icon} text-3xl text-gray-400 dark:text-gray-500`}></i>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">{content.title}</h3>
+            <p className="max-w-md text-sm text-gray-500 dark:text-gray-400 mb-6">{content.description}</p>
+            
+            {type !== 'normal' && (
+                <Link href="/?type=normal" className="px-4 py-2 bg-theme/10 text-theme rounded-full text-sm font-medium transition-colors hover:bg-theme/20 focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                    <i className="ri-arrow-left-line mr-1"></i>
+                    {t('back_to_articles')}
+                </Link>
+            )}
+        </div>
+    );
+}
+
 export function FeedsPage() {
     const { t } = useTranslation()
     const query = new URLSearchParams(useSearch());
@@ -121,6 +169,16 @@ export function FeedsPage() {
         ref.current = key
     }, [query.get("page"), query.get("type"), fetchFeeds])
     
+    // 计算总页数
+    const totalPages = Math.ceil(feeds[listState]?.size / limit) || 1;
+    
+    // 获取类型按钮样式
+    const getTypeButtonStyle = (type: FeedType) => {
+        return listState === type 
+            ? "bg-theme/10 text-theme ring-1 ring-theme/30 shadow-sm" 
+            : "bg-gray-100 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700";
+    };
+    
     return (
         <>
             <Helmet>
@@ -134,41 +192,46 @@ export function FeedsPage() {
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
                 <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
                     <div className="wauto w-full max-w-6xl">
-                        <div className="flex flex-col space-y-4 mb-8">
-                            <div className="flex items-center justify-between py-4 sm:py-6 border-b border-gray-200/50 dark:border-gray-700/50">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+                        {/* 页面标题和过滤器区域 */}
+                        <div className="flex flex-col space-y-4 mb-8 animate-fadeIn">
+                            {/* 标题和篇数统计区域 */}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200/50 dark:border-gray-700/50">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-4 sm:mb-0">
                                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group">
                                         {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                                     </h1>
-                                    <div className="px-2 py-1 mt-1 sm:mt-0 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm self-start sm:self-auto">
+                                    <div className="inline-flex px-3 py-1 mt-2 sm:mt-0 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 font-medium backdrop-blur-sm self-start sm:self-auto items-center">
                                         <i className="ri-article-line mr-1.5"></i>
                                         {t('article.total$count', { count: feeds[listState]?.size })}
                                     </div>
                                 </div>
                                 
-                                {profile?.permission &&
-                                    <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
-                                        <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'draft' 
-                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
-                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                            <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
-                                            <span className="hidden xs:inline">{t('draft_bin')}</span>
+                                {/* 类型筛选按钮组 */}
+                                {profile?.permission && (
+                                    <div className="flex items-center space-x-2 sm:space-x-3 overflow-x-auto pb-1 hide-scrollbar">
+                                        <Link href="/?type=normal" 
+                                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center ${getTypeButtonStyle('normal')}`}>
+                                            <i className="ri-article-line mr-1.5"></i>
+                                            {t('published')}
                                         </Link>
-                                        <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'unlisted' 
-                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
-                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                            <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
-                                            <span className="hidden xs:inline">{t('unlisted')}</span>
+                                        <Link href="/?type=draft" 
+                                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center ${getTypeButtonStyle('draft')}`}>
+                                            <i className="ri-draft-line mr-1.5"></i>
+                                            <span>{t('draft_bin')}</span>
+                                        </Link>
+                                        <Link href="/?type=unlisted" 
+                                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center ${getTypeButtonStyle('unlisted')}`}>
+                                            <i className="ri-eye-off-line mr-1.5"></i>
+                                            <span>{t('unlisted')}</span>
                                         </Link>
                                     </div>
-                                }
+                                )}
                             </div>
                             
-                            <div className="flex justify-between items-center -mt-2 sm:mt-0">
-                                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
+                            {/* 描述和工具栏区域 */}
+                            <div className="flex justify-between items-center flex-wrap gap-2">
+                                <div className="text-sm text-gray-500 dark:text-gray-400 italic max-w-xl">
                                     {listState === 'draft' 
                                         ? t('draft_description') || "文章草稿区，仅自己可见" 
                                         : listState === 'unlisted' 
@@ -176,33 +239,39 @@ export function FeedsPage() {
                                             : t('article_description') || "所有已发布的公开文章"}
                                 </div>
                                 <div className="flex space-x-2">
-                                    {/* 未来可添加排序按钮、视图切换按钮等 */}
+                                    {profile?.permission && (
+                                        <Link href="/edit" className="inline-flex items-center px-4 py-2 bg-theme text-white rounded-full text-sm font-medium transition-all hover:bg-theme-dark focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                                            <i className="ri-add-line mr-1.5"></i>
+                                            {t('new_article')}
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
                         </div>
                         
+                        {/* 内容区域 */}
                         <Waiting for={status === 'idle'}>
-                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
-                                {feeds[listState].data.length > 0 ? (
-                                    feeds[listState].data.map(({ id, ...feed }: any) => (
-                                        <LazyFeedCard key={id} id={id} {...feed} />
-                                    ))
-                                ) : (
-                                    <div className="col-span-full text-center py-20 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
-                                        <i className="ri-inbox-line text-5xl mb-4 block opacity-50"></i>
-                                        <p className="text-lg">{t('no_articles')}</p>
-                                        <p className="text-sm mt-2 text-gray-400 dark:text-gray-500">{t('no_articles_description')}</p>
+                            {/* 文章列表 */}
+                            {feeds[listState].data.length > 0 ? (
+                                <div className="space-y-8 animate-fadeIn">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                                        {feeds[listState].data.map(({ id, ...feed }: any) => (
+                                            <LazyFeedCard key={id} id={id} {...feed} />
+                                        ))}
                                     </div>
-                                )}
-                            </div>
-                            
-                            {(page > 1 || feeds[listState]?.hasNext) && feeds[listState].data.length > 0 && (
-                                <Pagination 
-                                    currentPage={page}
-                                    totalPages={Math.ceil(feeds[listState]?.size / limit) || 1}
-                                    basePath={`/?type=${listState}`}
-                                    className="ani-show"
-                                />
+                                    
+                                    {/* 分页组件 */}
+                                    {(totalPages > 1) && (
+                                        <Pagination 
+                                            currentPage={page}
+                                            totalPages={totalPages}
+                                            basePath={`/?type=${listState}`}
+                                            className="animate-fadeIn mt-8"
+                                        />
+                                    )}
+                                </div>
+                            ) : (
+                                <EmptyState type={listState} />
                             )}
                         </Waiting>
                     </div>
