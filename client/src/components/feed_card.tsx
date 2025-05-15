@@ -3,7 +3,7 @@ import {useTranslation} from "react-i18next";
 import {timeago} from "../utils/timeago";
 import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
-import React from "react";
+import React, { useState, useMemo } from 'react';
 
 export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt }:
     {
@@ -14,8 +14,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         createdAt: Date, updatedAt: Date
     }) {
     const { t } = useTranslation();
-    const [imageLoaded, setImageLoaded] = React.useState(false);
-    const [imageError, setImageError] = React.useState(false);
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     // 预处理 summary，移除 Markdown 图片链接
     const cleanedSummary = summary ? summary.replace(/!\[.*?\]\(.*?\)/g, "") : ""; 
@@ -51,7 +51,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     };
     
     // 为文章生成基于标题的稳定渐变背景
-    const generateGradient = React.useMemo(() => {
+    const generateGradient = useMemo(() => {
         // 根据文章ID和标题生成一致的颜色
         const getHashCode = (str: string) => {
             let hash = 0;
@@ -193,14 +193,14 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     {/* 右侧状态显示 - 改进草稿和未列出标签样式 */}
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {draft === 1 && 
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50 shadow-sm">
-                                <i className="ri-draft-line mr-1.5 text-amber-500 dark:text-amber-400"></i>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
+                                <i className="ri-draft-line mr-1 text-amber-500 dark:text-amber-400"></i>
                                 <span>{t("draft")}</span>
                             </span>
                         }
                         {listed === 0 && 
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-700/50 shadow-sm">
-                                <i className="ri-eye-off-line mr-1.5 text-indigo-500 dark:text-indigo-400"></i>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-700/50">
+                                <i className="ri-eye-off-line mr-1 text-indigo-500 dark:text-indigo-400"></i>
                                 <span>{t("unlisted")}</span>
                             </span>
                         }
@@ -213,7 +213,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 </div>
                     
                 {/* 标签区域 - 统一分割线样式和对齐方式 */}
-                <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30 mt-3 sm:mt-4">
+                <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700 mt-3">
                     {hashtags.length > 0 ? (
                         <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
                             {hashtags.map(({id, name}) => (

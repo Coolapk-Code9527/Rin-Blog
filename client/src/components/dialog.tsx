@@ -56,7 +56,8 @@ export function useAlert() {
                     maxWidth: '40em'
                 },
                 overlay: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    backdropFilter: 'blur(4px)',
                     zIndex: 1000
                 }
             }}
@@ -118,7 +119,8 @@ export function useConfirm() {
                     maxWidth: '40em'
                 },
                 overlay: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    backdropFilter: 'blur(4px)',
                     zIndex: 1000
                 }
             }}
