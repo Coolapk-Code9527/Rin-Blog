@@ -19,6 +19,8 @@ import {Tips} from "../components/tips";
 import {useLoginModal} from "../hooks/useLoginModal";
 import mermaid from "mermaid";
 import {AdjacentSection} from "../components/adjacent_feed.tsx";
+import {formatDistance} from "date-fns";
+import { Pagination } from "../components/pagination";
 
 type Feed = {
   id: number;
@@ -42,7 +44,7 @@ type Feed = {
 
 
 
-export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Element, clean: (id: string) => void }) {
+export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
   const { t } = useTranslation();
   const profile = useContext(ProfileContext);
   const [feed, setFeed] = useState<Feed>();
@@ -126,7 +128,6 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
             if (img_match) {
               setHeadImage(img_match[1]);
             }
-            clean(id);
           }, 0);
         }
       });
@@ -363,70 +364,177 @@ function CommentInput({
 }) {
   const { t } = useTranslation();
   const [content, setContent] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { showAlert, AlertUI } = useAlert();
   const profile = useContext(ProfileContext);
   const { LoginModal, setIsOpened } = useLoginModal()
+  
   function errorHumanize(error: string) {
     if (error === "Unauthorized") return t("login.required");
     else if (error === "Content is required") return t("comment.empty");
+    else if (error === "Nickname is required for anonymous comments") return t("comment.anonymous.nickname_empty");
     return error;
   }
+  
   function submit() {
-    if (!profile) {
+    if (!profile && !isAnonymous) {
       setIsOpened(true)
       return;
     }
+    
+    if (isAnonymous && !nickname.trim()) {
+      setError(t("comment.anonymous.nickname_empty"));
+      return;
+    }
+    
+    if (!content.trim()) {
+      setError(t("comment.empty"));
+      return;
+    }
+    
+    setSubmitting(true);
+    setError("");
+    
     client.feed
       .comment({ feed: id })
       .post(
-        { content },
+        { 
+          content, 
+          isAnonymous, 
+          nickname: isAnonymous ? nickname : undefined 
+        },
         {
           headers: headersWithAuth(),
         }
       )
       .then(({ error }) => {
+        setSubmitting(false);
         if (error) {
           setError(errorHumanize(error.value as string));
         } else {
           setContent("");
+          if (isAnonymous) {
+            setNickname("");
+          }
           setError("");
           showAlert(t("comment.success"), () => {
             onRefresh();
           });
         }
+      })
+      .catch((err) => {
+        setSubmitting(false);
+        setError(String(err));
       });
   }
+  
   return (
-      <div className="w-full rounded-2xl bg-w t-primary p-6 items-end flex flex-col">
-      <div className="flex flex-col w-full items-start mb-4">
-        <label htmlFor="comment">{t("comment.title")}</label>
+    <div className="w-full bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+      <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+        <h3 className="text-base font-medium flex items-center gap-2">
+          <i className="ri-chat-new-line text-theme"></i>
+          {isAnonymous ? t("comment.anonymous.title") : t("comment.title")}
+        </h3>
+        
+        <div className="flex items-center">
+          <span className="text-xs text-gray-500 mr-2">{t("comment.anonymous.switch")}</span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={isAnonymous}
+              onChange={() => {
+                setIsAnonymous(!isAnonymous);
+                setError("");
+              }}
+            />
+            <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-theme-light peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
+          </label>
+        </div>
       </div>
-      {profile ? (<>
-        <textarea
-          id="comment"
-          placeholder={t("comment.placeholder.title")}
-          className="bg-w w-full h-24 rounded-lg"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-        />
-        <button
-          className="mt-4 bg-theme text-white px-4 py-2 rounded-full"
-          onClick={submit}
-        >
-          {t("comment.submit")}
-        </button>
-      </>) : (
-        <div className="flex flex-row w-full items-center justify-center space-x-2 py-12">
+      
+      {isAnonymous && (
+        <div className="px-4 py-3 border-b border-gray-100">
+          <div className="relative">
+            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <i className="ri-user-smile-line text-gray-400"></i>
+            </div>
+            <input
+              type="text"
+              className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
+              placeholder={t("comment.anonymous.nickname_placeholder")}
+              value={nickname}
+              onChange={(e) => {
+                setNickname(e.target.value);
+                setError("");
+              }}
+            />
+          </div>
+        </div>
+      )}
+      
+      {(profile || isAnonymous) ? (
+        <div className="px-4 py-4">
+          <textarea
+            placeholder={t("comment.placeholder.title")}
+            className="w-full min-h-24 p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-theme focus:border-theme focus:outline-none resize-y text-sm"
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value);
+              setError("");
+            }}
+          />
+          
+          <div className="flex justify-between items-center mt-3">
+            {error && (
+              <div className="text-red-500 text-xs bg-red-50 px-3 py-1.5 rounded-full flex items-center">
+                <i className="ri-error-warning-line mr-1"></i>
+                {error}
+              </div>
+            )}
+            <div className="flex-grow"></div>
+            <button
+              disabled={submitting}
+              className={`px-4 py-2 rounded-lg flex items-center text-sm ${
+                submitting 
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                  : 'bg-theme text-white hover:bg-theme-hover'
+              }`}
+              onClick={submit}
+            >
+              {submitting ? (
+                <>
+                  <i className="ri-loader-2-line animate-spin mr-1"></i>
+                  {t("publishing")}
+                </>
+              ) : (
+                <>
+                  <i className="ri-send-plane-fill mr-1"></i>
+                  {t("comment.submit")}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-10 px-4">
+          <div className="mb-4 text-center">
+            <i className="ri-user-follow-line text-5xl text-gray-200 mb-3 block"></i>
+            <p className="text-gray-500 text-sm">{t("login.required")}</p>
+          </div>
           <button
-            className="mt-2 bg-theme text-white px-4 py-2 rounded-full"
+            className="bg-theme text-white px-4 py-2 rounded-lg hover:bg-theme-hover transition-colors flex items-center text-sm"
             onClick={() => setIsOpened(true)}
           >
-            {t("login.required")}
+            <i className="ri-login-circle-line mr-1"></i>
+            {t("login.title")}
           </button>
         </div>
       )}
-      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+      
       <AlertUI />
       <LoginModal />
     </div>
@@ -438,7 +546,9 @@ type Comment = {
   content: string;
   createdAt: Date;
   updatedAt: Date;
-  user: {
+  userId?: number;
+  nickname?: string;
+  user?: {
     id: number;
     username: string;
     avatar: string | null;
@@ -450,59 +560,166 @@ function Comments({ id }: { id: string }) {
   const config = useContext(ClientConfigContext);
   const [comments, setComments] = useState<Comment[]>([]);
   const [error, setError] = useState<string>();
+  const [loading, setLoading] = useState(false);
   const ref = useRef("");
   const { t } = useTranslation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalComments, setTotalComments] = useState(0);
+  const commentsPerPage = 5; // 每页显示5条评论
 
   function loadComments() {
+    setLoading(true);
+    setError(undefined);
     client.feed
       .comment({ feed: id })
       .get({
         headers: headersWithAuth(),
       })
       .then(({ data, error }) => {
+        setLoading(false);
         if (error) {
           setError(error.value as string);
         } else if (data && Array.isArray(data)) {
           setComments(data);
+          setTotalComments(data.length);
+          // 如果当前页已经超出总页数，设置为第1页
+          const totalPages = Math.ceil(data.length / commentsPerPage);
+          if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(1);
+          }
         }
+      })
+      .catch((err) => {
+        setLoading(false);
+        setError(String(err));
       });
   }
+  
   useEffect(() => {
     if (ref.current == id) return;
     loadComments();
     ref.current = id;
   }, [id]);
+
+  // 获取当前页的评论
+  const currentComments = comments.slice(
+    (currentPage - 1) * commentsPerPage,
+    currentPage * commentsPerPage
+  );
+  
+  // 计算总页数
+  const totalPages = Math.ceil(totalComments / commentsPerPage);
+
+  // 页码变化处理函数
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({
+      top: document.getElementById('comments-section')?.offsetTop || 0,
+      behavior: 'smooth'
+    });
+  };
+  
   return (
     <>
-      {config.get<boolean>('comment.enabled') &&
-        <div className="m-2 flex flex-col justify-center items-center">
+      {config.get<boolean>('comment.enabled') && (
+        <div id="comments-section" className="m-2 flex flex-col justify-center items-center space-y-4">
+          <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="bg-gray-50 px-4 py-3 border-b border-gray-100">
+              <h2 className="text-lg font-medium flex items-center justify-between">
+                <div className="flex items-center">
+                  <i className="ri-chat-3-line mr-2 text-theme"></i>
+                  {t("comment.title")}
+                </div>
+                {comments.length > 0 && (
+                  <span className="bg-theme text-white px-2 py-0.5 text-xs rounded-full">
+                    {comments.length}
+                  </span>
+                )}
+              </h2>
+            </div>
+          </div>
+          
           <CommentInput id={id} onRefresh={loadComments} />
-          {error && (
-            <>
-              <div className="flex flex-col wauto rounded-2xl bg-w t-primary m-2 p-6 items-center justify-center">
-                <h1 className="text-xl font-bold t-primary">{error}</h1>
+          
+          {loading ? (
+            <div className="w-full bg-white rounded-lg p-8 flex justify-center shadow-sm">
+              <div className="flex items-center space-x-3">
+                <div className="h-5 w-5">
+                  <i className="ri-loader-4-line animate-spin text-theme"></i>
+                </div>
+                <p className="text-gray-500 text-sm">{t("loading")}</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="w-full rounded-lg bg-white p-6 shadow-sm">
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-3">
+                  <i className="ri-error-warning-line text-xl text-red-500"></i>
+                </div>
+                <h3 className="text-base font-medium text-gray-800 mb-2">{error}</h3>
                 <button
-                  className="mt-2 bg-theme text-white px-4 py-2 rounded-full"
+                  className="mt-2 bg-theme text-white px-4 py-2 rounded-lg hover:bg-theme-hover transition-colors flex items-center text-sm"
                   onClick={loadComments}
                 >
+                  <i className="ri-refresh-line mr-1"></i>
                   {t("reload")}
                 </button>
               </div>
+            </div>
+          ) : (
+            <>
+              {comments.length > 0 ? (
+                <div className="w-full space-y-4">
+                  <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                      <h3 className="text-base font-medium flex items-center">
+                        <i className="ri-list-check text-theme mr-2"></i>
+                        {t("comment.list.title", { count: comments.length })}
+                      </h3>
+                      <button
+                        className="text-xs text-gray-500 flex items-center hover:text-theme transition-colors"
+                        onClick={loadComments}
+                      >
+                        <i className="ri-refresh-line mr-1"></i>
+                        {t("reload")}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {currentComments.map((comment) => (
+                      <CommentItem
+                        key={comment.id}
+                        comment={comment}
+                        onRefresh={loadComments}
+                      />
+                    ))}
+                  </div>
+                  
+                  {totalPages > 1 && (
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                      siblingCount={1}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="w-full bg-white rounded-lg p-8 shadow-sm">
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                      <i className="ri-chat-1-line text-xl text-gray-400"></i>
+                    </div>
+                    <h3 className="text-base font-medium text-gray-800 mb-2">{t("comment.empty")}</h3>
+                    <p className="text-sm text-gray-500 text-center max-w-sm">{t("comment.empty.desc")}</p>
+                  </div>
+                </div>
+              )}
             </>
           )}
-          {comments.length > 0 && (
-            <div className="w-full">
-              {comments.map((comment) => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  onRefresh={loadComments}
-                />
-              ))}
-            </div>
-          )}
         </div>
-      }
+      )}
     </>
   );
 }
@@ -518,6 +735,7 @@ function CommentItem({
   const { showAlert, AlertUI } = useAlert();
   const { t } = useTranslation();
   const profile = useContext(ProfileContext);
+  
   function deleteComment() {
     showConfirm(
       t("delete.comment.title"),
@@ -539,50 +757,74 @@ function CommentItem({
           });
       })
   }
+
+  // 判断是否是匿名评论
+  const isAnonymous = !!comment.nickname;
+  
+  // 判断是否有删除权限 - 修改逻辑，使用permission替代admin
+  const canDelete = profile && 
+    (profile.permission || (!isAnonymous && comment.user && profile.id === comment.user.id));
+
   return (
-    <div className="flex flex-row items-start rounded-xl mt-2">
-      <img
-        src={comment.user.avatar || ""}
-        className="w-8 h-8 rounded-full mt-4"
-      />
-      <div className="flex flex-col flex-1 w-0 ml-2 bg-w rounded-xl p-4">
-        <div className="flex flex-row">
-          <span className="t-primary text-base font-bold">
-            {comment.user.username}
-          </span>
-          <div className="flex-1 w-0" />
-          <span
-            title={new Date(comment.createdAt).toLocaleString()}
-            className="text-gray-400 text-sm"
-          >
-            {timeago(comment.createdAt)}
-          </span>
-        </div>
-        <p className="t-primary break-words">{comment.content}</p>
-        <div className="flex flex-row justify-end">
-          {(profile?.permission || profile?.id == comment.user.id) && (
-            <Popup
-              arrow={false}
-              trigger={
-                <button className="px-2 py bg-secondary rounded-full">
-                  <i className="ri-more-fill t-secondary"></i>
-                </button>
-              }
-              position="left center"
-            >
-              <div className="flex flex-row self-end mr-2">
-                <button
-                  onClick={deleteComment}
-                  aria-label={t("delete.comment.title")}
-                  className="px-2 py bg-secondary rounded-full"
-                >
-                  <i className="ri-delete-bin-2-line t-secondary"></i>
-                </button>
+    <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+      <div className="p-4">
+        <div className="flex justify-between">
+          <div className="flex items-start">
+            {!isAnonymous && comment.user ? (
+              <div className="flex items-center">
+                <div className="relative flex-shrink-0">
+                  <img
+                    className="w-9 h-9 rounded-full object-cover border border-gray-100"
+                    src={comment.user.avatar || "/avatar.png"}
+                    alt={comment.user.username}
+                  />
+                  {comment.user.permission && (
+                    <div className="absolute -top-0.5 -right-0.5 bg-theme text-white rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                      <i className="ri-verified-badge-fill text-[10px]"></i>
+                    </div>
+                  )}
+                </div>
+                <div className="ml-2">
+                  <h4 className="text-sm font-medium text-gray-800">{comment.user.username}</h4>
+                  <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
+                    addSuffix: true,
+                  })}</span>
+                </div>
               </div>
-            </Popup>
+            ) : (
+              <div className="flex items-center">
+                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <i className="ri-user-line text-gray-400"></i>
+                </div>
+                <div className="ml-2">
+                  <div className="flex items-center">
+                    <h4 className="text-sm font-medium text-gray-800">{comment.nickname}</h4>
+                    <span className="ml-1.5 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{t("comment.anonymous.tag")}</span>
+                  </div>
+                  <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
+                    addSuffix: true,
+                  })}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {canDelete && (
+            <button
+              className="text-gray-400 hover:text-red-500 transition-colors text-sm flex items-center"
+              onClick={deleteComment}
+              title={t("delete.title")}
+            >
+              <i className="ri-delete-bin-line"></i>
+            </button>
           )}
         </div>
+        
+        <div className="mt-3 pt-3 border-t border-gray-50 prose prose-sm max-w-none text-gray-700">
+          <Markdown content={comment.content} />
+        </div>
       </div>
+      
       <ConfirmUI />
       <AlertUI />
     </div>

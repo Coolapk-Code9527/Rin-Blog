@@ -141,7 +141,7 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
 
   // 使用正则表达式检查文本是否以Markdown图片语法结尾
   const match = trimmed.match(/(.*?)(!*\[.*?\]\(.*?\))$/s);
-  
+
   if (match) {
     const [, beforeImage, _] = match;
     return beforeImage.trim().length === 0 || beforeImage.endsWith("\n");
@@ -276,10 +276,10 @@ export function Markdown({ content }: { content: string }) {
 
           if (isCodeBlock) {
             return (
-              <div className="relative group">
+              <div className="relative group my-6">
                 <SyntaxHighlighter
                   PreTag="div"
-                  className="rounded"
+                  className="rounded-lg"
                   language={language}
                   style={
                     colorMode === "dark"
@@ -296,17 +296,18 @@ export function Markdown({ content }: { content: string }) {
                     userSelect: 'none'
                   }}
                   customStyle={{
-                    margin: '1em 0', 
+                    margin: '0', 
                     padding: '1.25em',
-                    borderRadius: '0.75rem', 
+                    borderRadius: '0',
+                    borderBottomLeftRadius: '0.75rem',
+                    borderBottomRightRadius: '0.75rem',
                     fontSize: '14px',
                     lineHeight: '1.6',
-                    boxShadow: colorMode === 'dark' 
-                      ? '0 4px 12px rgba(0, 0, 0, 0.4)' 
-                      : '0 4px 12px rgba(0, 0, 0, 0.1)',
-                    border: colorMode === 'dark' 
-                      ? '1px solid #3f3f3f' 
-                      : '1px solid #e5e7eb',
+                    boxShadow: 'none',
+                    borderTop: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                    borderLeft: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                    borderRight: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                    borderBottom: 'none',
                     background: colorMode === 'dark' 
                       ? '#1e1e2e' 
                       : '#f8f9fc',
@@ -322,9 +323,14 @@ export function Markdown({ content }: { content: string }) {
                 >
                   {String(children).replace(/\n$/, "")}
                 </SyntaxHighlighter>
-                <div className="absolute top-2 right-2 flex space-x-1 invisible group-hover:visible">
+                <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {language && (
+                    <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs text-gray-600 dark:text-gray-300 select-none shadow-sm">
+                      {language}
+                    </span>
+                  )}
                   <button 
-                    className="px-2 py-1 bg-w rounded-md text-sm bg-hover select-none transition-colors shadow-sm"
+                    className="px-2 py-1 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-md text-xs flex items-center gap-1 shadow-sm hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
                     onClick={() => {
                       navigator.clipboard.writeText(String(children));
                       setCopied(true);
@@ -332,22 +338,17 @@ export function Markdown({ content }: { content: string }) {
                     }}
                   >
                     {copied ? (
-                      <span className="flex items-center">
-                        <i className="ri-check-line mr-1 text-green-500"></i>
+                      <>
+                        <i className="ri-check-line" />
                         <span>{t('code.copied')}</span>
-                      </span>
+                      </>
                     ) : (
-                      <span className="flex items-center">
-                        <i className="ri-file-copy-line mr-1"></i>
+                      <>
+                        <i className="ri-file-copy-line" />
                         <span>{t('code.copy')}</span>
-                      </span>
+                      </>
                     )}
                   </button>
-                  {language && (
-                    <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-sm text-gray-600 dark:text-gray-300 select-none shadow-sm">
-                      {language}
-                    </span>
-                  )}
                 </div>
               </div>
             );
@@ -355,7 +356,7 @@ export function Markdown({ content }: { content: string }) {
             return (
               <code
                 {...rest}
-                className={`bg-[#f3f4f6] dark:bg-[#2d2d3a] px-[5px] rounded-md mx-[2px] py-[2px] text-[#d33682] dark:text-[#f08d49] ${className || ""}`}
+                className={`font-mono text-sm px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700 ${className || ""}`}
                 style={inlineCodeStyle}
               >
                 {children}
@@ -366,7 +367,7 @@ export function Markdown({ content }: { content: string }) {
         blockquote({ children, ...props }) {
           return (
             <blockquote
-              className="border-l-4 border-gray-300 dark:border-gray-500 pl-4 italic text-gray-500 dark:text-gray-400"
+              className="border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 pl-4 py-1 rounded-r-md italic text-gray-700 dark:text-gray-300"
               {...props}
             >
               {children}
@@ -375,14 +376,14 @@ export function Markdown({ content }: { content: string }) {
         },
         em({ children, ...props }) {
           return (
-            <em className="ml-[1px] mr-[4px]" {...props}>
+            <em className="italic text-gray-800 dark:text-gray-200" {...props}>
               {children}
             </em>
           );
         },
         strong({ children, ...props }) {
           return (
-            <strong className="mx-[1px]" {...props}>
+            <strong className="font-bold text-gray-900 dark:text-white" {...props}>
               {children}
             </strong>
           );
@@ -390,8 +391,8 @@ export function Markdown({ content }: { content: string }) {
 
         ul({ children, className, ...props }) {
           const listClass = className?.includes("contains-task-list")
-            ? "list-none pl-5"
-            : "list-disc pl-5 mt-2";
+            ? "list-none pl-2 my-4 space-y-1"
+            : "list-disc pl-6 my-4 space-y-1";
           return (
             <ul className={listClass} {...props}>
               {children}
@@ -400,14 +401,14 @@ export function Markdown({ content }: { content: string }) {
         },
         ol({ children, ...props }) {
           return (
-            <ol className="list-decimal pl-5" {...props}>
+            <ol className="list-decimal pl-6 my-4 space-y-1" {...props}>
               {children}
             </ol>
           );
         },
         li({ children, ...props }) {
           return (
-            <li className="pl-2 py-1" {...props}>
+            <li className="mb-1" {...props}>
               {children}
             </li>
           );
@@ -415,7 +416,7 @@ export function Markdown({ content }: { content: string }) {
         a({ children, ...props }) {
           return (
             <a
-              className="text-[#0686c8] dark:text-[#2590f1] hover:underline"
+              className="text-blue-600 dark:text-blue-400 font-medium relative hover:text-blue-800 dark:hover:text-blue-300"
               {...props}
             >
               {children}
@@ -426,7 +427,7 @@ export function Markdown({ content }: { content: string }) {
           return (
             <h1
               id={children?.toString()}
-              className="text-3xl font-bold mt-4"
+              className="text-3xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
@@ -437,7 +438,7 @@ export function Markdown({ content }: { content: string }) {
           return (
             <h2
               id={children?.toString()}
-              className="text-2xl font-bold mt-4"
+              className="text-2xl font-bold mt-6 mb-4 pb-1 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
@@ -448,7 +449,7 @@ export function Markdown({ content }: { content: string }) {
           return (
             <h3
               id={children?.toString()}
-              className="text-xl font-bold mt-4"
+              className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
@@ -459,7 +460,7 @@ export function Markdown({ content }: { content: string }) {
           return (
             <h4
               id={children?.toString()}
-              className="text-lg font-bold mt-4"
+              className="text-lg font-bold mt-4 mb-3 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
@@ -470,7 +471,7 @@ export function Markdown({ content }: { content: string }) {
           return (
             <h5
               id={children?.toString()}
-              className="text-base font-bold mt-4"
+              className="text-base font-bold mt-4 mb-2 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
@@ -481,7 +482,7 @@ export function Markdown({ content }: { content: string }) {
           return (
             <h6
               id={children?.toString()}
-              className="text-sm font-bold mt-4"
+              className="text-sm font-bold mt-4 mb-2 text-gray-700 dark:text-gray-300"
               {...props}
             >
               {children}
@@ -489,22 +490,90 @@ export function Markdown({ content }: { content: string }) {
           );
         },
         p({ children, node, ...props }) {
+          // 检查是否为图片后的描述文本
+          const isImageCaption = 
+            node?.children?.length === 1 && 
+            node?.children[0]?.type === "emphasis" && 
+            node?.prev?.children?.some(child => child.type === "image");
+          
           return (
-            <p className="mt-2 py-1" {...props}>
+            <p className={`${isImageCaption ? "text-center text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-4" : "mt-2 py-1"}`} {...props}>
               {children}
             </p>
           );
         },
         hr({ children, ...props }) {
-          return <hr className="my-4" {...props} />;
+          return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" {...props} />;
         },
-        table: ({ node, ...props }) => <table className="table" {...props} />,
-        th: ({ node, ...props }) => (
-          <th className="px-4 py-2 border bg-gray-600" {...props} />
+        table: ({ node, ...props }) => {
+          // 检测是否为URL表格
+          let isUrlTable = false;
+          try {
+            // 检查表头是否包含URL列
+            const headerRow = node?.children?.[0]?.children?.[0];
+            const headerCells = headerRow?.children || [];
+            
+            // 判断表头是否包含URL或链接相关词汇
+            const hasUrlHeader = headerCells.some(cell => {
+              const cellText = cell?.children?.[0]?.value || '';
+              return /url|link|地址|链接/i.test(cellText);
+            });
+            
+            // 判断第二列是否包含多个URL格式内容
+            const bodyRows = (node?.children?.[1]?.children || []).slice(0, 3); // 获取前几行
+            let urlCount = 0;
+            
+            bodyRows.forEach(row => {
+              const cells = row?.children || [];
+              if (cells[1]) { // 第二列
+                const cellContent = cells[1]?.children?.[0]?.value || '';
+                if (/https?:\/\/[^\s]+/.test(cellContent)) {
+                  urlCount++;
+                }
+              }
+            });
+            
+            isUrlTable = hasUrlHeader || urlCount >= 2;
+          } catch (e) {
+            // 忽略错误
+          }
+          
+          const tableClass = isUrlTable ? 'table responsive url-table' : 'table responsive';
+          
+          return (
+            <div className="overflow-hidden my-6">
+              <table className={tableClass + " w-full"} {...props} />
+            </div>
+          );
+        },
+        th: ({ node, children, ...props }) => (
+          <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider" {...props}>
+            {children}
+          </th>
         ),
-        td: ({ node, ...props }) => (
-          <td className="px-4 py-2 border" {...props} />
-        ),
+        td: ({ node, children, ...props }) => {
+          // 获取表头文本用于响应式显示
+          let headerText = '';
+          try {
+            const rowIndex = node?.position?.start?.line;
+            const table = node?.parent?.parent;
+            const headerRow = table?.children?.[0]?.children?.[0];
+            const cellIndex = node?.parent?.children?.findIndex(cell => cell === node);
+            
+            if (headerRow && cellIndex !== undefined && cellIndex >= 0) {
+              const headerCell = headerRow?.children?.[cellIndex];
+              headerText = headerCell?.children?.[0]?.value || '';
+            }
+          } catch (e) {
+            // 忽略错误，使用默认空字符串
+          }
+          
+          return (
+            <td className="px-4 py-3 whitespace-normal break-words" data-label={headerText} {...props}>
+              {children}
+            </td>
+          );
+        },
         sup: ({ children, ...props }) => (
           <sup className="text-xs mr-[4px]" {...props}>
             {children}
@@ -570,11 +639,11 @@ export function Markdown({ content }: { content: string }) {
 export function SimplifiedMarkdown({ content }: { content: string }) {
   // 预处理内容，替换所有Markdown图片语法，包括更多复杂格式
   const processedContent = useMemo(() => {
-    // 替换图片语法 ![alt](url) 为 [图片]
-    let processed = content.replace(/!\[.*?\]\(.*?\)/g, '[图片]');
+    // 严格匹配图片语法 ![alt](url) 及其变体，不显示任何占位符
+    let processed = content.replace(/!\[([^\]]*?)\]\(([^)]*?)\)/g, '');
     
-    // 替换链接中的图片语法 [![alt](url)](link) 为 [图片链接]
-    processed = processed.replace(/\[!\[.*?\]\(.*?\)\]\(.*?\)/g, '[图片链接]');
+    // 替换链接中的图片语法 [![alt](url)](link) 为普通链接文本
+    processed = processed.replace(/\[!\[[^\]]*?\]\([^)]*?\)\]\(([^)]*?)\)/g, '');
     
     // 替换行内代码块 `code` 为简化版本
     processed = processed.replace(/`([^`]+)`/g, '`…`');
@@ -596,13 +665,13 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
       components={{
         // 简化的组件渲染
         p({ children }) {
-          return <p className="my-1">{children}</p>;
+          return <p className="my-2 text-gray-800 dark:text-gray-200">{children}</p>;
         },
         a({ children, href }) {
           return (
             <a
               href={href}
-              className="text-[#0686c8] dark:text-[#2590f1] hover:underline"
+              className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-800 dark:hover:text-blue-300"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -611,16 +680,81 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
           );
         },
         img() {
-          // 摘要中不显示图片，只显示[图片]占位符
-          return <span className="text-gray-500">{t('preview.image')}</span>;
+          // 摘要中不显示图片，也不显示占位符
+          return null;
         },
         code({ children, className }) {
           // 简化的代码显示
           return (
-            <code className="bg-[#eff1f3] dark:bg-[#4a5061] px-1 rounded text-xs">
+            <code className="font-mono text-xs px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700">
               {children}
             </code>
           );
+        },
+        // 表格相关组件
+        table: ({ children, node, ...props }) => {
+          // 检测是否为URL表格
+          let isUrlTable = false;
+          try {
+            // 简化版的URL表格检测
+            if (node?.children?.[0]?.children?.[0]) {
+              const headerCells = node.children[0].children[0].children || [];
+              const hasUrlHeader = headerCells.some(cell => {
+                const cellText = cell?.children?.[0]?.value || '';
+                return /url|link|地址|链接/i.test(cellText);
+              });
+              
+              isUrlTable = hasUrlHeader;
+            }
+          } catch (e) {
+            // 忽略错误
+          }
+          
+          const tableClass = isUrlTable ? 'table responsive url-table table-compact' : 'table responsive table-compact';
+          
+          return (
+            <div className="overflow-hidden my-3">
+              <table className={tableClass + " w-full text-sm"} {...props}>
+                {children}
+              </table>
+            </div>
+          );
+        },
+        th: ({ children, ...props }) => (
+          <th className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider" {...props}>
+            {children}
+          </th>
+        ),
+        td: ({ children, ...props }) => (
+          <td className="px-3 py-2 whitespace-normal break-words" {...props}>
+            {children}
+          </td>
+        ),
+        // 增强的元素渲染
+        blockquote({ children }) {
+          return (
+            <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 pl-4 py-1 rounded-r-md italic text-gray-700 dark:text-gray-300 my-3">
+              {children}
+            </blockquote>
+          );
+        },
+        strong({ children }) {
+          return <strong className="font-bold text-gray-900 dark:text-white">{children}</strong>;
+        },
+        em({ children }) {
+          return <em className="italic text-gray-800 dark:text-gray-200">{children}</em>;
+        },
+        ul({ children }) {
+          return <ul className="list-disc pl-5 my-3 space-y-1">{children}</ul>;
+        },
+        ol({ children }) {
+          return <ol className="list-decimal pl-5 my-3 space-y-1">{children}</ol>;
+        },
+        li({ children }) {
+          return <li className="mb-1">{children}</li>;
+        },
+        hr() {
+          return <hr className="my-4 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" />;
         },
         // 其他元素使用默认渲染
       }}

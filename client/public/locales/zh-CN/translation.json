@@ -11,6 +11,8 @@
       "title": "删除文章"
     },
     "search": {
+      "clear_history": "清除历史",
+      "history": "搜索历史",
       "placeholder": "请输入关键字",
       "title": "搜索",
       "title$keyword": "搜索：{{keyword}}"
@@ -44,7 +46,26 @@
     },
     "submit": "发表评论",
     "success": "评论成功",
-    "title": "评论"
+    "title": "评论",
+    "anonymous": {
+      "title": "匿名评论",
+      "nickname": "昵称",
+      "nickname_empty": "昵称不能为空",
+      "nickname_placeholder": "请输入昵称",
+      "switch": "匿名评论",
+      "tag": "匿名用户"
+    },
+    "empty": {
+      "list": "暂无评论，来说点什么吧"
+    },
+    "list": {
+      "title": "全部评论 ({{count}}条)"
+    },
+    "pagination": {
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第 {{page}} 页"
+    }
   },
   "comparison": "对比",
   "confirm": "确认",
@@ -119,6 +140,7 @@
   "last_updated": "最近更新",
   "listed": "展示在文章列表",
   "loading": "加载中",
+  "logged_in": "已登录",
   "login": {
     "oauth_only": "请登录后继续",
     "password": {
@@ -132,9 +154,12 @@
   },
   "logout": "退出登录",
   "main_content": "正文",
+  "menu": "菜单",
+  "mobile_menu": "移动菜单",
   "next": "下一页",
   "no_more": "没有更多了",
   "preview": "预览",
+  "preview.image": "图片",
   "previous": "上一页",
   "publish": {
     "success": "发布成功",
@@ -365,5 +390,6 @@
   "code": {
     "copy": "复制",
     "copied": "已复制!"
-  }
+  },
+  "user": "用户"
 }

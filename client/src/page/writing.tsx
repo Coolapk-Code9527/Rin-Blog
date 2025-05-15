@@ -1024,6 +1024,7 @@ async function publish({
   }
   if (data && typeof data !== "string") {
     // 直接跳转到文章页面，不显示提示弹窗
+    Cache.with().set("content", content); // 将当前内容写入缓存，避免beforeunload触发
       Cache.with().clear();
     // 使用replace方法替换当前页面，避免返回按钮返回到编辑页
     window.location.replace("/feed/" + data.insertedId);
@@ -1079,10 +1080,13 @@ async function update({
   }
   
   // 直接跳转到文章页面，不显示提示弹窗
+  if (content) {
+    Cache.with(id).set("content", content); // 将当前内容写入缓存，避免beforeunload触发
+  }
       Cache.with(id).clear();
   // 使用replace方法替换当前页面，避免返回按钮返回到编辑页
   window.location.replace("/feed/" + id);
-}
+  }
 
 // 修改uploadImage函数，处理API响应类型
 async function uploadImage(file: File, onSuccess: (url: string) => void, showAlert: ShowAlertType) {
@@ -1334,6 +1338,9 @@ export function WritingPage({ id }: { id?: number }) {
     getDraft,
     loadDrafts
   } = useDraftManager();
+
+  // 添加一个发布状态标记
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const autoSave = useCallback(() => {
     if (cache.get("content") !== content) {
@@ -1609,8 +1616,8 @@ export function WritingPage({ id }: { id?: number }) {
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // 只有当编辑器内容与缓存内容不同，且不是在发布/更新后的跳转时提示
-      if (cache.get("content") !== content && !window.location.pathname.includes('/feed/')) {
+      // 只有当编辑器内容与缓存内容不同，且不是在发布/更新中，且不是在文章页面的情况下提示
+      if (cache.get("content") !== content && !isPublishing && !window.location.pathname.includes('/feed/')) {
         e.preventDefault();
         e.returnValue = '';
         return '';
@@ -1619,7 +1626,7 @@ export function WritingPage({ id }: { id?: number }) {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [content, cache]);
+  }, [content, cache, isPublishing]);
 
   function publishButton() {
     if (publishing) return;
@@ -1630,6 +1637,7 @@ export function WritingPage({ id }: { id?: number }) {
         .map((tag: string) => tag.trim()) || [];
     if (id !== undefined) {
       setPublishing(true)
+      setIsPublishing(true); // 设置发布状态为true
       update({
         id,
         title,
@@ -1642,6 +1650,7 @@ export function WritingPage({ id }: { id?: number }) {
         createdAt,
         onCompleted: () => {
           setPublishing(false)
+          setIsPublishing(false); // 重置发布状态
         },
         showAlert
       });
@@ -1655,6 +1664,7 @@ export function WritingPage({ id }: { id?: number }) {
         return;
       }
       setPublishing(true)
+      setIsPublishing(true); // 设置发布状态为true
       publish({
         title,
         content,
@@ -1666,6 +1676,7 @@ export function WritingPage({ id }: { id?: number }) {
         createdAt,
         onCompleted: () => {
           setPublishing(false)
+          setIsPublishing(false); // 重置发布状态
         },
         showAlert
       });

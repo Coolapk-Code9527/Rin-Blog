@@ -8,6 +8,7 @@ import {setup} from "../setup";
 import {ClientConfig, PublicCache} from "../utils/cache";
 import {getDB} from "../utils/di";
 import {extractImage} from "../utils/image";
+import {markdownToPlainText} from "../utils/markdown";
 import {bindTagToPost} from "./tag";
 
 export function FeedService() {
@@ -16,29 +17,80 @@ export function FeedService() {
         .use(setup())
         .group('/feed', (group) =>
             group
-                .get('/', async ({ admin, set, query: { page, limit, type } }) => {
+                .get('/', async ({ admin, set, query: { page, limit, type, cursor } }) => {
                     if ((type === 'draft' || type === 'unlisted') && !admin) {
                         set.status = 403;
                         return 'Permission denied';
                     }
                     const cache = PublicCache();
-                    const page_num = (page ? page > 0 ? page : 1 : 1) - 1;
                     const limit_num = limit ? +limit > 50 ? 50 : +limit : 20;
-                    const cacheKey = `feeds_${type}_${page_num}_${limit_num}`;
-                    const cached = await cache.get(cacheKey);
-                    if (cached) {
-                        return cached;
-                    }
+                    
+                    let cacheKey = '';
+                    let hasNext = false;
+                    let feed_list = [];
+                    
                     const where = type === 'draft' ? eq(feeds.draft, 1) : type === 'unlisted' ? and(eq(feeds.draft, 0), eq(feeds.listed, 0)) : and(eq(feeds.draft, 0), eq(feeds.listed, 1));
+                    
                     const size = await db.select({ count: count() }).from(feeds).where(where);
                     if (size[0].count === 0) {
                         return {
                             size: 0,
                             data: [],
-                            hasNext: false
+                            hasNext: false,
+                            cursor: null
                         }
                     }
-                    const feed_list = (await db.query.feeds.findMany({
+                    
+                    if (cursor) {
+                        const [cursorTimestamp, cursorId] = cursor.split('|').map(val => parseInt(val));
+                        
+                        const cursorCondition = or(
+                            lt(feeds.createdAt, new Date(cursorTimestamp)),
+                            and(
+                                eq(feeds.createdAt, new Date(cursorTimestamp)),
+                                lt(feeds.id, cursorId)
+                            )
+                        );
+                        
+                        feed_list = (await db.query.feeds.findMany({
+                            where: and(where, cursorCondition),
+                            columns: admin ? undefined : {
+                                draft: false,
+                                listed: false
+                            },
+                            with: {
+                                hashtags: {
+                                    columns: {},
+                                    with: {
+                                        hashtag: {
+                                            columns: { id: true, name: true }
+                                        }
+                                    }
+                                }, user: {
+                                    columns: { id: true, username: true, avatar: true }
+                                }
+                            },
+                            orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
+                            limit: limit_num + 1,
+                        })).map(({ content, hashtags, summary, ...other }) => {
+                            const avatar = extractImage(content);
+                            return {
+                                summary: summary.length > 0 ? summary : markdownToPlainText(content, 100),
+                                hashtags: hashtags.map(({ hashtag }) => hashtag),
+                                avatar,
+                                ...other
+                            }
+                        });
+                    } else {
+                        const page_num = (page ? page > 0 ? page : 1 : 1) - 1;
+                        cacheKey = `feeds_${type}_${page_num}_${limit_num}`;
+                        
+                        const cached = await cache.get(cacheKey);
+                        if (cached) {
+                            return cached;
+                        }
+                        
+                        feed_list = (await db.query.feeds.findMany({
                         where: where,
                         columns: admin ? undefined : {
                             draft: false,
@@ -56,29 +108,38 @@ export function FeedService() {
                                 columns: { id: true, username: true, avatar: true }
                             }
                         },
-                        orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.updatedAt)],
+                            orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
                         offset: page_num * limit_num,
                         limit: limit_num + 1,
                     })).map(({ content, hashtags, summary, ...other }) => {
-                        // 提取首图
                         const avatar = extractImage(content);
                         return {
-                            summary: summary.length > 0 ? summary : content.length > 100 ? content.slice(0, 100) : content,
+                            summary: summary.length > 0 ? summary : markdownToPlainText(content, 100),
                             hashtags: hashtags.map(({ hashtag }) => hashtag),
                             avatar,
                             ...other
                         }
                     });
-                    let hasNext = false
-                    if (feed_list.length === limit_num + 1) {
-                        feed_list.pop();
-                        hasNext = true;
                     }
+                    
+                    let nextCursor = null;
+                    if (feed_list.length === limit_num + 1) {
+                        const lastItem = feed_list.pop();
+                        hasNext = true;
+                        
+                        if (lastItem) {
+                            const createdAt = new Date(lastItem.createdAt).getTime();
+                            nextCursor = `${createdAt}|${lastItem.id}`;
+                        }
+                    }
+                    
                     const data = {
                         size: size[0].count,
                         data: feed_list,
-                        hasNext
+                        hasNext,
+                        cursor: nextCursor
                     }
+                    
                     if (type === undefined || type === 'normal' || type === '')
                         await cache.set(cacheKey, data);
                     return data
@@ -86,7 +147,8 @@ export function FeedService() {
                     query: t.Object({
                         page: t.Optional(t.Numeric()),
                         limit: t.Optional(t.Numeric()),
-                        type: t.Optional(t.String())
+                        type: t.Optional(t.String()),
+                        cursor: t.Optional(t.String())
                     })
                 })
                 .get('/timeline', async () => {
@@ -106,7 +168,6 @@ export function FeedService() {
                         set.status = 403;
                         return 'Permission denied';
                     }
-                    // input check
                     if (!title) {
                         set.status = 400;
                         return 'Title is required';
@@ -116,14 +177,17 @@ export function FeedService() {
                         return 'Content is required';
                     }
 
-                    // check exist
-                    const exist = await db.query.feeds.findFirst({
-                        where: or(eq(feeds.title, title), eq(feeds.content, content))
+                    try {
+                        if (alias) {
+                            const existAlias = await db.query.feeds.findFirst({
+                                where: eq(feeds.alias, alias)
                     });
-                    if (exist) {
+                            if (existAlias) {
                         set.status = 400;
-                        return 'Content already exists';
+                                return 'Alias already exists';
+                            }
                     }
+                        
                     const date = createdAt ? new Date(createdAt) : new Date();
                     const result = await db.insert(feeds).values({
                         title,
@@ -136,13 +200,23 @@ export function FeedService() {
                         createdAt: date,
                         updatedAt: date
                     }).returning({ insertedId: feeds.id });
+                        
+                        if (tags && tags.length > 0) {
                     await bindTagToPost(db, result[0].insertedId, tags);
+                        }
+                        
                     await PublicCache().deletePrefix('feeds_');
+                        
                     if (result.length === 0) {
                         set.status = 500;
                         return 'Failed to insert';
                     } else {
                         return result[0];
+                        }
+                    } catch (error) {
+                        console.error("Error creating feed:", error);
+                        set.status = 500;
+                        return "Internal Server Error";
                     }
                 }, {
                     body: t.Object({
@@ -179,7 +253,6 @@ export function FeedService() {
                         set.status = 404;
                         return 'Not found';
                     }
-                    // permission check
                     if (feed.draft && feed.uid !== uid && !admin) {
                         set.status = 403;
                         return 'Permission denied';
@@ -188,8 +261,6 @@ export function FeedService() {
                     const { hashtags, ...other } = feed;
                     const hashtags_flatten = hashtags.map((f) => f.hashtag);
 
-
-                    // update visits
                     const config = ClientConfig()
                     const enableVisit = await config.getOrDefault('counter.enabled', true);
                     let pv = 0;
@@ -251,10 +322,7 @@ export function FeedService() {
                             const summary =
                                 feed.summary.length > 0
                                     ? feed.summary
-                                    : feed.content.length > 50
-                                        ? feed.content.slice(0, 50)
-                                        : feed.content;
-                            // NOTE: feed.id is adjacent feed, id_num is current feed id
+                                    : markdownToPlainText(feed.content, 50);
                             const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                             const cacheData = {
                             id: feed.id,
@@ -270,7 +338,6 @@ export function FeedService() {
                         return null;
                     }
                     const getPreviousFeed = async () => {
-                        // It should return an array with only one data item
                         const previousFeedCached = await cache.getBySuffix(
                             `previous_feed_${id_num}`,
                         );
@@ -474,7 +541,7 @@ export function FeedService() {
                 orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
             }))).map(({ content, hashtags, summary, ...other }) => {
                 return {
-                    summary: summary.length > 0 ? summary : content.length > 100 ? content.slice(0, 100) : content,
+                    summary: summary.length > 0 ? summary : markdownToPlainText(content, 100),
                     hashtags: hashtags.map(({ hashtag }) => hashtag),
                     ...other
                 }
@@ -527,7 +594,7 @@ export function FeedService() {
                 const draft = item?.['wp:status'] !== 'publish';
                 const contentHtml = item?.['content:encoded'];
                 const content = html2md(contentHtml);
-                const summary = content.length > 100 ? content.slice(0, 100) : content;
+                const summary = markdownToPlainText(content, 100);
                 let tags = item?.['category'];
                 if (tags && Array.isArray(tags)) {
                     tags = tags.map((tag: any) => tag + '');

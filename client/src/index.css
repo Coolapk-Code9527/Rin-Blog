@@ -1,5 +1,73 @@
 @import "./base.css";
 
+/* 主题色变量 */
+:root {
+  /* 主题色变量 */
+  --theme-color: #6366f1;
+  --theme-color-light: rgba(99, 102, 241, 0.1);
+  --theme-color-medium: rgba(99, 102, 241, 0.3);
+  --theme-color-dark: #4f46e5;
+  
+  /* 背景色 */
+  --bg-white: #ffffff;
+  --bg-gray-50: #f9fafb;
+  --bg-gray-100: #f3f4f6;
+  --bg-popup: rgba(255, 255, 255, 0.95);
+  --bg-popup-hover: #f3f4f6;
+  
+  /* 文本色 */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-placeholder: #9ca3af;
+  
+  /* 过渡时间 */
+  --transition-fast: 0.15s;
+  --transition-normal: 0.25s;
+  --transition-slow: 0.4s;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* 圆角 */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
+}
+
+/* 深色模式变量 */
+.dark {
+  --theme-color: #818cf8; /* 稍微亮一点的主题色 */
+  --theme-color-light: rgba(129, 140, 248, 0.15);
+  --theme-color-medium: rgba(129, 140, 248, 0.3);
+  --theme-color-dark: #6366f1;
+  
+  /* 背景色 */
+  --bg-white: #111827;
+  --bg-gray-50: #1f2937;
+  --bg-gray-100: #374151;
+  --bg-popup: rgba(31, 41, 55, 0.95);
+  --bg-popup-hover: #374151;
+  
+  /* 文本色 */
+  --text-primary: #f9fafb;
+  --text-secondary: #e5e7eb;
+  --text-tertiary: #d1d5db;
+  --text-placeholder: #9ca3af;
+  
+  /* 阴影 - 深色模式下要更深一些 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
 /* 优化的字体方案 */
 :root {
   /* 无衬线字体优先级 */
@@ -47,9 +115,73 @@ textarea:focus {
   outline: none;
 }
 
-.wmde-markdown {
-  @apply bg-w;
+.wmde-markdown, .toc-content, .markdown-body {
+  @apply leading-relaxed text-gray-800 dark:text-gray-200;
   font-family: var(--font-sans) !important;
+  line-height: 1.8;
+}
+
+.wmde-markdown h1, .toc-content h1, .markdown-body h1 {
+  @apply text-3xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white;
+  line-height: 1.3;
+}
+
+.wmde-markdown h2, .toc-content h2, .markdown-body h2 {
+  @apply text-2xl font-bold mt-6 mb-4 pb-1 text-gray-900 dark:text-white;
+  line-height: 1.4;
+}
+
+.wmde-markdown h3, .toc-content h3, .markdown-body h3 {
+  @apply text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white;
+  line-height: 1.4;
+}
+
+.wmde-markdown h4, .toc-content h4, .markdown-body h4 {
+  @apply text-lg font-bold mt-4 mb-3 text-gray-900 dark:text-white;
+  line-height: 1.5;
+}
+
+.wmde-markdown h5, .toc-content h5, .markdown-body h5 {
+  @apply text-base font-bold mt-4 mb-2 text-gray-900 dark:text-white;
+}
+
+.wmde-markdown h6, .toc-content h6, .markdown-body h6 {
+  @apply text-sm font-bold mt-4 mb-2 text-gray-700 dark:text-gray-300;
+}
+
+.wmde-markdown p, .toc-content p, .markdown-body p {
+  @apply my-4 text-gray-800 dark:text-gray-200;
+}
+
+.wmde-markdown a, .toc-content a, .markdown-body a {
+  @apply text-blue-600 dark:text-blue-400 font-medium no-underline relative;
+  transition: all 0.2s;
+}
+
+.wmde-markdown a:hover, .toc-content a:hover, .markdown-body a:hover {
+  @apply text-blue-800 dark:text-blue-300;
+}
+
+.wmde-markdown a:not(.anchor):after, .toc-content a:not(.anchor):after, .markdown-body a:not(.anchor):after {
+  content: '';
+  @apply absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 dark:bg-blue-400;
+  transition: width 0.3s ease;
+}
+
+.wmde-markdown a:not(.anchor):hover:after, .toc-content a:not(.anchor):hover:after, .markdown-body a:not(.anchor):hover:after {
+  @apply w-full;
+}
+
+.wmde-markdown strong, .toc-content strong, .markdown-body strong {
+  @apply font-bold text-gray-900 dark:text-white;
+}
+
+.wmde-markdown em, .toc-content em, .markdown-body em {
+  @apply italic text-gray-800 dark:text-gray-200;
+}
+
+.wmde-markdown del, .toc-content del, .markdown-body del {
+  @apply line-through text-gray-500 dark:text-gray-400;
 }
 
 .w-md-editor {
@@ -148,6 +280,120 @@ ul {
   }
 }
 
+/* 添加搜索框展开动画 */
+@keyframes expandWidth {
+  0% {
+    width: 0;
+    opacity: 0;
+    transform: scaleX(0.7);
+  }
+  70% {
+    opacity: 0.7;
+  }
+  100% {
+    width: 100%;
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.animate-expandWidth {
+  animation: expandWidth 0.25s cubic-bezier(0.38, 0.1, 0.36, 0.9) forwards;
+  transform-origin: right;
+  will-change: transform, opacity, width;
+}
+
+/* 搜索下拉菜单动画 */
+@keyframes slideDown {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.2s cubic-bezier(0.38, 0.1, 0.36, 0.9) forwards;
+  will-change: transform, opacity;
+}
+
+/* 搜索框样式优化 */
+.search-container {
+  position: relative;
+}
+
+.search-container input {
+  transition: all 0.2s;
+}
+
+.search-container input:focus {
+  box-shadow: 0 0 0 3px rgba(var(--theme-rgb, 99, 102, 241), 0.2);
+}
+
+/* 搜索按钮焦点状态样式 */
+.search-container button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--theme-color-light, rgba(99, 102, 241, 0.1));
+  border-radius: var(--radius-md, 0.375rem);
+}
+
+/* 搜索历史下拉菜单优化 */
+.search-container [role="listbox"] {
+  max-height: min(400px, calc(100vh - 200px));
+  box-shadow: var(--shadow-xl, 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08));
+  animation: scaleIn var(--transition-normal, 0.25s) ease-out forwards;
+  transform-origin: top center;
+  border-radius: var(--radius-xl, 0.75rem);
+  overflow: hidden;
+}
+
+/* 增强搜索历史项 */
+.search-container [role="listbox"] button {
+  transition: all 0.15s ease-out;
+}
+
+.search-container [role="listbox"] button:hover i,
+.search-container [role="listbox"] button:focus i {
+  color: var(--theme-color, #6366f1);
+}
+
+/* 改进搜索历史标题样式 */
+.search-container [role="listbox"] .sticky {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.dark .search-container [role="listbox"] .sticky {
+  background-color: rgba(31, 41, 55, 0.95);
+}
+
+/* 响应式调整 */
+@media (max-width: 640px) {
+  .search-container [role="listbox"] {
+    max-height: min(300px, calc(100vh - 250px));
+  }
+  
+  /* 移动端优化动画效果 */
+  .animate-expandWidth {
+    animation-duration: 0.2s;
+  }
+  
+  .animate-slideDown {
+    animation-duration: 0.15s;
+  }
+}
+
+/* 低性能设备优化 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-expandWidth,
+  .animate-slideDown {
+    animation-duration: 0.01s;
+    transition-duration: 0.01s;
+  }
+}
+
 .popup-content {
   animation: anvil 0.3s cubic-bezier(0.38, 0.1, 0.36, 0.9) forwards;
 }
@@ -160,19 +406,102 @@ ul {
   animation: anvil 0.3s cubic-bezier(0.38, 0.1, 0.36, 0.9) forwards;
 }
 
+/* 表格样式优化 */
 .table {
-  @apply w-full border-collapse my-4;
-  overflow-x: auto;
-  display: block !important;
+  @apply w-full border-collapse my-6 overflow-hidden;
+}
+
+/* 使表格在大屏幕上优雅显示 */
+@media (min-width: 768px) {
+  .table {
+    display: table !important;
+    overflow: hidden;
+  }
+}
+
+/* 在小屏幕上启用水平滚动 */
+@media (max-width: 767px) {
+  .table {
+    overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 .table th,
 .table td {
-  @apply border border-slate-500 dark:border-slate-300 px-4 py-2;
+  @apply px-4 py-3 text-left;
+  border: none;
+  position: relative;
+}
+
+/* 表格条纹样式 */
+.table tr:nth-child(even) {
+  @apply bg-gray-50 dark:bg-gray-800/50;
+}
+
+.table tr {
+  @apply hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors;
 }
 
 .table th {
-  @apply bg-slate-200 dark:bg-slate-700;
+  @apply bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium text-sm uppercase tracking-wider sticky top-0;
+}
+
+/* 表格单元格间隔线（垂直） */
+.table td:not(:last-child)::after {
+  display: none;
+}
+
+/* 表格响应式优化：在小屏幕上显示垂直布局 */
+@media (max-width: 640px) {
+  .table.responsive {
+    display: block !important;
+  }
+  
+  .table.responsive thead {
+    display: none;
+  }
+  
+  .table.responsive tbody, 
+  .table.responsive tr, 
+  .table.responsive td {
+    display: block;
+    width: 100%;
+  }
+  
+  .table.responsive tr {
+    @apply overflow-hidden;
+  }
+  
+  .table.responsive td {
+    @apply py-3 px-4;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    text-align: left;
+    gap: 8px;
+  }
+  
+  .table.responsive td::before {
+    content: attr(data-label);
+    @apply font-medium text-gray-700 dark:text-gray-300 text-left min-w-[80px] max-w-[80px];
+    flex-shrink: 0;
+  }
+  
+  .table.responsive td::after {
+    display: none;
+  }
+  
+  /* URL表格在手机端的特殊处理 */
+  .url-table.responsive td {
+    flex-direction: column;
+    @apply py-2;
+  }
+  
+  .url-table.responsive td::before {
+    @apply mb-1 max-w-full min-w-full;
+  }
 }
 
 /* TOC Style */
@@ -291,4 +620,386 @@ a.toc-link {
   0% { opacity: 0.5; }
   50% { opacity: 1; }
   100% { opacity: 0.5; }
+}
+
+/* 确保图标元素及其伪元素使用 RemixIcon 字体 */
+i[class^="ri-"], i[class*=" ri-"],
+i[class^="ri-"]::before, i[class*=" ri-"]::before {
+  font-family: 'RemixIcon' !important; /* 确保这里的名称和 RemixIcon CSS 中的一致 */
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-rendering: auto;
+}
+
+/* 表格变体样式 */
+/* 紧凑型表格 */
+.table.table-compact th,
+.table.table-compact td {
+  @apply px-3 py-2 text-sm;
+}
+
+/* 无边框表格 */
+.table.table-borderless tr {
+  @apply border-b-0;
+}
+
+/* 卡片式表格 */
+.table.table-card {
+  @apply bg-white dark:bg-gray-900 rounded-xl overflow-hidden;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.table.table-card th {
+  @apply bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300;
+}
+
+/* 彩色表头表格 */
+.table.table-colored-header th {
+  @apply bg-gradient-to-r from-blue-500 to-purple-600 text-white;
+}
+
+/* 分组表格 */
+.table.table-grouped tr.group-header td {
+  @apply bg-gray-100 dark:bg-gray-800 font-medium;
+}
+
+/* 带状态指示表格 */
+.table tr.status-success {
+  @apply bg-green-50 dark:bg-green-900/20;
+}
+
+.table tr.status-warning {
+  @apply bg-yellow-50 dark:bg-yellow-900/20;
+}
+
+.table tr.status-error {
+  @apply bg-red-50 dark:bg-red-900/20;
+}
+
+/* 强调第一列 */
+.table.table-first-col-emphasis td:first-child {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+/* 全局表格优化 */
+.markdown-body table,
+.wmde-markdown table {
+  @apply !table;
+}
+
+/* URL表格样式定制 */
+.url-table {
+  @apply shadow-none;
+}
+
+.url-table th {
+  @apply bg-gray-50 dark:bg-gray-800 text-xs;
+}
+
+.url-table td:nth-child(2) { /* URL列 */
+  @apply font-mono text-blue-600 dark:text-blue-400 break-all;
+}
+
+.url-table tr:hover {
+  @apply bg-blue-50 dark:bg-blue-900/20;
+}
+
+/* 列表样式优化 */
+.wmde-markdown ul, .toc-content ul, .markdown-body ul,
+.wmde-markdown ol, .toc-content ol, .markdown-body ol {
+  @apply my-4 pl-6 space-y-2;
+}
+
+.wmde-markdown ul, .toc-content ul, .markdown-body ul {
+  @apply list-disc;
+}
+
+.wmde-markdown ol, .toc-content ol, .markdown-body ol {
+  @apply list-decimal;
+}
+
+.wmde-markdown ul ul, .toc-content ul ul, .markdown-body ul ul,
+.wmde-markdown ol ol, .toc-content ol ol, .markdown-body ol ol,
+.wmde-markdown ul ol, .toc-content ul ol, .markdown-body ul ol,
+.wmde-markdown ol ul, .toc-content ol ul, .markdown-body ol ul {
+  @apply my-2;
+}
+
+.wmde-markdown li, .toc-content li, .markdown-body li {
+  @apply mb-1;
+}
+
+.wmde-markdown li p, .toc-content li p, .markdown-body li p {
+  @apply my-1;
+}
+
+/* 任务列表样式优化 */
+.wmde-markdown ul.contains-task-list, 
+.toc-content ul.contains-task-list, 
+.markdown-body ul.contains-task-list {
+  @apply list-none pl-2;
+}
+
+.wmde-markdown ul.contains-task-list li.task-list-item, 
+.toc-content ul.contains-task-list li.task-list-item, 
+.markdown-body ul.contains-task-list li.task-list-item {
+  @apply flex items-start space-x-2 my-2;
+}
+
+.wmde-markdown ul.contains-task-list li.task-list-item input[type="checkbox"], 
+.toc-content ul.contains-task-list li.task-list-item input[type="checkbox"], 
+.markdown-body ul.contains-task-list li.task-list-item input[type="checkbox"] {
+  @apply mt-1 mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-blue-600;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.wmde-markdown ul.contains-task-list li.task-list-item input[type="checkbox"]:checked, 
+.toc-content ul.contains-task-list li.task-list-item input[type="checkbox"]:checked, 
+.markdown-body ul.contains-task-list li.task-list-item input[type="checkbox"]:checked {
+  @apply bg-blue-600 dark:bg-blue-500;
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+/* 引用块样式优化 */
+.wmde-markdown blockquote, .toc-content blockquote, .markdown-body blockquote {
+  @apply my-6 pl-4 py-1 border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 rounded-r-md italic text-gray-700 dark:text-gray-300;
+}
+
+.wmde-markdown blockquote p, .toc-content blockquote p, .markdown-body blockquote p {
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+/* 水平线样式优化 */
+.wmde-markdown hr, .toc-content hr, .markdown-body hr {
+  @apply my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent;
+}
+
+/* 代码块样式优化 */
+.wmde-markdown code, .toc-content code, .markdown-body code {
+  @apply font-mono text-sm px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700;
+}
+
+.wmde-markdown pre, .toc-content pre, .markdown-body pre {
+  @apply my-6 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.wmde-markdown pre code, .toc-content pre code, .markdown-body pre code {
+  @apply block p-4 overflow-x-auto text-sm bg-transparent border-0 text-gray-800 dark:text-gray-200;
+}
+
+.wmde-markdown pre.language-mermaid, .toc-content pre.language-mermaid, .markdown-body pre.language-mermaid {
+  @apply bg-transparent border-0 shadow-none mx-auto;
+}
+
+/* 图片样式优化 */
+.wmde-markdown img, .toc-content img, .markdown-body img {
+  @apply my-4 rounded-lg max-w-full h-auto mx-auto shadow-md object-cover;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.wmde-markdown img:hover, .toc-content img:hover, .markdown-body img:hover {
+  transform: scale(1.01);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* 图片标题优化 */
+.wmde-markdown img + em, .toc-content img + em, .markdown-body img + em {
+  @apply block text-center text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-4;
+}
+
+/* KaTeX 公式样式优化 */
+.katex-display {
+  @apply my-4 py-2 overflow-x-auto overflow-y-hidden;
+  scrollbar-width: thin;
+}
+
+.katex-display::-webkit-scrollbar {
+  @apply h-1.5;
+}
+
+.katex-display::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.katex-display::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+/* 高亮标记 */
+.wmde-markdown mark, .toc-content mark, .markdown-body mark {
+  @apply bg-yellow-100 dark:bg-yellow-800/40 px-1 rounded text-gray-900 dark:text-gray-100;
+}
+
+/* 导航栏相关动画和样式 */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 导航项悬停效果 */
+a[aria-current="page"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2px;
+  background: linear-gradient(to right, rgba(var(--theme-rgb, 99, 102, 241), 0.4), rgba(var(--theme-rgb, 99, 102, 241), 1), rgba(var(--theme-rgb, 99, 102, 241), 0.4));
+  border-radius: 2px;
+}
+
+/* 用户菜单和语言菜单动画 */
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+[role="menu"], 
+[role="listbox"] {
+  animation: scaleIn var(--transition-normal, 0.25s) ease-out forwards;
+  transform-origin: top right;
+  box-shadow: var(--shadow-xl, 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08));
+  background-color: var(--bg-popup, rgba(255, 255, 255, 0.95));
+  border-radius: var(--radius-xl, 0.75rem);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark [role="menu"],
+.dark [role="listbox"] {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 按钮交互效果 */
+button:focus-visible {
+  outline: 2px solid var(--theme-color-light, rgba(99, 102, 241, 0.2));
+  outline-offset: 2px;
+}
+
+/* 增强头像交互 */
+button img.rounded-full {
+  transition: all var(--transition-fast, 0.2s) ease-out;
+}
+
+button:hover img.rounded-full,
+button:focus img.rounded-full {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md, 0 3px 10px rgba(0, 0, 0, 0.1));
+}
+
+/* 导航条吸顶效果 */
+.fixed.z-\[10000\] {
+  transition: background-color var(--transition-normal, 0.3s) ease, 
+              backdrop-filter var(--transition-normal, 0.3s) ease, 
+              box-shadow var(--transition-normal, 0.3s) ease, 
+              border-color var(--transition-normal, 0.3s) ease;
+}
+
+/* 导航项共享样式 */
+.NavItem-common {
+  position: relative;
+  overflow: hidden;
+}
+
+.NavItem-common::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--theme-color, #6366f1);
+  border-radius: inherit;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: transform var(--transition-fast, 0.2s) ease, opacity var(--transition-fast, 0.2s) ease;
+  z-index: -1;
+}
+
+.NavItem-common:hover::before {
+  opacity: 0.05;
+  transform: scale(1);
+}
+
+/* 移动端抽屉菜单动画 */
+@media (max-width: 1023px) {
+  .fixed[aria-modal="true"] {
+    animation: slideInRight 0.3s cubic-bezier(0.38, 0.1, 0.36, 0.9) forwards;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 输入框效果增强 */
+input.focus\:ring-2:focus {
+  box-shadow: 0 0 0 3px rgba(var(--theme-rgb, 99, 102, 241), 0.2);
+}
+
+/* 增强搜索容器效果 */
+.search-container button:hover i {
+  transform: translateY(-1px);
+}
+
+.search-container button:active i {
+  transform: translateY(1px);
+}
+
+/* 语言菜单优化 */
+[role="menu"] {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform-origin: top right;
+  animation: scaleIn 0.25s ease-out forwards;
+}
+
+/* 语言项悬停效果 */
+[role="menu"] button, 
+[role="listbox"] button {
+  position: relative;
+  overflow: hidden;
+}
+
+[role="menu"] button::before,
+[role="listbox"] button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  z-index: -1;
+  border-radius: inherit;
+}
+
+[role="menu"] button:hover::before,
+[role="listbox"] button:hover::before {
+  opacity: 0.05;
+  transform: scale(1);
 }

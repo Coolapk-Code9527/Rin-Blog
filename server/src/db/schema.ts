@@ -56,7 +56,8 @@ export const users = sqliteTable("users", {
 export const comments = sqliteTable("comments", {
     id: integer("id").primaryKey(),
     feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
-    userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+    nickname: text("nickname"),
     content: text("content").notNull(),
     createdAt: created_at,
     updatedAt: updated_at,

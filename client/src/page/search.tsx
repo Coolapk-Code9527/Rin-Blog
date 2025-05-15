@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
+import { Pagination } from "../components/pagination"
 import { client } from "../main"
 import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
@@ -74,21 +75,15 @@ export function SearchPage({ keyword }: { keyword: string }) {
                                 <FeedCard key={id} id={id} {...feed} />
                             ))}
                         </div>
-                        <div className="wauto flex flex-row items-center mt-4 ani-show">
-                            {page > 1 &&
-                                <Link href={`?page=${(page - 1)}`}
-                                    className={`text-sm font-normal rounded-full px-4 py-2 text-white bg-theme`}>
-                                    {t('previous')}
-                                </Link>
-                            }
-                            <div className="flex-1" />
-                            {feeds?.hasNext &&
-                                <Link href={`?page=${(page + 1)}`}
-                                    className={`text-sm font-normal rounded-full px-4 py-2 text-white bg-theme`}>
-                                    {t('next')}
-                                </Link>
-                            }
-                        </div>
+                        
+                        {(page > 1 || feeds?.hasNext) && (
+                            <Pagination 
+                                currentPage={page}
+                                totalPages={Math.ceil(feeds?.size / limit) || 1}
+                                basePath={`/search/${keyword}`}
+                                className="ani-show"
+                            />
+                        )}
                     </Waiting>
                 </main>
             </Waiting>

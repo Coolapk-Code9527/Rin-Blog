@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import { getCookie } from 'typescript-cookie'
-import { DefaultParams, PathPattern, Route, Switch } from 'wouter'
+import { DefaultParams, PathPattern, Route, Switch, useRoute } from 'wouter'
 import Footer from './components/footer'
 import { Header } from './components/header'
 import { Padding } from './components/padding'
@@ -123,15 +123,15 @@ function App() {
             </RouteMe>
 
             <RouteWithIndex path="/feed/:id">
-              {(params, TOC, clean) => {
-                return (<FeedPage id={params.id || ""} TOC={TOC} clean={clean} />)
+              {(params, TOC) => {
+                return (<FeedPage id={params.id || ""} TOC={TOC} />)
               }}
             </RouteWithIndex>
 
             <RouteWithIndex path="/:alias">
-              {(params, TOC, clean) => {
+              {(params, TOC) => {
                 return (
-                  <FeedPage id={params.alias || ""} TOC={TOC} clean={clean} />
+                  <FeedPage id={params.alias || ""} TOC={TOC} />
                 )
               }}
             </RouteWithIndex>
@@ -190,11 +190,20 @@ function RouteMe({ path, children, headerComponent, paddingClassName }:
 
 
 function RouteWithIndex({ path, children }:
-  { path: PathPattern, children: (params: DefaultParams, TOC: () => JSX.Element, clean: (id: string) => void) => React.ReactNode }) {
-  const { TOC, cleanup } = useTableOfContents(".toc-content");
+  { path: PathPattern, children: (params: DefaultParams, TOC: () => JSX.Element) => React.ReactNode }) {
+  const paramsRef = useRef<DefaultParams | null>(null);
+  const [routeMatch, params] = useRoute(path);
+  
+  // 当路由参数变化时，更新 paramsRef
+  if (routeMatch && (!paramsRef.current || paramsRef.current.id !== params.id)) {
+    paramsRef.current = params;
+  }
+  
+  const { TOC } = useTableOfContents(".toc-content", paramsRef.current?.id);
+  
   return (<RouteMe path={path} headerComponent={TOCHeader({ TOC: TOC })} paddingClassName='mx-4'>
     {params => {
-      return children(params, TOC, cleanup)
+      return children(params, TOC)
     }}
   </RouteMe>)
 }

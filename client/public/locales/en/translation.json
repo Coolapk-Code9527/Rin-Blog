@@ -40,11 +40,30 @@
   "comment": {
     "empty": "Comment cannot be empty",
     "placeholder": {
-      "title": "Say something..."
+      "title": "Say something"
     },
     "submit": "Submit Comment",
     "success": "Comment successful",
-    "title": "Comment"
+    "title": "Comment",
+    "anonymous": {
+      "title": "Anonymous Comment",
+      "nickname": "Nickname",
+      "nickname_empty": "Nickname cannot be empty",
+      "nickname_placeholder": "Please enter your nickname",
+      "switch": "Comment Anonymously",
+      "tag": "Anonymous"
+    },
+    "empty": {
+      "list": "No comments yet. Be the first to comment!"
+    },
+    "list": {
+      "title": "All Comments ({{count}})"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{page}}"
+    }
   },
   "comparison": "Comparison",
   "confirm": "Confirm",
@@ -126,6 +145,7 @@
   "next": "Next Page",
   "no_more": "No More",
   "preview": "Preview",
+  "preview.image": "Image",
   "previous": "Previous Page",
   "publish": {
     "success": "Publish successful",

@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet'
 import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
+import { Pagination } from "../components/pagination"
 import { client } from "../main"
 import { ProfileContext } from "../state/profile"
 import { headersWithAuth } from "../utils/auth"
@@ -103,21 +104,15 @@ export function FeedsPage() {
                                 <FeedCard key={id} id={id} {...feed} />
                             ))}
                         </div>
-                        <div className="wauto flex flex-row items-center mt-4 ani-show">
-                            {page > 1 &&
-                                <Link href={`/?type=${listState}&page=${(page - 1)}`}
-                                    className={`text-sm font-normal rounded-full px-4 py-2 text-white bg-theme`}>
-                                    {t('previous')}
-                                </Link>
-                            }
-                            <div className="flex-1" />
-                            {feeds[listState]?.hasNext &&
-                                <Link href={`/?type=${listState}&page=${(page + 1)}`}
-                                    className={`text-sm font-normal rounded-full px-4 py-2 text-white bg-theme`}>
-                                    {t('next')}
-                                </Link>
-                            }
-                        </div>
+                        
+                        {(page > 1 || feeds[listState]?.hasNext) && (
+                            <Pagination 
+                                currentPage={page}
+                                totalPages={Math.ceil(feeds[listState]?.size / limit) || 1}
+                                basePath={`/?type=${listState}`}
+                                className="ani-show"
+                            />
+                        )}
                     </Waiting>
                 </main>
             </Waiting>

@@ -14,14 +14,21 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         createdAt: Date, updatedAt: Date
     }) {
     const { t } = useTranslation()
+    console.log("[FeedCard] Original summary:", summary);
+
+    // 预处理 summary，移除 Markdown 图片链接
+    const cleanedSummary = summary ? summary.replace(/!\[.*?\]\(.*?\)/g, "") : ""; 
+    console.log("[FeedCard] Cleaned summary:", cleanedSummary);
+
     return useMemo(() => (
         <>
-            <Link href={`/feed/${id}`} target="_blank" className="w-full rounded-2xl bg-w my-2 p-6 duration-300 bg-button">
+            <Link href={`/feed/${id}`} target="_blank" className="w-full rounded-2xl bg-w my-2 p-0 duration-300 bg-button overflow-hidden">
                 {avatar &&
-                    <div className="flex flex-row items-center mb-2 rounded-xl overflow-clip">
+                    <div className="w-full h-auto overflow-hidden">
                         <img src={avatar} alt=""
-                            className="object-cover object-center w-full max-h-96 hover:scale-105 translation duration-300" />
+                            className="object-cover w-full h-auto" />
                     </div>}
+                <div className="p-6">
                 <h1 className="text-xl font-bold text-gray-700 dark:text-white text-pretty overflow-hidden">
                     {title}
                 </h1>
@@ -43,7 +50,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     </span>}
                 </p>
                 <div className="text-pretty overflow-hidden dark:text-neutral-500">
-                    <SimplifiedMarkdown content={summary} />
+                    <SimplifiedMarkdown content={cleanedSummary} />
                 </div>
                 {hashtags.length > 0 &&
                     <div className="mt-2 flex flex-row flex-wrap justify-start gap-x-2">
@@ -52,7 +59,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                         ))}
                     </div>
                 }
+                </div>
             </Link>
         </>
-    ), [id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt])
+    ), [id, title, avatar, draft, listed, top, cleanedSummary, hashtags, createdAt, updatedAt])
 }
