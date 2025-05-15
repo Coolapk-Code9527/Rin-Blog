@@ -154,10 +154,10 @@ export const createPlaceholder = (
 // 生成低质量图片预览
 export const generateLowQualityPreview = async (url: string): Promise<string> => {
     try {
-        // 使用优化参数生成低质量预览图
+        // 使用优化参数生成低质量预览图，但提高质量和尺寸参数
         return await optimizeImageUrl(url, {
-            width: 20, // 非常小的宽度
-            quality: 20, // 低质量
+            width: 40, // 增加预览尺寸，使预览更清晰
+            quality: 40, // 提高预览质量
             format: 'auto' // 自动选择最佳格式
         });
     } catch (error) {

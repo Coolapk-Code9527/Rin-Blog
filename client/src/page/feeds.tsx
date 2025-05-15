@@ -190,7 +190,7 @@ export function FeedsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
-                <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
+                <main className="w-full min-h-[80vh] flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
                     <div className="wauto w-full max-w-6xl">
                         {/* 页面标题和过滤器区域 */}
                         <div className="flex flex-col space-y-4 mb-8 animate-fadeIn">
@@ -228,17 +228,6 @@ export function FeedsPage() {
                                     </div>
                                 )}
                             </div>
-                            
-                            {/* 描述区域移除 "article_description"，并移除 new_article 按钮 */}
-                            {(listState === 'draft' || listState === 'unlisted') && (
-                                <div className="flex justify-between items-center flex-wrap gap-2">
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 italic max-w-xl">
-                                        {listState === 'draft' 
-                                            ? t('draft_description') || "文章草稿区，仅自己可见" 
-                                            : t('unlisted_description') || "未列出的文章，有链接才能访问"}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                         
                         {/* 内容区域 */}

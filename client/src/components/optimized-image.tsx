@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { optimizeImageUrl, generateSrcSet, createPlaceholder, generateLowQualityPreview } from '../utils/image-optimization';
 
 interface OptimizedImageProps {
@@ -23,7 +23,7 @@ export function OptimizedImage({
     height,
     className = '',
     objectFit = 'cover',
-    quality = 75,
+    quality = 85,
     lazyLoad = true,
     blur = true,
     placeholder: customPlaceholder,
@@ -32,158 +32,153 @@ export function OptimizedImage({
 }: OptimizedImageProps) {
     const [optimizedSrc, setOptimizedSrc] = useState<string>('');
     const [srcSet, setSrcSet] = useState<string>('');
-    const [currentSrc, setCurrentSrc] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [hasError, setHasError] = useState<boolean>(false);
-    const [blurActive, setBlurActive] = useState<boolean>(blur);
+    const [blurSrc, setBlurSrc] = useState<string>('');
     const [placeholder, setPlaceholder] = useState<string>(
         customPlaceholder || createPlaceholder(width || 100, height || 100)
     );
-    const imgRef = useRef<HTMLImageElement>(null);
 
+    // 优化图片URL
     useEffect(() => {
-        if (!src) {
-            setHasError(true);
-            setIsLoading(false); 
-            setBlurActive(false);
-            return;
-        }
+        if (!src) return;
 
+        // 重置状态
         setIsLoading(true);
         setHasError(false);
-        setBlurActive(blur);
-        setCurrentSrc(blur ? placeholder : '');
 
-        let isMounted = true;
+        // 直接设置原始图片URL，避免过度处理导致模糊
+        setOptimizedSrc(src);
 
-        const loadImages = async () => {
+        // 优化主图片URL，只用于srcset
+        const optimizeImage = async () => {
             try {
+                // 生成srcset
+                if (width) {
+                    const set = await generateSrcSet(src, undefined, {
+                        quality,
+                        format: 'auto'
+                    });
+                    setSrcSet(set);
+                }
+
+                // 生成低质量预览，提高预览质量
                 if (blur) {
                     const lowQualityPreview = await generateLowQualityPreview(src);
-                    if (isMounted && blurActive) {
-                        setCurrentSrc(lowQualityPreview);
-                    }
+                    setBlurSrc(lowQualityPreview);
                 }
-
-                const optimized = await optimizeImageUrl(src, { width, height, quality, format: 'auto' });
-                if (isMounted) {
-                    setOptimizedSrc(optimized);
-                    if (!blurActive || !currentSrc || currentSrc === placeholder ){
-                         setCurrentSrc(optimized);
-                    } else {
-                        const tempImg = new Image();
-                        tempImg.src = currentSrc;
-                        tempImg.onload = () => {
-                            if(isMounted) setCurrentSrc(optimized);
-                        };
-                        tempImg.onerror = () => {
-                            if(isMounted) setCurrentSrc(optimized);
-                        }
-                    }
-                }
-
-                if (width) {
-                    const srcsetVal = await generateSrcSet(src, undefined, { quality, format: 'auto' });
-                    if (isMounted) setSrcSet(srcsetVal);
-                }
-
             } catch (error) {
                 console.error('Failed to optimize image:', error);
-                if (isMounted) {
-                    setHasError(true);
-                    setIsLoading(false);
-                    setBlurActive(false);
-                    setCurrentSrc(placeholder);
-                    onError?.();
-                }
+                setHasError(true);
+                onError?.();
             }
         };
 
-        loadImages();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [src, width, height, quality, blur, customPlaceholder, onError]);
-
-    const handleImageLoad = () => {
-        if (currentSrc === optimizedSrc) {
+        optimizeImage();
+        
+        // 预加载原始图片以确保质量
+        const img = new Image();
+        img.onload = () => {
             setIsLoading(false);
-            setBlurActive(false);
             onLoad?.();
-        }
+        };
+        img.onerror = () => {
+            setIsLoading(false);
+            setHasError(true);
+            onError?.();
+        };
+        img.src = src;
+        
+    }, [src, width, height, quality, blur, onError, onLoad]);
+
+    // 处理图片加载完成事件
+    const handleImageLoad = () => {
+        setIsLoading(false);
+        onLoad?.();
     };
 
+    // 处理图片加载错误事件
     const handleImageError = () => {
-        if (currentSrc === optimizedSrc || !blurActive) { 
-            setHasError(true);
-            setIsLoading(false);
-            setBlurActive(false);
-            onError?.();
-        } else if (blurActive && currentSrc !== optimizedSrc) {
-            setCurrentSrc(optimizedSrc);
-        }
+        setIsLoading(false);
+        setHasError(true);
+        onError?.();
     };
-    
+
+    // 构建图片样式
     const imageStyle = {
         objectFit,
-        opacity: !isLoading && !hasError && currentSrc !== placeholder ? 1 : 0,
-        transition: 'opacity 0.5s ease-in-out',
-        width: '100%',
-        height: '100%',
-        transform: !isLoading && !hasError && currentSrc !== placeholder ? 'scale(1)' : (blurActive? 'scale(1.1)' : 'scale(1)'),
+        opacity: isLoading ? 0 : 1,
+        transition: 'opacity 0.3s ease-in-out',
+        width: width ? `${width}px` : '100%',
+        height: height ? `${height}px` : '100%'
     };
 
-    const placeholderStyle: React.CSSProperties = {
+    // 构建模糊背景样式，减少模糊程度
+    const blurStyle = {
+        backgroundImage: blurSrc ? `url(${blurSrc})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        transition: 'opacity 0.5s ease-in-out',
-        opacity: (isLoading || hasError) ? 1 : 0,
-    };
-    
-    const blurOverlayStyle: React.CSSProperties = {
-         ...placeholderStyle,
-         backgroundImage: blurActive && currentSrc !== optimizedSrc && currentSrc !== placeholder ? `url(${currentSrc})` : undefined,
-         backgroundSize: 'cover',
-         backgroundPosition: 'center',
-         filter: 'blur(10px)',
-         transform: 'scale(1.1)',
-         opacity: blurActive && (isLoading || currentSrc !== optimizedSrc) ? 1 : 0,
+        filter: 'blur(5px)',
+        opacity: isLoading ? 1 : 0,
+        transition: 'opacity 0.3s ease-in-out'
     };
 
     return (
-        <div className={`relative overflow-hidden ${className}`} style={{ width: width ? `${width}px` : '100%', height: height ? `${height}px` : 'auto', aspectRatio: (width && height) ? `${width}/${height}` : undefined }}>
-            <img src={placeholder} alt="" role="presentation" style={placeholderStyle} className={`${(isLoading || hasError) ? 'animate-pulse' : ''} bg-gray-100 dark:bg-gray-800`} />
+        <div className={`relative overflow-hidden ${className}`} style={{ width: width, height: height }}>
+            {/* 加载中模糊效果或占位符 */}
+            {isLoading && (
+                <>
+                    {blurSrc ? (
+                        <div style={blurStyle as React.CSSProperties} />
+                    ) : (
+                        <div 
+                            className="absolute inset-0 bg-gray-100 dark:bg-gray-800 animate-pulse" 
+                            style={{ backgroundImage: `url(${placeholder})` }}
+                        />
+                    )}
+                </>
+            )}
 
-            {blur && <div style={blurOverlayStyle} />} 
+            {/* 图片加载错误显示 */}
+            {hasError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
+                    <svg
+                        className="w-10 h-10 text-gray-400 dark:text-gray-500 mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                    </svg>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">图片加载失败</span>
+                </div>
+            )}
 
-            {!hasError && currentSrc && currentSrc !== placeholder && (
+            {/* 优化后的图片 */}
+            {optimizedSrc && !hasError && (
                 <img
-                    ref={imgRef}
-                    src={currentSrc}
-                    srcSet={currentSrc === optimizedSrc ? srcSet : undefined}
-                    sizes={currentSrc === optimizedSrc && srcSet ? "(max-width: 768px) 100vw, 50vw" : undefined}
+                    src={optimizedSrc}
+                    srcSet={srcSet || undefined}
+                    sizes={srcSet ? "(max-width: 768px) 100vw, 50vw" : undefined}
                     alt={alt}
                     loading={lazyLoad ? "lazy" : "eager"}
                     decoding="async"
                     onLoad={handleImageLoad}
                     onError={handleImageError}
                     style={imageStyle as React.CSSProperties}
-                    className={`absolute top-0 left-0 w-full h-full`}
+                    className={`w-full h-full transition-transform duration-500 ${!isLoading ? 'transform-gpu scale-100' : 'transform-gpu scale-105'}`}
                 />
-            )}
-
-            {hasError && !isLoading && (
-                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/80 dark:bg-gray-800/80">
-                    <svg className="w-10 h-10 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">图片加载失败</span>
-                </div>
             )}
         </div>
     );
