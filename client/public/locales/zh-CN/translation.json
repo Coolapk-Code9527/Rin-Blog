@@ -13,7 +13,9 @@
     "search": {
       "placeholder": "请输入关键字",
       "title": "搜索",
-      "title$keyword": "搜索：{{keyword}}"
+      "title$keyword": "搜索：{{keyword}}",
+      "history": "搜索历史",
+      "clear_history": "清除历史"
     },
     "title": "文章",
     "top": {
@@ -298,6 +300,7 @@
   "drop_or_click_to_upload": "拖放图片至此或点击上传",
   "editing": "编辑中...",
   "languages": "语言",
+  "logged_in": "已登录",
   "unnamed": "未命名",
   "published_at": "发布于",
   "date_format": {
@@ -385,5 +388,7 @@
   "code": {
     "copy": "复制",
     "copied": "已复制!"
-  }
+  },
+  "user": "用户",
+  "menu": "菜单"
 }

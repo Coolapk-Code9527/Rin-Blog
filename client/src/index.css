@@ -262,7 +262,8 @@ ul {
 }
 
 .search-container input:focus {
-  box-shadow: 0 0 0 3px rgba(var(--theme-rgb, 99, 102, 241), 0.2);
+  box-shadow: 0 0 0 3px rgba(var(--theme-rgb, 99, 102, 241), 0.3), 
+              0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 搜索按钮焦点状态样式 */
@@ -270,10 +271,88 @@ ul {
   outline: none;
 }
 
-/* 搜索历史下拉菜单优化 */
-.search-container [role="listbox"] {
-  max-height: min(400px, calc(100vh - 200px));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+/* 搜索历史下拉菜单样式优化 */
+#mobile-search-history,
+#search-history-dropdown {
+  max-height: min(320px, calc(100vh - 180px));
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--theme-rgb, 99, 102, 241), 0.3) transparent;
+}
+
+#mobile-search-history::-webkit-scrollbar,
+#search-history-dropdown::-webkit-scrollbar {
+  width: 4px;
+}
+
+#mobile-search-history::-webkit-scrollbar-track,
+#search-history-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#mobile-search-history::-webkit-scrollbar-thumb,
+#search-history-dropdown::-webkit-scrollbar-thumb {
+  background-color: rgba(var(--theme-rgb, 99, 102, 241), 0.3);
+  border-radius: 4px;
+}
+
+/* 搜索历史项样式增强 */
+button[role="option"] {
+  position: relative;
+  overflow: hidden;
+}
+
+button[role="option"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(var(--theme-rgb, 99, 102, 241), 0.08);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+  z-index: 0;
+}
+
+button[role="option"]:hover::before {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+button[role="option"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 移动端菜单滚动条样式 */
+.fixed[aria-modal="true"] .overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--theme-rgb, 99, 102, 241), 0.3) transparent;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 95%,
+    rgba(var(--theme-rgb, 99, 102, 241), 0.05) 100%
+  );
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-attachment: local;
+}
+
+.fixed[aria-modal="true"] .overflow-y-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.fixed[aria-modal="true"] .overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fixed[aria-modal="true"] .overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(var(--theme-rgb, 99, 102, 241), 0.3);
+  border-radius: 4px;
 }
 
 /* 响应式调整 */
@@ -761,8 +840,28 @@ a[aria-current="page"]::after {
   transform: translateX(-50%);
   width: 60%;
   height: 2px;
-  background: linear-gradient(to right, rgba(var(--theme-rgb, 99, 102, 241), 0.4), rgba(var(--theme-rgb, 99, 102, 241), 1), rgba(var(--theme-rgb, 99, 102, 241), 0.4));
+  background: linear-gradient(to right, 
+    rgba(var(--theme-rgb, 99, 102, 241), 0.2), 
+    rgba(var(--theme-rgb, 99, 102, 241), 1), 
+    rgba(var(--theme-rgb, 99, 102, 241), 0.2)
+  );
   border-radius: 2px;
+  animation: borderPulse 2s infinite;
+}
+
+@keyframes borderPulse {
+  0% {
+    opacity: 0.7;
+    transform: translateX(-50%) scaleX(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scaleX(1.0);
+  }
+  100% {
+    opacity: 0.7;
+    transform: translateX(-50%) scaleX(0.9);
+  }
 }
 
 /* 用户菜单和语言菜单动画 */
@@ -862,4 +961,33 @@ input.focus\:ring-2:focus {
 
 .search-container button:active i {
   transform: translateY(1px);
+}
+
+/* 语言切换菜单中国旗图标特殊效果 */
+button:hover .mr-3:first-child,
+button:hover .mr-2\.5:first-child {
+  animation: flagWave 1s ease-in-out;
+}
+
+@keyframes flagWave {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(5deg);
+  }
+  50% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* 用户菜单增强效果 */
+button img.rounded-full:hover {
+  box-shadow: 0 0 0 4px rgba(var(--theme-rgb, 99, 102, 241), 0.3);
 }

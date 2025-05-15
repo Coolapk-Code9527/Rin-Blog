@@ -363,10 +363,10 @@ function MobileMenu() {
                             {/* 关闭按钮 */}
                             <button 
                                 onClick={onClose} 
-                                className="absolute top-3 right-3 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-theme/30 z-10"
+                                className="absolute top-3 right-3 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 z-10 transition-all duration-200"
                                 aria-label={t('close')}
                             >
-                                <i className="ri-close-line text-xl" />
+                                <i className="ri-close-line text-xl"></i>
                             </button>
 
                             <div className="flex flex-col h-full">
@@ -381,7 +381,7 @@ function MobileMenu() {
                                                         alt={profile.name || t('user')} 
                                                         className="w-20 h-20 rounded-full border-2 border-gray-300 dark:border-gray-600 shadow-md transition-transform duration-200 hover:scale-105" 
                                                     />
-                                                    <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></span>
+                                                    <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900 shadow-sm"></span>
                                                 </div>
                                                 <div className="text-center">
                                                     <p className="text-lg font-medium text-gray-800 dark:text-gray-200">{profile.name}</p>
@@ -389,7 +389,7 @@ function MobileMenu() {
                                                 </div>
                                                 <button 
                                                     onClick={handleLogout}
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-colors duration-150 font-medium"
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-colors duration-150 font-medium shadow-sm hover:shadow"
                                                 >
                                                     <i className="ri-logout-circle-line"></i>
                                                     <span>{t('logout')}</span>
@@ -524,11 +524,11 @@ function MobileMenu() {
                                         <div className="relative">
                                             <button 
                                                 onClick={() => setShowLanguages(!showLanguages)}
-                                                className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-theme/30"
+                                                className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-theme/30 shadow-sm"
                                                 aria-expanded={showLanguages}
                                             >
                                                 <div className="flex items-center">
-                                                    <i className="ri-translate-2 mr-2 text-gray-500 dark:text-gray-400"></i>
+                                                    <i className="ri-translate-2 mr-2.5 text-gray-500 dark:text-gray-400 text-base"></i>
                                                     <span className="font-medium">
                                                         {languages.find(lang => lang.code === i18n.language)?.name || t('languages')}
                                                     </span>
@@ -542,10 +542,10 @@ function MobileMenu() {
                                                         <button 
                                                             key={code} 
                                                             onClick={() => changeLanguage(code)}
-                                                            className={`w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 ${i18n.language === code ? 'bg-theme/10 text-theme font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                                                            className={`w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 ${i18n.language === code ? 'bg-theme/10 text-theme font-medium' : 'text-gray-700 dark:text-gray-300'}`}
                                                         >
                                                             <div className="flex items-center">
-                                                                <span className="mr-2 text-base">{flag}</span>
+                                                                <span className="mr-3 text-lg">{flag}</span>
                                                                 <span>{name}</span>
                                                             </div>
                                                             {i18n.language === code && <i className="ri-check-line"></i>}
@@ -659,14 +659,14 @@ function LanguageSwitch({ className }: { className?: string }) {
                             <button 
                                 key={code} 
                                 onClick={() => changeLanguage(code)}
-                                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-150 flex items-center justify-between gap-2
+                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-150 flex items-center justify-between gap-2
                                     ${i18n.language === code 
                                         ? 'bg-theme/10 text-theme font-medium' 
                                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                                 role="menuitem"
                             >
                                 <div className="flex items-center">
-                                    <span className="mr-2 text-base">{flag}</span>
+                                    <span className="mr-2.5 text-lg">{flag}</span>
                                     <span>{name}</span>
                                 </div>
                                 {i18n.language === code && <i className="ri-check-line text-theme"></i>}
