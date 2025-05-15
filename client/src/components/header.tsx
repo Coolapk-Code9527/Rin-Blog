@@ -538,7 +538,7 @@ function MobileMenu() {
                                                 <i className={`ri-arrow-${showLanguages ? 'up' : 'down'}-s-line transition-transform duration-200`}></i>
                                             </button>
 
-                                            <div className={`absolute w-full z-30 overflow-hidden transition-all duration-200 ease-in-out ${showLanguages ? 'max-h-60' : 'max-h-0'}`}>
+                                            <div className={`absolute top-full left-0 right-0 z-30 ${showLanguages ? 'block' : 'hidden'}`} style={{ maxHeight: '300px' }}>
                                                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-slideDown mt-1">
                                                     {languages.map(({ code, name, flag }) => (
                                                         <button 
@@ -647,10 +647,11 @@ function LanguageSwitch({ className }: { className?: string }) {
             
             {isOpen && (
                 <div 
-                    className="absolute top-full right-0 mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/50 dark:border-gray-700/50 z-20 animate-slideDown"
+                    className="absolute top-full right-0 mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/50 dark:border-gray-700/50 z-50 animate-slideDown"
                     role="menu"
                     aria-orientation="vertical"
                     aria-labelledby="language-menu"
+                    style={{ maxHeight: '300px', overflowY: 'auto' }}
                 >
                     <p className='font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center'>
                         <i className="ri-translate-2 mr-1.5 text-theme"></i>

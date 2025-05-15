@@ -1021,159 +1021,153 @@ button img.rounded-full:hover {
   max-height: 300px; /* 限制最大高度 */
 }
 
-/* 文章卡片样式增强 */
-.wauto a[href^="/feed/"] {
+/* 美化文章卡片 */
+.bg-button {
   position: relative;
-  z-index: 1;
-  isolation: isolate;
-  will-change: transform, box-shadow;
-  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+  background-color: var(--bg);
+  transition: all 0.3s ease;
 }
 
-.wauto a[href^="/feed/"]:hover {
+.bg-button:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.05);
 }
 
-.wauto a[href^="/feed/"]::before {
+.bg-button::after {
   content: '';
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background: linear-gradient(130deg, rgba(var(--theme-rgb, 99, 102, 241), 0.15), transparent);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--theme-rgb, 99, 102, 241), 0) 0%,
+    rgba(var(--theme-rgb, 99, 102, 241), 0.03) 100%
+  );
   opacity: 0;
-  transition: opacity 0.4s;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: inherit;
 }
 
-.wauto a[href^="/feed/"]:hover::before {
+.bg-button:hover::after {
   opacity: 1;
 }
 
-.wauto a[href^="/feed/"] img {
-  transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+/* 优化标签样式 */
+.hashtag {
+  transition: all 0.2s ease;
 }
 
-.wauto a[href^="/feed/"]:hover img {
-  transform: scale(1.05);
-}
-
-/* 文章列表空状态动画 */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.wauto .flex.flex-col.items-center.justify-center {
-  animation: fadeInUp 0.5s ease-out forwards;
-}
-
-/* 文章列表进入动画 */
-.animate-fadeIn {
-  animation: fadeIn 0.5s ease-out forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.space-y-6 > a {
-  opacity: 0;
-  animation: fadeInStagger 0.5s ease-out forwards;
-}
-
-@keyframes fadeInStagger {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.space-y-6 > a:nth-child(1) { animation-delay: 0.1s; }
-.space-y-6 > a:nth-child(2) { animation-delay: 0.2s; }
-.space-y-6 > a:nth-child(3) { animation-delay: 0.3s; }
-.space-y-6 > a:nth-child(4) { animation-delay: 0.4s; }
-.space-y-6 > a:nth-child(5) { animation-delay: 0.5s; }
-.space-y-6 > a:nth-child(n+6) { animation-delay: 0.6s; }
-
-/* 文章页面标题区域 */
-.py-6.border-b {
-  animation: fadeInDown 0.6s ease-out;
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 增强标签交互效果 */
-button.inline-flex.items-center.px-2\.5.py-1.rounded-full {
-  will-change: transform;
-  transition: all 0.2s ease-out;
-}
-
-button.inline-flex.items-center.px-2\.5.py-1.rounded-full:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 8px -2px rgba(var(--theme-rgb, 99, 102, 241), 0.15);
-}
-
-/* 文章列表页布局优化 */
-@media (min-width: 768px) {
-  .wauto.w-full.max-w-4xl {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .wauto.w-full.max-w-4xl {
-    max-width: 5xl;
-  }
-}
-
-/* 分页控件优化 */
-.pagination {
-  transition: opacity 0.3s ease;
-}
-
-.pagination:hover {
-  opacity: 0.9;
-}
-
-.pagination button {
-  transition: transform 0.2s ease, background-color 0.2s ease;
-}
-
-.pagination button:hover:not(:disabled) {
+.hashtag:hover {
   transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-/* 低性能设备考虑 */
-@media (prefers-reduced-motion: reduce) {
-  .wauto a[href^="/feed/"],
-  .wauto a[href^="/feed/"] img,
-  .animate-fadeIn,
-  .space-y-6 > a,
-  .py-6.border-b,
-  .pagination button {
-    animation: none;
-    transition: none;
+/* 增强导航项样式 */
+.NavItem-common {
+  position: relative;
+  overflow: hidden;
+}
+
+.NavItem-common::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  border-radius: inherit;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  z-index: -1;
+}
+
+.NavItem-common:hover::before {
+  opacity: 0.07;
+  transform: scale(1);
+}
+
+/* 设置文章摘要行数限制 */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;  
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 优化语言选择器样式 */
+[role="menu"], 
+[role="listbox"] {
+  animation: scaleIn 0.2s cubic-bezier(0.2, 0, 0.13, 1.5) forwards;
+  transform-origin: top right;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden !important;
+}
+
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
   }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 添加导航栏选中项的脉动效果 */
+@media (min-width: 1024px) {
+  a[aria-current="page"]::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(to right, 
+      rgba(var(--theme-rgb, 99, 102, 241), 0.2), 
+      rgba(var(--theme-rgb, 99, 102, 241), 1), 
+      rgba(var(--theme-rgb, 99, 102, 241), 0.2)
+    );
+    border-radius: 2px;
+    transform: translateX(-50%);
+    animation: borderPulse 2s infinite;
+  }
+}
+
+@keyframes borderPulse {
+  0% {
+    opacity: 0.7;
+    width: 50%;
+  }
+  50% {
+    opacity: 1;
+    width: 70%;
+  }
+  100% {
+    opacity: 0.7;
+    width: 50%;
+  }
+}
+
+/* 移动端导航项选中效果 */
+div[aria-modal="true"] a[aria-current="page"] {
+  background-color: rgba(var(--theme-rgb, 99, 102, 241), 0.1);
+  position: relative;
+}
+
+div[aria-modal="true"] a[aria-current="page"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 3px;
+  background-color: rgba(var(--theme-rgb, 99, 102, 241), 1);
+  border-radius: 0 4px 4px 0;
 }
