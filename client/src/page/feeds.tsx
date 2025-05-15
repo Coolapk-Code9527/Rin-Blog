@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext, useCallback } from "react"
+import React from "react"
 import { Helmet } from 'react-helmet'
 import { Link, useLocation } from "wouter"
 import { FeedCard } from "../components/feed_card"
@@ -10,12 +10,6 @@ import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { useTranslation } from "react-i18next";
-
-// 添加useSearch hook
-const useSearch = () => {
-    const [location] = useLocation();
-    return location.split('?')[1] || '';
-};
 
 type FeedsData = {
     size: number,
@@ -31,8 +25,8 @@ type FeedsMap = {
 
 // 懒加载Feed卡片组件
 function LazyFeedCard({ id, ...props }: any) {
-    const [isVisible, setIsVisible] = useState(false);
-    const cardRef = useRef<HTMLDivElement>(null);
+    const [isVisible, setIsVisible] = React.useState(false);
+    const cardRef = React.useRef<HTMLDivElement>(null);
     const { t } = useTranslation();
     
     // 为占位符生成渐变背景
@@ -62,7 +56,7 @@ function LazyFeedCard({ id, ...props }: any) {
     
     const placeholderGradient = generatePlaceholderGradient();
 
-    useEffect(() => {
+    React.useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
@@ -131,22 +125,24 @@ function LazyFeedCard({ id, ...props }: any) {
 }
 
 export function FeedsPage() {
-    const { t } = useTranslation()
-    const query = new URLSearchParams(useSearch());
-    const profile = useContext(ProfileContext);
-    const [listState, _setListState] = useState<FeedType>(query.get("type") as FeedType || 'normal')
-    const [status, setStatus] = useState<'loading' | 'idle'>('idle')
-    const [feeds, setFeeds] = useState<FeedsMap>({
+    const { t } = useTranslation();
+    const [location] = useLocation();
+    const query = new URLSearchParams(location.split('?')[1] || '');
+    
+    const profile = React.useContext(ProfileContext);
+    const [listState, setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal');
+    const [status, setStatus] = React.useState<'loading' | 'idle'>('idle');
+    const [feeds, setFeeds] = React.useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
         unlisted: { size: 0, data: [], hasNext: false },
         normal: { size: 0, data: [], hasNext: false }
-    })
-    const page = tryInt(1, query.get("page"))
-    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
-    const ref = useRef("")
-    const [, navigate] = useLocation();
+    });
     
-    const fetchFeeds = useCallback((type: FeedType, currentPage: number) => {
+    const page = tryInt(1, query.get("page"));
+    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE);
+    const ref = React.useRef("");
+    
+    const fetchFeeds = React.useCallback((type: FeedType, currentPage: number) => {
         client.feed.index.get({
             query: {
                 page: currentPage,
@@ -182,36 +178,26 @@ export function FeedsPage() {
         });
     }, [limit]);
     
-    const handleTypeChange = useCallback((type: FeedType) => {
-        if (type === listState) {
-            if (page !== 1) {
-                navigate(`/?type=${type}&page=1`);
-            }
-            return;
-        }
-        navigate(`/?type=${type}&page=1`);
-    }, [listState, navigate, page]);
-    
-    useEffect(() => {
+    React.useEffect(() => {
         const currentTypeFromQuery = query.get("type") as FeedType || 'normal';
         const currentPageFromQuery = tryInt(1, query.get("page"));
         
         const key = `${currentPageFromQuery}-${currentTypeFromQuery}`;
-        if (ref.current === key && listState === currentTypeFromQuery) return;
-
+        if (ref.current === key) return;
+        
         if (currentTypeFromQuery !== listState) {
-            _setListState(currentTypeFromQuery);
+            setListState(currentTypeFromQuery);
         }
         
         setStatus('loading');
         fetchFeeds(currentTypeFromQuery, currentPageFromQuery);
         ref.current = key;
-    }, [query, fetchFeeds, listState]);
+    }, [location, fetchFeeds, listState]);
     
     return (
         <>
             <Helmet>
-                <title>{`${t('article.title')} - ${process.env.NAME}`}</title>
+                <title>{`${t('article.title')} - ${process.env.NAME || siteName}`}</title>
                 <meta property="og:site_name" content={siteName} />
                 <meta property="og:title" content={t('article.title')} />
                 <meta property="og:image" content={process.env.AVATAR} />
@@ -225,47 +211,46 @@ export function FeedsPage() {
                             <div className="flex items-center justify-between py-4 sm:py-6 border-b border-gray-200/50 dark:border-gray-700/50">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
                                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group">
-                            {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
+                                        {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                                     </h1>
                                     <div className="px-2 py-1 mt-1 sm:mt-0 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm self-start sm:self-auto">
                                         <i className="ri-article-line mr-1.5"></i>
-                                {t('article.total$count', { count: feeds[listState]?.size })}
+                                        {t('article.total$count', { count: feeds[listState]?.size })}
                                     </div>
                                 </div>
                                 
-                            {profile?.permission &&
+                                {profile?.permission && (
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
-                                        <button 
-                                            onClick={() => handleTypeChange('draft')} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'draft' 
-                                            ? "bg-amber-100 text-amber-700 dark:bg-amber-700/30 dark:text-amber-400 ring-1 ring-amber-400 dark:ring-amber-600 hover:bg-amber-200 dark:hover:bg-amber-700/40" 
-                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"} shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2 dark:focus:ring-offset-gray-900`}>
+                                        <Link href="/?type=draft&page=1"
+                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${
+                                                listState === 'draft' 
+                                                ? "bg-amber-100 text-amber-700 dark:bg-amber-700/30 dark:text-amber-400 ring-1 ring-amber-400 dark:ring-amber-600 hover:bg-amber-200 dark:hover:bg-amber-700/40" 
+                                                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                                            } shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2 dark:focus:ring-offset-gray-900`}>
                                             <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('draft_bin')}</span>
-                                        </button>
-                                        <button 
-                                            onClick={() => handleTypeChange('unlisted')} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'unlisted' 
-                                            ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-700/30 dark:text-indigo-400 ring-1 ring-indigo-400 dark:ring-indigo-600 hover:bg-indigo-200 dark:hover:bg-indigo-700/40" 
-                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"} shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 dark:focus:ring-offset-gray-900`}>
+                                        </Link>
+                                        <Link href="/?type=unlisted&page=1"
+                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${
+                                                listState === 'unlisted' 
+                                                ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-700/30 dark:text-indigo-400 ring-1 ring-indigo-400 dark:ring-indigo-600 hover:bg-indigo-200 dark:hover:bg-indigo-700/40" 
+                                                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                                            } shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 dark:focus:ring-offset-gray-900`}>
                                             <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('unlisted')}</span>
-                                        </button>
-                                        <button 
-                                            onClick={() => handleTypeChange('normal')} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${listState === 'normal' 
-                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30 hover:bg-theme/20" 
-                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"} shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-theme/50 focus:ring-offset-2 dark:focus:ring-offset-gray-900`}>
+                                        </Link>
+                                        <Link href="/?type=normal&page=1"
+                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 flex items-center ${
+                                                listState === 'normal' 
+                                                ? "bg-theme/10 text-theme ring-1 ring-theme/30 hover:bg-theme/20" 
+                                                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                                            } shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-theme/50 focus:ring-offset-2 dark:focus:ring-offset-gray-900`}>
                                             <i className="ri-global-line mr-1 sm:mr-1.5"></i>
                                             <span className="hidden xs:inline">{t('article.title')}</span>
-                                        </button>
+                                        </Link>
                                     </div>
-                                }
-                            </div>
-                            
-                            <div className="flex justify-between items-center -mt-2 sm:mt-0">
-                                {/* 移除文章描述区域 */}
+                                )}
                             </div>
                         </div>
                         
@@ -295,17 +280,17 @@ export function FeedsPage() {
                             )}
                             
                             {(page > 1 || feeds[listState]?.hasNext) && feeds[listState].data.length > 0 && (
-                            <Pagination 
-                                currentPage={page}
-                                totalPages={Math.ceil(feeds[listState]?.size / limit) || 1}
-                                basePath={`/?type=${listState}`}
-                                className="ani-show"
-                            />
-                        )}
-                    </Waiting>
+                                <Pagination 
+                                    currentPage={page}
+                                    totalPages={Math.ceil(feeds[listState]?.size / limit) || 1}
+                                    basePath={`/?type=${listState}`}
+                                    className="ani-show"
+                                />
+                            )}
+                        </Waiting>
                     </div>
                 </main>
             </Waiting>
         </>
-    )
+    );
 }
