@@ -40,7 +40,8 @@ Rin is a blog based on Cloudflare Pages + Workers + D1 + R2. It does not require
 16. Seamless dark mode integration with automatic system preference detection
 17. Responsive dual-column article grid layout for desktop with optimized single-column view on mobile devices
 18. Enhanced article card design with consistent height, elegant visual style and improved accessibility
-19. For more features, please refer to https://xeu.life
+19. Smart tag coloring system that automatically assigns visually distinct colors to different tags
+20. For more features, please refer to https://xeu.life
 
 # User Interface
 - **Responsive Navigation**: Adapts seamlessly to different screen sizes with optimized layouts for desktop, tablet, and mobile devices
@@ -51,8 +52,11 @@ Rin is a blog based on Cloudflare Pages + Workers + D1 + R2. It does not require
 - **Grid Layout**: Efficient use of screen space with dual-column grid on desktop and single column on mobile
 - **Unified Design Language**: Consistent spacing, border radius, shadows, and color scheme throughout the interface
 - **Flexible Content Display**: Cards intelligently handle varying content lengths (titles, summaries, tags) while maintaining visual consistency
-- **Improved Tag Design**: Stylish tags with hover effects and better visual hierarchy
+- **Improved Tag Design**: Color-coded tags with intuitive visual hierarchy and pleasing hover animations
 - **Empty State Handling**: Graceful display when no articles are available in the current view
+- **Enhanced Status Indicators**: Clear visual distinction for pinned, draft, and unlisted articles
+- **Semantic HTML Structure**: Properly structured HTML for better SEO and accessibility
+- **Visual Hierarchy**: Clear distinction between different sections of the interface
 
 # Documentation
 [rin-docs.xeu.life](https://rin-docs.xeu.life)

@@ -20,9 +20,10 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     return (
         <>
             <Link href={`/feed/${id}`} 
-                className="group block w-full rounded-2xl bg-w h-full duration-300 bg-button overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                className={`group block w-full rounded-2xl bg-w h-full duration-300 bg-button overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${top === 1 ? 'ring-2 ring-theme/30' : ''}`}
                 aria-labelledby={`article-title-${id}`}
             >
+                {/* 卡片顶部区域 */}
                 {avatar ? (
                     <div className="w-full h-48 overflow-hidden rounded-t-2xl relative">
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
@@ -32,20 +33,33 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                                 (e.target as HTMLImageElement).style.display = 'none';
                             }}
                         />
+                        {top === 1 && (
+                            <div className="absolute top-3 right-3 bg-theme text-white text-xs px-2 py-1 rounded-full shadow-md z-20 flex items-center">
+                                <i className="ri-pushpin-fill mr-1"></i>
+                                {t('article.top.title')}
+                            </div>
+                        )}
                     </div>
                 ) : (
-                    <div className="h-3"></div>
+                    <div className={`h-16 ${top === 1 ? 'bg-gradient-to-r from-theme/5 to-theme/10' : 'bg-gray-50 dark:bg-gray-800/20'} rounded-t-2xl flex items-center justify-center`}>
+                        {top === 1 ? (
+                            <div className="bg-theme/10 text-theme text-xs px-3 py-1.5 rounded-full shadow-sm flex items-center">
+                                <i className="ri-pushpin-fill mr-1.5"></i>
+                                {t('article.top.title')}
+                            </div>
+                        ) : (
+                            <div className="text-gray-400 dark:text-gray-500 opacity-30">
+                                <i className="ri-article-line text-3xl"></i>
+                            </div>
+                        )}
+                    </div>
                 )}
+                
+                {/* 卡片内容区域 */}
                 <div className="p-5 flex-1 flex flex-col">
                     {/* 文章状态指示 */}
-                    {(top === 1 || draft === 1 || listed === 0) && 
-                        <div className="flex flex-wrap gap-2 mb-2">
-                            {top === 1 && 
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-theme/10 text-theme">
-                                    <i className="ri-thumb-up-fill mr-1"></i>
-                                    {t('article.top.title')}
-                                </span>
-                            }
+                    {(draft === 1 || listed === 0) && 
+                        <div className="flex flex-wrap gap-2 mb-3">
                             {draft === 1 && 
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
                                     <i className="ri-draft-line mr-1"></i>
@@ -83,20 +97,24 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     </div>
                     
                     {/* 文章摘要 */}
-                    <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-sm mb-3 leading-relaxed line-clamp-3 min-h-[4.5rem]">
+                    <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-sm leading-relaxed line-clamp-3 min-h-[4.5rem]">
                         <SimplifiedMarkdown content={cleanedSummary} />
                     </div>
                     
                     {/* 标签 - 使用mt-auto将标签推到底部 */}
-                    {hashtags.length > 0 &&
-                        <div className="mt-auto pt-3 flex flex-row flex-wrap items-center gap-2 border-t border-gray-100 dark:border-gray-800">
-                            {hashtags.map(({id, name}) => (
-                                <div key={id} className="animate-fadeIn">
-                                    <HashTag name={name} />
-                                </div>
-                            ))}
-                        </div>
-                    }
+                    <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-800/70 mt-4">
+                        {hashtags.length > 0 ? (
+                            <div className="flex flex-row flex-wrap items-center gap-2">
+                                {hashtags.map(({id, name}) => (
+                                    <div key={id} className="animate-fadeIn">
+                                        <HashTag name={name} />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="h-6"></div> // 占位，保持底部对齐
+                        )}
+                    </div>
                 </div>
             </Link>
         </>
