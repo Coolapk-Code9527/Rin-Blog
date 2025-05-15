@@ -76,67 +76,108 @@ export function FeedsPage() {
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
             </Helmet>
-            <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
-                <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
-                    <div className="wauto w-full max-w-6xl text-start text-black dark:text-white py-6 border-b border-gray-200/50 dark:border-gray-700/50 mb-8">
-                        <div className="flex flex-wrap items-center justify-between mb-4">
-                            <div className="flex items-center space-x-3">
-                                <h1 className="text-3xl font-bold relative group">
-                                    {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
-                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
-                                </h1>
-                                <div className="px-2.5 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center">
-                                    <i className="ri-article-line mr-1.5"></i>
-                                    {t('article.total$count', { count: feeds[listState]?.size })}
-                                </div>
-                            </div>
+            
+            {/* 页面主容器 */}
+            <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
+                {/* 页面标题和分类选项 */}
+                <div className="wauto w-full max-w-6xl">
+                    <div className="py-8">
+                        <h1 className="text-3xl font-bold text-gray-800 dark:text-white relative inline-block group">
+                            {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
+                            <span className="absolute -bottom-1 left-0 w-1/3 h-1 bg-theme group-hover:w-full transition-all duration-300"></span>
+                        </h1>
+                        <p className="mt-2 text-gray-600 dark:text-gray-400">
+                            {listState === 'draft' 
+                                ? t('draft_description') 
+                                : listState === 'unlisted' 
+                                    ? t('unlisted_description')
+                                    : t('articles_description')}
+                        </p>
+                    </div>
+                    
+                    {/* 文章分类导航和统计信息 */}
+                    <div className="mb-8 flex flex-wrap items-center justify-between">
+                        <div className="flex items-center space-x-2 mb-4 sm:mb-0">
+                            <Link href="/?type=normal" 
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${listState === 'normal' 
+                                ? "bg-theme/10 text-theme dark:bg-theme/30 dark:text-white" 
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
+                                <i className="ri-article-line mr-1.5"></i>
+                                {t('all_articles')}
+                            </Link>
                             
-                            {profile?.permission &&
-                                <div className="flex flex-row space-x-3 items-center mt-2 sm:mt-0">
-                                    <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${listState === 'draft' 
-                                        ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
+                            {profile?.permission && (
+                                <>
+                                    <Link href="/?type=draft" 
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${listState === 'draft' 
+                                        ? "bg-theme/10 text-theme dark:bg-theme/30 dark:text-white" 
                                         : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                         <i className="ri-draft-line mr-1.5"></i>
                                         {t('draft_bin')}
                                     </Link>
-                                    <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${listState === 'unlisted' 
-                                        ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
+                                    
+                                    <Link href="/?type=unlisted" 
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${listState === 'unlisted' 
+                                        ? "bg-theme/10 text-theme dark:bg-theme/30 dark:text-white" 
                                         : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
                                         <i className="ri-eye-off-line mr-1.5"></i>
                                         {t('unlisted')}
                                     </Link>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                    <Waiting for={status === 'idle'}>
-                        <div className={`wauto grid grid-cols-1 md:grid-cols-2 gap-6 ani-show max-w-6xl w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
-                            {feeds[listState].data.length > 0 ? (
-                                feeds[listState].data.map(({ id, ...feed }: any) => (
-                                    <FeedCard key={id} id={id} {...feed} />
-                                ))
-                            ) : (
-                                <div className="col-span-full text-center py-20 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
-                                    <i className="ri-inbox-line text-5xl mb-4 block opacity-50"></i>
-                                    <p className="text-lg">{t('no_articles')}</p>
-                                    <p className="text-sm mt-2 text-gray-400 dark:text-gray-500">{t('no_articles_description')}</p>
-                                </div>
+                                </>
                             )}
                         </div>
                         
-                        {(page > 1 || feeds[listState]?.hasNext) && feeds[listState].data.length > 0 && (
-                            <Pagination 
-                                currentPage={page}
-                                totalPages={Math.ceil(feeds[listState]?.size / limit) || 1}
-                                basePath={`/?type=${listState}`}
-                                className="ani-show"
-                            />
+                        {/* 文章数量统计 */}
+                        <div className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                            <i className="ri-file-list-3-line mr-1.5"></i>
+                            {t('article.total$count', { count: feeds[listState]?.size })}
+                        </div>
+                    </div>
+                </div>
+                
+                {/* 文章列表 */}
+                <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
+                    <div className={`wauto grid grid-cols-1 md:grid-cols-2 gap-6 ani-show max-w-6xl w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
+                        {status === 'loading' ? (
+                            // 加载状态
+                            Array(4).fill(0).map((_, index) => (
+                                <div key={index} className="rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse h-[280px]"></div>
+                            ))
+                        ) : feeds[listState].data.length > 0 ? (
+                            // 有文章数据
+                            feeds[listState].data.map(({ id, ...feed }: any) => (
+                                <FeedCard key={id} id={id} {...feed} />
+                            ))
+                        ) : (
+                            // 没有文章数据
+                            <div className="col-span-full text-center py-20 bg-gray-50/50 dark:bg-gray-800/20 rounded-xl border border-gray-200/80 dark:border-gray-700/50">
+                                <div className="flex flex-col items-center justify-center">
+                                    <i className="ri-inbox-line text-5xl mb-4 text-gray-300 dark:text-gray-600"></i>
+                                    <p className="text-lg text-gray-500 dark:text-gray-400">{t('no_articles')}</p>
+                                    <p className="text-sm mt-2 text-gray-400 dark:text-gray-500 max-w-md">{t('no_articles_description')}</p>
+                                    
+                                    {profile?.permission && (
+                                        <Link href="/writing" className="mt-6 px-4 py-2 bg-theme/10 text-theme dark:bg-theme/30 dark:text-white rounded-lg text-sm font-medium hover:bg-theme/20 dark:hover:bg-theme/40 transition-all">
+                                            <i className="ri-edit-line mr-1.5"></i>
+                                            {t('create_new_article')}
+                                        </Link>
+                                    )}
+                                </div>
+                            </div>
                         )}
-                    </Waiting>
-                </main>
-            </Waiting>
+                    </div>
+                    
+                    {/* 分页导航 */}
+                    {(page > 1 || feeds[listState]?.hasNext) && feeds[listState].data.length > 0 && (
+                        <Pagination 
+                            currentPage={page}
+                            totalPages={Math.ceil(feeds[listState]?.size / limit) || 1}
+                            basePath={`/?type=${listState}`}
+                            className="ani-show"
+                        />
+                    )}
+                </Waiting>
+            </main>
         </>
     )
 }
