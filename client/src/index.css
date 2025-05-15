@@ -839,13 +839,13 @@ a[aria-current="page"]::after {
   left: 50%;
   transform: translateX(-50%);
   width: 60%;
-  height: 2px;
+  height: 3px;
   background: linear-gradient(to right, 
     rgba(var(--theme-rgb, 99, 102, 241), 0.2), 
     rgba(var(--theme-rgb, 99, 102, 241), 1), 
     rgba(var(--theme-rgb, 99, 102, 241), 0.2)
   );
-  border-radius: 2px;
+  border-radius: 2px 2px 0 0;
   animation: borderPulse 2s infinite;
 }
 
@@ -992,7 +992,33 @@ button img.rounded-full:hover {
   box-shadow: 0 0 0 4px rgba(var(--theme-rgb, 99, 102, 241), 0.3);
 }
 
-/* 菜单弹出动画 */
+/* 菜单位置样式 */
+.absolute.z-20.inset-x-0 {
+  max-height: 300px;
+  overflow-y: auto;
+  transform-origin: top center;
+  animation: scaleIn 0.25s ease-out forwards;
+}
+
+/* 菜单项左边框样式 */
+.border-l-theme {
+  border-left-color: rgba(var(--theme-rgb, 99, 102, 241), 1) !important;
+  border-left-width: 3px !important;
+}
+
+/* 侧边栏导航项样式 */
+.border-l-2.border-l-theme {
+  border-left-color: rgba(var(--theme-rgb, 99, 102, 241), 1) !important;
+  border-left-width: 3px !important;
+  padding-left: calc(1rem - 1px) !important;
+}
+
+/* 移除菜单活动项动画 */
+a.border-l-theme[aria-current="page"]::after {
+  display: none;
+}
+
+/* 新增菜单动画和样式统一 */
 @keyframes scaleIn {
   from {
     opacity: 0;
@@ -1008,119 +1034,43 @@ button img.rounded-full:hover {
   animation: scaleIn 0.2s ease-out forwards;
 }
 
-/* 统一的下划线样式 */
-.active-underline {
-  position: relative;
+/* 菜单样式统一 */
+div[role="menu"], div[role="listbox"] {
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: theme('colors.gray.400') theme('colors.gray.100');
 }
 
-.active-underline::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, var(--theme-color, #3b82f6) 0%, var(--theme-color-light, #60a5fa) 100%);
-  transform-origin: center;
-  transition: transform 0.3s ease;
+div[role="menu"]::-webkit-scrollbar, div[role="listbox"]::-webkit-scrollbar {
+  width: 5px;
 }
 
-.nav-item:not(.active) .active-underline::after {
-  transform: scaleX(0);
+div[role="menu"]::-webkit-scrollbar-track, div[role="listbox"]::-webkit-scrollbar-track {
+  background: theme('colors.gray.100');
+  border-radius: 10px;
 }
 
-.nav-item:hover .active-underline::after {
-  transform: scaleX(1);
+div[role="menu"]::-webkit-scrollbar-thumb, div[role="listbox"]::-webkit-scrollbar-thumb {
+  background-color: theme('colors.gray.400');
+  border-radius: 10px;
 }
 
-.nav-item.active .active-underline::after {
-  transform: scaleX(1);
-}
-
-/* 下拉菜单导航项样式 */
-.dropdown-nav-item {
-  position: relative;
-  transition: all 0.2s ease;
-  border-radius: 0.375rem;
-}
-
-.dropdown-nav-item:hover {
-  background-color: rgba(var(--theme-color-rgb, 59, 130, 246), 0.05);
-}
-
-.dropdown-nav-item.active {
-  background-color: rgba(var(--theme-color-rgb, 59, 130, 246), 0.1);
-}
-
-/* 移动端菜单的下划线样式 */
-.mobile-menu .nav-item .active-underline::after {
-  bottom: -4px;
+/* 导航栏选中项下划线样式 */
+.text-theme span[class*="absolute bottom-0"] {
   height: 3px;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(to right, theme('colors.rose.500'), theme('colors.pink.400'));
 }
 
-/* 语言选择器增强样式 */
-.language-menu {
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+/* 侧边栏导航项选中样式 */
+a[aria-current="page"].border-l-theme, 
+button.border-l-theme {
+  border-left-color: theme('colors.rose.500');
+  border-left-width: 2px;
 }
 
-.language-option {
-  position: relative;
-  overflow: hidden;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease-out;
-}
-
-.language-option:hover {
-  transform: translateY(-1px);
-}
-
-.language-option:active {
-  transform: translateY(1px);
-}
-
-.language-option:before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: currentColor;
-  opacity: 0;
-  transition: opacity 0.2s;
-  z-index: 0;
-}
-
-.language-option:hover:before {
-  opacity: 0.03;
-}
-
-.language-option.active:before {
-  opacity: 0.06;
-}
-
-.language-option > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* 国旗图标悬停动画 */
-@keyframes flagWave {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(6deg); }
-  50% { transform: rotate(-4deg); }
-  75% { transform: rotate(2deg); }
-  100% { transform: rotate(0deg); }
-}
-
-.language-option:hover .flag-icon {
-  animation: flagWave 1s ease-in-out;
-}
-
-/* 语言选择器弹出层样式 */
-.language-selector-backdrop {
-  background-color: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(2px);
-  animation: fadeIn 0.2s ease-out;
+/* 移除活动菜单项的动画 */
+.animate-fadeIn {
+  display: none;
 }
