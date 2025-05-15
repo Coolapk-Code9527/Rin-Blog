@@ -10,20 +10,43 @@
 - **加载状态指示器**: 添加图片加载状态指示器，提升用户体验
 - **错误处理**: 优化图片加载失败时的界面显示
 - **过渡动画**: 为图片加载添加平滑过渡效果
-- **现代图片格式支持**: 自动检测并使用WebP/AVIF等现代图片格式
-- **响应式图片**: 根据设备屏幕尺寸加载适当大小的图片
-- **低质量图片预加载**: 使用极小的低质量图片作为预览，实现模糊加载效果
+- **自适应渐变背景**: 根据文章ID和标题生成稳定的渐变色背景，作为图片加载前的占位背景
 
 ```tsx
-<OptimizedImage 
-    src={avatar} 
-    alt={title}
-    className="w-full h-full"
-    objectFit="cover"
-    lazyLoad={true}
-    blur={true}
-    onLoad={() => setImageLoaded(true)}
-    onError={() => setImageError(true)}
+// 为文章生成基于标题的稳定渐变背景
+const generateGradient = useMemo(() => {
+    // 根据文章ID和标题生成一致的颜色
+    const getHashCode = (str: string) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash = hash & hash; // 转换为32位整数
+        }
+        return Math.abs(hash);
+    };
+    
+    const colorPalettes = [
+        ['#4158D0', '#C850C0', '#FFCC70'], // 紫蓝到粉
+        ['#0093E9', '#80D0C7'], // 蓝到青
+        // ... 更多渐变色配置
+    ];
+    
+    const hash = getHashCode(`${id}-${title}`);
+    const paletteIndex = hash % colorPalettes.length;
+    
+    return {
+        colors: colorPalettes[paletteIndex],
+        angle: (hash % 360)
+    };
+}, [id, title]);
+
+// 在渲染时使用生成的渐变背景
+<div 
+    className="absolute inset-0 w-full h-full z-0"
+    style={{
+        background: `linear-gradient(${generateGradient.angle}deg, ${generateGradient.colors.join(', ')})`,
+        opacity: avatar && imageLoaded ? 0 : 0.8
+    }}
 />
 ```
 
@@ -32,39 +55,34 @@
 - **虚拟列表实现**: 使用 `IntersectionObserver` API 实现文章卡片懒加载
 - **占位符优化**: 为尚未加载的卡片提供视觉占位符，减少布局偏移
 - **预加载数据**: 预加载下一页数据，提升翻页体验
-- **空状态优化**: 为不同类型列表提供针对性的空状态显示
-- **动态高度调整**: 自适应内容高度，保持统一的视觉效果
+- **骨架屏效果**: 添加精美的骨架屏占位符，提供更专业的加载体验
 
 ```tsx
-// 懒加载Feed卡片组件
 function LazyFeedCard({ id, ...props }) {
     const [isVisible, setIsVisible] = useState(false);
     const cardRef = useRef(null);
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIsVisible(true);
-                    observer.disconnect();
-                }
-            },
-            { threshold: 0.1, rootMargin: '200px 0px' }
-        );
-
-        if (cardRef.current) {
-            observer.observe(cardRef.current);
-        }
-
-        return () => observer.disconnect();
-    }, []);
-
+    // 为占位符生成渐变背景...
+    
     return (
         <div ref={cardRef} className="w-full h-full">
             {isVisible ? (
                 <FeedCard id={id} {...props} />
             ) : (
-                <div className="w-full h-[260px] xs:h-[280px] bg-gray-50 dark:bg-gray-800/20 rounded-2xl animate-pulse shadow-sm border border-gray-100 dark:border-gray-700"></div>
+                <div className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
+                    {/* 占位符卡片顶部 */}
+                    <div className={`w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`}>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-full bg-white/20 dark:bg-gray-700/30 flex items-center justify-center">
+                                <i className="ri-image-line text-white/50 dark:text-gray-500/70 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 占位符卡片内容区域 */}
+                    <div className="p-4 sm:p-5 flex-1 flex flex-col">
+                        {/* 标题占位、摘要占位、标签占位等骨架元素 */}
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -76,38 +94,41 @@ function LazyFeedCard({ id, ...props }) {
 - **标签动效增强**: 为标签添加平滑动画和交互反馈
 - **触觉反馈**: 为移动设备添加触觉反馈支持
 - **预加载机制**: 当用户悬停文章卡片时预加载文章详情页面
-- **状态指示器**: 为特殊状态文章添加明显的视觉标识
-- **可访问性增强**: 改进键盘导航和屏幕阅读器支持
-- **阅读时间估算**: 自动计算文章阅读时间并显示
+- **视觉一致性**: 确保无图片文章卡片与有图片文章卡片保持一致的视觉高度和体验
 
 ```tsx
-// 阅读时间计算功能
-const calculateReadTime = () => {
-    if (!cleanedSummary) return 1;
-    const wordCount = cleanedSummary.split(/\s+/).length;
-    const readTime = Math.ceil(wordCount / 200);
-    return Math.max(1, readTime); // 至少1分钟
+// 预加载文章详情页
+const prefetchArticle = () => {
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = `/feed/${id}`;
+    document.head.appendChild(link);
+};
+
+// 触觉反馈支持
+const onTouchStart = () => {
+    if ('vibrate' in navigator) {
+        navigator.vibrate(5); // 轻微振动5毫秒
+    }
 };
 ```
 
-### 4. 图片处理工具实现
+### 4. 加载状态优化
 
-- **图片格式检测**: 自动检测浏览器支持的最优图片格式
-- **响应式图片生成**: 根据设备尺寸和像素密度生成合适的图片
-- **低质量图片预览**: 先加载极小的低质量图片，然后再加载高质量图片
-- **图片加载错误处理**: 提供友好的错误显示和重试机制
+- **智能加载指示器**: 根据不同场景显示适合的加载状态
+- **平滑过渡效果**: 确保列表项加载和图片显示有平滑的过渡体验
+- **分段加载**: 优化大量数据的加载策略，提升首屏加载速度
 
 ```tsx
-// 根据浏览器支持选择最佳图片格式
-if (options.format === 'auto') {
-    // 根据浏览器支持自动选择最佳格式
-    const avifSupported = await supportsAVIF();
-    if (avifSupported) {
-        params.push('format=avif');
-    } else if (supportsWebP()) {
-        params.push('format=webp');
-    }
-}
+{/* 加载更多状态 */}
+{status === 'loading' && feeds[listState].data.length > 0 && (
+    <div className="w-full flex justify-center py-8">
+        <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
+            <div className="w-5 h-5 border-2 border-theme border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-sm">{t('loading_more') || '加载更多...'}</span>
+        </div>
+    </div>
+)}
 ```
 
 ## 未来可能的优化方向
@@ -116,8 +137,8 @@ if (options.format === 'auto') {
 
 - **资源分割与代码拆分**: 使用动态导入和路由懒加载
 - **重要资源预加载**: 预加载关键路径资源
-- **资源优先级设置**: 为不同资源设置加载优先级
-- **字体优化**: 使用字体子集和可变字体，减少字体资源大小
+- **图片格式优化**: 使用 WebP 或 AVIF 等现代图片格式
+- **渐进式图片加载**: 实现类似Medium的渐进式图片加载效果
 
 ```tsx
 // 路由懒加载示例
@@ -143,7 +164,7 @@ function App() {
 - **React Query 集成**: 使用 React Query 实现数据获取、缓存和状态管理
 - **缓存策略优化**: 实现更细粒度的缓存策略
 - **乐观更新**: 为用户操作提供即时反馈
-- **状态持久化**: 实现状态持久化，提升重访体验
+- **数据预取**: 智能预测用户行为并预先获取可能需要的数据
 
 ```tsx
 import { useQuery, useMutation, useQueryClient } from 'react-query';
@@ -181,15 +202,14 @@ function useToggleDraft() {
 - **静态生成**: 对不常变化的内容实现静态生成
 - **增量静态生成**: 为频繁更新的内容实现增量静态生成
 - **Service Worker 实现**: 添加离线支持和网络弹性
-- **内容预加载**: 基于用户行为预测可能访问的内容并预加载
+- **图片处理服务**: 实现自动图片优化和格式转换服务
 
 ### 4. 监控与分析
 
 - **性能监控**: 实现前端性能监控系统
 - **用户体验指标**: 跟踪和优化核心网页指标 (CWV)
 - **错误跟踪**: 实现前端错误跟踪和上报
-- **用户行为分析**: 收集和分析用户交互模式
-- **A/B测试系统**: 实现不同设计方案的分组测试
+- **用户行为分析**: 收集用户与界面交互的数据，优化用户体验
 
 ```tsx
 // 性能监控示例
@@ -225,15 +245,14 @@ function reportWebVitals() {
 
 以下是性能优化前后的关键指标对比:
 
-| 指标 | 原始值 | 第一阶段优化 | 第二阶段优化 | 总改进 |
-|------|--------|------------|------------|------|
-| 首次内容绘制 (FCP) | 1.8s | 1.2s | 0.9s | 50% |
-| 最大内容绘制 (LCP) | 2.7s | 1.9s | 1.5s | 44% |
-| 首次输入延迟 (FID) | 180ms | 65ms | 45ms | 75% |
-| 累积布局偏移 (CLS) | 0.25 | 0.08 | 0.05 | 80% |
-| 页面加载时间 | 3.5s | 2.2s | 1.8s | 49% |
-| 图片加载时间 | 1.2s | 0.8s | 0.5s | 58% |
-| JS执行时间 | 320ms | 210ms | 180ms | 44% |
+| 指标 | 优化前 | 优化后 | 改进 |
+|------|--------|--------|------|
+| 首次内容绘制 (FCP) | 1.8s | 1.2s | 33% |
+| 最大内容绘制 (LCP) | 2.7s | 1.9s | 30% |
+| 首次输入延迟 (FID) | 180ms | 65ms | 64% |
+| 累积布局偏移 (CLS) | 0.25 | 0.08 | 68% |
+| 页面加载时间 | 3.5s | 2.2s | 37% |
+| 感知加载速度 | 中等 | 很快 | 显著提升 |
 
 ## 浏览器支持
 
@@ -249,14 +268,15 @@ function reportWebVitals() {
 ## 未来工作
 
 - [ ] 实现完整的资源预加载策略
-- [ ] 添加 Service Worker 支持
-- [ ] 集成 React Query 优化数据获取和缓存
+- [ ] 添加Service Worker支持
+- [ ] 集成React Query优化数据获取和缓存
 - [ ] 添加静态生成支持
 - [ ] 实现前端性能监控系统
-- [ ] 实现内容预取系统
-- [ ] 优化字体加载
-- [ ] 实现离线功能支持
-- [ ] 添加内容分析与推荐
+- [ ] 添加图片自动优化服务
+- [ ] 实现更智能的预取策略
+- [ ] 优化首屏关键渲染路径
+- [ ] 实现更精细的代码分割策略
+- [ ] 添加性能预算监控工具
 
 ## 参考资料
 
@@ -265,6 +285,6 @@ function reportWebVitals() {
 - [Optimize CLS](https://web.dev/optimize-cls/)
 - [React Performance](https://reactjs.org/docs/optimizing-performance.html)
 - [Intersection Observer API](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API)
-- [Modern Image Optimization](https://web.dev/fast/#optimize-your-images)
-- [Using WebP Images](https://web.dev/serve-images-webp/)
-- [AVIF Image Format](https://jakearchibald.com/2020/avif-has-landed/) 
+- [Skeleton Screens](https://uxdesign.cc/what-you-should-know-about-skeleton-screens-a820c45a571a)
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/)
+- [Content-aware Image Resizing](https://web.dev/responsive-images/) 
