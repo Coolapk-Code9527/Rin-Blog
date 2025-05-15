@@ -13,6 +13,7 @@ import './components.css'
 import { siteName } from './utils/constants'
 import { listenSystemMode } from './utils/darkModeUtils'
 import LanguageDetector from 'i18next-browser-languagedetector';
+import "./utils/styles.css";
 export const endpoint = process.env.API_URL || 'http://localhost:3001'
 export const oauth_url = process.env.API_URL + '/user/github'
 export const client = treaty<Server>(endpoint)

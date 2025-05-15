@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useCallback, useEffect, useState } from "react";
+import { useSearch } from "wouter";
 
 export interface CursorPaginationOptions {
   /**
@@ -39,8 +39,8 @@ export function useCursorPagination({
   const cursorKey = `cursor_pagination_cursor_${pageId}`;
   
   // 读取URL参数
-  const [location] = useLocation();
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const query = useSearch();
+  const urlParams = new URLSearchParams(query);
   
   // 获取存储的值
   const getSavedValue = (key: string, defaultValue: string) => {
@@ -100,7 +100,7 @@ export function useCursorPagination({
         }
       }
     }
-  }, [location, readFromUrl, page]);
+  }, [query, readFromUrl]);
   
   // 设置游标和相关状态
   const updateCursorState = useCallback((nextCursor: string | null, hasNextPage: boolean) => {

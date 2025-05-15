@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useLocation } from "wouter";
-import React from "react";
+import { Link } from "wouter";
 
 export interface PaginationProps {
   /**
@@ -56,7 +55,6 @@ export function Pagination({
   className = "",
 }: PaginationProps) {
   const { t } = useTranslation();
-  const [_, setLocation] = useLocation();
   
   // 处理页码点击
   const handlePageClick = (page: number) => {
@@ -80,12 +78,10 @@ export function Pagination({
     const isCurrentPage = pageNumber === currentPage;
     const commonClasses = `w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium transition-all`;
     const activeClasses = "bg-theme text-white shadow-sm";
-    const inactiveClasses = "bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200";
+    const inactiveClasses = "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200 dark:border-gray-700 hover:border-theme/30 dark:hover:border-theme/30";
     
     const fullClasses = `${commonClasses} ${isCurrentPage ? activeClasses : inactiveClasses}`;
     const ariaLabel = label || t("pagination.page", { page: pageNumber });
-    
-    const pageUrl = getPageUrl(pageNumber);
     
     return onPageChange ? (
       // 客户端分页模式
@@ -100,19 +96,15 @@ export function Pagination({
       </button>
     ) : (
       // URL分页模式
-      <a
+      <Link
         key={pageNumber}
-        href={pageUrl}
-        onClick={(e) => {
-          e.preventDefault();
-          setLocation(pageUrl);
-        }}
+        href={getPageUrl(pageNumber)}
         className={fullClasses}
         aria-label={ariaLabel}
         aria-current={isCurrentPage ? "page" : undefined}
       >
         {label || pageNumber}
-      </a>
+      </Link>
     );
   };
   
@@ -121,11 +113,9 @@ export function Pagination({
     const disabled = currentPage === 1;
     const classes = `w-8 h-8 flex items-center justify-center rounded-full transition-all ${
       disabled
-        ? 'text-gray-300 cursor-not-allowed'
-        : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200'
+        ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200 dark:border-gray-700 hover:border-theme/30 dark:hover:border-theme/30'
     }`;
-    
-    const prevPageUrl = getPageUrl(currentPage - 1);
     
     if (onPageChange) {
       // 客户端分页模式
@@ -151,17 +141,13 @@ export function Pagination({
         <i className="ri-arrow-left-s-line"></i>
       </button>
     ) : (
-      <a
-        href={prevPageUrl}
-        onClick={(e) => {
-          e.preventDefault();
-          setLocation(prevPageUrl);
-        }}
+      <Link
+        href={getPageUrl(currentPage - 1)}
         className={classes}
         aria-label={t("pagination.previous")}
       >
         <i className="ri-arrow-left-s-line"></i>
-      </a>
+      </Link>
     );
   };
   
@@ -170,11 +156,9 @@ export function Pagination({
     const disabled = currentPage === totalPages;
     const classes = `w-8 h-8 flex items-center justify-center rounded-full transition-all ${
       disabled
-        ? 'text-gray-300 cursor-not-allowed'
-        : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200'
+        ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200 dark:border-gray-700 hover:border-theme/30 dark:hover:border-theme/30'
     }`;
-    
-    const nextPageUrl = getPageUrl(currentPage + 1);
     
     if (onPageChange) {
       // 客户端分页模式
@@ -200,17 +184,13 @@ export function Pagination({
         <i className="ri-arrow-right-s-line"></i>
       </button>
     ) : (
-      <a
-        href={nextPageUrl}
-        onClick={(e) => {
-          e.preventDefault();
-          setLocation(nextPageUrl);
-        }}
+      <Link
+        href={getPageUrl(currentPage + 1)}
         className={classes}
         aria-label={t("pagination.next")}
       >
         <i className="ri-arrow-right-s-line"></i>
-      </a>
+      </Link>
     );
   };
   

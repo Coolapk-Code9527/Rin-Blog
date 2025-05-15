@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react"
 import { Helmet } from 'react-helmet'
-import { useTranslation } from "react-i18next"
-import { useLocation } from "wouter"
+import { Link } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
@@ -9,6 +8,8 @@ import { client } from "../main"
 import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
+import { useTranslation } from "react-i18next"
+import { useSearch } from "../utils/hooks"
 
 type FeedsData = {
     size: number,
@@ -18,13 +19,11 @@ type FeedsData = {
 
 export function SearchPage({ keyword }: { keyword: string }) {
     const { t } = useTranslation()
-    const [location] = useLocation()
-    // 手动解析 URL 查询参数
-    const searchParams = new URLSearchParams(location.split('?')[1] || '')
+    const query = new URLSearchParams(useSearch());
     const [status, setStatus] = useState<'loading' | 'idle'>('idle')
     const [feeds, setFeeds] = useState<FeedsData>()
-    const page = tryInt(1, searchParams.get("page"))
-    const limit = tryInt(10, searchParams.get("limit"), process.env.PAGE_SIZE)
+    const page = tryInt(1, query.get("page"))
+    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = useRef("")
     function fetchFeeds() {
         if (!keyword) return
