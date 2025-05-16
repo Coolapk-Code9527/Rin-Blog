@@ -187,7 +187,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full flex flex-row justify-center ani-show max-w-6xl mx-auto gap-8 px-2 md:px-4 lg:px-8">
+      <div className="w-full flex flex-row justify-center ani-show max-w-7xl mx-auto gap-4 md:gap-6 px-3 md:px-5 lg:px-8">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -206,17 +206,17 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <div className="hidden lg:block flex-shrink-0 w-0 xl:w-72" />
-            <main className="flex-1 min-w-0 max-w-4xl">
+            <div className="hidden xl:block flex-shrink-0 w-0 xl:w-64 2xl:w-72" />
+            <main className="flex-1 min-w-0 max-w-5xl">
               <article
-                className="rounded-2xl bg-w m-2 px-6 py-4"
+                className="rounded-2xl bg-w m-2 px-4 sm:px-6 py-5 sm:py-6 shadow-sm hover:shadow transition-shadow duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
                   <div>
-                    <div className="mt-1 mb-1 flex gap-1">
+                    <div className="mt-1 mb-1.5 flex gap-1.5">
                       <p
-                        className="text-gray-400 text-[12px]"
+                        className="text-gray-400 text-[13px]"
                         title={new Date(feed.createdAt).toLocaleString()}
                       >
                         {t("published_at")} {timeago(feed.createdAt)}
@@ -224,7 +224,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
 
                       {feed.createdAt !== feed.updatedAt && (
                         <p
-                          className="text-gray-400 text-[12px]"
+                          className="text-gray-400 text-[13px]"
                           title={new Date(feed.updatedAt).toLocaleString()}
                         >
                           {t("feed_card.updated$time", {
@@ -233,11 +233,11 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                         </p>
                       )}
                     </div>
-                    {counterEnabled && <p className='text-[12px] text-gray-400 font-normal link-line'>
+                    {counterEnabled && <p className='text-[13px] text-gray-400 font-normal link-line mb-1.5'>
                       {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
                     </p>}
                     <div className="flex flex-row items-center">
-                      <h1 className="text-2xl font-bold t-primary break-all">
+                      <h1 className="text-2xl sm:text-3xl font-bold t-primary break-all leading-tight">
                         {feed.title}
                       </h1>
                       <div className="flex-1 w-0" />
@@ -275,22 +275,25 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                     )}
                   </div>
                 </div>
-                <Markdown content={feed.content} />
-                <div className="mt-6 flex flex-col gap-2">
+                <div className="mt-5">
+                  <Markdown content={feed.content} />
+                </div>
+                <div className="mt-6 flex flex-col gap-3">
                   {feed.hashtags.length > 0 && (
-                    <div className="flex flex-row flex-wrap gap-x-2">
+                    <div className="flex flex-row flex-wrap gap-x-2 gap-y-1.5">
                       {feed.hashtags.map(({ name }, index) => (
                         <HashTag name={name} key={index} />
                       ))}
                     </div>
                   )}
-                  <div className="flex flex-row items-center">
+                  <div className="flex flex-row items-center mt-2">
                     <img
                       src={feed.user.avatar || "/avatar.png"}
-                      className="w-8 h-8 rounded-full"
+                      className="w-9 h-9 rounded-full"
+                      alt={feed.user.username}
                     />
-                    <div className="ml-2">
-                      <span className="text-gray-400 text-sm cursor-default">
+                    <div className="ml-2.5">
+                      <span className="text-gray-500 text-sm cursor-default hover:text-gray-700 transition-colors">
                         {feed.user.username}
                       </span>
                     </div>
@@ -302,10 +305,17 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               <div className="h-16" />
             </main>
             <aside
-              className="w-full lg:w-80 mt-8 lg:mt-0 lg:block relative flex flex-col gap-6"
-              style={{ maxHeight: 'calc(100vh - 5.5rem)', overflow: 'auto' }}
+              className="w-full lg:w-72 xl:w-80 mt-8 lg:mt-0 lg:block flex-shrink-0"
+              style={{ 
+                height: 'calc(100vh - 5.5rem)', 
+                position: 'sticky', 
+                top: '5.5rem', 
+                overflow: 'auto', 
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(0,0,0,0.1) transparent'
+              }}
             >
-              <div className="start-0 end-0 top-[5.5rem] sticky flex flex-col gap-6 lg:static">
+              <div className="flex flex-col gap-6 pr-2">
                 <TOC />
                 <RecentPosts />
               </div>
@@ -442,7 +452,7 @@ function CommentInput({
   
   return (
     <div className="w-full bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
-      <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+      <div className="bg-gray-50 px-5 py-3.5 border-b border-gray-100 flex justify-between items-center">
         <h3 className="text-base font-medium flex items-center gap-2">
           <i className="ri-chat-new-line text-theme"></i>
           {isAnonymous ? t("comment.anonymous.title") : t("comment.title")}
@@ -631,16 +641,16 @@ function Comments({ id }: { id: string }) {
   return (
     <>
       {config.get<boolean>('comment.enabled') && (
-        <div id="comments-section" className="m-2 flex flex-col justify-center items-center space-y-4">
+        <div id="comments-section" className="m-2 flex flex-col justify-center items-center space-y-5">
           <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gray-50 px-4 py-3 border-b border-gray-100">
+            <div className="bg-gray-50 px-5 py-4 border-b border-gray-100">
               <h2 className="text-lg font-medium flex items-center justify-between">
                 <div className="flex items-center">
                   <i className="ri-chat-3-line mr-2 text-theme"></i>
                   {t("comment.title")}
                 </div>
                 {comments.length > 0 && (
-                  <span className="bg-theme text-white px-2 py-0.5 text-xs rounded-full">
+                  <span className="bg-theme text-white px-2.5 py-0.5 text-xs rounded-full">
                     {comments.length}
                   </span>
                 )}
@@ -680,7 +690,7 @@ function Comments({ id }: { id: string }) {
               {comments.length > 0 ? (
                 <div className="w-full space-y-4">
                   <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                    <div className="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
                       <h3 className="text-base font-medium flex items-center">
                         <i className="ri-list-check text-theme mr-2"></i>
                         {t("comment.list.title", { count: comments.length })}
@@ -695,7 +705,7 @@ function Comments({ id }: { id: string }) {
                     </div>
                   </div>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {currentComments.map((comment, idx) => (
                       <CommentItem
                         comment={comment}
@@ -706,13 +716,16 @@ function Comments({ id }: { id: string }) {
                   </div>
                   
                   {totalPages > 1 && (
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={handlePageChange}
-                      siblingCount={1}
-                      aria-label={t("comment.pagination.title", { defaultValue: "评论分页" })}
-                    />
+                    <div className="mt-6 flex justify-center">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        siblingCount={1}
+                        className="shadow-sm bg-white rounded-lg py-2 px-3"
+                        aria-label={t("comment.pagination.title", { defaultValue: "评论分页" })}
+                      />
+                    </div>
                   )}
                 </div>
               ) : (
@@ -775,25 +788,25 @@ function CommentItem({
     (profile.permission || (!isAnonymous && comment.user && profile.id === comment.user.id));
 
   return (
-    <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
-      <div className="p-4">
+    <div className="bg-white rounded-lg shadow-sm hover:shadow transition-all duration-300 overflow-hidden">
+      <div className="p-5">
         <div className="flex justify-between">
           <div className="flex items-start">
             {!isAnonymous && comment.user ? (
               <div className="flex items-center">
                 <div className="relative flex-shrink-0">
                   <img
-                    className="w-9 h-9 rounded-full object-cover border border-gray-100"
+                    className="w-10 h-10 rounded-full object-cover border border-gray-100"
                     src={comment.user.avatar || "/avatar.png"}
                     alt={comment.user.username}
                   />
                   {comment.user.permission && (
-                    <div className="absolute -top-0.5 -right-0.5 bg-theme text-white rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                    <div className="absolute -top-0.5 -right-0.5 bg-theme text-white rounded-full w-4 h-4 flex items-center justify-center">
                       <i className="ri-verified-badge-fill text-[10px]"></i>
                     </div>
                   )}
                 </div>
-                <div className="ml-2">
+                <div className="ml-3">
                   <h4 className="text-sm font-medium text-gray-800">{comment.user.username}</h4>
                   <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
                     addSuffix: true,
@@ -802,13 +815,13 @@ function CommentItem({
               </div>
             ) : (
               <div className="flex items-center">
-                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                   <i className="ri-user-line text-gray-400"></i>
                 </div>
-                <div className="ml-2">
+                <div className="ml-3">
                   <div className="flex items-center">
                     <h4 className="text-sm font-medium text-gray-800">{comment.nickname}</h4>
-                    <span className="ml-1.5 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{t("comment.anonymous.tag")}</span>
+                    <span className="ml-2 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{t("comment.anonymous.tag")}</span>
                   </div>
                   <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
                     addSuffix: true,
@@ -829,7 +842,7 @@ function CommentItem({
           )}
         </div>
         
-        <div className="mt-3 pt-3 border-t border-gray-50 prose prose-sm max-w-none text-gray-700">
+        <div className="mt-4 pt-4 border-t border-gray-50 prose prose-sm max-w-none text-gray-700">
           <Markdown content={comment.content} />
         </div>
       </div>
