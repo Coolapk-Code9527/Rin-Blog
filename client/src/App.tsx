@@ -1,18 +1,12 @@
-import { useContext, useEffect, useState, lazy, Suspense, useRef } from 'react'
-import { Route, Router, Switch } from 'wouter'
+import { useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
-import loadable from '@loadable/component'
-import NeedLogin from './components/needlogin'
-import Header from './components/header'
-import Footer from './components/footer'
-import ProfileContextProvider, { ProfileContext } from './state/profile'
-import { ClientConfigContext, ConfigWrapper, defaultClientConfig } from './state/config'
-import { siteName } from './utils/constants'
-import { Toaster } from 'react-hot-toast'
-import { useTranslation } from 'react-i18next'
 import { getCookie } from 'typescript-cookie'
+import { DefaultParams, PathPattern, Route, Switch, useRoute } from 'wouter'
+import Footer from './components/footer'
+import { Header } from './components/header'
+import { Padding } from './components/padding'
+import useTableOfContents from './hooks/useTableOfContents.tsx'
 import { client } from './main'
-import { headersWithAuth } from './utils/auth'
 import { CallbackPage } from './page/callback'
 import { FeedPage, TOCHeader } from './page/feed'
 import { FeedsPage } from './page/feeds'
@@ -22,47 +16,31 @@ import { HashtagsPage } from './page/hashtags.tsx'
 import { Settings } from "./page/settings.tsx"
 import { TimelinePage } from './page/timeline'
 import { WritingPage } from './page/writing'
+import { ClientConfigContext, ConfigWrapper, defaultClientConfig } from './state/config.tsx'
+import { Profile, ProfileContext } from './state/profile'
+import { headersWithAuth } from './utils/auth'
 import { tryInt } from './utils/int'
 import { SearchPage } from './page/search.tsx'
 import { Tips, TipsPage } from './components/tips.tsx'
-import ScrollRestorationHandler from './utils/scroll-restoration'
-import GitHubCallbackPage from './page/github'
-import useTableOfContents from './hooks/useTableOfContents.tsx'
-import { Padding } from './components/padding'
+import { useTranslation } from 'react-i18next'
 
-// 使用懒加载优化性能
-const HomePage = lazy(() => import('./page/home'))
-const FeedPage = loadable(() => import('./page/feed'))
-const FeedsPage = loadable(() => import('./page/feeds'))
-const TagsPage = loadable(() => import('./page/tags'))
-const SearchPage = loadable(() => import('./page/search'))
-const EditPage = loadable(() => import('./page/edit'))
-const SettingsPage = loadable(() => import('./page/settings'))
-const TagPage = loadable(() => import('./page/tag'))
-const NotFoundPage = loadable(() => import('./page/not_found'))
-const GitHubCallbackPage = loadable(() => import('./page/github'))
-
-// 回到顶部按钮
+// 返回顶部按钮组件
 function BackToTop() {
   const [visible, setVisible] = useState(false);
-  const { t } = useTranslation();
   
-  // 监听滚动事件，控制按钮显示
   useEffect(() => {
-    const toggleVisible = () => {
-      const scrolled = document.documentElement.scrollTop;
-      if (scrolled > 500) {
+    const toggleVisibility = () => {
+      if (window.pageYOffset > 500) {
         setVisible(true);
       } else {
         setVisible(false);
       }
     };
     
-    window.addEventListener('scroll', toggleVisible);
-    return () => window.removeEventListener('scroll', toggleVisible);
+    window.addEventListener('scroll', toggleVisibility);
+    return () => window.removeEventListener('scroll', toggleVisibility);
   }, []);
   
-  // 平滑滚动回顶部
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -71,65 +49,25 @@ function BackToTop() {
   };
   
   return (
-    <button
-      onClick={scrollToTop}
-      className={`fixed bottom-6 right-6 p-2.5 rounded-full bg-theme text-white shadow-lg hover:bg-theme-hover focus:outline-none focus:ring-2 focus:ring-theme/50 transition-all duration-300 z-50 ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-      }`}
-      aria-label={t('back_to_top', '回到顶部')}
-    >
-      <i className="ri-arrow-up-line text-xl"></i>
-    </button>
-  );
-}
-
-// 页面预加载器
-function PagePreloader() {
-  const [preloaded, setPreloaded] = useState(false);
-  
-  useEffect(() => {
-    // 标记为预加载完成，移除预加载动画
-    const timer = setTimeout(() => {
-      setPreloaded(true);
-    }, 800);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  if (preloaded) return null;
-  
-  return (
-    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-[10000] flex items-center justify-center transition-opacity duration-500">
-      <div className="relative">
-        <div className="w-16 h-16 border-4 border-theme/20 border-t-theme rounded-full animate-spin"></div>
-        <span className="sr-only">加载中...</span>
-      </div>
-    </div>
+    <>
+      {visible && (
+        <button
+          onClick={scrollToTop}
+          className="fixed right-5 bottom-5 z-50 w-10 h-10 rounded-full bg-theme text-white shadow-lg flex items-center justify-center transition-all hover:bg-theme-hover focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2"
+          aria-label="返回顶部"
+        >
+          <i className="ri-arrow-up-line"></i>
+        </button>
+      )}
+    </>
   );
 }
 
 function App() {
   const ref = useRef(false)
   const { t } = useTranslation()
-  const [profile, setProfile] = useState(undefined)
-  const [config, setConfig] = useState(new ConfigWrapper({}, defaultClientConfig))
-  
-  // 图片懒加载处理
-  useEffect(() => {
-    if ('loading' in HTMLImageElement.prototype) {
-      // 浏览器原生支持懒加载
-      const images = document.querySelectorAll('img:not([loading])');
-      images.forEach(img => {
-        img.setAttribute('loading', 'lazy');
-      });
-    } else {
-      // 动态加载懒加载polyfill
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js';
-      document.body.appendChild(script);
-    }
-  }, []);
-
+  const [profile, setProfile] = useState<Profile | undefined>()
+  const [config, setConfig] = useState<ConfigWrapper>(new ConfigWrapper({}, new Map()))
   useEffect(() => {
     if (ref.current) return
     if (getCookie('token')?.length ?? 0 > 0) {
@@ -162,78 +100,123 @@ function App() {
     }
     ref.current = true
   }, [])
-
-  // 根据客户端配置设置 meta 标签
-  const description = config.get('description') || siteName
-  const keywords = config.get('keywords')
-  const avatar = config.get('avatar')
-  const owner = config.get('owner')
-  const isPrivate = config.get('private')
-
+  const favicon = `${process.env.API_URL}/favicon`;
   return (
-    <ProfileContext.Provider value={profile}>
+    <>
       <ClientConfigContext.Provider value={config}>
-        <Router>
-          <Helmet defaultTitle={siteName}>
-            <meta name="description" content={description} />
-            {keywords && <meta name="keywords" content={keywords} />}
-            {avatar && <link rel="icon" href={avatar} />}
+        <ProfileContext.Provider value={profile}>
+          <Helmet>
+            {favicon &&
+              <link rel="icon" href={favicon} />}
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <meta charSet="utf-8" />
+            <meta name="description" content={process.env.DESCRIPTION || '个人博客'} />
+            <meta property="og:site_name" content={process.env.NAME || '个人博客'} />
+            <meta property="og:type" content="website" />
+            <meta property="og:image" content={process.env.AVATAR} />
+            <meta name="twitter:card" content="summary" />
+            <meta name="twitter:title" content={process.env.NAME || '个人博客'} />
+            <meta name="twitter:description" content={process.env.DESCRIPTION || '个人博客'} />
+            <meta name="twitter:image" content={process.env.AVATAR} />
           </Helmet>
+          <Switch>
+            <RouteMe path="/">
+              <FeedsPage />
+            </RouteMe>
 
-          <div className="flex min-h-screen flex-col">
-            <PagePreloader />
-            <ScrollRestorationHandler />
-            <Header />
-            <Toaster 
-              position="top-center"
-              toastOptions={{
-                duration: 3000,
-                style: {
-                  background: 'var(--color-bg-soft)',
-                  color: 'var(--color-text-primary)',
-                  border: '1px solid var(--color-border)',
-                },
+            <RouteMe path="/timeline">
+              <TimelinePage />
+            </RouteMe>
+
+
+            <RouteMe path="/friends">
+              <FriendsPage />
+            </RouteMe>
+
+            <RouteMe path="/hashtags">
+              <HashtagsPage />
+            </RouteMe>
+
+            <RouteMe path="/hashtag/:name">
+              {params => {
+                return (<HashtagPage name={params.name || ""} />)
               }}
-            />
-            
-            <main className="flex-grow flex">
-              <Suspense fallback={
-                <div className="w-full flex items-center justify-center py-20">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-theme/20 border-t-theme"></div>
-                </div>
-              }>
-                <Switch>
-                  <Route path="/" component={HomePage} />
-                  <Route path={owner ? `/${owner}/:id` : '/a/:id'} component={FeedPage} />
-                  <Route path="/feeds" component={FeedsPage} />
-                  <Route path="/tags" component={TagsPage} />
-                  <Route path="/tag/:tag" component={TagPage} />
-                  <Route path="/search/:key">
-                    {params => <SearchPage search={params.key} />}
-                  </Route>
-                  <Route path="/edit/:id?">
-                    {params => (
-                      isPrivate ? <NeedLogin><EditPage id={params.id} /></NeedLogin> : <EditPage id={params.id} />
-                    )}
-                  </Route>
-                  <Route path="/settings">
-                    <NeedLogin>
-                      <SettingsPage />
-                    </NeedLogin>
-                  </Route>
-                  <Route path="/github" component={GitHubCallbackPage} />
-                  <Route component={NotFoundPage} />
-                </Switch>
-              </Suspense>
-            </main>
-            
-            <Footer />
-            <BackToTop />
-          </div>
-        </Router>
+            </RouteMe>
+
+            <RouteMe path="/search/:keyword">
+              {params => {
+                return (<SearchPage keyword={params.keyword || ""} />)
+              }}
+            </RouteMe>
+
+            <RouteMe path="/settings" paddingClassName='mx-4'>
+              <Settings />
+            </RouteMe>
+
+
+            <RouteMe path="/writing" paddingClassName='mx-4'>
+              <WritingPage />
+            </RouteMe>
+
+            <RouteMe path="/writing/:id" paddingClassName='mx-4'>
+              {({ id }) => {
+                const id_num = tryInt(0, id)
+                return (
+                  <WritingPage id={id_num} />
+                )
+              }}
+            </RouteMe>
+
+            <RouteMe path="/callback" >
+              <CallbackPage />
+            </RouteMe>
+
+            <RouteWithIndex path="/feed/:id">
+              {(params, TOC) => {
+                return (<FeedPage id={params.id || ""} TOC={TOC} />)
+              }}
+            </RouteWithIndex>
+
+            <RouteWithIndex path="/:alias">
+              {(params, TOC) => {
+                return (
+                  <FeedPage id={params.alias || ""} TOC={TOC} />
+                )
+              }}
+            </RouteWithIndex>
+
+            <RouteMe path="/user/github">
+              {_ => (
+                <TipsPage>
+                  <Tips value={t('error.api_url')} type='error' />
+                </TipsPage>
+              )}
+            </RouteMe>
+
+            <RouteMe path="/*/user/github">
+              {_ => (
+                <TipsPage>
+                  <Tips value={t('error.api_url_slash')} type='error' />
+                </TipsPage>
+              )}
+            </RouteMe>
+
+            <RouteMe path="/user/github/callback">
+              {_ => (
+                <TipsPage>
+                  <Tips value={t('error.github_callback')} type='error' />
+                </TipsPage>
+              )}
+            </RouteMe>
+
+            {/* Default route in a switch */}
+            <Route>404: No such page!</Route>
+          </Switch>
+        </ProfileContext.Provider>
       </ClientConfigContext.Provider>
-    </ProfileContext.Provider>
-  );
+      <BackToTop />
+    </>
+  )
 }
 
 function RouteMe({ path, children, headerComponent, paddingClassName }:

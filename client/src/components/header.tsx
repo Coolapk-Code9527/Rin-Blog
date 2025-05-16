@@ -61,17 +61,16 @@ export function Header({ children }: { children?: React.ReactNode }) {
                             </Link>
                             
                             {/* 中间导航区域 - 仅在较大屏幕可见 */}
-                            <div className="hidden lg:flex items-center space-x-2">
+                            <div className="hidden lg:flex items-center space-x-1">
                                 <NavBar menu={false} />
                                 {children}
                             </div>
                             
                             {/* 右侧操作区域 */}
                             <div className="flex items-center">
-                                <div className="flex items-center space-x-2 sm:space-x-3">
+                                <div className="flex items-center space-x-1 sm:space-x-2">
                                     <SearchButton className="hidden md:block" />
                                     <LanguageSwitch className="hidden md:block" />
-                                    <NotificationButton className="hidden md:block" />
                                     <UserAvatar profile={profile} />
                                     
                                     {/* 折叠式菜单 - 中等屏幕出现，只显示一部分元素 */}
@@ -121,12 +120,12 @@ function NavItem({ menu, title, selected, href, when = true, onClick }: {
                     className={`
                         ${menu 
                             ? "block w-full relative px-4 py-2.5" 
-                            : "inline-flex items-center relative px-3 py-2.5"} 
+                            : "inline-flex items-center relative px-3 py-2"} 
                         text-sm font-medium rounded-lg transition-all duration-200 NavItem-common
                         ${selected 
                             ? menu 
                                 ? "text-theme dark:text-theme bg-theme/5 dark:bg-theme/10" 
-                                : "text-theme dark:text-theme relative before:absolute before:bottom-0 before:left-0 before:w-full before:h-0.5 before:bg-theme before:rounded-full before:transform before:translate-y-1" 
+                                : "text-theme dark:text-theme" 
                             : menu 
                                 ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white" 
                                 : "text-gray-700 dark:text-gray-300 hover:text-theme dark:hover:text-theme hover:bg-gray-100/70 dark:hover:bg-gray-800/70"}
@@ -195,20 +194,13 @@ function MobileMenu() {
     function onOpen() {
         lastScrollY.current = window.scrollY; // Save scroll position
         setOpen(true);
-        // 防止body滚动
-        if (typeof document !== 'undefined') {
-            document.body.style.overflow = 'hidden';
-        }
     }
 
     function onClose() {
         setOpen(false);
         setShowLanguages(false);
         setIsSearchExpanded(false);
-        // 恢复body滚动
-        if (typeof document !== 'undefined') {
-            document.body.style.overflow = '';
-        }
+        // Scroll restoration will be handled by useEffect
     }
 
     function onSearch() {
@@ -256,12 +248,35 @@ function MobileMenu() {
         setShowLanguages(false);
     }
 
-    // 处理菜单点击
+    useEffect(() => {
+        const body = document.body;
+        const html = document.documentElement;
+
+        if (isOpen) {
+            // Lock scroll
+            body.style.overflow = 'hidden';
+            html.style.overflow = 'hidden'; // Also on html element for robustness
+        } else {
+            // Unlock scroll
+            body.style.overflow = '';
+            html.style.overflow = '';
+            // Restore scroll position smoothly
+            window.scrollTo(0, lastScrollY.current);
+        }
+
+        return () => {
+            // Ensure styles are reset on component unmount
+            body.style.overflow = '';
+            html.style.overflow = '';
+        };
+    }, [isOpen]);
+
+    // 阻止菜单内部点击事件冒泡到遮罩层
     const handleMenuClick = (e: React.MouseEvent) => {
         e.stopPropagation();
     };
     
-    // 搜索历史相关功能
+    // 搜索历史状态
     const [searchHistory, setSearchHistory] = useState<string[]>(() => {
         try {
             const saved = localStorage.getItem('search_history');
@@ -271,328 +286,300 @@ function MobileMenu() {
         }
     });
     
+    // 保存搜索历史到本地存储
     const saveToHistory = (term: string) => {
         if (!term.trim()) return;
         
-        const newHistory = [
+        try {
+            const saved = localStorage.getItem('search_history');
+            let history = saved ? JSON.parse(saved) : [];
+            
+            // 将新搜索添加到历史最前面，同时移除重复项
+            history = [
                 term, 
-            ...searchHistory.filter(item => item !== term)
+                ...history.filter((item: string) => item !== term)
             ].slice(0, 5); // 只保留最近5条
             
-        setSearchHistory(newHistory);
-        localStorage.setItem('search_history', JSON.stringify(newHistory));
+            setSearchHistory(history);
+            localStorage.setItem('search_history', JSON.stringify(history));
+        } catch (e) {
+            console.error('保存搜索历史失败', e);
+        }
     };
     
-    // 移动端菜单选项数据
-    const mobileMenuOptions = [
-        { 
-            icon: 'ri-search-line',
-            title: t('article.search.title'),
-            onClick: () => setIsSearchExpanded(true),
-            show: true
-        },
-        {
-            icon: 'ri-user-line',
-            title: profile ? profile.name : t('github_login'),
-            onClick: () => {
-                if (!profile) {
-                    setIsLoginModalOpened(true);
-                    onClose();
-                }
-            },
-            show: true,
-            hasSubmenu: !!profile,
-            submenu: profile ? [
-                {
-                    icon: 'ri-settings-4-line',
-                    title: t('settings.title'),
-                    href: '/settings'
-                },
-                {
-                    icon: 'ri-logout-circle-line',
-                    title: t('logout'),
-                    onClick: () => {
-                        removeCookie("token");
-                        window.location.reload();
-                    },
-                    isDanger: true
-                }
-            ] : []
-        },
-        {
-            icon: 'ri-translate-2',
-            title: t('languages'),
-            onClick: () => setShowLanguages(true),
-            show: true,
-            active: showLanguages
-        },
-        {
-            icon: isDarkMode ? 'ri-sun-line' : 'ri-moon-line',
-            title: isDarkMode ? t('light_mode') : t('dark_mode'),
-            onClick: () => {
-                if (typeof document !== 'undefined') {
-                    document.documentElement.classList.toggle('dark');
-                }
-            },
-            show: true
-        }
-    ];
-
-    // 移动端退出登录
+    // 处理退出登录
     const handleLogout = () => {
         removeCookie("token");
-        onClose();
         window.location.reload();
     };
 
     return (
-        <div className="md:hidden block">
+        <div className="md:hidden">
             <button 
                 onClick={onOpen}
-                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
+                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
                 aria-label={t('menu')}
+                aria-expanded={isOpen}
+                aria-haspopup="true"
             >
-                <i className="ri-menu-line text-xl"></i>
+                <i className="ri-menu-3-line text-xl" />
             </button>
 
-            {isOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[10001] animate-fadeIn">
+            {/* 移动菜单及遮罩（渲染为全局覆盖） */}
+            {typeof document !== 'undefined' && isOpen && (
+                <>
+                    {/* 背景遮罩 */}
                     <div 
-                        className="fixed right-0 top-0 h-full w-full xs:w-80 bg-white dark:bg-gray-900 animate-slideInRight overflow-y-auto"
-                        onClick={handleMenuClick}
+                        className={`fixed inset-0 bg-black/60 backdrop-blur-[2px] z-[9990] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                        onClick={onClose} // 点击遮罩层关闭菜单
+                        aria-hidden="true"
+                        style={{
+                            position: 'fixed', 
+                            top: 0, 
+                            left: 0, 
+                            right: 0, 
+                            bottom: 0, 
+                            width: '100vw', 
+                            height: '100vh'
+                        }}
                     >
-                        <div className="p-4">
-                            {/* 顶部操作区 */}
-                            <div className="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700">
-                                <div className="flex items-center">
-                                    <img 
-                                        src={process.env.AVATAR} 
-                                        alt="Logo" 
-                                        className="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700" 
-                                    />
-                                    <div className="ml-3">
-                                        <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                                            {process.env.NAME}
-                                        </h3>
+                        <div 
+                            className={`fixed top-0 right-0 w-[300px] max-w-[85vw] h-[100dvh] backdrop-blur-md transition-all duration-300 ease-out overflow-hidden`}
+                            onClick={handleMenuClick} // 阻止冒泡，防止点击菜单内容时关闭
+                            aria-modal="true"
+                            role="dialog"
+                            tabIndex={-1}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Escape') {
+                                    onClose();
+                                }
+                            }}
+                            style={{
+                                boxShadow: isDarkMode ? '0 0 30px rgba(0, 0, 0, 0.6)' : '0 0 30px rgba(0, 0, 0, 0.4)',
+                                borderLeft: isDarkMode ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
+                                backgroundColor: isDarkMode ? 'rgba(17, 24, 39, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                                transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+                                opacity: isOpen ? 1 : 0,
+                            }}
+                        >
+                            {/* 关闭按钮 */}
+                            <button 
+                                onClick={onClose} 
+                                className="absolute top-3 right-3 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 z-10 transition-all duration-200"
+                                aria-label={t('close')}
+                            >
+                                <i className="ri-close-line text-xl"></i>
+                            </button>
+
+                            <div className="flex flex-col h-full">
+                                <div className="pt-14"> {/* 为关闭按钮留出空间 */}
+                                    {/* 用户头像及认证区域 */}
+                                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col items-center space-y-4">
+                                        {profile?.avatar ? (
+                                            <>
+                                                <div className="relative">
+                                                    <img 
+                                                        src={profile.avatar} 
+                                                        alt={profile.name || t('user')} 
+                                                        className="w-20 h-20 rounded-full border-2 border-gray-300 dark:border-gray-600 shadow-md transition-transform duration-200 hover:scale-105" 
+                                                    />
+                                                    <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900 shadow-sm"></span>
                                                 </div>
+                                                <div className="text-center">
+                                                    <p className="text-lg font-medium text-gray-800 dark:text-gray-200">{profile.name}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('logged_in')}</p>
                                                 </div>
                                                 <button 
-                                    onClick={onClose}
-                                    className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme transition-colors"
-                                    aria-label={t('close')}
+                                                    onClick={handleLogout}
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-colors duration-150 font-medium shadow-sm hover:shadow"
                                                 >
-                                    <i className="ri-close-line text-xl"></i>
+                                                    <i className="ri-logout-circle-line"></i>
+                                                    <span>{t('logout')}</span>
                                                 </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 shadow-md">
+                                                    <i className="ri-user-fill text-4xl text-gray-500 dark:text-gray-400"></i>
                                                 </div>
-                            
-                            {/* 搜索框 */}
-                            {isSearchExpanded ? (
-                                <div 
-                                    ref={searchContainerRef}
-                                    className="mt-4 relative animate-fadeIn"
-                                >
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <i className="ri-search-line text-gray-400"></i>
-                                        </div>
+                                                <button 
+                                                    onClick={() => setIsLoginModalOpened(true)} 
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm bg-theme/10 hover:bg-theme/20 text-theme transition-colors duration-150 font-medium"
+                                                >
+                                                    <i className="ri-github-fill"></i>
+                                                    <span>{t('github_login')}</span>
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                    <LoginModal /> {/* Ensure LoginModal is rendered to be usable */}
+
+                                    {/* 搜索和语言区域 */}
+                                    <div className="px-3 py-3 border-b border-gray-200 dark:border-gray-700">
+                                        {/* 搜索栏 */}
+                                        <div ref={searchContainerRef} className="relative flex items-center mb-3" role="search">
+                                            {!isSearchExpanded ? (
+                                                <button 
+                                                    onClick={() => setIsSearchExpanded(true)}
+                                                    className="flex items-center w-full p-2 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-full border border-pink-300 dark:border-pink-500/40 hover:border-pink-400 dark:hover:border-pink-400/60 hover:shadow focus:outline-none focus:ring-2 focus:ring-pink-400/30 transition-all duration-200"
+                                                    aria-label={t('article.search.title')}
+                                                >
+                                                    <i className="ri-search-line text-gray-400 mr-2 text-sm"></i>
+                                                    <span className="text-gray-500 dark:text-gray-400">
+                                                        {t('article.search.placeholder')}
+                                                    </span>
+                                                </button>
+                                            ) : (
+                                                <div className="relative flex items-center w-full animate-expandWidth">
                                                     <input
                                                         ref={searchInputRef}
                                                         type="text"
                                                         value={searchValue}
-                                            onChange={(e) => setValue(e.target.value)}
+                                                        onChange={(e) => setSearchValue(e.target.value)}
                                                         onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-                                            className="w-full py-2.5 pl-10 pr-10 bg-gray-100 dark:bg-gray-800 border-none rounded-xl text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/20 focus:outline-none shadow-sm transition-all duration-200"
                                                         placeholder={t('article.search.placeholder')}
+                                                        className="w-full py-2 pl-8 pr-9 bg-white dark:bg-gray-800 border border-pink-300 dark:border-pink-500/40 rounded-full text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-pink-400/30 focus:border-pink-400 dark:focus:border-pink-400 shadow-sm hover:shadow focus:shadow-md focus:outline-none transition-all duration-200 text-xs"
+                                                        aria-controls={searchHistory.length > 0 ? "mobile-search-history" : undefined}
+                                                        aria-expanded={isSearchExpanded}
+                                                        autoComplete="off"
                                                     />
-                                        <div className="absolute inset-y-0 right-0 flex items-center">
+                                                    <i className="ri-search-line absolute left-3 text-gray-400 text-sm"></i>
+                                                    <div className="absolute right-2 flex space-x-1">
+                                                        {searchValue.trim() && (
                                                             <button 
-                                                onClick={() => setIsSearchExpanded(false)}
-                                                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                                                onClick={() => setSearchValue('')}
+                                                                className="p-1 text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
+                                                                aria-label={t('clear')}
                                                                 type="button"
                                                             >
-                                                <i className="ri-close-line"></i>
+                                                                <i className="ri-close-circle-line text-sm"></i>
+                                                            </button>
+                                                        )}
+                                                        <button 
+                                                            onClick={() => {
+                                                                if (searchValue.trim()) {
+                                                                    onSearch();
+                                                                } else {
+                                                                    setIsSearchExpanded(false);
+                                                                }
+                                                            }}
+                                                            className="p-1 text-gray-500 dark:text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
+                                                            aria-label={searchValue.trim() ? t('search') : t('close')}
+                                                            type="button"
+                                                        >
+                                                            {searchValue.trim() ? (
+                                                                <i className="ri-arrow-right-circle-line text-sm"></i>
+                                                            ) : (
+                                                                <i className="ri-close-line text-sm"></i>
+                                                            )}
                                                         </button>
                                                     </div>
                                                 </div>
-                                    
-                                    {/* 搜索历史 */}
-                                    {searchHistory.length > 0 && (
-                                        <div className="mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                                            <div className="p-2 flex justify-between items-center border-b border-gray-100 dark:border-gray-700">
-                                                <span className="text-xs text-gray-500 dark:text-gray-400">{t('article.search.history') || '最近搜索'}</span>
+                                            )}
+                                            
+                                            {/* 搜索历史下拉 */}
+                                            {isSearchExpanded && searchHistory.length > 0 && (
+                                                <div 
+                                                    id="mobile-search-history"
+                                                    className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg z-20 overflow-hidden animate-slideDown"
+                                                    role="listbox"
+                                                    style={{boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)'}}
+                                                >
+                                                    <div className="max-h-36 overflow-y-auto">
+                                                        <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-gray-700">
+                                                            <span className="flex items-center">
+                                                                <i className="ri-history-line mr-1.5 text-pink-400/70"></i>
+                                                                {t('article.search.history')}
+                                                            </span>
                                                             <button 
                                                                 onClick={() => {
                                                                     setSearchHistory([]);
                                                                     localStorage.removeItem('search_history');
                                                                 }}
-                                                    className="text-xs px-1.5 py-0.5 rounded text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                >
-                                                    <i className="ri-delete-bin-line mr-0.5"></i>
-                                                    {t('article.search.clear_history') || '清除'}
+                                                                className="text-xs px-1.5 py-0.5 rounded text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
+                                                                aria-label={t('article.search.clear_history')}
+                                                                type="button"
+                                                            >
+                                                                <span className="flex items-center">
+                                                                    <i className="ri-delete-bin-line mr-0.5 text-xs"></i>
+                                                                    {t('article.search.clear_history')}
+                                                                </span>
                                                             </button>
                                                         </div>
-                                            <div className="max-h-40 overflow-y-auto">
+                                                        <div className="divide-y divide-gray-100 dark:divide-gray-700">
                                                             {searchHistory.map((term, index) => (
                                                                 <button 
                                                                     key={index}
-                                                        className="w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left flex items-center"
+                                                                    className="w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/70 text-left flex items-center transition-colors duration-150 group"
                                                                     onClick={() => {
-                                                            setValue(term);
-                                                            setTimeout(onSearch, 10);
-                                                        }}
-                                                    >
-                                                        <i className="ri-time-line mr-2 text-gray-400"></i>
-                                                        <span className="truncate">{term}</span>
+                                                                        setSearchValue(term);
+                                                                        setTimeout(() => onSearch(), 10);
+                                                                    }}
+                                                                    role="option"
+                                                                    aria-selected={searchValue === term}
+                                                                    type="button"
+                                                                >
+                                                                    <i className="ri-time-line mr-2 text-gray-400 group-hover:text-theme transition-colors duration-150"></i>
+                                                                    <span className="truncate flex-1">{term}</span>
+                                                                    <span className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded transition-opacity duration-150">
+                                                                        {t('search.use', '使用')}
+                                                                    </span>
                                                                 </button>
                                                             ))}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
-                            ) : (
-                                <>
-                                    {/* 语言切换面板 */}
-                                    {showLanguages ? (
-                                        <div className="mt-4 animate-fadeIn">
-                                            <div className="flex items-center mb-3">
+                                        
+                                        {/* 语言切换 */}
+                                        <div className="relative mb-3">
                                             <button 
-                                                    onClick={() => setShowLanguages(false)}
-                                                    className="p-1.5 mr-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                                >
-                                                    <i className="ri-arrow-left-s-line text-lg"></i>
+                                                onClick={() => setShowLanguages(!showLanguages)}
+                                                className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-theme/30 shadow-sm"
+                                                aria-expanded={showLanguages}
+                                            >
+                                                <div className="flex items-center">
+                                                    <i className="ri-translate-2 mr-2.5 text-gray-500 dark:text-gray-400 text-base"></i>
+                                                    <span className="font-medium">
+                                                        {languages.find(lang => lang.code === i18n.language)?.name || t('languages')}
+                                                    </span>
+                                                </div>
+                                                <i className={`ri-arrow-${showLanguages ? 'up' : 'down'}-s-line transition-transform duration-200`}></i>
                                             </button>
-                                                <h3 className="text-lg font-medium text-gray-800 dark:text-white">
-                                                    {t('languages')}
-                                                </h3>
-                                            </div>
-                                            <div className="space-y-2 mt-2">
+
+                                            <div className={`absolute top-full left-0 right-0 z-30 ${showLanguages ? 'block' : 'hidden'}`} style={{ maxHeight: '300px' }}>
+                                                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-slideDown mt-1">
                                                     {languages.map(({ code, name, flag }) => (
                                                         <button 
                                                             key={code} 
                                                             onClick={() => changeLanguage(code)}
-                                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors ${
-                                                            i18n.language === code
-                                                                ? 'bg-theme/10 text-theme font-medium'
-                                                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                                        }`}
+                                                            className={`w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 ${i18n.language === code ? 'bg-theme/10 text-theme font-medium' : 'text-gray-700 dark:text-gray-300'}`}
                                                         >
                                                             <div className="flex items-center">
-                                                            <span className="text-xl mr-3">{flag}</span>
+                                                                <span className="mr-3 text-lg">{flag}</span>
                                                                 <span>{name}</span>
                                                             </div>
-                                                        {i18n.language === code && (
-                                                            <i className="ri-check-line text-theme"></i>
-                                                        )}
+                                                            {i18n.language === code && <i className="ri-check-line"></i>}
                                                         </button>
                                                     ))}
                                                 </div>
                                             </div>
-                                    ) : (
-                                        <>
-                                            {/* 导航菜单 */}
-                                            <div className="mt-4">
-                                                <h3 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium px-2">
-                                                    {t('navigation')}
-                                                </h3>
-                                                <nav className="mt-2 space-y-1">
-                                                    <NavBar menu={true} onClick={onClose} />
-                                                </nav>
                                         </div>
-                                            
-                                            {/* 分割线 */}
-                                            <div className="my-4 border-t border-gray-200 dark:border-gray-700"></div>
-                                            
-                                            {/* 功能选项 */}
-                                            <h3 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium px-2">
-                                                {t('options')}
-                                            </h3>
-                                            <div className="mt-2 space-y-1">
-                                                {mobileMenuOptions.map((option, index) => (
-                                                    option.show && (
-                                                        <div key={index}>
-                                                            <button
-                                                                onClick={option.onClick}
-                                                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors ${
-                                                                    option.active
-                                                                        ? 'bg-theme/10 text-theme'
-                                                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                                                }`}
-                                                            >
-                                                                <div className="flex items-center">
-                                                                    <i className={`${option.icon} mr-3 text-lg`}></i>
-                                                                    <span>{option.title}</span>
                                     </div>
-                                                                {option.hasSubmenu && (
-                                                                    <i className="ri-arrow-right-s-line"></i>
-                                                                )}
-                                                            </button>
-                                                            
-                                                            {option.hasSubmenu && option.submenu && option.submenu.length > 0 && (
-                                                                <div className="pl-10 space-y-1 mt-1">
-                                                                    {option.submenu.map((submenu, subIndex) => (
-                                                                        <div key={subIndex}>
-                                                                            {submenu.href ? (
-                                                                                <Link
-                                                                                    href={submenu.href}
-                                                                                    onClick={onClose}
-                                                                                    className={`w-full flex items-center px-4 py-2.5 rounded-lg text-left transition-colors ${
-                                                                                        submenu.isDanger
-                                                                                            ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                                                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                                                                    }`}
-                                                                                >
-                                                                                    <i className={`${submenu.icon} mr-3 text-lg ${submenu.isDanger ? 'text-red-400' : 'text-gray-400'}`}></i>
-                                                                                    <span>{submenu.title}</span>
-                                                                                </Link>
-                                                                            ) : (
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        if (submenu.onClick) submenu.onClick();
-                                                                                        onClose();
-                                                                                    }}
-                                                                                    className={`w-full flex items-center px-4 py-2.5 rounded-lg text-left transition-colors ${
-                                                                                        submenu.isDanger
-                                                                                            ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                                                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                                                                    }`}
-                                                                                >
-                                                                                    <i className={`${submenu.icon} mr-3 text-lg ${submenu.isDanger ? 'text-red-400' : 'text-gray-400'}`}></i>
-                                                                                    <span>{submenu.title}</span>
-                                                                                </button>
-                                                                            )}
+
+                                    {/* 导航链接区域 */}
+                                    <div className="flex-1 overflow-y-auto overscroll-contain p-3">
+                                        <div className="space-y-1.5">
+                                            <NavBar menu={true} onClick={onClose} />
                                         </div>
-                                                                    ))}
                                     </div>
-                                                            )}
                                 </div>
-                                                    )
-                                                ))}
                             </div>
-                                        </>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                        
-                        {/* 底部信息栏 */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-                            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                <span>© {new Date().getFullYear()} {process.env.NAME}</span>
-                                <Link 
-                                    href="https://github.com/songquanpeng/rin-blog" 
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center hover:text-theme transition-colors"
-                                >
-                                    <i className="ri-github-fill mr-1 text-lg"></i>
-                                    <span>Rin-Blog</span>
-                                </Link>
-                    </div>
                         </div>
                     </div>
-                </div>
+                </>
             )}
-            <LoginModal />
         </div>
     );
 }
@@ -602,7 +589,7 @@ function NavBar({ menu, onClick }: { menu: boolean, onClick?: () => void }) {
     const [location] = useLocation();
     const { t } = useTranslation()
     return (
-        <div className={`${menu ? "flex flex-col w-full" : "flex space-x-1"}`}>
+        <>
             <NavItem menu={menu} onClick={onClick} title={t('article.title')}
                 selected={location === "/" || location.startsWith('/feed')} href="/" />
             <NavItem menu={menu} onClick={onClick} title={t('timeline')} selected={location === "/timeline"} href="/timeline" />
@@ -614,7 +601,7 @@ function NavBar({ menu, onClick }: { menu: boolean, onClick?: () => void }) {
             <NavItem menu={menu} onClick={onClick} when={profile?.permission == true} title={t('settings.title')}
                 selected={location === "/settings"}
                 href="/settings" />
-        </div>
+        </>
     )
 }
 
@@ -663,13 +650,9 @@ function LanguageSwitch({ className }: { className?: string }) {
                 aria-label={label}
                 aria-expanded={isOpen}
                 aria-haspopup="true"
-                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105 relative"
+                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
             >
                 <i className="ri-translate-2 text-xl"></i>
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-theme opacity-20"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-theme text-[8px] text-white flex items-center justify-center">{currentLanguage.code.substring(0,2)}</span>
-                </span>
             </button>
             
             {isOpen && (
@@ -794,15 +777,14 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
         const key = encodeURIComponent(value.trim());
         saveToHistory(value.trim()); // 保存到历史
         
-        setLocation(`/search/${key}`, { replace: false });
-        setValue('');
+        setTimeout(() => {
             setIsExpanded(false);
+            onClose?.();
+        }, 100);
         
-        // 如果存在关闭回调，就调用它
-        if (onClose) {
-            onClose();
+        // 使用编程式导航而不改变滚动位置
+        setLocation(`/search/${key}`, { replace: false });
     }
-    };
 
     // 处理键盘事件
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -898,7 +880,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={getTranslatedText('article.search.placeholder', '搜索文章...')}
-                            className={`${getSearchInputWidthClass()} py-2 pl-8 pr-9 bg-white dark:bg-gray-800 border border-pink-300 dark:border-pink-500/40 rounded-full text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-pink-400/30 focus:border-pink-400 dark:focus:border-pink-400 shadow-sm hover:shadow focus:shadow-md focus:outline-none transition-all duration-200 text-xs`}
+                            className={`${getSearchInputWidthClass()} py-2 pl-8 pr-9 bg-white dark:bg-gray-800 border border-pink-300 dark:border-pink-500/40 rounded-full text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-pink-400/30 focus:border-pink-400 dark:focus:border-pink-400 shadow-sm hover:shadow focus:shadow-md transition-all duration-200 text-xs`}
                             aria-expanded={isExpanded}
                             autoComplete="off"
                             aria-autocomplete="list"
@@ -1038,7 +1020,7 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                         <img 
                             src={profile.avatar} 
                             alt={profile.name || t('user')} 
-                            className="w-9 h-9 rounded-full border-2 border-gray-200 dark:border-gray-700 shadow-sm hover:border-theme transition-colors duration-200" 
+                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm" 
                         />
                         <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></span>
                     </button>
@@ -1063,15 +1045,6 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                             </div>
                             
                             <div className="mt-1 space-y-1">
-                                <Link 
-                                    href="/settings"
-                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-all duration-150 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 group"
-                                    role="menuitem"
-                                    onClick={() => setIsOpen(false)}
-                                >
-                                    <i className="ri-settings-4-line text-gray-400 group-hover:text-theme transition-colors"></i>
-                                    <span>{t('settings.title')}</span>
-                                </Link>
                                 <button 
                                     onClick={handleLogout}
                                     className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-all duration-150 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 group"
@@ -1126,7 +1099,7 @@ function CollapsedMenu() {
         <div ref={menuRef}>
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className={`p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 ${isOpen ? 'bg-gray-100 dark:bg-gray-800 text-theme' : ''}`}
+                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
                 aria-expanded={isOpen}
                 aria-label={t('menu')}
             >
@@ -1134,139 +1107,8 @@ function CollapsedMenu() {
             </button>
             
             {isOpen && (
-                <div className="absolute right-0 mt-2 py-2 w-48 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 z-20 animate-slideDown">
+                <div className="absolute right-0 mt-2 py-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 animate-slideDown">
                     <NavBar menu={true} onClick={() => setIsOpen(false)} />
-                </div>
-            )}
-        </div>
-    );
-}
-
-// 通知按钮组件
-function NotificationButton({ className }: { className?: string }) {
-    const { t } = useTranslation();
-    const [isOpen, setIsOpen] = useState(false);
-    const notifRef = useRef<HTMLDivElement>(null);
-    const [notificationCount, setNotificationCount] = useState(2); // 示例通知数量
-    
-    // 监听点击外部关闭通知面板
-    useEffect(() => {
-        if (!isOpen) return;
-        
-        const handleClickOutside = (event: MouseEvent) => {
-            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
-    
-    // 清除所有通知
-    const clearAllNotifications = () => {
-        setNotificationCount(0);
-        setIsOpen(false);
-    };
-    
-    // 示例通知数据
-    const notifications = [
-        {
-            id: 1,
-            title: '新评论',
-            message: '有人评论了你的文章 "Hello World"',
-            time: '10分钟前',
-            read: false,
-            icon: 'ri-chat-1-line'
-        },
-        {
-            id: 2,
-            title: '系统提醒',
-            message: '你的账户已成功更新',
-            time: '1小时前',
-            read: true,
-            icon: 'ri-information-line'
-        }
-    ];
-    
-    return (
-        <div ref={notifRef} className={(className || "") + " relative flex items-center"}>
-            <button 
-                onClick={() => setIsOpen(!isOpen)} 
-                title={t('notifications')} 
-                aria-label={t('notifications')}
-                aria-expanded={isOpen}
-                aria-haspopup="true"
-                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105 relative"
-            >
-                <i className="ri-notification-3-line text-xl"></i>
-                {notificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-50"></span>
-                        <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 text-[10px] text-white flex items-center justify-center">{notificationCount}</span>
-                    </span>
-                )}
-            </button>
-            
-            {isOpen && (
-                <div 
-                    className="absolute top-full right-0 mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl shadow-xl p-2 w-80 border border-gray-200/50 dark:border-gray-700/50 z-50 animate-slideDown"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="notification-menu"
-                    style={{ maxHeight: '400px', overflowY: 'auto' }}
-                >
-                    <div className="flex justify-between items-center p-2 border-b border-gray-100 dark:border-gray-700">
-                        <p className='font-medium text-gray-800 dark:text-gray-200 flex items-center'>
-                            <i className="ri-notification-3-line mr-1.5 text-theme"></i>
-                            {t('notifications')}
-                        </p>
-                        {notificationCount > 0 && (
-                            <button 
-                                onClick={clearAllNotifications}
-                                className="text-xs px-2 py-1 rounded text-gray-500 hover:text-theme dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                            >
-                                {t('clear_all')}
-                            </button>
-                        )}
-                    </div>
-                    
-                    <div className="py-1">
-                        {notifications.length > 0 ? (
-                            <div className="space-y-1 max-h-72 overflow-y-auto">
-                                {notifications.map((notification) => (
-                                    <div 
-                                        key={notification.id}
-                                        className={`px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors ${notification.read ? 'opacity-70' : ''}`}
-                                    >
-                                        <div className="flex items-start">
-                                            <div className={`mr-3 mt-0.5 w-8 h-8 rounded-full flex items-center justify-center ${notification.read ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400' : 'bg-theme/10 text-theme'}`}>
-                                                <i className={notification.icon}></i>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                                                    {notification.title}
-                                                </p>
-                                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-2">
-                                                    {notification.message}
-                                                </p>
-                                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                                    {notification.time}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-                                <i className="ri-notification-off-line text-3xl mb-2 block opacity-60"></i>
-                                <p className="text-sm">{t('no_notifications')}</p>
-                            </div>
-                        )}
-                    </div>
                 </div>
             )}
         </div>
@@ -1290,13 +1132,6 @@ if (typeof document !== "undefined") {
         }
         .animate-fadeIn {
             animation: fadeIn 0.3s ease-out forwards;
-        }
-        @keyframes slideDown {
-            from { transform: translateY(-10px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-slideDown {
-            animation: slideDown 0.2s ease-out forwards;
         }
     `;
     document.head.appendChild(style);
