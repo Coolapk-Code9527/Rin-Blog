@@ -251,7 +251,7 @@ export function FeedsPage() {
                                         ? t('draft_description')
                                         : listState === 'unlisted' 
                                             ? t('unlisted_description')
-                                            : t('article.public_description') || "公开发布的文章，所有人可见"}
+                                            : ""}
                                 </div>
                                 <div className="flex space-x-2">
                                     {/* 未来可添加排序按钮、视图切换按钮等 */}

@@ -3,7 +3,9 @@ import {useTranslation} from "react-i18next";
 import {timeago} from "../utils/timeago";
 import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
-import React from "react";
+import React, { memo } from "react";
+import { FiCalendar } from "react-icons/fi";
+import dayjs from "dayjs";
 
 export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt }:
     {
@@ -85,152 +87,129 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     }, [id, title]);
 
     return (
-            <Link href={`/feed/${id}`} 
-            className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
-                ? 'border-theme/30 dark:border-theme/20 shadow-md' 
-                : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
-                flex flex-col min-h-[260px] xs:min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
-            aria-labelledby={`article-title-${id}`}
-            onMouseEnter={prefetchArticle}
-            onTouchStart={handleTouchStart}
+        <div
+            className={`w-full overflow-hidden ${
+                top === 1
+                    ? "col-span-full"
+                    : ""
+            } group transition-transform duration-300 ease-out hover:-translate-y-1`}
         >
-            {/* 卡片顶部区域 - 增加图片显示区域高度 */}
-            <div className={`w-full h-40 xs:h-48 sm:h-56 md:h-60 overflow-hidden rounded-t-xl relative`}>
-                {/* 渐变背景占位 - 根据文章标题生成的稳定渐变色 */}
-                <div 
-                    className="absolute inset-0 w-full h-full z-0"
-                    style={{
-                        background: `linear-gradient(${generateGradient.angle}deg, ${generateGradient.colors.join(', ')})`,
-                        opacity: avatar && imageLoaded ? 0 : 0.8
-                    }}
-                />
-                
-                {/* 顶部渐变遮罩层 */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-300 z-10"></div>
-                
-                {avatar && (
-                    <>
-                        {/* 图片加载状态指示器 */}
-                        {!imageLoaded && !imageError && (
-                            <div className="absolute inset-0 flex items-center justify-center z-5">
-                                <div className="w-8 h-8 border-2 border-white/70 border-t-transparent rounded-full animate-spin"></div>
+            <Link
+                href={`/feed/${id}`}
+                className={`block h-full rounded-xl border dark:border-gray-800 shadow-sm dark:shadow-none hover:shadow-md dark:bg-gray-800/50 bg-white backdrop-blur-sm transition-all duration-300 ${
+                    top === 1 ? "ring-2 ring-pink-500/70 dark:ring-pink-600/50" : ""
+                }`}
+                onMouseEnter={prefetchArticle}
+            >
+                {/* 图片区域 - 优化图片显示比例和加载体验 */}
+                <div className={`relative overflow-hidden ${avatar ? "h-32 sm:h-40 md:h-48" : "h-0"}`}>
+                    {avatar && (
+                        <>
+                            <div className="absolute inset-0 bg-gradient-to-b from-gray-900/0 to-gray-900/80 z-10"></div>
+                            <img 
+                                src={avatar} 
+                                alt={title}
+                                loading="lazy"
+                                decoding="async"
+                                className={`object-cover h-full w-full transform group-hover:scale-105 transition-transform duration-700 ease-in-out`}
+                                onLoad={() => setImageLoaded(true)}
+                                onError={() => {
+                                    setImageError(true);
+                                    setImageLoaded(true);
+                                }}
+                            />
+                            {/* 显示文章日期，添加半透明背景提高辨识度 */}
+                            <div className="absolute bottom-2 right-2 z-10 bg-gray-800/80 text-white text-xs px-2 py-1 rounded-md">
+                                {createdAt && (
+                                    <div className="flex items-center space-x-1">
+                                        <FiCalendar className="w-3 h-3" />
+                                        <span>
+                                            {dayjs(createdAt).format("YYYY-MM-DD")}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                        
-                        {/* 图片加载错误占位符 */}
-                        {imageError && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center z-5">
-                                <i className="ri-image-line text-3xl text-white/80 mb-2"></i>
-                                <span className="text-xs text-white/80 bg-black/30 px-2 py-1 rounded">{t('image_load_error')}</span>
+                        </>
+                    )}
+                    {/* 置顶标识 - 增强视觉效果 */}
+                    {top === 1 && (
+                        <div className="absolute top-2 left-2 z-10">
+                            <div className={`text-xs px-2 py-1 rounded-md bg-amber-500 text-white`}>
+                                {t('article.top.title')}
                             </div>
-                        )}
-                        
-                        <img 
-                            src={avatar} 
-                            alt={title}
-                            loading="lazy"
-                            decoding="async"
-                            className={`object-cover w-full h-full group-hover:scale-105 transition-all duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'} z-1`}
-                            onLoad={() => setImageLoaded(true)}
-                            onError={() => {
-                                setImageError(true);
-                                setImageLoaded(true);
-                            }}
-                        />
-                    </>
-                )}
-                
-                {/* 无图片时的内容提示 */}
-                {!avatar && (
-                    <div className="absolute inset-0 flex items-center justify-center z-5">
-                        <div className="text-white/90 text-center px-4">
-                            <i className="ri-article-line text-4xl mb-2 drop-shadow-md"></i>
-                            <p className="text-sm font-medium drop-shadow-md">{title.substring(0, 20)}{title.length > 20 ? '...' : ''}</p>
                         </div>
-                    </div>
-                )}
-                    
-                {/* 置顶标识 - 优化位置居中 */}
-                {top === 1 && (
-                    <div className="absolute top-3 right-3 z-20 flex items-center justify-center">
-                        <div className="bg-theme text-white text-xs font-medium px-2.5 py-1.5 rounded-full shadow-md flex items-center">
-                            <i className="ri-pushpin-line mr-1"></i>
-                            <span>{t('article.top.title')}</span>
-                        </div>
-                    </div>
-                )}
-                
-                {/* 今日发布标识 */}
-                {isToday() && (
-                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-md z-20 flex items-center justify-center">
-                        <i className="ri-time-line mr-1.5"></i>
-                        <span className="hidden xs:inline">{t('today')}</span>
-                    </div>
-                )}
-            </div>
-            
-            {/* 卡片内容区域 */}
-            <div className="p-4 sm:p-5 flex-1 flex flex-col">
-                {/* 文章标题 */}
-                <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 line-clamp-2">
-                    {title}
-                </h2>
-                    
-                {/* 日期和状态区域 - 移动端紧凑设计 */}
-                <div className="flex flex-wrap justify-between items-center gap-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
-                    {/* 左侧日期显示 */}
-                    <div className="flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-2 py-0.5">
-                        <i className="ri-calendar-line mr-1"></i>
-                        {formatDate(createdAt)}
-                        {createdAt !== updatedAt &&
-                            <span className="ml-2 flex items-center" title={new Date(updatedAt).toLocaleString()}>
-                                <i className="ri-history-line mr-1"></i>
-                                {formatDate(updatedAt)}
-                            </span>
-                        }
-                    </div>
-                    
-                    {/* 右侧状态显示 - 改进草稿和未列出标签样式 */}
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                        {draft === 1 && 
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
-                                <i className="ri-draft-line mr-1 text-theme"></i>
-                                <span>{t("draft")}</span>
-                            </span>
-                        }
-                        {listed === 0 && 
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
-                                <i className="ri-eye-off-line mr-1 text-theme"></i>
-                                <span>{t("unlisted")}</span>
-                            </span>
-                        }
-                    </div>
-                </div>
-                
-                {/* 文章摘要 - 改进自适应显示 */}
-                <div className="flex-grow flex flex-col">
-                    <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
-                        <div className="line-clamp-3">
-                            <SimplifiedMarkdown content={cleanedSummary} />
-                        </div>
-                    </div>
-                </div>
-                    
-                {/* 标签区域 - 统一分割线样式和对齐方式 */}
-                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/30">
-                    {hashtags.length > 0 ? (
-                        <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
-                            {hashtags.map(({id, name}) => (
-                                <div key={id} className="animate-fadeIn">
-                                    <HashTag name={name} />
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="h-6"></div> // 占位，保持底部对齐
                     )}
                 </div>
-            </div>
-        </Link>
+
+                {/* 内容区域 - 优化边距和层次感 */}
+                <div className="p-3 sm:p-4 flex flex-col h-[calc(100%-theme(height.32))] sm:h-[calc(100%-theme(height.40))] md:h-[calc(100%-theme(height.48))]">
+                    {/* 标题区域 - 优化字体大小和行高 */}
+                    <div className="mb-2">
+                        <h2 className="text-md sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors duration-300">
+                            {title}
+                        </h2>
+                    </div>
+                    
+                    {/* 日期和状态区域 - 移动端紧凑设计 */}
+                    <div className="flex flex-wrap justify-between items-center gap-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
+                        {/* 左侧日期显示 */}
+                        <div className="flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-2 py-0.5">
+                            <i className="ri-calendar-line mr-1"></i>
+                            {formatDate(createdAt)}
+                            {createdAt !== updatedAt &&
+                                <span className="ml-2 flex items-center" title={new Date(updatedAt).toLocaleString()}>
+                                    <i className="ri-history-line mr-1"></i>
+                                    {formatDate(updatedAt)}
+                                </span>
+                            }
+                        </div>
+                        
+                        {/* 右侧状态显示 - 改进草稿和未列出标签样式 */}
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                            {draft === 1 && 
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
+                                    <i className="ri-draft-line mr-1 text-theme"></i>
+                                    <span>{t("draft")}</span>
+                                </span>
+                            }
+                            {listed === 0 && 
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
+                                    <i className="ri-eye-off-line mr-1 text-theme"></i>
+                                    <span>{t("unlisted")}</span>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    
+                    {/* 文章摘要 - 完全重写自适应显示逻辑 */}
+                    <div className="flex-1 min-h-0 overflow-hidden relative">
+                        <div className="h-full text-pretty dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
+                            <SimplifiedMarkdown content={cleanedSummary} />
+                        </div>
+                        {/* 渐变遮罩层，创建自然的文本截断效果 */}
+                        <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white dark:from-gray-800 to-transparent"></div>
+                    </div>
+                        
+                    {/* 标签区域 - 统一分割线样式和对齐方式 */}
+                    <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/30">
+                        <div className="flex flex-wrap items-center gap-2">
+                            {/* 文章标签 - 提高层次感和可读性 */}
+                            {hashtags && hashtags.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {hashtags.map(({id, name}) => (
+                                        <div
+                                            key={id}
+                                            className="text-xs text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50 px-2 py-0.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                        >
+                                            {name}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </Link>
+        </div>
     )
 }

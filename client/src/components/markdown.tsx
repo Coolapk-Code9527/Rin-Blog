@@ -1,5 +1,5 @@
 import "katex/dist/katex.min.css";
-import React, { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { cloneElement, isValidElement, memo, useEffect, useMemo, useRef, useState, CSSProperties } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
@@ -639,17 +639,25 @@ export function Markdown({ content }: { content: string }) {
 export function SimplifiedMarkdown({ content }: { content: string }) {
   // 预处理内容，替换所有Markdown图片语法，包括更多复杂格式
   const processedContent = useMemo(() => {
+    if (!content) return '';
+    
     // 严格匹配图片语法 ![alt](url) 及其变体，不显示任何占位符
     let processed = content.replace(/!\[([^\]]*?)\]\(([^)]*?)\)/g, '');
     
     // 替换链接中的图片语法 [![alt](url)](link) 为普通链接文本
-    processed = processed.replace(/\[!\[[^\]]*?\]\([^)]*?\)\]\(([^)]*?)\)/g, '');
+    processed = processed.replace(/\[!\[[^\]]*?\]\([^)]*?\)\]\(([^)]*?)\)/g, '[链接]');
     
     // 替换行内代码块 `code` 为简化版本
     processed = processed.replace(/`([^`]+)`/g, '`…`');
     
     // 替换复杂的多行代码块为简单提示
     processed = processed.replace(/```[\s\S]*?```/g, '[代码块]');
+
+    // 替换复杂的HTML标签
+    processed = processed.replace(/<[^>]*>/g, '');
+    
+    // 处理空白行和多余空格
+    processed = processed.replace(/\n{2,}/g, '\n\n').trim();
     
     return processed;
   }, [content]);
@@ -665,13 +673,18 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
       components={{
         // 简化的组件渲染
         p({ children }) {
-          return <p className="my-2 text-gray-800 dark:text-gray-200">{children}</p>;
+          // 确保段落内容不为空
+          if (!children || (Array.isArray(children) && children.every(child => !child))) {
+            return null;
+          }
+          return <p className="mb-2 text-gray-800 dark:text-gray-200">{children}</p>;
         },
         a({ children, href }) {
           return (
             <a
               href={href}
               className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-800 dark:hover:text-blue-300"
+              onClick={(e) => e.stopPropagation()} // 防止卡片点击冲突
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -691,51 +704,18 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
             </code>
           );
         },
-        // 表格相关组件
-        table: ({ children, node, ...props }) => {
-          // 检测是否为URL表格
-          let isUrlTable = false;
-          try {
-            // 简化版的URL表格检测
-            if (node?.children?.[0]?.children?.[0]) {
-              const headerCells = node.children[0].children[0].children || [];
-              const hasUrlHeader = headerCells.some(cell => {
-                const cellText = cell?.children?.[0]?.value || '';
-                return /url|link|地址|链接/i.test(cellText);
-              });
-              
-              isUrlTable = hasUrlHeader;
-            }
-          } catch (e) {
-            // 忽略错误
-          }
-          
-          const tableClass = isUrlTable ? 'table responsive url-table table-compact' : 'table responsive table-compact';
-          
-          return (
-            <div className="overflow-hidden my-3">
-              <table className={tableClass + " w-full text-sm"} {...props}>
-                {children}
-              </table>
-            </div>
-          );
-        },
-        th: ({ children, ...props }) => (
-          <th className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider" {...props}>
-            {children}
-          </th>
-        ),
-        td: ({ children, ...props }) => (
-          <td className="px-3 py-2 whitespace-normal break-words" {...props}>
-            {children}
-          </td>
-        ),
+        // 表格相关组件 - 摘要中完全隐藏表格
+        table: () => <span className="text-gray-500 dark:text-gray-400">[表格内容]</span>,
+        th: () => null,
+        td: () => null,
+        tr: () => null,
+        tbody: () => null,
+        thead: () => null,
+        
         // 增强的元素渲染
         blockquote({ children }) {
           return (
-            <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 pl-4 py-1 rounded-r-md italic text-gray-700 dark:text-gray-300 my-3">
-              {children}
-            </blockquote>
+            <span className="text-gray-600 dark:text-gray-300 italic">「{children}」</span>
           );
         },
         strong({ children }) {
@@ -744,19 +724,26 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
         em({ children }) {
           return <em className="italic text-gray-800 dark:text-gray-200">{children}</em>;
         },
+        // 列表在摘要中显示为内联文本
         ul({ children }) {
-          return <ul className="list-disc pl-5 my-3 space-y-1">{children}</ul>;
+          return <span className="text-gray-700 dark:text-gray-300">{children}</span>;
         },
         ol({ children }) {
-          return <ol className="list-decimal pl-5 my-3 space-y-1">{children}</ol>;
+          return <span className="text-gray-700 dark:text-gray-300">{children}</span>;
         },
         li({ children }) {
-          return <li className="mb-1">{children}</li>;
+          return <span className="inline-block mr-1">• {children}</span>;
         },
         hr() {
-          return <hr className="my-4 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" />;
+          return <span className="mx-2">·</span>;
         },
-        // 其他元素使用默认渲染
+        // 标题在摘要中显示为加粗文本
+        h1: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
+        h2: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
+        h3: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
+        h4: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
+        h5: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
+        h6: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
       }}
     />
   );
