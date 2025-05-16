@@ -94,7 +94,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
 
     return (
             <Link href={`/feed/${id}`} 
-            className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
+            className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all transform border ${top === 1 
                 ? 'border-theme/30 dark:border-theme/20 shadow-md' 
                 : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
                 flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
@@ -137,7 +137,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                         
                         <img 
                             src={avatar} 
-                            alt={title}
+                            alt={title || t('unnamed')}
                             loading="lazy"
                             decoding="async"
                             className={`object-cover w-full h-full group-hover:scale-105 transition-all duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'} z-1`}
@@ -183,7 +183,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             <div className="p-3 sm:p-4 flex-1 flex flex-col">
                 {/* 文章标题 */}
                 <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-1.5 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 line-clamp-2">
-                    {title}
+                    {title || t('unnamed')}
                 </h2>
                     
                 {/* 日期和状态区域 - 移动端紧凑设计 */}
@@ -228,11 +228,14 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/30">
                     {hashtags.length > 0 ? (
                         <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
-                            {hashtags.map(({id, name}) => (
+                            {hashtags.slice(0, 3).map(({id, name}) => (
                                 <div key={id} className="animate-fadeIn">
                                     <HashTag name={name} />
                                 </div>
                             ))}
+                            {hashtags.length > 3 && (
+                                <span className="text-xs text-gray-400 dark:text-gray-500">+{hashtags.length - 3}</span>
+                            )}
                         </div>
                     ) : (
                         <div className="h-6"></div> // 占位，保持底部对齐
