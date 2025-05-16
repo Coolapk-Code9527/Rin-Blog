@@ -24,7 +24,7 @@ type FeedsMap = {
 }
 
 // 懒加载Feed卡片组件
-function LazyFeedCard({ id, ...props }: any) {
+function LazyFeedCard({ id, viewMode = 'grid', ...props }: any) {
     const [isVisible, setIsVisible] = React.useState(false);
     const cardRef = React.useRef<HTMLDivElement>(null);
     const { t } = useTranslation();
@@ -79,11 +79,125 @@ function LazyFeedCard({ id, ...props }: any) {
     return (
         <div ref={cardRef} className="w-full h-full">
             {isVisible ? (
-                <FeedCard id={id} {...props} />
+                <Link href={`/feed/${id}`} 
+                    className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${props.top === 1 
+                        ? 'border-theme/30 dark:border-theme/20 shadow-md' 
+                        : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
+                        flex ${viewMode === 'grid' ? 'flex-col' : 'md:flex-row'} min-h-[260px] ${viewMode === 'list' ? 'md:min-h-[180px]' : 'xs:min-h-[280px]'} focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
+                    aria-labelledby={`article-title-${id}`}
+                    onTouchStart={() => {
+                        if ('vibrate' in navigator) {
+                            navigator.vibrate(5); // 轻微振动5毫秒
+                        }
+                    }}
+                >
+                    {/* 卡片顶部区域 - 根据视图模式调整尺寸 */}
+                    <div className={`${viewMode === 'grid' 
+                            ? 'w-full h-44 xs:h-52 sm:h-56 md:h-60' 
+                            : 'w-full md:w-[280px] h-44 md:h-full'} 
+                            overflow-hidden ${viewMode === 'grid' ? 'rounded-t-xl' : 'rounded-t-xl md:rounded-l-xl md:rounded-tr-none'} relative`}>
+                        {/* 渐变背景占位和图片内容... */}
+                        <div 
+                            className="absolute inset-0 w-full h-full z-0 bg-gradient-to-br from-blue-100 to-purple-200 dark:from-blue-900/40 dark:to-purple-900/40"
+                        />
+                        
+                        {/* 顶部渐变遮罩层 */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-40 group-hover:opacity-60 transition-opacity duration-300 z-10"></div>
+                        
+                        {props.avatar && (
+                            <img 
+                                src={props.avatar} 
+                                alt={props.title}
+                                loading="lazy"
+                                decoding="async"
+                                className="object-cover w-full h-full group-hover:scale-105 transition-all duration-700 z-1"
+                            />
+                        )}
+                        
+                        {/* 无图片时的内容提示 */}
+                        {!props.avatar && (
+                            <div className="absolute inset-0 flex items-center justify-center z-5">
+                                <div className="text-white/90 text-center px-4">
+                                    <i className="ri-article-line text-4xl mb-2 drop-shadow-md"></i>
+                                    <p className="text-sm font-medium drop-shadow-md">{props.title.substring(0, 20)}{props.title.length > 20 ? '...' : ''}</p>
+                                </div>
+                            </div>
+                        )}
+                            
+                        {/* 置顶标识 */}
+                        {props.top === 1 && (
+                            <div className="absolute top-3 right-3 z-20 flex items-center justify-center">
+                                <div className="bg-theme text-white text-xs font-medium px-2.5 py-1.5 rounded-full shadow-md flex items-center">
+                                    <i className="ri-pushpin-line mr-1"></i>
+                                    <span>{t('article.top.title')}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* 卡片内容区域 */}
+                    <div className={`p-4 sm:p-5 flex-1 flex flex-col ${viewMode === 'list' ? 'md:justify-between' : ''}`}>
+                        {/* 文章标题 */}
+                        <div>
+                            <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors line-clamp-2">
+                                {props.title}
+                            </h2>
+                                
+                            {/* 日期和状态区域 */}
+                            <div className="flex flex-wrap justify-between items-center gap-1 mb-2 text-xs text-gray-500 dark:text-gray-400">
+                                {/* 左侧日期 */}
+                                <div className="flex items-center">
+                                    <i className="ri-calendar-line mr-1"></i>
+                                    {new Date(props.createdAt).toLocaleDateString()}
+                                </div>
+                                
+                                {/* 右侧状态 */}
+                                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                    {props.draft === 1 && 
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
+                                            <i className="ri-draft-line mr-1 text-theme"></i>
+                                            <span>{t("draft")}</span>
+                                        </span>
+                                    }
+                                    {props.listed === 0 && 
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
+                                            <i className="ri-eye-off-line mr-1 text-theme"></i>
+                                            <span>{t("unlisted")}</span>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                            
+                            {/* 列表视图下的摘要区域 */}
+                            <div className={`text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed ${viewMode === 'grid' ? 'line-clamp-3 h-[4.5rem] sm:h-[5rem]' : 'line-clamp-2 md:line-clamp-3'} group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors`}>
+                                {props.summary}
+                            </div>
+                        </div>
+                        
+                        {/* 标签区域 - 仅在网格视图或移动端列表视图显示 */}
+                        {(viewMode === 'grid' || window.innerWidth < 768) && props.hashtags && props.hashtags.length > 0 && (
+                            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/30">
+                                <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
+                                    {props.hashtags.slice(0, viewMode === 'list' ? 2 : 3).map((tag: any) => (
+                                        <div key={tag.id} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                            #{tag.name}
+                                        </div>
+                                    ))}
+                                    {props.hashtags.length > (viewMode === 'list' ? 2 : 3) && (
+                                        <div className="inline-flex items-center px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
+                                            +{props.hashtags.length - (viewMode === 'list' ? 2 : 3)}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </Link>
             ) : (
                 <div className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
+                    {/* 占位符内容... */}
                     {/* 占位符卡片顶部 */}
-                    <div className={`w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`}>
+                    <div className={`w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gradient-to-r from-blue-100 to-purple-200 dark:from-blue-900/40 dark:to-purple-900/40 animate-pulse`}>
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-10 h-10 rounded-full bg-white/20 dark:bg-gray-700/30 flex items-center justify-center">
                                 <i className="ri-image-line text-white/50 dark:text-gray-500/70 text-xl"></i>
@@ -93,24 +207,21 @@ function LazyFeedCard({ id, ...props }: any) {
                     
                     {/* 占位符卡片内容区域 */}
                     <div className="p-4 sm:p-5 flex-1 flex flex-col">
-                        {/* 标题占位 */}
+                        {/* 占位符内容... */}
                         <div className="h-6 sm:h-7 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4 mb-2 animate-pulse"></div>
                         <div className="h-4 sm:h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-1/2 mb-4 animate-pulse"></div>
                         
-                        {/* 日期和状态占位 */}
                         <div className="flex justify-between mb-3">
                             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/4 animate-pulse"></div>
                             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/5 animate-pulse"></div>
                         </div>
                         
-                        {/* 摘要占位 */}
                         <div className="space-y-2 mb-4">
                             <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                             <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                             <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-4/5 animate-pulse"></div>
                         </div>
                         
-                        {/* 标签占位 */}
                         <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30">
                             <div className="flex gap-2">
                                 <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
@@ -130,6 +241,7 @@ export function FeedsPage() {
     const profile = React.useContext(ProfileContext);
     const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
     const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
+    const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid')
     const [feeds, setFeeds] = React.useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
         unlisted: { size: 0, data: [], hasNext: false },
@@ -215,18 +327,26 @@ export function FeedsPage() {
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
                                         <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`w-8 h-8 rounded-md text-xs font-medium transition-all flex items-center justify-center shadow-sm
+                                            className={`w-9 h-9 sm:w-auto sm:h-auto sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center justify-center shadow-sm
                                             ${listState === 'draft' 
                                             ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
-                                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
-                                            <i className="ri-draft-line"></i>
+                                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}
+                                            aria-label={listState === 'draft' ? t('back_to_all_articles') : t('draft_bin')}
+                                            title={listState === 'draft' ? t('back_to_all_articles') : t('draft_bin')}
+                                        >
+                                            <i className="ri-draft-line sm:mr-2"></i>
+                                            <span className="hidden sm:inline">{t('draft_bin')}</span>
                                         </Link>
                                         <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`w-8 h-8 rounded-md text-xs font-medium transition-all flex items-center justify-center shadow-sm
+                                            className={`w-9 h-9 sm:w-auto sm:h-auto sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center justify-center shadow-sm
                                             ${listState === 'unlisted' 
                                             ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
-                                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
-                                            <i className="ri-eye-off-line"></i>
+                                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}
+                                            aria-label={listState === 'unlisted' ? t('back_to_all_articles') : t('unlisted')}
+                                            title={listState === 'unlisted' ? t('back_to_all_articles') : t('unlisted')}
+                                        >
+                                            <i className="ri-eye-off-line sm:mr-2"></i>
+                                            <span className="hidden sm:inline">{t('unlisted')}</span>
                                         </Link>
                                     </div>
                                 }
@@ -241,16 +361,51 @@ export function FeedsPage() {
                                             : ""}
                                 </div>
                                 <div className="flex space-x-2">
-                                    {/* 未来可添加排序按钮、视图切换按钮等 */}
-                        </div>
-                    </div>
+                                    {/* 视图切换按钮组 */}
+                                    <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+                                        <button
+                                            onClick={() => setViewMode('grid')}
+                                            className={`w-8 h-8 flex items-center justify-center transition-colors ${
+                                                viewMode === 'grid'
+                                                ? 'bg-theme/10 text-theme dark:bg-theme/20'
+                                                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750'
+                                            }`}
+                                            aria-label={t('grid_view') || "网格视图"}
+                                            title={t('grid_view') || "网格视图"}
+                                        >
+                                            <i className="ri-grid-fill"></i>
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('list')}
+                                            className={`w-8 h-8 flex items-center justify-center transition-colors ${
+                                                viewMode === 'list'
+                                                ? 'bg-theme/10 text-theme dark:bg-theme/20'
+                                                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750'
+                                            }`}
+                                            aria-label={t('list_view') || "列表视图"}
+                                            title={t('list_view') || "列表视图"}
+                                        >
+                                            <i className="ri-list-check"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <Waiting for={status === 'idle'}>
-                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
+                            <div className={`${
+                                viewMode === 'grid' 
+                                ? 'grid grid-cols-1 md:grid-cols-2 gap-6' 
+                                : 'flex flex-col space-y-4'
+                            } ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
                                 {feeds[listState].data.length > 0 ? (
                                     feeds[listState].data.map(({ id, ...feed }: any) => (
-                                        <LazyFeedCard key={id} id={id} {...feed} />
+                                        <LazyFeedCard 
+                                            key={id} 
+                                            id={id} 
+                                            {...feed}
+                                            viewMode={viewMode} 
+                                        />
                                     ))
                                 ) : (
                                     <div className="col-span-full text-center py-20 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">

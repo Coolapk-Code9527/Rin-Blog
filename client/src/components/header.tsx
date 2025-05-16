@@ -91,14 +91,13 @@ export function Header({ children }: { children?: React.ReactNode }) {
     ), [profile, children, isScrolled, t])
 }
 
-function NavItem({ menu, title, selected, href, when = true, onClick, children }: {
+function NavItem({ menu, title, selected, href, when = true, onClick }: {
     title: string,
     selected: boolean,
     href: string,
     menu?: boolean,
     when?: boolean,
-    onClick?: () => void,
-    children?: React.ReactNode
+    onClick?: () => void
 }) {
     // 阻止默认链接行为并使用编程式导航
     const [_, setLocation] = useLocation();
@@ -134,7 +133,7 @@ function NavItem({ menu, title, selected, href, when = true, onClick, children }
                     onClick={handleClick}
                     aria-current={selected ? 'page' : undefined}
                 >
-                    {children || title}
+                    {title}
                     {menu && selected && (
                         <span className="absolute right-3 text-theme">
                             <i className="ri-arrow-right-s-line"></i>
@@ -595,15 +594,8 @@ function NavBar({ menu, onClick }: { menu: boolean, onClick?: () => void }) {
                 selected={location === "/" || location.startsWith('/feed')} href="/" />
             <NavItem menu={menu} onClick={onClick} title={t('timeline')} selected={location === "/timeline"} href="/timeline" />
             <NavItem menu={menu} onClick={onClick} title={t('hashtags')} selected={location === "/hashtags"} href="/hashtags" />
-            <NavItem menu={menu} onClick={onClick} when={profile?.permission == true} title={menu ? t('writing') : ""}
-                selected={location.startsWith("/writing")} href="/writing">
-                {!menu && 
-                    <div className="flex items-center gap-1 px-2 py-1 bg-theme text-white rounded-lg hover:bg-theme-hover transition-colors">
-                        <i className="ri-edit-line"></i>
-                        <span>{t('writing')}</span>
-                    </div>
-                }
-            </NavItem>
+            <NavItem menu={menu} onClick={onClick} when={profile?.permission == true} title={t('writing')}
+                selected={location.startsWith("/writing")} href="/writing" />
             <NavItem menu={menu} onClick={onClick} title={t('friends.title')} selected={location === "/friends"} href="/friends" />
             <NavItem menu={menu} onClick={onClick} title={t('about.title')} selected={location === "/about"} href="/about" />
             <NavItem menu={menu} onClick={onClick} when={profile?.permission == true} title={t('settings.title')}

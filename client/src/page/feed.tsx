@@ -40,6 +40,8 @@ type Feed = {
   };
   pv: number;
   uv: number;
+  draft: number;
+  listed: number;
 };
 
 
@@ -239,6 +241,24 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                       </h1>
                       <div className="flex-1 w-0" />
                     </div>
+                    
+                    {/* 文章状态标签区域 */}
+                    {(feed.draft === 1 || feed.listed === 0) && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {feed.draft === 1 && (
+                          <div className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
+                            <i className="ri-draft-line mr-1.5"></i>
+                            <span>{t("draft")}</span>
+                          </div>
+                        )}
+                        {feed.listed === 0 && (
+                          <div className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
+                            <i className="ri-eye-off-line mr-1.5"></i>
+                            <span>{t("unlisted")}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="pt-2">
                     {profile?.permission && (
