@@ -5,7 +5,7 @@ import ReactModal from "react-modal";
 import Popup from "reactjs-popup";
 import {Link, useLocation} from "wouter";
 import {useAlert, useConfirm} from "../components/dialog";
-import {HashTag} from "../components/hash_tag";
+import {HashTag} from "../components/hashtag";
 import {Waiting} from "../components/loading";
 import {Markdown} from "../components/markdown";
 import {client} from "../main";
@@ -21,11 +21,6 @@ import mermaid from "mermaid";
 import {AdjacentSection} from "../components/adjacent_feed.tsx";
 import {formatDistance} from "date-fns";
 import { Pagination } from "../components/pagination";
-import { useSearchParams } from "react-router-dom";
-import React from "react";
-import { useParams } from "react-router-dom";
-import { useDarkMode } from "../hooks/useDarkMode";
-import { SimplifiedMarkdown } from "../utils/simplified_markdown";
 
 type Feed = {
   id: number;
@@ -45,373 +40,279 @@ type Feed = {
   };
   pv: number;
   uv: number;
-  top: number;
-  draft: number;
-  listed: number;
-  userAvatarUrl: string | null;
-  userName: string | null;
 };
 
-export function FeedPage() {
-  const [searchParams] = useSearchParams();
-  const { t, i18n } = useTranslation();
-  const { client } = React.useContext(ClientContext);
-  const { user } = React.useContext(UserContext);
-  const { id } = useParams() || { id: '' };
-  const [error, setError] = React.useState<string | null>(null);
-  const [feed, setFeed] = React.useState<Feed | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [deleting, setDeleting] = React.useState(false);
-  const [settingTop, setSettingTop] = React.useState(false);
-  const [darkMode] = useDarkMode();
+
+
+export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
+  const { t } = useTranslation();
+  const profile = useContext(ProfileContext);
+  const [feed, setFeed] = useState<Feed>();
+  const [error, setError] = useState<string>();
+  const [headImage, setHeadImage] = useState<string>();
+  const ref = useRef("");
   const [, setLocation] = useLocation();
-  const [refs, setRefs] = React.useState<HTMLElement[]>([]);
-
-  // 获取文章
-  React.useEffect(() => {
-    const getFeed = async () => {
-      setLoading(true);
-      setError(null);
-      if (id) {
-        try {
-          const resp = await client.getFeed({
-            id, 
-            locale: i18n.language,
-            timezone: new Date().getTimezoneOffset(),
-          });
-          if (resp.status === "ok") {
-            document.title = `${resp.data.title || t('unnamed')} | ${t('title')}`;
-            resp.data.createdAt = new Date(resp.data.createdAt);
-            resp.data.updatedAt = new Date(resp.data.updatedAt);
-            if (resp.data.attachments) {
-              resp.data.attachments.map((attachment: any) => {
-                attachment.createdAt = new Date(attachment.createdAt);
-                return attachment;
-              });
+  const { showAlert, AlertUI } = useAlert();
+  const { showConfirm, ConfirmUI } = useConfirm();
+  const [top, setTop] = useState<number>(0);
+  const config = useContext(ClientConfigContext);
+  const counterEnabled = config.get<boolean>('counter.enabled');
+  function deleteFeed() {
+    // Confirm
+    showConfirm(
+      t("article.delete.title"),
+      t("article.delete.confirm"),
+      () => {
+        if (!feed) return;
+        client
+          .feed({ id: feed.id })
+          .delete(null, {
+            headers: headersWithAuth(),
+          })
+          .then(({ error }) => {
+            if (error) {
+              showAlert(error.value as string);
+            } else {
+              showAlert(t("delete.success"));
+              setLocation("/");
             }
-            setFeed(resp.data);
-          } else {
-            setError(resp.message);
-          }
-        } catch (e: any) {
-          setError(e.toString());
-        }
-      } else {
-        setError(t('error.feed_id_missing'));
-      }
-      setLoading(false);
-    }
-    
-    getFeed();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, i18n.language]);
-
-  // 删除文章处理函数
-  const handleDeleteFeed = React.useCallback(async () => {
-    if (id) {
-      try {
-        setDeleting(true);
-        const resp = await client.deleteFeed({
-          id
-        });
-        if (resp.status === "ok") {
-          setLocation("/feeds");
-        } else {
-          setError(resp.message);
-        }
-      } catch (e: any) {
-        setError(e.toString());
-      }
-      setDeleting(false);
-    }
-  }, [id, client, setLocation]);
-  
-  // 置顶/取消置顶文章处理函数
-  const handleSetTop = React.useCallback(async () => {
-    if (id && feed) {
-      try {
-        setSettingTop(true);
-        const resp = await client.topFeed({
-          id,
-          type: feed.top === 1 ? "0" : "1"
-        });
-        if (resp.status === "ok") {
-          setFeed({
-            ...feed,
-            top: feed.top === 1 ? 0 : 1
           });
-        } else {
-          setError(resp.message);
+      })
+  }
+  function topFeed() {
+    const isUnTop = !(top > 0)
+    const topNew = isUnTop ? 1 : 0;
+    // Confirm
+    showConfirm(
+      isUnTop ? t("article.top.title") : t("article.untop.title"),
+      isUnTop ? t("article.top.confirm") : t("article.untop.confirm"),
+      () => {
+        if (!feed) return;
+        client
+          .feed.top({ id: feed.id })
+          .post({
+            top: topNew,
+          }, {
+            headers: headersWithAuth(),
+          })
+          .then(({ error }) => {
+            if (error) {
+              showAlert(error.value as string);
+            } else {
+              showAlert(isUnTop ? t("article.top.success") : t("article.untop.success"));
+              setTop(topNew);
+            }
+          });
+      })
+  }
+  useEffect(() => {
+    if (ref.current == id) return;
+    setFeed(undefined);
+    setError(undefined);
+    setHeadImage(undefined);
+    client
+      .feed({ id })
+      .get({
+        headers: headersWithAuth(),
+      })
+      .then(({ data, error }) => {
+        if (error) {
+          setError(error.value as string);
+        } else if (data && typeof data !== "string") {
+          setTimeout(() => {
+            setFeed(data);
+            setTop(data.top);
+            // Extract head image
+            const img_reg = /!\[.*?\]\((.*?)\)/;
+            const img_match = img_reg.exec(data.content);
+            if (img_match) {
+              setHeadImage(img_match[1]);
+            }
+          }, 0);
         }
-      } catch (e: any) {
-        setError(e.toString());
-      }
-      setSettingTop(false);
-    }
-  }, [client, feed, id]);
-
-  // 在文章渲染完成后，处理目录与锚点
-  React.useEffect(() => {
-    if (feed) {
-      // 获取所有标题元素
-      const headingElements = Array.from(document.querySelectorAll('.markdown h1, .markdown h2, .markdown h3, .markdown h4, .markdown h5, .markdown h6'));
-      setRefs(headingElements as HTMLElement[]);
-      
-      // 处理URL中的锚点
-      const hash = window.location.hash.substring(1);
-      if (hash) {
-        setTimeout(() => {
-          const element = document.getElementById(hash);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 100);
-      }
-    }
+      });
+    ref.current = id;
+  }, [id]);
+  useEffect(() => {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "default",
+    });
+    mermaid.run({
+      suppressErrors: true,
+      nodes: document.querySelectorAll("pre.mermaid_default")
+    }).then(()=>{
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "dark",
+      });
+      mermaid.run({
+        suppressErrors: true,
+        nodes: document.querySelectorAll("pre.mermaid_dark")
+      });
+    })
   }, [feed]);
 
-  if (loading) {
-    return <Waiting />;
-  }
-
-  if (error) {
-    return <div className="flex flex-col h-screen items-center justify-center">
-      <div className="p-4 bg-red-50 dark:bg-red-900/30 rounded-lg max-w-xl w-full">
-        <div className="text-xl font-bold text-red-700 dark:text-red-400 text-center mb-2">
-          <i className="ri-error-warning-line mr-2"></i>
-          {t('error.title')}
-        </div>
-        <div className="text-center text-red-600 dark:text-red-300">
-          {error}
-        </div>
-        <div className="mt-4 flex justify-center">
-          <Button
-            type="button"
-            className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-black dark:text-white font-medium px-4 py-2 rounded-lg"
-            onClick={() => window.history.back()}
-          >
-            <i className="ri-arrow-left-line mr-2"></i>
-            {t('back')}
-          </Button>
-        </div>
-      </div>
-    </div>;
-  }
-
-  if (!feed) {
-    return <div className="flex flex-col h-screen items-center justify-center">
-      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg max-w-xl w-full">
-        <div className="text-xl font-bold text-yellow-700 dark:text-yellow-400 text-center mb-2">
-          <i className="ri-error-warning-line mr-2"></i>
-          {t('error.title')}
-        </div>
-        <div className="text-center text-yellow-600 dark:text-yellow-300">
-          {t('error.feed_not_found')}
-        </div>
-        <div className="mt-4 flex justify-center">
-          <Button
-            type="button"
-            className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-black dark:text-white font-medium px-4 py-2 rounded-lg"
-            onClick={() => window.history.back()}
-          >
-            <i className="ri-arrow-left-line mr-2"></i>
-            {t('back')}
-          </Button>
-        </div>
-      </div>
-    </div>;
-  }
-
   return (
-    <div>
-      {/* 页面主容器 - 重新设计为两栏布局 */}
-      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8">
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
-          {/* 主内容区 - 增大宽度 */}
-          <article className="w-full lg:w-3/4 flex-grow">
-            {/* 头部导航和操作按钮 */}
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              <Button
-                type="button"
-                className="inline-flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium px-3 py-1.5 rounded-lg text-sm transition-all duration-200"
-                onClick={() => window.history.back()}
-              >
-                <i className="ri-arrow-left-line mr-1.5"></i>
-                {t('back')}
-              </Button>
-
-              {user && user.id === feed.userId && (
-                <div className="flex items-center space-x-2">
-                  {/* 编辑按钮 */}
-                  <Button
-                    type="button"
-                    className="inline-flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium px-3 py-1.5 rounded-lg text-sm transition-colors"
-                    onClick={() => setLocation(`/writing?id=${feed.id}`)}
-                  >
-                    <i className="ri-edit-line mr-1.5"></i>
-                    {t('edit')}
-                  </Button>
-                  
-                  {/* 置顶按钮 */}
-                  <Button
-                    type="button"
-                    className={`inline-flex items-center ${feed.top === 1 
-                      ? 'bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:hover:bg-amber-800/40 text-amber-700 dark:text-amber-300' 
-                      : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
-                    } font-medium px-3 py-1.5 rounded-lg text-sm transition-colors`}
-                    loading={settingTop}
-                    onClick={handleSetTop}
-                  >
-                    <i className={`${feed.top === 1 ? 'ri-pushpin-fill' : 'ri-pushpin-line'} mr-1.5`}></i>
-                    {feed.top === 1 ? t('article.top.cancel') : t('article.top.title')}
-                  </Button>
-                  
-                  {/* 删除按钮 */}
-                  <Button
-                    type="button"
-                    className="inline-flex items-center bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-800/40 text-red-700 dark:text-red-300 font-medium px-3 py-1.5 rounded-lg text-sm transition-colors"
-                    loading={deleting}
-                    onClick={() => {
-                      if (window.confirm(t('article.delete.confirm'))) {
-                        handleDeleteFeed();
-                      }
-                    }}
-                  >
-                    <i className="ri-delete-bin-line mr-1.5"></i>
-                    {t('delete')}
-                  </Button>
-                </div>
+    <Waiting for={feed || error}>
+      {feed && (
+        <Helmet>
+          <title>{`${feed.title ?? t('unnamed')} - ${process.env.NAME}`}</title>
+          <meta property="og:site_name" content={siteName} />
+          <meta property="og:title" content={feed.title ?? t('unnamed')} />
+          <meta property="og:image" content={headImage ?? process.env.AVATAR} />
+          <meta property="og:type" content="article" />
+          <meta property="og:url" content={document.URL} />
+          <meta
+            name="og:description"
+            content={
+              feed.content.length > 200
+                ? feed.content.substring(0, 200)
+                : feed.content
+            }
+          />
+          <meta name="author" content={feed.user.username} />
+          <meta
+            name="keywords"
+            content={feed.hashtags.map(({ name }) => name).join(", ")}
+          />
+          <meta
+            name="description"
+            content={
+              feed.content.length > 200
+                ? feed.content.substring(0, 200)
+                : feed.content
+            }
+          />
+        </Helmet>
+      )}
+      <div className="w-full flex flex-row justify-center ani-show">
+        {error && (
+          <>
+            <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
+              <h1 className="text-xl font-bold t-primary">{error}</h1>
+              {error === "Not found" && id === "about" && (
+                <Tips value={t("about.notfound")} />
               )}
+              <Button
+                title={t("index.back")}
+                onClick={() => {
+                  window.history.back();
+                }}
+              />
             </div>
-
-            {/* 文章标题和状态 */}
-            <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
-                {feed.title || t('unnamed')}
-                {feed.top === 1 && (
-                  <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
-                    <i className="ri-pushpin-fill mr-1"></i>
-                    {t('article.top.title')}
-                  </span>
-                )}
-              </h1>
-              
-              <div className="flex flex-wrap items-center gap-3 md:gap-4 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                <div className="flex items-center">
-                  <i className="ri-calendar-line mr-1.5"></i>
-                  <time dateTime={feed.createdAt.toISOString()}>
-                    {dateFormat(feed.createdAt, t)}
-                  </time>
-                </div>
-                
-                {feed.createdAt.getTime() !== feed.updatedAt.getTime() && (
-                  <div className="flex items-center">
-                    <i className="ri-history-line mr-1.5"></i>
-                    <time dateTime={feed.updatedAt.toISOString()}>
-                      {dateFormat(feed.updatedAt, t)}
-                    </time>
-                  </div>
-                )}
-                
-                {feed.draft === 1 && (
-                  <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme-light">
-                    <i className="ri-draft-line mr-1.5"></i>
-                    {t('draft')}
-                  </div>
-                )}
-                
-                {feed.listed === 0 && (
-                  <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                    <i className="ri-eye-off-line mr-1.5"></i>
-                    {t('unlisted')}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 文章内容 - 使用卡片式设计增强可读性 */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-              <div className="article-content prose dark:prose-invert md:prose-lg lg:prose-xl max-w-none p-5 md:p-8">
-                <Markdown 
-                  content={feed.content || ''} 
-                  className="markdown" 
-                  darkMode={darkMode}
-                />
-              </div>
-              
-              {/* 文章元信息 - 作者头像、用户名和标签 */}
-              <div className="px-5 md:px-8 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  {/* 作者信息 */}
-                  <div className="flex items-center">
-                    <img 
-                      src={feed.userAvatarUrl || 'https://api.dicebear.com/7.x/thumbs/svg?seed=Rin'} 
-                      alt={feed.userName || t('anonymous')} 
-                      className="w-8 h-8 rounded-full mr-3 object-cover" 
+          </>
+        )}
+        {feed && !error && (
+          <>
+            <div className="hidden xl:block xl:w-64" />
+            <main className="w-full max-w-4xl mx-auto px-2 sm:px-4 md:px-8 flex-1">
+              <article
+                className="rounded-2xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 m-0 md:m-4 px-0 md:px-8 py-6 md:py-10 transition-all duration-300"
+                aria-label={feed.title ?? "Unnamed"}
+              >
+                {headImage && (
+                  <div className="w-full mb-6">
+                    <img
+                      src={headImage}
+                      alt={feed.title ?? "cover"}
+                      className="w-full h-64 object-cover rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
+                      loading="lazy"
                     />
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">
-                        {feed.userName || t('anonymous')}
-                      </div>
-                    </div>
                   </div>
-                  
-                  {/* 标签信息 */}
-                  {feed.hashtags && feed.hashtags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 md:justify-end">
-                      {feed.hashtags.map(tag => (
-                        <HashTag key={tag.id} name={tag.name} />
+                )}
+                <div className="flex flex-col gap-2 mb-4">
+                  <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white leading-tight mb-2">
+                    {feed.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                    <span title={new Date(feed.createdAt).toLocaleString()}>
+                      <i className="ri-calendar-line mr-1"></i>
+                      {t("published_at")} {timeago(feed.createdAt)}
+                    </span>
+                    {feed.createdAt !== feed.updatedAt && (
+                      <span title={new Date(feed.updatedAt).toLocaleString()}>
+                        <i className="ri-history-line mr-1"></i>
+                        {t("feed_card.updated$time", { time: timeago(feed.updatedAt) })}
+                      </span>
+                    )}
+                    {counterEnabled && (
+                      <span>
+                        <i className="ri-eye-line mr-1"></i>{t("count.pv")} {feed.pv} | <i className="ri-user-3-line mr-1"></i>{t("count.uv")} {feed.uv}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-4 mb-6">
+                  <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-900/40 px-3 py-2 rounded-lg shadow-sm">
+                    <img
+                      src={feed.user.avatar || "/avatar.png"}
+                      className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
+                      alt={feed.user.username}
+                    />
+                    <span className="text-gray-700 dark:text-gray-200 font-medium text-base">{feed.user.username}</span>
+                  </div>
+                  {feed.hashtags.length > 0 && (
+                    <div className="flex flex-row flex-wrap gap-2">
+                      {feed.hashtags.map(({ name }, index) => (
+                        <HashTag key={index} name={name} />
                       ))}
                     </div>
                   )}
+                  <div className="flex-1" />
+                  {profile?.permission && (
+                    <div className="flex gap-2">
+                      <button
+                        aria-label={top > 0 ? t("untop.title") : t("top.title")}
+                        onClick={topFeed}
+                        className={`w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center ${
+                          top > 0
+                            ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20"
+                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
+                        }`}
+                      >
+                        <i className="ri-skip-up-line" />
+                      </button>
+                      <Link
+                        aria-label={t("edit")}
+                        href={`/writing/${feed.id}`}
+                        className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
+                      >
+                        <i className="ri-edit-2-line" />
+                      </Link>
+                      <button
+                        aria-label={t("delete.title")}
+                        onClick={deleteFeed}
+                        className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        <i className="ri-delete-bin-7-line" />
+                      </button>
+                    </div>
+                  )}
                 </div>
+                <div className="prose prose-lg dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-100 mb-8">
+                  <Markdown content={feed.content} />
+                </div>
+              </article>
+              <AdjacentSection id={id} setError={setError}/>
+              {feed && <Comments id={`${feed.id}`} />}
+              <div className="h-16" />
+            </main>
+            <div className="w-80 hidden lg:block relative">
+              <div className={`start-0 end-0 top-[5.5rem] sticky`}>
+                <TOC />
               </div>
             </div>
-            
-            {/* 评论区域 */}
-            <div className="mt-8">
-              <Comments feedId={feed.id} />
-            </div>
-          </article>
-          
-          {/* 侧边栏 */}
-          <aside className="w-full lg:w-1/4 lg:max-w-xs">
-            {/* 目录导航 - 桌面端显示固定位置，移动端折叠 */}
-            {refs.length > 0 && (
-              <div className="lg:sticky lg:top-24 mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/90 border-b border-gray-100 dark:border-gray-700">
-                  <h3 className="text-base font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                    <i className="ri-list-check mr-2"></i>
-                    {t('toc')}
-                  </h3>
-                </div>
-                <div className="p-4 max-h-[calc(100vh-250px)] overflow-y-auto">
-                  <TOCHeader refs={refs} />
-                </div>
-              </div>
-            )}
-            
-            {/* 相关文章推荐占位（如有） */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/90 border-b border-gray-100 dark:border-gray-700">
-                <h3 className="text-base font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                  <i className="ri-links-line mr-2"></i>
-                  {t('related_articles')}
-                </h3>
-              </div>
-              <div className="p-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400 italic">{t('no_related_articles')}</p>
-              </div>
-            </div>
-          </aside>
-        </div>
+          </>
+        )}
       </div>
-    </div>
+      <AlertUI />
+      <ConfirmUI />
+    </Waiting>
   );
 }
 
-export function TOCHeader({ refs }: { refs: HTMLElement[] }) {
-  const { t } = useTranslation();
+export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
   const [isOpened, setIsOpened] = useState(false);
 
   return (
@@ -449,7 +350,7 @@ export function TOCHeader({ refs }: { refs: HTMLElement[] }) {
         onRequestClose={() => setIsOpened(false)}
       >
         <div className="w-[80vw] sm:w-[60vw] lg:w-[40vw] overflow-clip relative t-primary">
-          <TOC refs={refs} />
+          <TOC />
         </div>
       </ReactModal>
     </div>
@@ -657,7 +558,7 @@ type Comment = {
   };
 };
 
-function Comments({ feedId }: { feedId: string }) {
+function Comments({ id }: { id: string }) {
   const config = useContext(ClientConfigContext);
   const [comments, setComments] = useState<Comment[]>([]);
   const [error, setError] = useState<string>();
@@ -672,7 +573,7 @@ function Comments({ feedId }: { feedId: string }) {
     setLoading(true);
     setError(undefined);
     client.feed
-      .comment({ feed: feedId })
+      .comment({ feed: id })
       .get({
         headers: headersWithAuth(),
       })
@@ -697,10 +598,10 @@ function Comments({ feedId }: { feedId: string }) {
   }
   
   useEffect(() => {
-    if (ref.current == feedId) return;
+    if (ref.current == id) return;
     loadComments();
-    ref.current = feedId;
-  }, [feedId]);
+    ref.current = id;
+  }, [id]);
 
   // 获取当前页的评论
   const currentComments = comments.slice(
@@ -740,7 +641,7 @@ function Comments({ feedId }: { feedId: string }) {
             </div>
           </div>
           
-          <CommentInput id={feedId} onRefresh={loadComments} />
+          <CommentInput id={id} onRefresh={loadComments} />
           
           {loading ? (
             <div className="w-full bg-white rounded-lg p-8 flex justify-center shadow-sm">
