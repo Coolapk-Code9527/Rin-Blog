@@ -192,43 +192,47 @@ export function FeedsPage() {
                 <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
                     <div className="w-auto w-full max-w-6xl">
                         <div className="flex flex-col space-y-4 mb-4">
-                            <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between py-4 sm:py-6 gap-2 xs:gap-0">
-                                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group">
-                            {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 sm:py-5 gap-3 sm:gap-4">
+                                {/* 左侧：标题和文章数量 */}
+                                <div className="flex items-center gap-2 sm:gap-3">
+                                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 dark:text-white relative group">
+                                        {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                                     </h1>
-                                    <div className="px-2 py-1 sm:mt-0 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm self-start sm:self-auto">
-                                        <i className="ri-article-line mr-1.5"></i>
-                                {t('article.total$count', { count: feeds[listState]?.size })}
+                                    <div className="px-2 py-1 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm">
+                                        <i className="ri-article-line mr-1"></i>
+                                        {t('article.total$count', { count: feeds[listState]?.size })}
                                     </div>
                                 </div>
                                 
-                            {profile?.permission &&
-                                    <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
+                                {/* 右侧：操作按钮组 */}
+                                {profile?.permission && (
+                                    <div className="flex items-center gap-2 md:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
                                         <Link href="/writing/new"
-                                            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
-                                            <i className="ri-add-line mr-1 sm:mr-2"></i>
-                                            <span className="inline text-xs sm:text-sm">{t('new_article')}</span>
+                                            className="flex-1 sm:flex-none px-3 sm:px-3.5 py-2 rounded-md text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
+                                            <i className="ri-add-line mr-1.5"></i>
+                                            <span>{t('new_article')}</span>
                                         </Link>
-                                        <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`w-8 h-8 sm:w-auto sm:h-auto px-0 xs:px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center sm:justify-start shadow-sm
-                                            ${listState === 'draft' 
-                                            ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow" 
-                                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
-                                            <i className="ri-draft-line xs:mr-1 sm:mr-2"></i>
-                                            <span className="hidden sm:inline">{t('draft_bin')}</span>
-                                    </Link>
-                                        <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`w-8 h-8 sm:w-auto sm:h-auto px-0 xs:px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center sm:justify-start shadow-sm
-                                            ${listState === 'unlisted' 
-                                            ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow" 
-                                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
-                                            <i className="ri-eye-off-line xs:mr-1 sm:mr-2"></i>
-                                            <span className="hidden sm:inline">{t('unlisted')}</span>
-                                    </Link>
-                                </div>
-                            }
+                                        <div className="flex items-center gap-2">
+                                            <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
+                                                className={`flex-1 sm:flex-none h-9 xs:h-auto px-3 py-2 rounded-md text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm
+                                                ${listState === 'draft' 
+                                                ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow" 
+                                                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
+                                                <i className="ri-draft-line mr-1.5 md:mr-2"></i>
+                                                <span className="hidden xs:inline">{t('draft_bin')}</span>
+                                            </Link>
+                                            <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
+                                                className={`flex-1 sm:flex-none h-9 xs:h-auto px-3 py-2 rounded-md text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm
+                                                ${listState === 'unlisted' 
+                                                ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow" 
+                                                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
+                                                <i className="ri-eye-off-line mr-1.5 md:mr-2"></i>
+                                                <span className="hidden xs:inline">{t('unlisted')}</span>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             
                             {/* 上方渐变分割线 */}
@@ -236,25 +240,25 @@ export function FeedsPage() {
                                 <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                             </div>
                             
-                            <div className="flex justify-between items-center -mt-2 sm:mt-0">
+                            <div className="flex justify-between items-center -mt-1 sm:mt-0">
                                 {(listState === 'draft' || listState === 'unlisted') && (
-                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-2 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-md">
-                                    {listState === 'draft' 
-                                            ? t('draft_description')
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-3 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700/20 max-w-full sm:max-w-md">
+                                        {listState === 'draft' 
+                                            ? t('draft_description') 
                                             : t('unlisted_description')
                                         }
-                                </div>
+                                    </div>
                                 )}
                                 <div className="flex space-x-2">
                                     {/* 未来可添加排序按钮、视图切换按钮等 */}
-                        </div>
-                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <Waiting for={status === 'idle'}>
                             {feeds[listState]?.data?.length > 0 ? (
                                 <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 w-full">
                                         {feeds[listState].data.map((feed, i) => (
                                             <LazyFeedCard key={`feed-card-${feed.id}-${i}`} {...feed} />
                                         ))}
@@ -316,21 +320,23 @@ export function FeedsPage() {
                                 </div>
                             ) : (
                                 // 空状态 - 添加创建文章按钮
-                                <div className="w-full py-16 sm:py-24 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                                    <div className="text-5xl text-gray-300 dark:text-gray-600">
+                                <div className="w-full py-14 sm:py-20 flex flex-col items-center justify-center text-center space-y-5 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-50 dark:bg-gray-800/50">
+                                    <div className="text-6xl text-gray-300 dark:text-gray-600">
                                         <i className="ri-inbox-2-line"></i>
                                     </div>
-                                    <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-300">{t('empty_list')}</h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-                                        {listState === 'draft' 
-                                            ? t('empty_draft_description') 
-                                            : listState === 'unlisted' 
-                                                ? t('empty_unlisted_description')
-                                                : t('empty_article_description')
-                                        }
-                                    </p>
+                                    <div className="max-w-md px-4">
+                                        <h3 className="text-xl sm:text-2xl font-semibold text-gray-600 dark:text-gray-300 mb-2">{t('empty_list')}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            {listState === 'draft' 
+                                                ? t('empty_draft_description') 
+                                                : listState === 'unlisted' 
+                                                    ? t('empty_unlisted_description')
+                                                    : t('empty_article_description')
+                                            }
+                                        </p>
+                                    </div>
                                     {profile?.permission && (
-                                        <Link href="/writing/new" className="mt-4 px-5 py-2.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
+                                        <Link href="/writing/new" className="mt-4 px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
                                             <i className="ri-add-line mr-2"></i>
                                             {t('create_now')}
                                         </Link>

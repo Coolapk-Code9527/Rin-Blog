@@ -102,7 +102,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
                 ? 'border-theme/30 dark:border-theme/20 shadow-md' 
                 : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
-                flex flex-col min-h-[260px] xs:min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
+                flex flex-col min-h-[260px] xs:min-h-[280px] sm:min-h-[300px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
             aria-labelledby={`article-title-${id}`}
             onMouseEnter={prefetchArticle}
             onTouchStart={handleTouchStart}
@@ -110,7 +110,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             onClick={handleClick}
         >
             {/* 卡片顶部区域 - 根据屏幕大小调整高度 */}
-            <div className={`w-full h-40 xs:h-44 sm:h-48 overflow-hidden rounded-t-xl relative`}>
+            <div className={`w-full h-40 xs:h-44 sm:h-48 md:h-52 overflow-hidden rounded-t-xl relative`}>
                 {/* 渐变背景占位 - 根据文章标题生成的稳定渐变色 */}
                 <div 
                     className="absolute inset-0 w-full h-full z-0"
@@ -187,7 +187,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             {/* 卡片内容区域 */}
             <div className="p-4 sm:p-5 flex-1 flex flex-col">
                 {/* 文章标题 */}
-                <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 line-clamp-2">
+                <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1.5 sm:mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 line-clamp-2">
                     {title}
                 </h2>
                     
