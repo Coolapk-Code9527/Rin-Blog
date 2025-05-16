@@ -211,94 +211,182 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                 className="rounded-2xl bg-w m-2 px-6 py-4"
                 aria-label={feed.title ?? "Unnamed"}
               >
-                <div className="flex justify-between">
-                  <div>
-                    <div className="mt-1 mb-1 flex gap-1">
-                      <p
-                        className="text-gray-400 text-[12px]"
-                        title={new Date(feed.createdAt).toLocaleString()}
-                      >
-                        {t("published_at")} {timeago(feed.createdAt)}
-                      </p>
-
-                      {feed.createdAt !== feed.updatedAt && (
-                        <p
-                          className="text-gray-400 text-[12px]"
-                          title={new Date(feed.updatedAt).toLocaleString()}
-                        >
-                          {t("feed_card.updated$time", {
-                            time: timeago(feed.updatedAt),
-                          })}
-                        </p>
+                <div className="flex flex-col items-start border-b border-gray-100 dark:border-gray-700 pb-4 mb-6">
+                  <div className="flex items-center mb-4 w-full">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 rounded-full overflow-hidden mr-3 bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                        {feed.user.avatar ? (
+                          <img 
+                            src={feed.user.avatar} 
+                            alt={feed.user.username} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <i className="ri-user-line text-lg"></i>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium t-primary">{feed.user.username}</div>
+                        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                          <span className="flex items-center" title={new Date(feed.createdAt).toLocaleString()}>
+                            <i className="ri-calendar-line mr-1"></i>
+                            {new Date(feed.createdAt).toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'})}
+                          </span>
+                          {feed.createdAt !== feed.updatedAt && (
+                            <span className="ml-3 flex items-center" title={new Date(feed.updatedAt).toLocaleString()}>
+                              <i className="ri-history-line mr-1"></i>
+                              {t("updated")}
+                            </span>
+                          )}
+                          <span className="ml-3 flex items-center">
+                            <i className="ri-time-line mr-1"></i>
+                            {Math.max(1, Math.ceil(feed.content.length / 500))} {t("min_read")}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex-1" />
+                      {counterEnabled && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                          <span className="flex items-center mr-3">
+                            <i className="ri-eye-line mr-1"></i>
+                            {feed.pv}
+                          </span>
+                          <span className="flex items-center">
+                            <i className="ri-user-line mr-1"></i>
+                            {feed.uv}
+                          </span>
+                        </div>
                       )}
                     </div>
-                    {counterEnabled && <p className='text-[12px] text-gray-400 font-normal link-line'>
-                      {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
-                    </p>}
-                    <div className="flex flex-row items-center">
-                      <h1 className="text-2xl font-bold t-primary break-all">
-                        {feed.title}
-                      </h1>
-                      <div className="flex-1 w-0" />
-                    </div>
                   </div>
-                  <div className="pt-2">
-                    {profile?.permission && (
-                      <div className="flex gap-2">
-                        <button
-                          aria-label={top > 0 ? t("untop.title") : t("top.title")}
-                          onClick={topFeed}
-                          className={`w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center ${
-                            top > 0 
-                              ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
-                              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
-                          }`}
-                        >
-                          <i className="ri-skip-up-line" />
-                        </button>
-                        <Link
-                          aria-label={t("edit")}
-                          href={`/writing/${feed.id}`}
-                          className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
-                        >
-                          <i className="ri-edit-2-line" />
-                        </Link>
-                        <button
-                          aria-label={t("delete.title")}
-                          onClick={deleteFeed}
-                          className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                          <i className="ri-delete-bin-7-line" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <Markdown content={feed.content} />
-                <div className="mt-6 flex flex-col gap-2">
+                  
+                  <h1 className="text-3xl md:text-4xl font-bold t-primary mb-4 leading-tight break-all">
+                    {feed.title}
+                  </h1>
+
                   {feed.hashtags.length > 0 && (
-                    <div className="flex flex-row flex-wrap gap-x-2">
-                      {feed.hashtags.map(({ name }, index) => (
-                        <HashTag key={index} name={name} />
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {feed.hashtags.map(({ id, name }) => (
+                        <Link
+                          key={id}
+                          href={`/hashtag/${name}`}
+                          className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-700 dark:text-gray-300 transition-colors hover:bg-theme/20 hover:text-theme"
+                        >
+                          #{name}
+                        </Link>
                       ))}
                     </div>
                   )}
-                  <div className="flex flex-row items-center">
-                    <img
-                      src={feed.user.avatar || "/avatar.png"}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <div className="ml-2">
-                      <span className="text-gray-400 text-sm cursor-default">
-                        {feed.user.username}
+                </div>
+                
+                {/* 管理员操作按钮区 */}
+                {profile?.permission && (
+                  <div className="flex gap-2 mb-4 justify-end">
+                    <button
+                      aria-label={top > 0 ? t("untop.title") : t("top.title")}
+                      onClick={topFeed}
+                      className={`w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center ${
+                        top > 0 
+                          ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
+                          : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
+                      }`}
+                    >
+                      <i className="ri-skip-up-line" />
+                    </button>
+                    <Link
+                      aria-label={t("edit")}
+                      href={`/writing/${feed.id}`}
+                      className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
+                    >
+                      <i className="ri-edit-2-line" />
+                    </Link>
+                    <button
+                      aria-label={t("delete.title")}
+                      onClick={deleteFeed}
+                      className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <i className="ri-delete-bin-7-line" />
+                    </button>
+                  </div>
+                )}
+                
+                {/* 文章内容区域优化 - 增加最大宽度限制，提高阅读体验 */}
+                <div className="w-full max-w-4xl mx-auto prose prose-md dark:prose-invert prose-img:rounded-lg prose-headings:font-bold prose-a:text-theme">
+                  <Markdown content={feed.content} />
+                </div>
+                
+                {/* 文章底部标签优化 */}
+                <div className="mt-8 mb-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+                  {feed.hashtags.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">
+                        <i className="ri-price-tag-3-line mr-1"></i>
+                        {t("tags")}:
                       </span>
+                      {feed.hashtags.map(({ id, name }) => (
+                        <Link
+                          key={id}
+                          href={`/hashtag/${name}`}
+                          className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300 transition-colors hover:bg-theme/20 hover:text-theme"
+                        >
+                          #{name}
+                        </Link>
+                      ))}
                     </div>
+                  )}
+                </div>
+                
+                {/* 分享功能按钮 */}
+                <div className="mb-8 flex justify-center">
+                  <div className="inline-flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-full px-4 py-2 shadow-sm">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        showAlert(t("copied"));
+                      }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      aria-label={t("copy_link")}
+                      title={t("copy_link")}
+                    >
+                      <i className="ri-link"></i>
+                    </button>
+                    <a
+                      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(feed.title || '')}&url=${encodeURIComponent(window.location.href)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      aria-label="Twitter"
+                      title="Twitter"
+                    >
+                      <i className="ri-twitter-x-line"></i>
+                    </a>
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      aria-label="Facebook"
+                      title="Facebook"
+                    >
+                      <i className="ri-facebook-circle-line"></i>
+                    </a>
                   </div>
                 </div>
               </article>
-              <AdjacentSection id={id} setError={setError}/>
-              {feed && <Comments id={`${feed.id}`} />}
-              <div className="h-16" />
+              
+              {/* 相邻文章导航区优化 */}
+              <AdjacentSection id={id} setError={setError} />
+              
+              {/* 评论区域样式优化 */}
+              <div className="rounded-2xl bg-w m-2 p-6">
+                <h2 className="text-xl font-bold mb-6 flex items-center text-gray-800 dark:text-white">
+                  <i className="ri-chat-3-line mr-2"></i>
+                  {t("comment.title")}
+                </h2>
+                <Comments id={id} />
+              </div>
             </main>
             <div className="w-80 hidden lg:block relative">
               <div
