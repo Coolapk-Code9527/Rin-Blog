@@ -84,7 +84,7 @@ declare module 'wouter' {
 }
 
 // 为Node.js进程声明添加支持
-declare var process: {
+declare let process: {
   env: {
     NODE_ENV: 'development' | 'production' | 'test',
     [key: string]: string | undefined

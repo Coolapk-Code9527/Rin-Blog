@@ -50,7 +50,7 @@ async function publish({ name, avatar, desc, url, showAlert }: { name: string, a
 export function FriendsPage() {
     const { t } = useTranslation()
     const config = useContext(ClientConfigContext)
-    let [apply, setApply] = useState<FriendItem>()
+    const [apply, setApply] = useState<FriendItem>()
     const [name, setName] = useState("")
     const [desc, setDesc] = useState("")
     const [avatar, setAvatar] = useState("")

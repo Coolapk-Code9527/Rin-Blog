@@ -53,7 +53,7 @@ function BackToTop() {
       {visible && (
         <button
           onClick={scrollToTop}
-          className="fixed right-5 bottom-5 z-50 w-10 h-10 rounded-full bg-theme text-white shadow-lg flex items-center justify-center transition-all hover:bg-theme-hover focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2"
+          className="fixed right-5 bottom-5 z-50 w-10 h-10 rounded-full bg-theme text-white shadow-lg flex items-center justify-center transition-all hover:bg-theme-hover active:bg-theme-active hover:scale-110 focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900"
           aria-label="返回顶部"
         >
           <i className="ri-arrow-up-line"></i>
