@@ -246,23 +246,27 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                         <button
                           aria-label={top > 0 ? t("untop.title") : t("top.title")}
                           onClick={topFeed}
-                          className={`flex-1 flex flex-col items-end justify-center px-2 py rounded-full transition ${top > 0 ? "bg-theme text-white hover:bg-theme-hover active:bg-theme-active" : "bg-secondary bg-button dark:text-neutral-400"}`}
+                          className={`w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center ${
+                            top > 0 
+                              ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
+                              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
+                          }`}
                         >
                           <i className="ri-skip-up-line" />
                         </button>
                         <Link
                           aria-label={t("edit")}
                           href={`/writing/${feed.id}`}
-                          className="flex-1 flex flex-col items-end justify-center px-2 py bg-secondary bg-button rounded-full transition"
+                          className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
                         >
-                          <i className="ri-edit-2-line dark:text-neutral-400" />
+                          <i className="ri-edit-2-line" />
                         </Link>
                         <button
                           aria-label={t("delete.title")}
                           onClick={deleteFeed}
-                          className="flex-1 flex flex-col items-end justify-center px-2 py bg-secondary bg-button rounded-full transition"
+                          className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
-                          <i className="ri-delete-bin-7-line text-red-500" />
+                          <i className="ri-delete-bin-7-line" />
                         </button>
                       </div>
                     )}
