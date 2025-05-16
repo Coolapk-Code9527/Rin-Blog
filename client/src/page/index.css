@@ -82,4 +82,45 @@ html.dark .text-fade-bottom::after {
 
 html.dark .article-card:hover {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 分页组件增强样式 */
+.pagination-container {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* 分页按钮微交互 */
+.pagination-button {
+  transition: all 0.2s ease;
+}
+
+.pagination-button:hover {
+  transform: translateY(-2px);
+}
+
+.pagination-button:active {
+  transform: translateY(1px);
+}
+
+/* 页面内容切换动画 */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s, transform 0.3s;
 } 

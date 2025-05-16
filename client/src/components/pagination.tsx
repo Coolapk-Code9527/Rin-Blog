@@ -300,9 +300,23 @@ export function Pagination({
     return null;
   }
   
+  // 添加页面总数提示 - 修正i18n使用方式
+  const paginationSummary = t('pagination.summary', {
+    current: currentPage,
+    total: totalPages
+  });
+  
+  // 页面导航的无障碍标签
+  const navigationLabel = t('pagination.navigation');
+  
   return (
-    <div className={`flex justify-center py-6 ${className}`}>
-      <div className="flex items-center gap-2">
+    <div className={`flex flex-col items-center py-6 ${className}`} aria-label={navigationLabel}>
+      {/* 页面总数提示信息 */}
+      <div className="text-xs text-gray-500 dark:text-gray-400 mb-3" aria-live="polite">
+        {paginationSummary}
+      </div>
+      
+      <div className="flex items-center gap-2 pagination-container" role="navigation">
         {renderPreviousButton()}
         
         {getPageNumbers().map((pageNumber) => {
