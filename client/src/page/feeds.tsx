@@ -10,6 +10,15 @@ import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { useTranslation } from "react-i18next";
+import { useEffect, useState, useContext } from 'react';
+import { useHydrated } from 'react-hydrated';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from 'react-query';
+import { Helmet as HelmetAsync } from 'react-helmet-async';
+import { LazyFeedCard } from '../components/feed_card';
+import { FeedsPageSkeleton } from '../components/skeleton';
+import { ThemeContext } from '../state/theme.context';
+import usePageVisibility from '../hooks/use_page_visibility';
 
 type FeedsData = {
     size: number,
@@ -178,6 +187,34 @@ export function FeedsPage() {
         ref.current = key
     }, [query.get("page"), query.get("type"), fetchFeeds])
     
+    const { isLoading, isFetching, isError, data, error } = useQuery(
+        ['feeds', page, listState],
+        () => fetchFeeds(listState),
+        {
+            keepPreviousData: true,
+            refetchOnWindowFocus: true,
+            staleTime: 1000 * 60 * 5, // 5分钟内不重新获取
+            onError: () => {
+                setStatus('error');
+            },
+        }
+    );
+
+    // 标记是否为首次加载，用于显示骨架屏
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+    
+    // 首次加载完成后，关闭骨架屏
+    useEffect(() => {
+        if (status !== 'loading' && isInitialLoading) {
+            // 延迟300ms关闭骨架屏，让UI切换更顺滑
+            const timer = setTimeout(() => {
+                setIsInitialLoading(false);
+            }, 300);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [status, isInitialLoading]);
+
     return (
         <>
             <Helmet>
@@ -191,12 +228,12 @@ export function FeedsPage() {
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
                 <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
                     <div className="w-auto w-full max-w-6xl">
-                        <div className="flex flex-col space-y-4 mb-4">
+                        <div className="flex flex-col space-y-4 mb-6">
                             <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between py-4 sm:py-6 gap-2 xs:gap-0">
                                 <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group">
                             {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
-                                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
+                                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-theme/70 to-theme-dark/70 group-hover:w-full transition-all duration-300"></span>
                                     </h1>
                                     <div className="px-2 py-1 sm:mt-0 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm self-start sm:self-auto">
                                         <i className="ri-article-line mr-1.5"></i>
@@ -232,11 +269,11 @@ export function FeedsPage() {
                             </div>
                             
                             {/* 上方渐变分割线 */}
-                            <div className="w-full mb-3">
-                                <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+                            <div className="w-full mb-4">
+                                <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent shadow-sm" />
                             </div>
                             
-                            <div className="flex justify-between items-center -mt-2 sm:mt-0">
+                            <div className="flex justify-between items-center">
                                 {(listState === 'draft' || listState === 'unlisted') && (
                                     <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-2 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-md">
                                     {listState === 'draft' 
@@ -254,14 +291,14 @@ export function FeedsPage() {
                         <Waiting for={status === 'idle'}>
                             {feeds[listState]?.data?.length > 0 ? (
                                 <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 w-full">
                                         {feeds[listState].data.map((feed, i) => (
                                             <LazyFeedCard key={`feed-card-${feed.id}-${i}`} {...feed} />
                                         ))}
                                     </div>
                                     
                                     {/* 分页控制 - 改进视觉样式和交互 */}
-                                    <div className="flex justify-center mt-8 mb-2 w-full">
+                                    <div className="flex justify-center mt-10 mb-4 w-full">
                                         <Pagination
                                             currentPage={page}
                                             totalPages={Math.ceil(feeds[listState].size / limit)}
@@ -272,7 +309,7 @@ export function FeedsPage() {
                                     
                                     {/* 底部分隔线 */}
                                     <div className="w-full mb-8">
-                                        <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+                                        <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent shadow-sm" />
                                     </div>
                                 </>
                             ) : status === 'loading' ? (
