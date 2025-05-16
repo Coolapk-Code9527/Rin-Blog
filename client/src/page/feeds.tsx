@@ -154,60 +154,6 @@ export function FeedsPage() {
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = React.useRef("")
     
-    // 添加排序功能
-    const [sortOrder, setSortOrder] = React.useState<'newest' | 'oldest' | 'top'>('newest');
-    
-    // 排序菜单状态
-    const [sortMenuOpen, setSortMenuOpen] = React.useState(false);
-    
-    // 排序选项
-    const sortOptions = {
-        newest: t('sort.newest'),
-        oldest: t('sort.oldest'),
-        top: t('sort.top')
-    };
-    
-    // 处理排序切换
-    const handleSortChange = (order: 'newest' | 'oldest' | 'top') => {
-        setSortOrder(order);
-        setSortMenuOpen(false);
-        // 如果有后端API支持排序，可以在这里调用
-    };
-    
-    // 关闭排序菜单的点击外部处理
-    React.useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            if (sortMenuOpen && !target.closest('.sort-dropdown')) {
-                setSortMenuOpen(false);
-            }
-        };
-        
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [sortMenuOpen]);
-    
-    // 对文章排序的处理函数
-    const getSortedFeeds = () => {
-        const feedsToSort = [...feeds[listState].data];
-        
-        switch (sortOrder) {
-            case 'newest':
-                return feedsToSort.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            case 'oldest':
-                return feedsToSort.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-            case 'top':
-                return feedsToSort.sort((a, b) => (b.top || 0) - (a.top || 0));
-            default:
-                return feedsToSort;
-        }
-    };
-    
-    // 获取排序后的文章
-    const sortedFeeds = getSortedFeeds();
-    
     // 使用useCallback优化函数
     const fetchFeeds = React.useCallback((type: FeedType) => {
         client.feed.index.get({
@@ -282,131 +228,104 @@ export function FeedsPage() {
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
                 <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
                     <div className="w-auto w-full max-w-6xl">
-                        {/* 标题和操作区改造 - 更清晰的层次结构和更好的响应式设计 */}
-                        <div className="mb-8">
-                            {/* 主标题区域 - 更醒目的标题和统计信息 */}
-                            <div className="flex flex-col space-y-3 mb-6">
-                                <div className="flex items-center">
-                                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative before:absolute before:left-0 before:-bottom-2 before:w-12 before:h-1 before:bg-theme">
+                        {/* Bento风格的文章页头部设计 */}
+                        <div className="bento-header mb-8 pt-8 pb-4">
+                            {/* 标题和统计信息区 */}
+                            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8">
+                                {/* 左侧标题区 */}
+                                <div className="flex flex-col">
+                                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2 relative inline-block">
                                         {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
+                                        <div className="absolute -bottom-1 left-0 h-1 w-24 bg-gradient-to-r from-theme to-theme-dark rounded-full"></div>
                                     </h1>
-                                    <div className="ml-3 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm">
-                                        <i className="ri-article-line mr-1.5"></i>
-                                        {t('article.total$count', { count: feeds[listState]?.size })}
+                                    
+                                    {/* 类型说明文字，有条件显示 */}
+                                    {(listState === 'draft' || listState === 'unlisted') && (
+                                        <div className="mt-3 text-sm text-gray-600 dark:text-gray-400 italic px-4 py-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-l-2 border-theme">
+                                            {listState === 'draft' 
+                                                ? t('draft_description') 
+                                                : t('unlisted_description')
+                                            }
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {/* 右侧文章统计信息 */}
+                                <div className="flex items-center justify-start lg:justify-end">
+                                    <div className="flex items-center rounded-full px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium shadow-sm">
+                                        <span className="flex items-center justify-center w-8 h-8 bg-white dark:bg-gray-700 rounded-full shadow-sm mr-3">
+                                            <i className="ri-article-line text-theme"></i>
+                                        </span>
+                                        <span>{t('article.total$count', { count: feeds[listState]?.size })}</span>
                                     </div>
                                 </div>
-
-                                {/* 类型说明 - 仅在特殊模式下显示 */}
-                                {(listState === 'draft' || listState === 'unlisted') && (
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-800/50 rounded-md px-3 py-2 border-l-2 border-theme/50">
-                                        {listState === 'draft' 
-                                            ? t('draft_description')
-                                            : t('unlisted_description')
-                                        }
-                                    </div>
-                                )}
                             </div>
-
-                            {/* 操作按钮区 - 更合理的布局和分组 */}
+                            
+                            {/* 操作按钮区 */}
                             {profile?.permission && (
-                                <div className="flex flex-wrap gap-3 mb-6">
-                                    {/* 主要操作组 */}
-                                    <div className="flex sort-dropdown">
+                                <div className="bento-actions grid grid-cols-1 sm:grid-cols-12 gap-4">
+                                    {/* 新建文章按钮 */}
+                                    <div className="sm:col-span-4">
                                         <Link href="/writing/new"
-                                            className="h-10 px-4 rounded-l-lg text-sm font-medium bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:shadow-md transition-all duration-300 flex items-center justify-center">
-                                            <i className="ri-add-line mr-2"></i>
-                                            <span>{t('new_article')}</span>
+                                            className="group w-full relative overflow-hidden px-4 py-3 rounded-xl flex items-center justify-center transition-all duration-300 bg-gradient-to-r from-theme to-theme-dark text-white shadow-md hover:shadow-lg hover:scale-[1.02]">
+                                            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                                            <i className="ri-add-line mr-2 text-lg"></i>
+                                            <span className="font-medium">{t('new_article')}</span>
                                         </Link>
-                                        <button
-                                            onClick={() => setSortMenuOpen(!sortMenuOpen)}
-                                            className="h-10 w-10 rounded-r-lg bg-theme/90 text-white hover:bg-theme-hover active:bg-theme-active transition-all duration-300 flex items-center justify-center border-l border-white/20 relative"
-                                        >
-                                            <i className="ri-arrow-down-line"></i>
-                                            
-                                            {/* 排序下拉菜单 */}
-                                            {sortMenuOpen && (
-                                                <div className="absolute top-full right-0 mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10 py-1">
-                                                    {Object.entries(sortOptions).map(([key, value]) => (
-                                                        <button
-                                                            key={key}
-                                                            onClick={() => handleSortChange(key as 'newest' | 'oldest' | 'top')}
-                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                                                                sortOrder === key ? 'text-theme font-medium' : 'text-gray-700 dark:text-gray-300'
-                                                            }`}
-                                                        >
-                                                            <i className={`mr-2 ${
-                                                                key === 'newest' ? 'ri-arrow-up-line' : 
-                                                                key === 'oldest' ? 'ri-arrow-down-line' : 
-                                                                'ri-star-line'
-                                                            }`}></i>
-                                                            {value}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </button>
                                     </div>
                                     
-                                    {/* 次要操作组 - 使用分段控制样式 */}
-                                    <div className="flex bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                                        <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`h-10 px-3 text-sm font-medium transition-all duration-300 flex items-center justify-center border-r border-gray-200 dark:border-gray-700
-                                            ${listState === 'draft' 
-                                            ? "bg-theme/10 text-theme dark:bg-theme/20 font-semibold" 
-                                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
-                                            <i className="ri-draft-line mr-2"></i>
-                                            {t('draft_bin')}
-                                        </Link>
-                                        <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`h-10 px-3 text-sm font-medium transition-all duration-300 flex items-center justify-center
-                                            ${listState === 'unlisted' 
-                                            ? "bg-theme/10 text-theme dark:bg-theme/20 font-semibold" 
-                                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
-                                            <i className="ri-eye-off-line mr-2"></i>
-                                            {t('unlisted')}
-                                        </Link>
+                                    {/* 内容分类按钮组 */}
+                                    <div className="sm:col-span-8">
+                                        <div className="flex rounded-xl overflow-hidden shadow-md h-full border border-gray-100 dark:border-gray-700">
+                                            <Link href={listState === 'normal' ? '/' : '/?type=normal'} 
+                                                className={`flex-1 flex items-center justify-center px-4 py-3 transition-colors duration-300 ${
+                                                    listState === 'normal' 
+                                                    ? "bg-gray-50 dark:bg-gray-800/80 text-theme border-b-2 border-theme" 
+                                                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750"
+                                                }`}>
+                                                <i className="ri-file-list-line mr-2 text-lg"></i>
+                                                <span className="font-medium">{t('article.title')}</span>
+                                            </Link>
+                                            
+                                            <Link href={listState === 'draft' ? '/' : '/?type=draft'} 
+                                                className={`flex-1 flex items-center justify-center px-4 py-3 transition-colors duration-300 ${
+                                                    listState === 'draft' 
+                                                    ? "bg-gray-50 dark:bg-gray-800/80 text-theme border-b-2 border-theme" 
+                                                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750"
+                                                }`}>
+                                                <i className="ri-draft-line mr-2 text-lg"></i>
+                                                <span className="font-medium">{t('draft_bin')}</span>
+                                            </Link>
+                                            
+                                            <Link href={listState === 'unlisted' ? '/' : '/?type=unlisted'} 
+                                                className={`flex-1 flex items-center justify-center px-4 py-3 transition-colors duration-300 ${
+                                                    listState === 'unlisted' 
+                                                    ? "bg-gray-50 dark:bg-gray-800/80 text-theme border-b-2 border-theme" 
+                                                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750"
+                                                }`}>
+                                                <i className="ri-eye-off-line mr-2 text-lg"></i>
+                                                <span className="font-medium">{t('unlisted')}</span>
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
                             )}
-
-                            {/* 文章类型筛选器 */}
-                            {listState === 'normal' && (
-                                <div className="mb-5">
-                                    <div className="flex flex-wrap gap-2">
-                                        {Object.entries(feedTypes).map(([key, value]) => (
-                                            <button
-                                                key={key}
-                                                onClick={() => handleTypeChange(key)}
-                                                className={`h-8 px-3 rounded-full text-sm transition-all duration-300 ${
-                                                    type === key
-                                                        ? 'bg-gradient-to-r from-theme to-theme-dark text-white font-medium shadow-sm'
-                                                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-theme/50 dark:hover:border-theme/30'
-                                                }`}
-                                            >
-                                                {value}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* 渐变分割线 - 更优雅的视觉分隔 */}
-                            <div className="w-full">
-                                <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/30 dark:via-theme/20 to-transparent" />
-                            </div>
                         </div>
+                        
+                        {/* 渐变分割线 */}
+                        <div className="w-full h-[2px] mb-8 bg-gradient-to-r from-gray-100 dark:from-gray-800 via-theme-light/40 dark:via-theme-dark/40 to-gray-100 dark:to-gray-800 shadow-sm"></div>
                         
                         <Waiting for={status === 'idle'}>
                             {feeds[listState]?.data?.length > 0 ? (
                                 <>
-                                    {/* 已排序的文章卡片网格 */}
+                                    {/* 文章卡片网格 */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 w-full">
-                                        {sortedFeeds.map((feed, i) => (
+                                        {feeds[listState].data.map((feed, i) => (
                                             <LazyFeedCard key={`feed-card-${feed.id}-${i}`} {...feed} />
                                         ))}
                                     </div>
                                     
-                                    {/* 分页控制 */}
+                                    {/* 分页控制区 */}
                                     <div className="flex justify-center mt-10 mb-4 w-full">
                                         <Pagination
                                             currentPage={page}
@@ -417,12 +336,12 @@ export function FeedsPage() {
                                     </div>
                                     
                                     {/* 底部分隔线 */}
-                                    <div className="w-full my-8">
-                                        <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent shadow-sm" />
+                                    <div className="w-full mb-8 mt-8">
+                                        <div className="h-[2px] bg-gradient-to-r from-gray-100 dark:from-gray-800 via-theme-light/40 dark:via-theme-dark/40 to-gray-100 dark:to-gray-800 shadow-sm"></div>
                                     </div>
                                 </>
                             ) : status === 'loading' ? (
-                                // 加载状态显示骨架屏
+                                // 加载骨架屏
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full">
                                     {Array(6).fill(0).map((_, i) => (
                                         <div key={`skeleton-${i}`} className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
@@ -461,22 +380,24 @@ export function FeedsPage() {
                                     ))}
                                 </div>
                             ) : (
-                                // 空状态 - 添加创建文章按钮
-                                <div className="w-full py-16 sm:py-24 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                                    <div className="text-5xl text-gray-300 dark:text-gray-600">
-                                        <i className="ri-inbox-2-line"></i>
+                                // 空状态设计
+                                <div className="w-full py-16 sm:py-24 flex flex-col items-center justify-center text-center space-y-6 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                                    <div className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500">
+                                        <i className="ri-inbox-2-line text-4xl"></i>
                                     </div>
-                                    <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-300">{t('empty_list')}</h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-                                        {listState === 'draft' 
-                                            ? t('empty_draft_description') 
-                                            : listState === 'unlisted' 
-                                                ? t('empty_unlisted_description')
-                                                : t('empty_article_description')
-                                        }
-                                    </p>
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('empty_list')}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                                            {listState === 'draft' 
+                                                ? t('empty_draft_description') 
+                                                : listState === 'unlisted' 
+                                                    ? t('empty_unlisted_description')
+                                                    : t('empty_article_description')
+                                            }
+                                        </p>
+                                    </div>
                                     {profile?.permission && (
-                                        <Link href="/writing/new" className="mt-4 px-5 py-2.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
+                                        <Link href="/writing/new" className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 bg-theme text-white hover:bg-theme-dark shadow-sm hover:shadow-md hover:scale-105">
                                             <i className="ri-add-line mr-2"></i>
                                             {t('create_now')}
                                         </Link>

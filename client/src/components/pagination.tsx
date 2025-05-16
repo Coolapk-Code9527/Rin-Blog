@@ -1,141 +1,276 @@
-import { Link } from "wouter"
-import { useTranslation } from "react-i18next"
+import { useTranslation } from "react-i18next";
+import { Link } from "wouter";
 
-// 创建范围数组的辅助函数
-function range(start: number, end: number): number[] {
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+export interface PaginationProps {
+  /**
+   * 当前页码，从1开始
+   */
+  currentPage: number;
+  
+  /**
+   * 总页数
+   */
+  totalPages: number;
+  
+  /**
+   * 点击页码时的回调函数（客户端分页时使用）
+   */
+  onPageChange?: (page: number) => void;
+  
+  /**
+   * 页面链接的基础路径（URL分页时使用）
+   * 例如："/blog" 或 "?type=normal&"
+   */
+  basePath?: string;
+  
+  /**
+   * 页码参数名（默认为"page"）
+   */
+  pageParam?: string;
+  
+  /**
+   * 是否显示省略号（默认显示）
+   */
+  showEllipsis?: boolean;
+  
+  /**
+   * 省略号两侧显示的页码数量（默认为1）
+   */
+  siblingCount?: number;
+  
+  /**
+   * CSS类名
+   */
+  className?: string;
 }
 
 export function Pagination({
-    currentPage,
-    totalPages,
-    basePath,
-    className,
-    onPageChange,
-}: {
-    currentPage: number,
-    totalPages: number,
-    basePath?: string,
-    className?: string,
-    onPageChange?: (page: number) => void,
-}) {
-    const { t } = useTranslation();
-    const isFirstPage = currentPage === 1;
-    const isLastPage = currentPage === totalPages;
+  currentPage,
+  totalPages,
+  onPageChange,
+  basePath = "?",
+  pageParam = "page",
+  showEllipsis = true,
+  siblingCount = 1,
+  className = "",
+}: PaginationProps) {
+  const { t } = useTranslation();
+  
+  // 处理页码点击
+  const handlePageClick = (page: number) => {
+    if (onPageChange) {
+      onPageChange(page);
+    }
+  };
+  
+  // 生成页码链接
+  const getPageUrl = (page: number) => {
+    // 拼接完整URL，确保basePath最后有问号或&
+    const connector = basePath.includes("?") ? 
+      (basePath.endsWith("&") || basePath.endsWith("?") ? "" : "&") : 
+      "?";
     
-    // 计算显示的页码范围
-    const renderPageNumbers = () => {
-        const pageNumbers = [];
-        const maxVisiblePages = 5; // 最多显示的页码数量
-        
-        // 计算显示的页码范围
-        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-        
-        // 调整起始页
-        if (endPage - startPage + 1 < maxVisiblePages) {
-            startPage = Math.max(1, endPage - maxVisiblePages + 1);
-        }
-        
-        // 渲染页码
-        for (let i = startPage; i <= endPage; i++) {
-            const isCurrentPage = currentPage === i;
-            pageNumbers.push(
-                <Link key={i} href={`${basePath || ''}${basePath?.includes('?') ? '&' : '?'}page=${i}`}
-                    className={`flex items-center justify-center min-w-9 h-9 rounded-full text-sm font-medium transition-all duration-300 ${
-                        isCurrentPage
-                        ? 'bg-gradient-to-r from-theme to-theme-dark text-white shadow-md transform scale-105 hover:shadow-lg'
-                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:border-theme/50 dark:hover:border-theme/30'
-                    }`}
-                    aria-current={isCurrentPage ? 'page' : undefined}
-                >
-                    {i}
-                </Link>
-            );
-        }
-        
-        return pageNumbers;
-    };
+    return `${basePath}${connector}${pageParam}=${page}`;
+  };
+  
+  // 生成页码按钮
+  const renderPageButton = (pageNumber: number, label?: string) => {
+    const isCurrentPage = pageNumber === currentPage;
+    const commonClasses = "relative block w-8 xs:w-8 sm:w-9 h-8 xs:h-8 sm:h-9 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 hover:scale-105";
+    const activeClasses = "bg-gradient-to-r from-theme-light via-theme to-theme-dark text-white shadow-md hover:shadow-lg animate-gradient-x";
+    const inactiveClasses = "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme hover:bg-theme-50 dark:hover:bg-theme-900/10";
     
-    // 如果总页数小于等于1，不显示分页
-    if (totalPages <= 1) return null;
+    const fullClasses = `${commonClasses} ${isCurrentPage ? activeClasses : inactiveClasses}`;
+    const ariaLabel = label || t("pagination.page", { page: pageNumber });
     
-    return (
-        <nav className="pagination-container" aria-label={t('pagination')}>
-            <ul className={`flex items-center justify-center flex-wrap gap-2 ${className || ''}`}>
-                {/* 上一页按钮 */}
-                <li>
-                    <Link href={isFirstPage ? '#' : `${basePath || ''}${basePath?.includes('?') ? '&' : '?'}page=${currentPage - 1}`}
-                        className={`flex items-center justify-center min-w-9 h-9 rounded-full transition-all duration-300 ${
-                            isFirstPage
-                            ? 'cursor-not-allowed opacity-50 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600'
-                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme hover:border-theme/50'
-                        }`}
-                        onClick={(e) => isFirstPage && e.preventDefault()}
-                        aria-disabled={isFirstPage}
-                        aria-label={t('previous_page')}
-                    >
-                        <i className="ri-arrow-left-s-line text-lg"></i>
-                    </Link>
-                </li>
-                
-                {/* 首页按钮 - 仅在当前页不是第一页且起始页大于1时显示 */}
-                {currentPage > 2 && renderPageNumbers()[0].props.children > 1 && (
-                    <>
-                        <li>
-                            <Link href={`${basePath || ''}${basePath?.includes('?') ? '&' : '?'}page=1`}
-                                className="flex items-center justify-center min-w-9 h-9 rounded-full text-sm font-medium transition-all duration-300 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:border-theme/50"
-                            >
-                                1
-                            </Link>
-                        </li>
-                        {renderPageNumbers()[0].props.children > 2 && (
-                            <li className="flex items-center">
-                                <span className="text-gray-400 dark:text-gray-500">...</span>
-                            </li>
-                        )}
-                    </>
-                )}
-                
-                {/* 页码数字 */}
-                {renderPageNumbers().map((pageNumber, index) => (
-                    <li key={index}>{pageNumber}</li>
-                ))}
-                
-                {/* 末页按钮 - 仅在当前页不是最后一页且结束页小于总页数时显示 */}
-                {currentPage < totalPages - 1 && renderPageNumbers()[renderPageNumbers().length - 1].props.children < totalPages && (
-                    <>
-                        {renderPageNumbers()[renderPageNumbers().length - 1].props.children < totalPages - 1 && (
-                            <li className="flex items-center">
-                                <span className="text-gray-400 dark:text-gray-500">...</span>
-                            </li>
-                        )}
-                        <li>
-                            <Link href={`${basePath || ''}${basePath?.includes('?') ? '&' : '?'}page=${totalPages}`}
-                                className="flex items-center justify-center min-w-9 h-9 rounded-full text-sm font-medium transition-all duration-300 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:border-theme/50"
-                            >
-                                {totalPages}
-                            </Link>
-                        </li>
-                    </>
-                )}
-                
-                {/* 下一页按钮 */}
-                <li>
-                    <Link href={isLastPage ? '#' : `${basePath || ''}${basePath?.includes('?') ? '&' : '?'}page=${currentPage + 1}`}
-                        className={`flex items-center justify-center min-w-9 h-9 rounded-full transition-all duration-300 ${
-                            isLastPage
-                            ? 'cursor-not-allowed opacity-50 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600'
-                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme hover:border-theme/50'
-                        }`}
-                        onClick={(e) => isLastPage && e.preventDefault()}
-                        aria-disabled={isLastPage}
-                        aria-label={t('next_page')}
-                    >
-                        <i className="ri-arrow-right-s-line text-lg"></i>
-                    </Link>
-                </li>
-            </ul>
-        </nav>
+    return onPageChange ? (
+      // 客户端分页模式
+      <button
+        key={pageNumber}
+        onClick={() => handlePageClick(pageNumber)}
+        className={fullClasses}
+        aria-label={ariaLabel}
+        aria-current={isCurrentPage ? "page" : undefined}
+      >
+        {label || pageNumber}
+      </button>
+    ) : (
+      // URL分页模式
+      <Link
+        key={pageNumber}
+        href={getPageUrl(pageNumber)}
+        className={fullClasses}
+        aria-label={ariaLabel}
+        aria-current={isCurrentPage ? "page" : undefined}
+      >
+        {label || pageNumber}
+      </Link>
     );
+  };
+  
+  // 渲染上一页按钮
+  const renderPreviousButton = () => {
+    const disabled = currentPage === 1;
+    const baseClasses = "w-8 xs:w-8 sm:w-9 h-8 xs:h-8 sm:h-9 flex items-center justify-center rounded-full transition-all duration-300";
+    const disabledClasses = `${baseClasses} text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-100 dark:bg-gray-800/50`;
+    const activeClasses = `${baseClasses} text-white shadow-sm hover:shadow-md hover:scale-105 bg-gradient-to-r from-theme-light/90 to-theme`;
+    
+    const classes = disabled ? disabledClasses : activeClasses;
+    
+    if (onPageChange) {
+      // 客户端分页模式
+      return (
+        <button
+          onClick={() => !disabled && handlePageClick(currentPage - 1)}
+          disabled={disabled}
+          className={classes}
+          aria-label={t("pagination.previous")}
+        >
+          <i className="ri-arrow-left-s-line"></i>
+        </button>
+      );
+    }
+    
+    // URL分页模式
+    return disabled ? (
+      <button
+        disabled
+        className={disabledClasses}
+        aria-label={t("pagination.previous")}
+      >
+        <i className="ri-arrow-left-s-line"></i>
+      </button>
+    ) : (
+      <Link
+        href={getPageUrl(currentPage - 1)}
+        className={activeClasses}
+        aria-label={t("pagination.previous")}
+      >
+        <i className="ri-arrow-left-s-line"></i>
+      </Link>
+    );
+  };
+  
+  // 渲染下一页按钮
+  const renderNextButton = () => {
+    const disabled = currentPage === totalPages;
+    const baseClasses = "w-8 xs:w-8 sm:w-9 h-8 xs:h-8 sm:h-9 flex items-center justify-center rounded-full transition-all duration-300";
+    const disabledClasses = `${baseClasses} text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-100 dark:bg-gray-800/50`;
+    const activeClasses = `${baseClasses} text-white shadow-sm hover:shadow-md hover:scale-105 bg-gradient-to-r from-theme to-theme-dark/90`;
+    
+    const classes = disabled ? disabledClasses : activeClasses;
+    
+    if (onPageChange) {
+      // 客户端分页模式
+      return (
+        <button
+          onClick={() => !disabled && handlePageClick(currentPage + 1)}
+          disabled={disabled}
+          className={classes}
+          aria-label={t("pagination.next")}
+        >
+          <i className="ri-arrow-right-s-line"></i>
+        </button>
+      );
+    }
+    
+    // URL分页模式
+    return disabled ? (
+      <button
+        disabled
+        className={disabledClasses}
+        aria-label={t("pagination.next")}
+      >
+        <i className="ri-arrow-right-s-line"></i>
+      </button>
+    ) : (
+      <Link
+        href={getPageUrl(currentPage + 1)}
+        className={activeClasses}
+        aria-label={t("pagination.next")}
+      >
+        <i className="ri-arrow-right-s-line"></i>
+      </Link>
+    );
+  };
+  
+  // 计算要显示的页码
+  const getPageNumbers = () => {
+    if (totalPages <= 5) {
+      // 如果总页数小于等于5，则全部显示
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    
+    if (!showEllipsis) {
+      // 如果不显示省略号，则只显示当前页码附近的页码
+      const startPage = Math.max(1, currentPage - siblingCount);
+      const endPage = Math.min(totalPages, currentPage + siblingCount);
+      return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+    }
+    
+    // 显示省略号的情况
+    const pages = [];
+    
+    // 始终添加第一页
+    pages.push(1);
+    
+    // 添加左边的省略号
+    if (currentPage > 2 + siblingCount) {
+      pages.push(-1); // 使用-1表示左省略号
+    }
+    
+    // 添加当前页及其附近的页码
+    for (let i = Math.max(2, currentPage - siblingCount); i <= Math.min(totalPages - 1, currentPage + siblingCount); i++) {
+      pages.push(i);
+    }
+    
+    // 添加右边的省略号
+    if (currentPage < totalPages - 1 - siblingCount) {
+      pages.push(-2); // 使用-2表示右省略号
+    }
+    
+    // 始终添加最后一页
+    if (totalPages > 1) {
+      pages.push(totalPages);
+    }
+    
+    return pages;
+  };
+  
+  // 如果只有一页，不显示分页
+  if (totalPages <= 1) {
+    return null;
+  }
+  
+  return (
+    <div className={`flex justify-center py-4 sm:py-8 ${className}`}>
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {renderPreviousButton()}
+        
+        {getPageNumbers().map((pageNumber) => {
+          if (pageNumber === -1) {
+            // 左省略号
+            return <span key="ellipsis-left" className="text-gray-400 dark:text-gray-500 w-5 sm:w-6 text-center flex items-center justify-center">
+              <span className="relative group">
+                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-theme/30 group-hover:w-full transition-all duration-300"></span>
+                ···
+              </span>
+            </span>;
+          } else if (pageNumber === -2) {
+            // 右省略号
+            return <span key="ellipsis-right" className="text-gray-400 dark:text-gray-500 w-5 sm:w-6 text-center flex items-center justify-center">
+              <span className="relative group">
+                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-theme/30 group-hover:w-full transition-all duration-300"></span>
+                ···
+              </span>
+            </span>;
+          }
+          
+          return renderPageButton(pageNumber);
+        })}
+        
+        {renderNextButton()}
+      </div>
+    </div>
+  );
 } 
