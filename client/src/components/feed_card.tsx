@@ -88,7 +88,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
 
     // 处理点击事件
     const handleClick = () => {
-        setLocation(`/feeds/${id}`);
+        setLocation(`/feed/${id}`);
     };
 
     // CSS变量定义，用于支持渐变遮罩效果

@@ -23,6 +23,7 @@ import { tryInt } from './utils/int'
 import { SearchPage } from './page/search.tsx'
 import { Tips, TipsPage } from './components/tips.tsx'
 import { useTranslation } from 'react-i18next'
+import { NotFoundPage } from './page/not-found.tsx'
 
 // 返回顶部按钮组件
 function BackToTop() {
@@ -210,7 +211,9 @@ function App() {
             </RouteMe>
 
             {/* Default route in a switch */}
-            <Route>404: No such page!</Route>
+            <RouteMe path="*">
+              <NotFoundPage />
+            </RouteMe>
           </Switch>
         </ProfileContext.Provider>
       </ClientConfigContext.Provider>
