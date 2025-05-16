@@ -102,7 +102,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
                 ? 'border-theme/30 dark:border-theme/20 shadow-md' 
                 : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
-                flex flex-col min-h-[260px] xs:min-h-[280px] sm:min-h-[300px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
+                flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
             aria-labelledby={`article-title-${id}`}
             onMouseEnter={prefetchArticle}
             onTouchStart={handleTouchStart}
@@ -110,7 +110,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             onClick={handleClick}
         >
             {/* 卡片顶部区域 - 根据屏幕大小调整高度 */}
-            <div className={`w-full h-40 xs:h-44 sm:h-48 md:h-52 overflow-hidden rounded-t-xl relative`}>
+            <div className={`w-full h-36 xs:h-40 sm:h-44 md:h-48 overflow-hidden rounded-t-xl relative`}>
                 {/* 渐变背景占位 - 根据文章标题生成的稳定渐变色 */}
                 <div 
                     className="absolute inset-0 w-full h-full z-0"
@@ -185,14 +185,14 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             </div>
             
             {/* 卡片内容区域 */}
-            <div className="p-4 sm:p-5 flex-1 flex flex-col">
+            <div className="p-3 sm:p-4 flex-1 flex flex-col">
                 {/* 文章标题 */}
-                <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1.5 sm:mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 line-clamp-2">
+                <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-1.5 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 line-clamp-2">
                     {title}
                 </h2>
                     
                 {/* 日期和状态区域 - 移动端紧凑设计 */}
-                <div className="flex flex-wrap justify-between items-center gap-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex flex-wrap justify-between items-center gap-1 mb-2 text-xs text-gray-500 dark:text-gray-400">
                     {/* 左侧日期显示 */}
                     <div className="flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-2 py-0.5">
                         <i className="ri-calendar-line mr-1"></i>
@@ -230,7 +230,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 </div>
                     
                 {/* 标签区域 - 统一分割线样式和对齐方式 */}
-                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/30">
+                <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/30">
                     {hashtags.length > 0 ? (
                         <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
                             {hashtags.map(({id, name}) => (

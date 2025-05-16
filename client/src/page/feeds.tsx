@@ -189,10 +189,10 @@ export function FeedsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
-                <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
+                <main className="w-full flex flex-col justify-center items-center mb-10 px-4 sm:px-6">
                     <div className="w-auto w-full max-w-6xl">
-                        <div className="flex flex-col space-y-4 mb-4">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 sm:py-5 gap-3 sm:gap-4">
+                        <div className="flex flex-col space-y-3 mb-3">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-2 sm:gap-3">
                                 {/* 左侧：标题和文章数量 */}
                                 <div className="flex items-center gap-2 sm:gap-3">
                                     <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 dark:text-white relative group">
@@ -236,7 +236,7 @@ export function FeedsPage() {
                             </div>
                             
                             {/* 上方渐变分割线 */}
-                            <div className="w-full mb-3">
+                            <div className="w-full mb-2">
                                 <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                             </div>
                             
@@ -258,14 +258,14 @@ export function FeedsPage() {
                         <Waiting for={status === 'idle'}>
                             {feeds[listState]?.data?.length > 0 ? (
                                 <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 w-full">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 w-full mt-2">
                                         {feeds[listState].data.map((feed, i) => (
                                             <LazyFeedCard key={`feed-card-${feed.id}-${i}`} {...feed} />
                                         ))}
                                     </div>
                                     
                                     {/* 分页控制 - 改进视觉样式和交互 */}
-                                    <div className="flex justify-center mt-8 mb-2 w-full">
+                                    <div className="flex justify-center mt-6 mb-2 w-full">
                                         <Pagination
                                             currentPage={page}
                                             totalPages={Math.ceil(feeds[listState].size / limit)}
@@ -275,7 +275,7 @@ export function FeedsPage() {
                                     </div>
                                     
                                     {/* 底部分隔线 */}
-                                    <div className="w-full mb-8">
+                                    <div className="w-full mb-6">
                                         <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                                     </div>
                                 </>
@@ -283,32 +283,32 @@ export function FeedsPage() {
                                 // 加载状态显示骨架屏
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full">
                                     {Array(6).fill(0).map((_, i) => (
-                                        <div key={`skeleton-${i}`} className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
+                                        <div key={`skeleton-${i}`} className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px]">
                                             {/* 骨架屏卡片顶部 */}
-                                            <div className="w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gray-200 dark:bg-gray-700 animate-pulse">
+                                            <div className="w-full h-36 xs:h-40 sm:h-44 md:h-48 overflow-hidden rounded-t-xl relative bg-gray-200 dark:bg-gray-700 animate-pulse">
                                             </div>
                                             
                                             {/* 骨架屏卡片内容区域 */}
-                                            <div className="p-4 sm:p-5 flex-1 flex flex-col">
+                                            <div className="p-3 sm:p-4 flex-1 flex flex-col">
                                                 {/* 标题占位 */}
-                                                <div className="h-6 sm:h-7 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4 mb-2 animate-pulse"></div>
-                                                <div className="h-4 sm:h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-1/2 mb-4 animate-pulse"></div>
+                                                <div className="h-6 sm:h-7 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4 mb-1 sm:mb-1.5 animate-pulse"></div>
+                                                <div className="h-4 sm:h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-1/2 mb-2 sm:mb-3 animate-pulse"></div>
                                                 
                                                 {/* 日期和状态占位 */}
-                                                <div className="flex justify-between mb-3">
+                                                <div className="flex justify-between mb-2">
                                                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/4 animate-pulse"></div>
                                                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/5 animate-pulse"></div>
                                                 </div>
                                                 
                                                 {/* 摘要占位 */}
-                                                <div className="space-y-2 mb-4">
+                                                <div className="space-y-1.5 mb-3">
                                                     <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                                                     <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                                                     <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-4/5 animate-pulse"></div>
-                            </div>
-                            
+                                                </div>
+                                                
                                                 {/* 标签占位 */}
-                                                <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30">
+                                                <div className="mt-auto pt-2 border-t border-gray-100 dark:border-gray-700/30">
                                                     <div className="flex gap-2">
                                                         <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
                                                         <div className="h-6 w-10 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
