@@ -215,21 +215,23 @@ export function FeedsPage() {
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
                                         <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'draft' 
-                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
-                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                            <i className="ri-draft-line mr-1 sm:mr-1.5"></i>
+                                            className={`px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center shadow-sm
+                                            ${listState === 'draft' 
+                                            ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-700/50" 
+                                            : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750"}`}>
+                                            <i className="ri-draft-line mr-1.5 sm:mr-2"></i>
                                             <span className="hidden xs:inline">{t('draft_bin')}</span>
-                                    </Link>
+                                        </Link>
                                         <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center ${listState === 'unlisted' 
-                                            ? "bg-theme/10 text-theme ring-1 ring-theme/30" 
-                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                            <i className="ri-eye-off-line mr-1 sm:mr-1.5"></i>
+                                            className={`px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center shadow-sm
+                                            ${listState === 'unlisted' 
+                                            ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/50" 
+                                            : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750"}`}>
+                                            <i className="ri-eye-off-line mr-1.5 sm:mr-2"></i>
                                             <span className="hidden xs:inline">{t('unlisted')}</span>
-                                    </Link>
-                                </div>
-                            }
+                                        </Link>
+                                    </div>
+                                }
                             </div>
                             
                             <div className="flex justify-between items-center -mt-2 sm:mt-0">
@@ -238,7 +240,7 @@ export function FeedsPage() {
                                         ? t('draft_description') || "文章草稿区，仅自己可见" 
                                         : listState === 'unlisted' 
                                             ? t('unlisted_description') || "未列出的文章，有链接才能访问" 
-                                            : t('article_description') || "所有已发布的公开文章"}
+                                            : t('article.public_description') || "公开发布的文章，所有人可见"}
                                 </div>
                                 <div className="flex space-x-2">
                                     {/* 未来可添加排序按钮、视图切换按钮等 */}

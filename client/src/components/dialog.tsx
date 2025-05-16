@@ -1,6 +1,6 @@
-import React, {useContext, useEffect, useRef, useState} from "react";
-import {useTranslation} from "react-i18next";
-import ReactModal from "react-modal";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import Modal from "react-modal";
 import { Button, ButtonWithLoading } from "./button";
 
 export type Confirm = {
@@ -33,7 +33,7 @@ export function useAlert() {
     }
     const { t } = useTranslation()
     const AlertUI = () => (
-        <ReactModal isOpen={isOpen}
+        <Modal isOpen={isOpen}
             shouldCloseOnOverlayClick={true}
             shouldCloseOnEsc={true}
             onRequestClose={close}
@@ -56,24 +56,24 @@ export function useAlert() {
                     maxWidth: '40em'
                 },
                 overlay: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    backdropFilter: 'blur(8px)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                    backdropFilter: 'blur(4px)',
                     zIndex: 1000
                 }
             }}
         >
-            <div className="flex flex-col items-start p-6 bg-white dark:bg-gray-800 space-y-4 w-full min-w-56 sm:min-w-96 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+            <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full min-w-56 sm:min-w-96">
+                <h1 className="text-2xl font-bold t-primary">
                     {t("alert")}
                 </h1>
-                <p className="text-base text-gray-600 dark:text-gray-300">
+                <p className="text-base t-primary">
                     {alert?.message}
                 </p>
-                <div className="w-full flex flex-row items-center justify-end space-x-3 mt-4">
+                <div className="w-full flex flex-row items-center justify-center space-x-2 mt-4">
                     <Button onClick={close} title={t('confirm')} />
                 </div>
             </div>
-        </ReactModal>
+        </Modal>
     )
     return { showAlert, close, AlertUI }
 }
@@ -96,7 +96,7 @@ export function useConfirm() {
     }
     const { t } = useTranslation()
     const ConfirmUI = () => (
-        <ReactModal isOpen={isOpen}
+        <Modal isOpen={isOpen}
             shouldCloseOnOverlayClick={true}
             shouldCloseOnEsc={true}
             onRequestClose={close}
@@ -119,20 +119,20 @@ export function useConfirm() {
                     maxWidth: '40em'
                 },
                 overlay: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    backdropFilter: 'blur(8px)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                    backdropFilter: 'blur(4px)',
                     zIndex: 1000
                 }
             }}
         >
-            <div className="flex flex-col items-start p-6 bg-white dark:bg-gray-800 space-y-4 w-full min-w-56 sm:min-w-96 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+            <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full min-w-56 sm:min-w-96">
+                <h1 className="text-2xl font-bold t-primary">
                     {confirm?.title}
                 </h1>
-                <p className="text-base text-gray-600 dark:text-gray-300">
+                <p className="text-base t-primary">
                     {confirm?.message}
                 </p>
-                <div className="w-full flex flex-row items-center justify-end space-x-3 mt-4">
+                <div className="w-full flex flex-row items-center justify-center space-x-2 mt-4">
                     <ButtonWithLoading
                         loading={loading}
                         onClick={async () => {
@@ -145,7 +145,7 @@ export function useConfirm() {
                     <Button secondary onClick={close} title={t('cancel')} />
                 </div>
             </div>
-        </ReactModal>
+        </Modal>
     )
     return { showConfirm, close, ConfirmUI }
 }

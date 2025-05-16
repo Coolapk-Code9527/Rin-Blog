@@ -49,7 +49,7 @@ export function DraftDialog({
   };
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-800 w-full max-w-4xl h-3/4 rounded-lg shadow-xl overflow-hidden flex flex-col">
         <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center">
