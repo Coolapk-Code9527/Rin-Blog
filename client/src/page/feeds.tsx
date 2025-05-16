@@ -215,7 +215,7 @@ export function FeedsPage() {
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
                                         <Link href="/writing/new"
-                                            className="w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center justify-center sm:justify-start shadow-sm bg-theme text-white hover:bg-theme-hover">
+                                            className="w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center justify-center sm:justify-start shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active">
                                             <i className="ri-add-line sm:mr-2"></i>
                                             <span className="hidden sm:inline">{t('new_article')}</span>
                                         </Link>
@@ -236,7 +236,7 @@ export function FeedsPage() {
                                             <span className="hidden sm:inline">{t('unlisted')}</span>
                                         </Link>
                                     </div>
-                                }
+                            }
                             </div>
                             
                             <div className="flex justify-between items-center -mt-2 sm:mt-0">

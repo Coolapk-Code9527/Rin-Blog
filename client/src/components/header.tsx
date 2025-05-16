@@ -63,6 +63,14 @@ export function Header({ children }: { children?: React.ReactNode }) {
                             {/* 中间导航区域 - 仅在较大屏幕可见 */}
                             <div className="hidden lg:flex items-center space-x-1">
                                 <NavBar menu={false} />
+                                {profile?.permission && (
+                                    <Link href="/writing/new" 
+                                        className="ml-1 px-3 py-2 rounded-lg text-sm font-medium flex items-center bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 transition-all hover:bg-theme hover:text-white"
+                                    >
+                                        <i className="ri-add-line mr-1.5"></i>
+                                        <span>{t('new_article')}</span>
+                                    </Link>
+                                )}
                                 {children}
                             </div>
                             
@@ -567,6 +575,19 @@ function MobileMenu() {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* 新增的新建文章按钮 - 仅在用户有权限时显示 */}
+                                    {profile?.permission && (
+                                        <div className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-800">
+                                            <Link href="/writing/new" 
+                                                className="w-full px-4 py-3 rounded-xl text-sm font-medium flex items-center justify-center bg-theme text-white transition-all hover:bg-theme-hover active:bg-theme-active"
+                                                onClick={onClose}
+                                            >
+                                                <i className="ri-add-line mr-2 text-lg"></i>
+                                                <span>{t('new_article')}</span>
+                                            </Link>
+                                        </div>
+                                    )}
 
                                     {/* 导航链接区域 */}
                                     <div className="flex-1 overflow-y-auto overscroll-contain p-3">

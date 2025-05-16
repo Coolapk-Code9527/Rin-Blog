@@ -68,7 +68,7 @@ build/Release
 
 node_modules/
 jspm_packages/
-Rin_Blog_bak/
+
 
 # Snowpack dependency directory (https://snowpack.dev/)
 
@@ -185,6 +185,7 @@ dist
 bunfig.toml
 
 
+Rin_Blog_bak/
 node_modules/
 
 

@@ -25,3 +25,5 @@ dist-ssr
 *.sw?
 
 public/locales/**/*_old.json
+
+Rin_Blog_bak/
