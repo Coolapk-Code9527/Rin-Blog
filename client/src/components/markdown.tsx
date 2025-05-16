@@ -94,18 +94,15 @@ const OptimizedImage = React.memo(({
     : '';
   
   return (
-    <div className="relative group overflow-hidden rounded-lg hover:shadow-lg transition-all duration-300">
+    <div className="relative flex justify-center items-center">
       {!imageState.loaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded animate-pulse">
-          <svg className="w-8 h-8 text-gray-300 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
+          <Loading type="spin" height={24} width={24} color="#FC466B" />
         </div>
       )}
       
       {imageState.error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 rounded p-4 z-10">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 rounded p-4">
           <i className="ri-image-line text-2xl text-red-500 mb-2"></i>
           <p className="text-sm text-gray-500 text-center">{alt || '图片加载失败'}</p>
         </div>
@@ -117,22 +114,12 @@ const OptimizedImage = React.memo(({
         data-src={src}
         alt={alt}
         onClick={onClick}
-        className={`${className} transition-all duration-500 ${imageState.loaded ? 'opacity-100' : 'opacity-0'} group-hover:scale-105 group-hover:brightness-105`}
+        className={`${className} transition-opacity duration-300 ${imageState.loaded ? 'opacity-100' : 'opacity-0'}`}
         style={style}
         onLoad={handleLoad}
         onError={handleError}
         loading="lazy"
       />
-      
-      {/* 点击查看提示 - 仅在图片加载完成且没有错误时显示 */}
-      {imageState.loaded && !imageState.error && (
-        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <span className="px-3 py-1.5 bg-black/60 rounded-full text-white text-xs flex items-center">
-            <i className="ri-zoom-in-line mr-1"></i>
-            点击查看大图
-          </span>
-        </div>
-      )}
     </div>
   );
 });
