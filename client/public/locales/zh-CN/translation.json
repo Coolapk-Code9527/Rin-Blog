@@ -402,5 +402,5 @@
   "image_load_error": "图片加载失败",
   "unlisted_description": "未列出的文章，有链接才能访问",
   "draft_description": "文章草稿区，仅自己可见",
-  "recommended_posts": "推荐阅读"
+  "recent_articles": "近期文章"
 }

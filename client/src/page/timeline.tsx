@@ -66,13 +66,13 @@ export function TimelinePage() {
                         {error && (
                           <div className="mt-2 mb-4 flex flex-col items-start">
                             <span className="text-red-500 text-sm mb-2">{error}</span>
-                            <button 
-                                onClick={fetchFeeds} 
+                        <button 
+                            onClick={fetchFeeds} 
                                 className="px-4 py-2 bg-theme text-white rounded hover:bg-theme-dark dark:bg-theme-dark dark:hover:bg-theme-light focus:outline-none focus:ring-2 focus:ring-theme-focus"
-                                aria-label={t('reload') || "Reload"}
-                            >
-                                {t('reload')}
-                            </button>
+                            aria-label={t('reload') || "Reload"}
+                        >
+                            {t('reload')}
+                        </button>
                           </div>
                         )}
                     </div>
