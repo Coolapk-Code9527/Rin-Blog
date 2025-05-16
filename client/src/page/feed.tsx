@@ -187,7 +187,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-6 px-3 md:px-5 lg:px-6">
+      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-6 px-3 md:px-4 lg:px-5">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -206,9 +206,9 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <main className="flex-1 min-w-0 max-w-4xl lg:max-w-5xl xl:max-w-6xl pt-2">
+            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl pt-2">
               <article
-                className="rounded-2xl bg-w m-2 px-5 sm:px-7 py-5 sm:py-6 shadow-sm hover:shadow transition-shadow duration-300"
+                className="rounded-2xl bg-w m-2 px-4 sm:px-6 md:px-7 py-5 sm:py-6 shadow-sm hover:shadow transition-shadow duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
@@ -317,16 +317,17 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               <div className="h-16" />
             </main>
             <aside
-              className="w-full lg:w-80 xl:w-96 lg:pt-2 hidden lg:block"
+              className="w-full lg:w-64 xl:w-72 lg:pt-2 hidden lg:block"
             >
               <div className="sticky top-[5.5rem]">
-                <div className="bg-w rounded-2xl p-4 mb-6 shadow-sm">
-                  <TOC />
+                <div className="bg-w rounded-2xl p-4 mb-5 shadow-sm">
+                  <div className="max-h-[50vh] overflow-auto custom-scrollbar pr-1">
+                    <TOC />
+                  </div>
                 </div>
-                <div className="bg-w rounded-2xl p-4 shadow-sm">
-                  <div className="max-h-[30rem] overflow-hidden relative">
+                <div className="bg-w rounded-2xl shadow-sm overflow-hidden">
+                  <div className="max-h-[40vh] overflow-auto custom-scrollbar">
                     <RecentPosts />
-                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white dark:from-gray-800 to-transparent"></div>
                   </div>
                 </div>
               </div>
