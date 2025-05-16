@@ -1337,3 +1337,118 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 .search-container input:focus {
   animation: searchPulse 2s infinite;
 }
+
+/* 文章详情页样式优化 */
+.toc-content {
+  line-height: 1.8;
+}
+
+.toc-content h1, 
+.toc-content h2, 
+.toc-content h3, 
+.toc-content h4, 
+.toc-content h5, 
+.toc-content h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.toc-content h1 {
+  font-size: 2em;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 0.3em;
+}
+
+.toc-content h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 0.3em;
+}
+
+.toc-content h3 {
+  font-size: 1.3em;
+}
+
+.toc-content h4 {
+  font-size: 1.15em;
+}
+
+.toc-content p, 
+.toc-content ul, 
+.toc-content ol {
+  margin-bottom: 1.2em;
+}
+
+.toc-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1em 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.toc-content blockquote {
+  border-left: 4px solid var(--theme-color, #3b82f6);
+  padding-left: 1em;
+  margin-left: 0;
+  margin-right: 0;
+  font-style: italic;
+  background-color: rgba(59, 130, 246, 0.05);
+  padding: 1em;
+  border-radius: 0 8px 8px 0;
+}
+
+.toc-content code:not([class*="language-"]) {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  padding: 0.2em 0.4em;
+  font-family: monospace;
+}
+
+.dark .toc-content code:not([class*="language-"]) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.toc-content pre {
+  margin: 1em 0;
+  padding: 1em;
+  overflow-x: auto;
+  border-radius: 8px;
+  background-color: #2d2d2d;
+}
+
+.dark .toc-content blockquote {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* 文章内导航(小屏幕) */
+@media (max-width: 1023px) {
+  .toc-modal {
+    max-height: 70vh;
+    overflow-y: auto;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* 响应式布局优化 */
+@media (max-width: 768px) {
+  .toc-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .toc-content h1 {
+    font-size: 1.75em;
+  }
+  
+  .toc-content h2 {
+    font-size: 1.4em;
+  }
+  
+  .toc-content h3 {
+    font-size: 1.2em;
+  }
+}

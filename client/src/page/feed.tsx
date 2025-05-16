@@ -21,7 +21,7 @@ import mermaid from "mermaid";
 import {AdjacentSection} from "../components/adjacent_feed.tsx";
 import {formatDistance} from "date-fns";
 import { Pagination } from "../components/pagination";
-import { RecommendedFeeds } from "../components/recommended_feeds";
+import {RecommendedPosts} from "../components/recommended_posts.tsx";
 
 type Feed = {
   id: number;
@@ -187,7 +187,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full flex flex-row justify-center ani-show max-w-7xl mx-auto">
+      <div className="w-full flex flex-row justify-center ani-show max-w-7xl mx-auto px-4">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -206,9 +206,10 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <main className="w-full lg:w-[calc(100%-320px)] xl:w-[calc(100%-360px)]">
+            <div className="hidden xl:block xl:w-64" />
+            <main className="flex-1 max-w-4xl">
               <article
-                className="rounded-2xl bg-w m-2 px-6 py-4"
+                className="rounded-2xl bg-w m-2 px-6 py-5 toc-content shadow-sm"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
@@ -236,7 +237,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                       {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
                     </p>}
                     <div className="flex flex-row items-center">
-                      <h1 className="text-2xl font-bold t-primary break-all">
+                      <h1 className="text-2xl md:text-3xl font-bold t-primary break-all">
                         {feed.title}
                       </h1>
                       <div className="flex-1 w-0" />
@@ -300,10 +301,12 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
             </main>
-            <div className="w-80 hidden lg:block">
-              <div className="top-[5.5rem] sticky">
+            <div className="w-80 hidden lg:block relative">
+              <div
+                  className="start-0 end-0 top-[5.5rem] sticky flex flex-col"
+              >
                 <TOC />
-                <RecommendedFeeds currentId={id} />
+                <RecommendedPosts currentId={id} />
               </div>
             </div>
           </>
@@ -317,12 +320,14 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
 
 export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
   const [isOpened, setIsOpened] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <div className="lg:hidden">
       <button
         onClick={() => setIsOpened(true)}
-        className="w-10 h-10 rounded-full flex flex-row items-center justify-center"
+        className="w-10 h-10 rounded-full flex flex-row items-center justify-center bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        aria-label={t("index.title")}
       >
         <i className="ri-menu-2-fill t-primary ri-lg"></i>
       </button>
@@ -352,8 +357,22 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
         }}
         onRequestClose={() => setIsOpened(false)}
       >
-        <div className="w-[80vw] sm:w-[60vw] lg:w-[40vw] overflow-clip relative t-primary">
-          <TOC />
+        <div className="w-[90vw] sm:w-[70vw] md:w-[50vw] toc-modal bg-white dark:bg-gray-800 relative t-primary rounded-xl">
+          <div className="flex justify-between items-center px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="font-medium flex items-center">
+              <i className="ri-list-ordered text-theme mr-2"></i>
+              {t("index.title", { defaultValue: "目录" })}
+            </h3>
+            <button 
+              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+              onClick={() => setIsOpened(false)}
+            >
+              <i className="ri-close-line"></i>
+            </button>
+          </div>
+          <div className="p-2">
+            <TOC />
+          </div>
         </div>
       </ReactModal>
     </div>
