@@ -1,5 +1,5 @@
 import "katex/dist/katex.min.css";
-import React, { cloneElement, isValidElement, memo, useEffect, useMemo, useRef, useState, CSSProperties } from "react";
+import React, { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
@@ -645,105 +645,86 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
     let processed = content.replace(/!\[([^\]]*?)\]\(([^)]*?)\)/g, '');
     
     // 替换链接中的图片语法 [![alt](url)](link) 为普通链接文本
-    processed = processed.replace(/\[!\[[^\]]*?\]\([^)]*?\)\]\(([^)]*?)\)/g, '[链接]');
+    processed = processed.replace(/\[!\[[^\]]*?\]\([^)]*?\)\]\(([^)]*?)\)/g, '');
     
     // 替换行内代码块 `code` 为简化版本
     processed = processed.replace(/`([^`]+)`/g, '`…`');
     
     // 替换复杂的多行代码块为简单提示
     processed = processed.replace(/```[\s\S]*?```/g, '[代码块]');
-
-    // 替换复杂的HTML标签
-    processed = processed.replace(/<[^>]*>/g, '');
     
-    // 处理空白行和多余空格
-    processed = processed.replace(/\n{2,}/g, '\n\n').trim();
+    // 限制内容长度（如果太长可能影响渲染性能）
+    if (processed.length > 500) {
+      processed = processed.substring(0, 500) + '...';
+    }
     
     return processed;
   }, [content]);
   
-  const { t } = useTranslation();
-  
   // 使用基本的Markdown渲染，没有图片查看器和复杂插件
   return (
     <ReactMarkdown
-      className="text-sm"
+      className="summary-markdown"
       remarkPlugins={[gfm]}
       children={processedContent}
       components={{
-        // 简化的组件渲染
+        // 简化的组件渲染，所有块级元素都改为行内显示
         p({ children }) {
-          // 确保段落内容不为空
-          if (!children || (Array.isArray(children) && children.every(child => !child))) {
-            return null;
-          }
-          return <p className="mb-2 text-gray-800 dark:text-gray-200">{children}</p>;
+          return <span className="text-inherit">{children}</span>;
         },
         a({ children, href }) {
           return (
-            <a
-              href={href}
-              className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-800 dark:hover:text-blue-300"
-              onClick={(e) => e.stopPropagation()} // 防止卡片点击冲突
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <span className="text-theme">
               {children}
-            </a>
+            </span>
           );
         },
         img() {
           // 摘要中不显示图片，也不显示占位符
           return null;
         },
-        code({ children, className }) {
+        code({ children }) {
           // 简化的代码显示
           return (
-            <code className="font-mono text-xs px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700">
+            <span className="font-mono text-inherit">
               {children}
-            </code>
+            </span>
           );
         },
-        // 表格相关组件 - 摘要中完全隐藏表格
-        table: () => <span className="text-gray-500 dark:text-gray-400">[表格内容]</span>,
-        th: () => null,
-        td: () => null,
-        tr: () => null,
-        tbody: () => null,
-        thead: () => null,
+        // 所有标题都转为普通文本
+        h1: ({ children }) => <span className="font-medium">{children}</span>,
+        h2: ({ children }) => <span className="font-medium">{children}</span>,
+        h3: ({ children }) => <span className="font-medium">{children}</span>,
+        h4: ({ children }) => <span className="font-medium">{children}</span>,
+        h5: ({ children }) => <span className="font-medium">{children}</span>,
+        h6: ({ children }) => <span className="font-medium">{children}</span>,
         
-        // 增强的元素渲染
+        // 其他块级元素简化处理
         blockquote({ children }) {
-          return (
-            <span className="text-gray-600 dark:text-gray-300 italic">「{children}」</span>
-          );
+          return <span className="italic">{children}</span>;
         },
         strong({ children }) {
-          return <strong className="font-bold text-gray-900 dark:text-white">{children}</strong>;
+          return <span className="font-medium">{children}</span>;
         },
         em({ children }) {
-          return <em className="italic text-gray-800 dark:text-gray-200">{children}</em>;
+          return <span className="italic">{children}</span>;
         },
-        // 列表在摘要中显示为内联文本
         ul({ children }) {
-          return <span className="text-gray-700 dark:text-gray-300">{children}</span>;
+          return <span>{children}</span>;
         },
         ol({ children }) {
-          return <span className="text-gray-700 dark:text-gray-300">{children}</span>;
+          return <span>{children}</span>;
         },
         li({ children }) {
-          return <span className="inline-block mr-1">• {children}</span>;
+          return <span>• {children} </span>;
         },
         hr() {
-          return <span className="mx-2">·</span>;
+          return <span> ... </span>;
         },
-        // 标题在摘要中显示为加粗文本
-        h1: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
-        h2: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
-        h3: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
-        h4: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
-        h5: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
-        h6: ({ children }) => <strong className="text-gray-900 dark:text-white">{children}</strong>,
+        table() {
+          return <span>[表格] </span>;
+        },
+        // 其他元素使用默认渲染
       }}
     />
   );

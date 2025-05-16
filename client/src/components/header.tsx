@@ -99,28 +99,48 @@ function NavItem({ menu, title, selected, href, when = true, onClick }: {
     when?: boolean,
     onClick?: () => void
 }) {
-    if (!when)
-        return null
+    // 阻止默认链接行为并使用编程式导航
+    const [_, setLocation] = useLocation();
+    
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        e.preventDefault(); // 阻止默认链接行为
+        
+        if (onClick) {
+            onClick(); // 执行传入的onClick回调
+        }
+        
+        // 使用编程式导航而不改变滚动位置
+        setLocation(href, { animate: true, replace: false });
+    }, [href, onClick, setLocation]);
+    
     return (
-        <Link href={href} className={`relative group ${menu ? 'w-full' : ''}`} role="menuitem" onClick={onClick}>
-            <div className={`flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200
-                ${selected 
-                    ? 'text-theme font-medium dark:text-theme' 
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-theme dark:hover:text-theme'}`}>
-                {/* 导航项主体内容 */}
-                <span className="relative block">
-                    {title}
-                    {/* 底部指示器 - 只在桌面模式且选中状态显示 */}
-                    {!menu && selected && (
-                        <span className="absolute -bottom-0.5 left-0 w-full h-0.5 bg-gradient-to-r from-theme/60 via-theme to-theme/60 rounded-full transform"></span>
+        <>
+            {when &&
+                <a href={href}
+                    className={`
+                        ${menu 
+                            ? "block w-full relative px-4 py-2.5" 
+                            : "inline-flex items-center relative px-3 py-2"} 
+                        text-sm font-medium rounded-lg transition-all duration-300
+                        ${selected 
+                            ? menu 
+                                ? "text-theme dark:text-theme bg-theme/5 dark:bg-theme/10 font-semibold" 
+                                : "nav-item active text-theme dark:text-theme" 
+                            : menu 
+                                ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme" 
+                                : "nav-item text-gray-700 dark:text-gray-300 hover:text-theme dark:hover:text-theme hover:bg-gray-100/70 dark:hover:bg-gray-800/70"}
+                    `}
+                    onClick={handleClick}
+                    aria-current={selected ? 'page' : undefined}
+                >
+                    <span className="nav-link">{title}</span>
+                    {menu && selected && (
+                        <span className="absolute right-3 text-theme">
+                            <i className="ri-arrow-right-s-line"></i>
+                        </span>
                     )}
-                </span>
-            </div>
-            {/* 侧边指示器 - 只在移动菜单且选中状态显示 */}
-            {menu && selected && (
-                <span className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-4/5 bg-theme rounded-r-md"></span>
-            )}
-        </Link>
+                </a>}
+        </>
     )
 }
 

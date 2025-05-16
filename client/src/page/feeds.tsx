@@ -246,61 +246,106 @@ export function FeedsPage() {
                             </div>
                             
                             <div className="flex justify-between items-center -mt-2 sm:mt-0">
-                                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-2 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-md">
-                                    {listState === 'draft' 
-                                        ? t('draft_description')
-                                        : listState === 'unlisted' 
-                                            ? t('unlisted_description')
-                                            : ""}
-                                </div>
+                                {(listState === 'draft' || listState === 'unlisted') && (
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-2 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-md">
+                                        {listState === 'draft' 
+                                            ? t('draft_description')
+                                            : t('unlisted_description')
+                                        }
+                                    </div>
+                                )}
                                 <div className="flex space-x-2">
                                     {/* 未来可添加排序按钮、视图切换按钮等 */}
-                        </div>
-                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <Waiting for={status === 'idle'}>
-                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
-                                {feeds[listState].data.length > 0 ? (
-                                    feeds[listState].data.map(({ id, ...feed }: any) => (
-                                        <LazyFeedCard key={id} id={id} {...feed} />
-                                    ))
-                                ) : (
-                                    <div className="col-span-full text-center py-20 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                                        <i className="ri-inbox-line text-5xl mb-4 block opacity-50 text-gray-400 dark:text-gray-500"></i>
-                                        <p className="text-lg font-medium">{t('no_articles')}</p>
-                                        <p className="text-sm mt-2 text-gray-400 dark:text-gray-500">{t('no_articles_description')}</p>
-                                        {profile?.permission && (
-                                            <Link href="/writing/new" 
-                                                className="mt-6 inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md"
-                                            >
-                                                <i className="ri-add-line mr-2"></i>
-                                                <span>{t('new_article')}</span>
-                                            </Link>
-                                        )}
+                            {feeds[listState]?.data?.length > 0 ? (
+                                <>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full">
+                                        {feeds[listState].data.map((feed, i) => (
+                                            <LazyFeedCard key={`feed-card-${feed.id}-${i}`} {...feed} />
+                                        ))}
                                     </div>
-                                )}
-                            </div>
-                            
-                            {/* 加载更多状态 - 优化加载动画 */}
-                            {status === 'loading' && feeds[listState].data.length > 0 && (
-                                <div className="w-full flex justify-center py-8">
-                                    <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 px-4 py-2 rounded-full shadow-sm">
-                                        <div className="w-5 h-5 border-2 border-theme border-t-transparent rounded-full animate-spin"></div>
-                                        <span className="text-sm">{t('loading_more')}</span>
+                                    
+                                    {/* 分页控制 - 改进视觉样式和交互 */}
+                                    <div className="flex justify-center mt-8 w-full">
+                                        <Pagination
+                                            current={page}
+                                            total={Math.ceil(feeds[listState].size / limit)}
+                                            baseUrl={`/?type=${listState}`}
+                                            linkClassName="w-9 h-9 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 hover:scale-105"
+                                            activeClassName="bg-theme text-white shadow-md hover:shadow-lg"
+                                            inactiveClassName="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme"
+                                            prevNextClassName="bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme"
+                                            ellipsisClassName="text-gray-400 dark:text-gray-500"
+                                        />
                                     </div>
+                                </>
+                            ) : status === 'loading' ? (
+                                // 加载状态显示骨架屏
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full">
+                                    {Array(6).fill(0).map((_, i) => (
+                                        <div key={`skeleton-${i}`} className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
+                                            {/* 骨架屏卡片顶部 */}
+                                            <div className="w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gray-200 dark:bg-gray-700 animate-pulse">
+                                            </div>
+                                            
+                                            {/* 骨架屏卡片内容区域 */}
+                                            <div className="p-4 sm:p-5 flex-1 flex flex-col">
+                                                {/* 标题占位 */}
+                                                <div className="h-6 sm:h-7 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4 mb-2 animate-pulse"></div>
+                                                <div className="h-4 sm:h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-1/2 mb-4 animate-pulse"></div>
+                                                
+                                                {/* 日期和状态占位 */}
+                                                <div className="flex justify-between mb-3">
+                                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/4 animate-pulse"></div>
+                                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/5 animate-pulse"></div>
+                                                </div>
+                                                
+                                                {/* 摘要占位 */}
+                                                <div className="space-y-2 mb-4">
+                                                    <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
+                                                    <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
+                                                    <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-4/5 animate-pulse"></div>
+                                                </div>
+                                                
+                                                {/* 标签占位 */}
+                                                <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30">
+                                                    <div className="flex gap-2">
+                                                        <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
+                                                        <div className="h-6 w-10 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                // 空状态 - 添加创建文章按钮
+                                <div className="w-full py-16 sm:py-24 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                                    <div className="text-5xl text-gray-300 dark:text-gray-600">
+                                        <i className="ri-inbox-2-line"></i>
+                                    </div>
+                                    <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-300">{t('empty_list')}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                                        {listState === 'draft' 
+                                            ? t('empty_draft_description') 
+                                            : listState === 'unlisted' 
+                                                ? t('empty_unlisted_description')
+                                                : t('empty_article_description')
+                                        }
+                                    </p>
+                                    {profile?.permission && (
+                                        <Link href="/writing/new" className="mt-4 px-5 py-2.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
+                                            <i className="ri-add-line mr-2"></i>
+                                            {t('create_now')}
+                                        </Link>
+                                    )}
                                 </div>
                             )}
-                            
-                            {(page > 1 || feeds[listState]?.hasNext) && feeds[listState].data.length > 0 && (
-                            <Pagination 
-                                currentPage={page}
-                                totalPages={Math.ceil(feeds[listState]?.size / limit) || 1}
-                                basePath={`/?type=${listState}`}
-                                className="ani-show"
-                            />
-                        )}
-                    </Waiting>
+                        </Waiting>
                     </div>
                 </main>
             </Waiting>
