@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HistoryItem } from '../utils/history';
 
@@ -20,13 +20,13 @@ export function HistoryDialog({
   onClear
 }: HistoryDialogProps) {
   const { t } = useTranslation();
-  const [selectedItem, setSelectedItem] = React.useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = React.useState(false);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
       <div className="bg-white dark:bg-gray-800 w-full max-w-3xl rounded-lg shadow-xl overflow-hidden">
         <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-4">
           <h3 className="font-medium text-lg">{t('history.title')}</h3>

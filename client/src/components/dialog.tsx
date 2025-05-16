@@ -1,4 +1,4 @@
-import { useState } from "react";
+import * as React from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "react-modal";
 import { Button, ButtonWithLoading } from "./button";
@@ -17,8 +17,8 @@ export type Alert = {
 export type ShowAlertType = (msg: string, onConfirm?: () => (Promise<void> | void)) => void;
 
 export function useAlert() {
-    const [alert, setAlert] = useState<Alert | null>(null)
-    const [isOpen, setIsOpen] = useState(false)
+    const [alert, setAlert] = React.useState<Alert | null>(null)
+    const [isOpen, setIsOpen] = React.useState(false)
     const close = () => {
         alert?.onConfirm()
         setIsOpen(false)
@@ -56,13 +56,13 @@ export function useAlert() {
                     maxWidth: '40em'
                 },
                 overlay: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
                     backdropFilter: 'blur(4px)',
                     zIndex: 1000
                 }
             }}
         >
-            <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full min-w-56 sm:min-w-96">
+            <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full min-w-56 sm:min-w-96 shadow-xl">
                 <h1 className="text-2xl font-bold t-primary">
                     {t("alert")}
                 </h1>
@@ -79,9 +79,9 @@ export function useAlert() {
 }
 
 export function useConfirm() {
-    const [confirm, setConfirm] = useState<Confirm | null>(null)
-    const [isOpen, setIsOpen] = useState(false)
-    const [loading, setLoading] = useState(false);
+    const [confirm, setConfirm] = React.useState<Confirm | null>(null)
+    const [isOpen, setIsOpen] = React.useState(false)
+    const [loading, setLoading] = React.useState(false);
     const close = () => {
         setConfirm(null)
         setIsOpen(false)
@@ -119,13 +119,13 @@ export function useConfirm() {
                     maxWidth: '40em'
                 },
                 overlay: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
                     backdropFilter: 'blur(4px)',
                     zIndex: 1000
                 }
             }}
         >
-            <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full min-w-56 sm:min-w-96">
+            <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full min-w-56 sm:min-w-96 shadow-xl">
                 <h1 className="text-2xl font-bold t-primary">
                     {confirm?.title}
                 </h1>
