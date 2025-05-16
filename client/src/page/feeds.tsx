@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef, useContext, useCallback } from "react"
 import { Helmet } from 'react-helmet'
-import { Link, useLocation } from "wouter"
+import { Link, useLocation, useRoute } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
+import { PageDivider } from "../components/page_divider"
 import { client } from "../main"
 import { ProfileContext } from "../state/profile"
 import { headersWithAuth } from "../utils/auth"
@@ -132,32 +133,46 @@ function LazyFeedCard({ id, ...props }: any) {
 
 export function FeedsPage() {
     const { t } = useTranslation()
-    const [location, setLocation] = useLocation();
-    const query = new URLSearchParams(location.substring(location.indexOf('?')));
+    const [location, navigate] = useLocation();
+    const [isHomePage] = useRoute("/");  // 检查是否在首页
+    const searchParams = new URLSearchParams(isHomePage ? location.slice(location.indexOf('?')) : "");
+    
     const profile = React.useContext(ProfileContext);
-    const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
+    const [listState, _setListState] = React.useState<FeedType>(searchParams.get("type") as FeedType || 'normal')
     const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
     const [feeds, setFeeds] = React.useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
         unlisted: { size: 0, data: [], hasNext: false },
         normal: { size: 0, data: [], hasNext: false }
     })
-    const page = tryInt(1, query.get("page"))
-    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
-    const ref = React.useRef("")
+    
+    // 正确解析页码参数
+    const page = tryInt(1, searchParams.get("page"));
+    const limit = tryInt(10, searchParams.get("limit"), process.env.PAGE_SIZE);
+    const ref = React.useRef("");
+    
+    // 记录当前请求状态，防止重复请求
+    const currentRequestRef = React.useRef<string | null>(null);
     
     // 使用useCallback优化函数
-    const fetchFeeds = React.useCallback((type: FeedType) => {
+    const fetchFeeds = React.useCallback((type: FeedType, pageNum: number = page) => {
+        // 创建请求标识
+        const requestId = `${type}-${pageNum}-${Date.now()}`;
+        currentRequestRef.current = requestId;
+        
         setStatus('loading');
         
         client.feed.index.get({
             query: {
-                page: page,
+                page: pageNum,
                 limit: limit,
                 type: type
             },
             headers: headersWithAuth()
         }).then(({ data }) => {
+            // 确保是最新请求的响应
+            if (currentRequestRef.current !== requestId) return;
+            
             if (data && typeof data !== 'string') {
                 setFeeds(prev => ({
                     ...prev,
@@ -169,7 +184,7 @@ export function FeedsPage() {
                     setTimeout(() => {
                         client.feed.index.get({
                             query: {
-                                page: page + 1,
+                                page: pageNum + 1,
                                 limit: limit,
                                 type: type
                             },
@@ -181,18 +196,21 @@ export function FeedsPage() {
                 setStatus('idle');
             }
         }).catch(err => {
+            // 确保是最新请求的响应
+            if (currentRequestRef.current !== requestId) return;
+            
             console.error('加载文章列表失败', err);
             setStatus('idle');
         });
-    }, [page, limit]);
+    }, [limit]);
     
     // 处理URL参数变化
     React.useEffect(() => {
         // 确保正确获取查询参数
-        const searchParams = new URLSearchParams(location.substring(location.indexOf('?')));
-        const pageParam = searchParams.get("page");
-        const typeParam = searchParams.get("type");
-        const key = `${pageParam} ${typeParam}`;
+        const urlParams = new URLSearchParams(isHomePage ? location.slice(location.indexOf('?')) : "");
+        const pageParam = urlParams.get("page");
+        const typeParam = urlParams.get("type");
+        const key = `${pageParam || '1'}-${typeParam || 'normal'}`;
         
         if (ref.current === key) return;
         
@@ -201,24 +219,30 @@ export function FeedsPage() {
             _setListState(type);
         }
         
-        setStatus('loading');
-        fetchFeeds(type);
+        const pageNum = pageParam ? parseInt(pageParam) : 1;
+        
+        fetchFeeds(type, pageNum);
         ref.current = key;
         
         // 记录当前分页位置到会话存储，方便返回时恢复
         try {
             sessionStorage.setItem('last_feed_page', JSON.stringify({
-                page: pageParam ? parseInt(pageParam) : 1,
+                page: pageNum,
                 type: type
             }));
         } catch (e) {
             // 忽略存储错误
         }
-    }, [location, fetchFeeds, listState]);
+    }, [location, fetchFeeds, listState, isHomePage]);
     
-    // 构造分页基础URL，确保类型参数正确传递
-    const getPaginationBaseUrl = () => {
-        return `/?type=${listState}`;
+    // 处理分页变化
+    const handlePageChange = (newPage: number) => {
+        const params = new URLSearchParams(location.slice(location.indexOf('?')));
+        params.set('page', newPage.toString());
+        if (listState !== 'normal') {
+            params.set('type', listState);
+        }
+        navigate(`/?${params.toString()}`);
     };
     
     return (
@@ -298,19 +322,24 @@ export function FeedsPage() {
                                         ))}
                                     </div>
                                     
-                                    {/* 分页控制 */}
+                                    {/* 分页控制 - 使用客户端回调和 URL 两种方式 */}
                                     <div className="flex justify-center mt-8 w-full">
                                         <Pagination
                                             currentPage={page}
                                             totalPages={Math.ceil(feeds[listState].size / limit)}
-                                            basePath={getPaginationBaseUrl()}
-                                            linkClassName="w-9 h-9 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 hover:scale-105"
-                                            activeClassName="bg-theme text-white shadow-md hover:shadow-lg"
-                                            inactiveClassName="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme"
-                                            prevNextClassName="bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme"
-                                            ellipsisClassName="text-gray-400 dark:text-gray-500"
+                                            onPageChange={handlePageChange}
+                                            basePath="/"
+                                            pageParam="page"
+                                            linkClassName="pagination-button"
+                                            activeClassName="active"
+                                            inactiveClassName=""
+                                            prevNextClassName=""
+                                            ellipsisClassName="pagination-ellipsis"
                                         />
                                     </div>
+                                    
+                                    {/* 添加页面分隔线 */}
+                                    <PageDivider className="mt-12" text={t('end_of_list', '列表结束')} />
                                 </>
                             ) : status === 'loading' ? (
                                 // 加载状态显示骨架屏

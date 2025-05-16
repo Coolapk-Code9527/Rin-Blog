@@ -84,22 +84,89 @@ html.dark .article-card:hover {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* 分页组件增强样式 */
-.pagination-container {
-  animation: fade-in 0.5s ease-out;
+/* 修复底部分隔线样式 */
+.pagination-summary {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 1rem;
+  font-size: 0.75rem;
+  color: #6b7280;
 }
 
-/* 分页按钮微交互 */
+/* 页面底部动效分隔线样式 */
+.page-divider {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.page-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
+}
+
+/* 分页组件样式 */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  gap: 0.5rem;
+}
+
 .pagination-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
   transition: all 0.2s ease;
 }
 
 .pagination-button:hover {
   transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.pagination-button:active {
-  transform: translateY(1px);
+.pagination-button.active {
+  background-color: var(--theme-color, #3b82f6);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);
+}
+
+.pagination-button:not(.active) {
+  background-color: white;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+html.dark .pagination-button:not(.active) {
+  background-color: #1f2937;
+  color: #d1d5db;
+  border-color: #374151;
+}
+
+.pagination-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: #9ca3af;
 }
 
 /* 页面内容切换动画 */
