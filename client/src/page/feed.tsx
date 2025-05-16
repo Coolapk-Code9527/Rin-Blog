@@ -187,7 +187,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full flex flex-row justify-center ani-show max-w-5xl mx-auto gap-8">
+      <div className="w-full flex flex-row justify-center ani-show max-w-6xl mx-auto gap-8 px-2 md:px-4 lg:px-8">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -206,8 +206,8 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <div className="hidden xl:block xl:w-72 flex-shrink-0" />
-            <main className="flex-1 min-w-0 max-w-3xl">
+            <div className="hidden lg:block flex-shrink-0 w-0 xl:w-72" />
+            <main className="flex-1 min-w-0 max-w-4xl">
               <article
                 className="rounded-2xl bg-w m-2 px-6 py-4"
                 aria-label={feed.title ?? "Unnamed"}
@@ -301,8 +301,11 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
             </main>
-            <aside className="w-80 hidden lg:block relative flex flex-col gap-6">
-              <div className="start-0 end-0 top-[5.5rem] sticky flex flex-col gap-6">
+            <aside
+              className="w-full lg:w-80 mt-8 lg:mt-0 lg:block relative flex flex-col gap-6"
+              style={{ maxHeight: 'calc(100vh - 5.5rem)', overflow: 'auto' }}
+            >
+              <div className="start-0 end-0 top-[5.5rem] sticky flex flex-col gap-6 lg:static">
                 <TOC />
                 <RecentPosts />
               </div>
