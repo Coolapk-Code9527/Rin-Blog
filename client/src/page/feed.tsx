@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import * as React from "react";
 import {Helmet} from "react-helmet";
 import {useTranslation} from "react-i18next";
 import ReactModal from "react-modal";
@@ -21,7 +21,7 @@ import mermaid from "mermaid";
 import {AdjacentSection} from "../components/adjacent_feed.tsx";
 import {formatDistance} from "date-fns";
 import { Pagination } from "../components/pagination";
-import { RecentPosts } from "../components/RecentPosts";
+import { RecentPosts } from "../components/recent_posts";
 
 type Feed = {
   id: number;
@@ -47,16 +47,16 @@ type Feed = {
 
 export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
   const { t } = useTranslation();
-  const profile = useContext(ProfileContext);
-  const [feed, setFeed] = useState<Feed>();
-  const [error, setError] = useState<string>();
-  const [headImage, setHeadImage] = useState<string>();
-  const ref = useRef("");
+  const profile = React.useContext(ProfileContext);
+  const [feed, setFeed] = React.useState<Feed>();
+  const [error, setError] = React.useState<string>();
+  const [headImage, setHeadImage] = React.useState<string>();
+  const ref = React.useRef("");
   const [, setLocation] = useLocation();
   const { showAlert, AlertUI } = useAlert();
   const { showConfirm, ConfirmUI } = useConfirm();
-  const [top, setTop] = useState<number>(0);
-  const config = useContext(ClientConfigContext);
+  const [top, setTop] = React.useState<number>(0);
+  const config = React.useContext(ClientConfigContext);
   const counterEnabled = config.get<boolean>('counter.enabled');
   function deleteFeed() {
     // Confirm
@@ -106,7 +106,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           });
       })
   }
-  useEffect(() => {
+  React.useEffect(() => {
     if (ref.current == id) return;
     setFeed(undefined);
     setError(undefined);
@@ -134,7 +134,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
       });
     ref.current = id;
   }, [id]);
-  useEffect(() => {
+  React.useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
       theme: "default",
@@ -206,10 +206,10 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <div className="xl:w-64" />
-            <main className="wauto max-w-3xl xl:max-w-[900px] mx-auto">
+            <div className="hidden xl:block xl:w-12 2xl:w-32" />
+            <main className="w-full max-w-3xl 2xl:max-w-4xl flex-1">
               <article
-                className="rounded-2xl bg-w m-2 px-6 py-4"
+                className="rounded-2xl bg-w m-2 px-8 py-6 shadow-lg"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
@@ -280,7 +280,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                   {feed.hashtags.length > 0 && (
                     <div className="flex flex-row flex-wrap gap-x-2">
                       {feed.hashtags.map(({ name }, index) => (
-                        <span key={index}><HashTag name={name} /></span>
+                        <HashTag key={index} name={name} />
                       ))}
                     </div>
                   )}
@@ -301,12 +301,12 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
             </main>
-            <div className="w-80 hidden lg:block relative">
-              <div className={`start-0 end-0 top-[5.5rem] sticky`}>
+            <aside className="w-80 hidden lg:block relative">
+              <div className="start-0 end-0 top-[5.5rem] sticky flex flex-col gap-6">
                 <TOC />
                 <RecentPosts />
               </div>
-            </div>
+            </aside>
           </>
         )}
       </div>
@@ -317,7 +317,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
 }
 
 export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
-  const [isOpened, setIsOpened] = useState(false);
+  const [isOpened, setIsOpened] = React.useState(false);
 
   return (
     <div className="lg:hidden">
@@ -369,13 +369,13 @@ function CommentInput({
   onRefresh: () => void;
 }) {
   const { t } = useTranslation();
-  const [content, setContent] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [content, setContent] = React.useState("");
+  const [nickname, setNickname] = React.useState("");
+  const [isAnonymous, setIsAnonymous] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [submitting, setSubmitting] = React.useState(false);
   const { showAlert, AlertUI } = useAlert();
-  const profile = useContext(ProfileContext);
+  const profile = React.useContext(ProfileContext);
   const { LoginModal, setIsOpened } = useLoginModal()
   
   function errorHumanize(error: string) {
@@ -694,12 +694,11 @@ function Comments({ id }: { id: string }) {
                   
                   <div className="space-y-3">
                     {currentComments.map((comment) => (
-                      <div key={comment.id}>
-                        <CommentItem
-                          comment={comment}
-                          onRefresh={loadComments}
-                        />
-                      </div>
+                      <CommentItem
+                        key={comment.id}
+                        comment={comment}
+                        onRefresh={loadComments}
+                      />
                     ))}
                   </div>
                   
