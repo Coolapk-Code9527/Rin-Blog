@@ -184,18 +184,18 @@ function Footer() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 md:mb-0">
                         <span 
                             onDoubleClick={() => {
-                                if(doubleClickTimes >= 2){ // actually need 3 times doubleClick
-                                    setDoubleClickTimes(0)
-                                    if(!loginEnabled) {
-                                        setIsOpened(true)
-                                    }
-                                } else {
-                                    setDoubleClickTimes(doubleClickTimes + 1)
-                                }
+                        if(doubleClickTimes >= 2){ // actually need 3 times doubleClick
+                            setDoubleClickTimes(0)
+                            if(!loginEnabled) {
+                                setIsOpened(true)
+                            }
+                        } else {
+                            setDoubleClickTimes(doubleClickTimes + 1)
+                        }
                             }}
                         >
                             © {currentYear} {process.env.NAME}. {t('footer.rights', '保留所有权利')}
-                        </span>
+                    </span>
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                         {t('footer.powered_by', '由')} <a className="hover:text-theme transition-colors" href="https://github.com/openRin/Rin" target="_blank" rel="noopener noreferrer">Rin</a> {t('footer.with_love', '用♥制作')}

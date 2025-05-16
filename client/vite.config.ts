@@ -11,7 +11,15 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      visualizer({ open: true }) // 自动开启分析页面
+      visualizer({ open: false }) // 不自动开启分析页面，部署环境不需要
     ],
+    optimizeDeps: {
+      include: ['@loadable/component']
+    },
+    build: {
+      rollupOptions: {
+        external: []
+      }
+    }
   }
 })

@@ -275,10 +275,10 @@ function MobileMenu() {
         if (!term.trim()) return;
         
         const newHistory = [
-            term, 
+                term, 
             ...searchHistory.filter(item => item !== term)
-        ].slice(0, 5); // 只保留最近5条
-        
+            ].slice(0, 5); // 只保留最近5条
+            
         setSearchHistory(newHistory);
         localStorage.setItem('search_history', JSON.stringify(newHistory));
     };
@@ -347,7 +347,7 @@ function MobileMenu() {
 
     return (
         <div className="md:hidden block">
-            <button
+            <button 
                 onClick={onOpen}
                 className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
                 aria-label={t('menu')}
@@ -374,16 +374,16 @@ function MobileMenu() {
                                         <h3 className="text-lg font-bold text-gray-800 dark:text-white">
                                             {process.env.NAME}
                                         </h3>
-                                    </div>
-                                </div>
-                                <button
+                                                </div>
+                                                </div>
+                                                <button 
                                     onClick={onClose}
                                     className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme transition-colors"
                                     aria-label={t('close')}
-                                >
+                                                >
                                     <i className="ri-close-line text-xl"></i>
-                                </button>
-                            </div>
+                                                </button>
+                                                </div>
                             
                             {/* 搜索框 */}
                             {isSearchExpanded ? (
@@ -395,98 +395,98 @@ function MobileMenu() {
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <i className="ri-search-line text-gray-400"></i>
                                         </div>
-                                        <input
-                                            ref={searchInputRef}
-                                            type="text"
-                                            value={searchValue}
+                                                    <input
+                                                        ref={searchInputRef}
+                                                        type="text"
+                                                        value={searchValue}
                                             onChange={(e) => setValue(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+                                                        onKeyDown={(e) => e.key === 'Enter' && onSearch()}
                                             className="w-full py-2.5 pl-10 pr-10 bg-gray-100 dark:bg-gray-800 border-none rounded-xl text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/20 focus:outline-none shadow-sm transition-all duration-200"
-                                            placeholder={t('article.search.placeholder')}
-                                        />
+                                                        placeholder={t('article.search.placeholder')}
+                                                    />
                                         <div className="absolute inset-y-0 right-0 flex items-center">
-                                            <button
+                                                            <button 
                                                 onClick={() => setIsSearchExpanded(false)}
                                                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                                                type="button"
-                                            >
+                                                                type="button"
+                                                            >
                                                 <i className="ri-close-line"></i>
-                                            </button>
-                                        </div>
-                                    </div>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                     
                                     {/* 搜索历史 */}
                                     {searchHistory.length > 0 && (
                                         <div className="mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                                             <div className="p-2 flex justify-between items-center border-b border-gray-100 dark:border-gray-700">
                                                 <span className="text-xs text-gray-500 dark:text-gray-400">{t('article.search.history') || '最近搜索'}</span>
-                                                <button
-                                                    onClick={() => {
-                                                        setSearchHistory([]);
-                                                        localStorage.removeItem('search_history');
-                                                    }}
+                                                            <button 
+                                                                onClick={() => {
+                                                                    setSearchHistory([]);
+                                                                    localStorage.removeItem('search_history');
+                                                                }}
                                                     className="text-xs px-1.5 py-0.5 rounded text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                                                 >
                                                     <i className="ri-delete-bin-line mr-0.5"></i>
                                                     {t('article.search.clear_history') || '清除'}
-                                                </button>
-                                            </div>
+                                                            </button>
+                                                        </div>
                                             <div className="max-h-40 overflow-y-auto">
-                                                {searchHistory.map((term, index) => (
-                                                    <button
-                                                        key={index}
+                                                            {searchHistory.map((term, index) => (
+                                                                <button 
+                                                                    key={index}
                                                         className="w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left flex items-center"
-                                                        onClick={() => {
+                                                                    onClick={() => {
                                                             setValue(term);
                                                             setTimeout(onSearch, 10);
                                                         }}
                                                     >
                                                         <i className="ri-time-line mr-2 text-gray-400"></i>
                                                         <span className="truncate">{term}</span>
-                                                    </button>
-                                                ))}
-                                            </div>
+                                                                </button>
+                                                            ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
                             ) : (
                                 <>
                                     {/* 语言切换面板 */}
                                     {showLanguages ? (
                                         <div className="mt-4 animate-fadeIn">
                                             <div className="flex items-center mb-3">
-                                                <button
+                                            <button 
                                                     onClick={() => setShowLanguages(false)}
                                                     className="p-1.5 mr-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                                                 >
                                                     <i className="ri-arrow-left-s-line text-lg"></i>
-                                                </button>
+                                            </button>
                                                 <h3 className="text-lg font-medium text-gray-800 dark:text-white">
                                                     {t('languages')}
                                                 </h3>
                                             </div>
                                             <div className="space-y-2 mt-2">
-                                                {languages.map(({ code, name, flag }) => (
-                                                    <button
-                                                        key={code}
-                                                        onClick={() => changeLanguage(code)}
+                                                    {languages.map(({ code, name, flag }) => (
+                                                        <button 
+                                                            key={code} 
+                                                            onClick={() => changeLanguage(code)}
                                                         className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors ${
                                                             i18n.language === code
                                                                 ? 'bg-theme/10 text-theme font-medium'
                                                                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                                                         }`}
-                                                    >
-                                                        <div className="flex items-center">
+                                                        >
+                                                            <div className="flex items-center">
                                                             <span className="text-xl mr-3">{flag}</span>
-                                                            <span>{name}</span>
-                                                        </div>
+                                                                <span>{name}</span>
+                                                            </div>
                                                         {i18n.language === code && (
                                                             <i className="ri-check-line text-theme"></i>
                                                         )}
-                                                    </button>
-                                                ))}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
                                     ) : (
                                         <>
                                             {/* 导航菜单 */}
@@ -497,7 +497,7 @@ function MobileMenu() {
                                                 <nav className="mt-2 space-y-1">
                                                     <NavBar menu={true} onClick={onClose} />
                                                 </nav>
-                                            </div>
+                                        </div>
                                             
                                             {/* 分割线 */}
                                             <div className="my-4 border-t border-gray-200 dark:border-gray-700"></div>
@@ -521,7 +521,7 @@ function MobileMenu() {
                                                                 <div className="flex items-center">
                                                                     <i className={`${option.icon} mr-3 text-lg`}></i>
                                                                     <span>{option.title}</span>
-                                                                </div>
+                                    </div>
                                                                 {option.hasSubmenu && (
                                                                     <i className="ri-arrow-right-s-line"></i>
                                                                 )}
@@ -560,14 +560,14 @@ function MobileMenu() {
                                                                                     <span>{submenu.title}</span>
                                                                                 </button>
                                                                             )}
-                                                                        </div>
+                                        </div>
                                                                     ))}
-                                                                </div>
+                                    </div>
                                                             )}
-                                                        </div>
+                                </div>
                                                     )
                                                 ))}
-                                            </div>
+                            </div>
                                         </>
                                     )}
                                 </>
@@ -587,7 +587,7 @@ function MobileMenu() {
                                     <i className="ri-github-fill mr-1 text-lg"></i>
                                     <span>Rin-Blog</span>
                                 </Link>
-                            </div>
+                    </div>
                         </div>
                     </div>
                 </div>
@@ -796,12 +796,12 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
         
         setLocation(`/search/${key}`, { replace: false });
         setValue('');
-        setIsExpanded(false);
+            setIsExpanded(false);
         
         // 如果存在关闭回调，就调用它
         if (onClose) {
             onClose();
-        }
+    }
     };
 
     // 处理键盘事件

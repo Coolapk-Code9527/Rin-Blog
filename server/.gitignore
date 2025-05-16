@@ -182,3 +182,6 @@ dist
 # Finder (MacOS) folder config
 .DS_Store
 bunfig.toml
+
+
+node_modules/

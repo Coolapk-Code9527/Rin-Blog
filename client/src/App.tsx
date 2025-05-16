@@ -1,12 +1,18 @@
-import { useContext, useEffect, useState, lazy, Suspense } from 'react'
+import { useContext, useEffect, useState, lazy, Suspense, useRef } from 'react'
+import { Route, Router, Switch } from 'wouter'
 import { Helmet } from 'react-helmet'
-import { getCookie } from 'typescript-cookie'
-import { DefaultParams, PathPattern, Route, Switch, useRoute } from 'wouter'
+import loadable from '@loadable/component'
+import NeedLogin from './components/needlogin'
+import Header from './components/header'
 import Footer from './components/footer'
-import { Header } from './components/header'
-import { Padding } from './components/padding'
-import useTableOfContents from './hooks/useTableOfContents.tsx'
+import ProfileContextProvider, { ProfileContext } from './state/profile'
+import { ClientConfigContext, ConfigWrapper, defaultClientConfig } from './state/config'
+import { siteName } from './utils/constants'
+import { Toaster } from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
+import { getCookie } from 'typescript-cookie'
 import { client } from './main'
+import { headersWithAuth } from './utils/auth'
 import { CallbackPage } from './page/callback'
 import { FeedPage, TOCHeader } from './page/feed'
 import { FeedsPage } from './page/feeds'
@@ -16,18 +22,13 @@ import { HashtagsPage } from './page/hashtags.tsx'
 import { Settings } from "./page/settings.tsx"
 import { TimelinePage } from './page/timeline'
 import { WritingPage } from './page/writing'
-import { ClientConfigContext, ConfigWrapper, defaultClientConfig } from './state/config.tsx'
-import { Profile, ProfileContext } from './state/profile'
-import { headersWithAuth } from './utils/auth'
 import { tryInt } from './utils/int'
 import { SearchPage } from './page/search.tsx'
 import { Tips, TipsPage } from './components/tips.tsx'
-import { useTranslation } from 'react-i18next'
-import loadable from '@loadable/component'
-import { Router } from 'wouter'
-import { Toaster } from 'react-hot-toast'
 import ScrollRestorationHandler from './utils/scroll-restoration'
 import GitHubCallbackPage from './page/github'
+import useTableOfContents from './hooks/useTableOfContents.tsx'
+import { Padding } from './components/padding'
 
 // 使用懒加载优化性能
 const HomePage = lazy(() => import('./page/home'))
@@ -39,8 +40,9 @@ const EditPage = loadable(() => import('./page/edit'))
 const SettingsPage = loadable(() => import('./page/settings'))
 const TagPage = loadable(() => import('./page/tag'))
 const NotFoundPage = loadable(() => import('./page/not_found'))
+const GitHubCallbackPage = loadable(() => import('./page/github'))
 
-// 返回顶部按钮组件
+// 回到顶部按钮
 function BackToTop() {
   const [visible, setVisible] = useState(false);
   const { t } = useTranslation();
@@ -81,24 +83,6 @@ function BackToTop() {
   );
 }
 
-// 图片懒加载处理
-useEffect(() => {
-  if ('loading' in HTMLImageElement.prototype) {
-    // 浏览器原生支持懒加载
-    const images = document.querySelectorAll('img[loading="lazy"]');
-    images.forEach(img => {
-      if (!img.hasAttribute('loading')) {
-        img.setAttribute('loading', 'lazy');
-      }
-    });
-  } else {
-    // 动态加载懒加载polyfill
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js';
-    document.body.appendChild(script);
-  }
-}, []);
-
 // 页面预加载器
 function PagePreloader() {
   const [preloaded, setPreloaded] = useState(false);
@@ -127,11 +111,24 @@ function PagePreloader() {
 function App() {
   const ref = useRef(false)
   const { t } = useTranslation()
-  const [profile, setProfile] = useState<Profile | undefined>()
-  const [config, setConfig] = useState<ConfigWrapper>(new ConfigWrapper({}, new Map()))
-  const clientConfig = useContext(ClientConfigContext)
-  const owner = clientConfig.get<string>('owner')
-  const isPrivate = clientConfig.get<boolean>('private')
+  const [profile, setProfile] = useState(undefined)
+  const [config, setConfig] = useState(new ConfigWrapper({}, defaultClientConfig))
+  
+  // 图片懒加载处理
+  useEffect(() => {
+    if ('loading' in HTMLImageElement.prototype) {
+      // 浏览器原生支持懒加载
+      const images = document.querySelectorAll('img:not([loading])');
+      images.forEach(img => {
+        img.setAttribute('loading', 'lazy');
+      });
+    } else {
+      // 动态加载懒加载polyfill
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js';
+      document.body.appendChild(script);
+    }
+  }, []);
 
   useEffect(() => {
     if (ref.current) return
@@ -167,19 +164,22 @@ function App() {
   }, [])
 
   // 根据客户端配置设置 meta 标签
-  const description = clientConfig.get<string>('description')
-  const keywords = clientConfig.get<string>('keywords')
-  const avatar = clientConfig.get<string>('avatar')
+  const description = config.get('description') || siteName
+  const keywords = config.get('keywords')
+  const avatar = config.get('avatar')
+  const owner = config.get('owner')
+  const isPrivate = config.get('private')
 
   return (
-    <Router>
-      <Helmet>
-        <meta name="description" content={description || '个人博客'} />
-        {keywords && <meta name="keywords" content={keywords} />}
-        {avatar && <link rel="icon" href={avatar} />}
-      </Helmet>
-      <ProfileContext.Provider value={profile}>
-        <ClientConfigContext.Provider value={config}>
+    <ProfileContext.Provider value={profile}>
+      <ClientConfigContext.Provider value={config}>
+        <Router>
+          <Helmet defaultTitle={siteName}>
+            <meta name="description" content={description} />
+            {keywords && <meta name="keywords" content={keywords} />}
+            {avatar && <link rel="icon" href={avatar} />}
+          </Helmet>
+
           <div className="flex min-h-screen flex-col">
             <PagePreloader />
             <ScrollRestorationHandler />
@@ -230,10 +230,10 @@ function App() {
             <Footer />
             <BackToTop />
           </div>
-        </ClientConfigContext.Provider>
-      </ProfileContext.Provider>
-    </Router>
-  )
+        </Router>
+      </ClientConfigContext.Provider>
+    </ProfileContext.Provider>
+  );
 }
 
 function RouteMe({ path, children, headerComponent, paddingClassName }:

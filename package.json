@@ -23,6 +23,8 @@
     "format:write": "turbo format:write"
   },
   "devDependencies": {
+    "@loadable/component": "^5.16.4",
+    "@types/loadable__component": "^5.13.9",
     "autoprefixer": "^10.4.19",
     "i18next-parser": "^9.0.0",
     "postcss": "^8.4.38",
