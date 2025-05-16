@@ -215,7 +215,7 @@ export function FeedsPage() {
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
                                         <Link href="/writing/new"
-                                            className="w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center justify-center sm:justify-start shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active">
+                                            className="w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center justify-center sm:justify-start shadow-sm bg-theme text-white hover:bg-theme-hover">
                                             <i className="ri-add-line sm:mr-2"></i>
                                             <span className="hidden sm:inline">{t('new_article')}</span>
                                         </Link>
@@ -226,7 +226,7 @@ export function FeedsPage() {
                                             : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
                                             <i className="ri-draft-line sm:mr-2"></i>
                                             <span className="hidden sm:inline">{t('draft_bin')}</span>
-                                        </Link>
+                                    </Link>
                                         <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
                                             className={`w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center justify-center sm:justify-start shadow-sm
                                             ${listState === 'unlisted' 
@@ -234,8 +234,8 @@ export function FeedsPage() {
                                             : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
                                             <i className="ri-eye-off-line sm:mr-2"></i>
                                             <span className="hidden sm:inline">{t('unlisted')}</span>
-                                        </Link>
-                                    </div>
+                                    </Link>
+                                </div>
                             }
                             </div>
                             

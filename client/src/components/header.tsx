@@ -41,14 +41,14 @@ export function Header({ children }: { children?: React.ReactNode }) {
                 <div className="w-screen">
                     <Padding className="px-4 py-3">
                         <div className="max-w-7xl mx-auto flex justify-between items-center">
-                            {/* 左侧Logo区域 */}
+                            {/* 左侧Logo区域 - 提升交互效果 */}
                             <Link aria-label={t('home')} href="/"
                                 className="flex flex-row items-center hover:opacity-90 transition-all duration-200 transform hover:scale-[0.98] group"
                             >
                                 <img 
                                     src={process.env.AVATAR} 
                                     alt="Avatar" 
-                                    className="w-10 h-10 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-sm group-hover:shadow-md transition-all duration-200" 
+                                    className="w-10 h-10 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-sm group-hover:shadow-md transition-all duration-200 group-hover:border-theme" 
                                 />
                                 <div className="flex flex-col justify-center items-start ml-3">
                                     <p className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-theme dark:group-hover:text-theme transition-colors duration-200">
@@ -60,23 +60,15 @@ export function Header({ children }: { children?: React.ReactNode }) {
                                 </div>
                             </Link>
                             
-                            {/* 中间导航区域 - 仅在较大屏幕可见 */}
-                            <div className="hidden lg:flex items-center space-x-1">
+                            {/* 中间导航区域 - 仅在较大屏幕可见，优化间距和交互效果 */}
+                            <div className="hidden lg:flex items-center space-x-2">
                                 <NavBar menu={false} />
-                                {profile?.permission && (
-                                    <Link href="/writing/new" 
-                                        className="ml-1 px-3 py-2 rounded-lg text-sm font-medium flex items-center bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 transition-all hover:bg-theme hover:text-white"
-                                    >
-                                        <i className="ri-add-line mr-1.5"></i>
-                                        <span>{t('new_article')}</span>
-                                    </Link>
-                                )}
                                 {children}
                             </div>
                             
-                            {/* 右侧操作区域 */}
+                            {/* 右侧操作区域 - 优化按钮组样式 */}
                             <div className="flex items-center">
-                                <div className="flex items-center space-x-1 sm:space-x-2">
+                                <div className="flex items-center space-x-1.5 sm:space-x-2.5">
                                     <SearchButton className="hidden md:block" />
                                     <LanguageSwitch className="hidden md:block" />
                                     <UserAvatar profile={profile} />
@@ -86,7 +78,7 @@ export function Header({ children }: { children?: React.ReactNode }) {
                                         <CollapsedMenu />
                                     </div>
                                     
-                                    {/* 移动端菜单按钮 */}
+                                    {/* 移动端菜单按钮 - 优化交互效果 */}
                                     <MobileMenu />
                                 </div>
                             </div>
@@ -133,7 +125,7 @@ function NavItem({ menu, title, selected, href, when = true, onClick }: {
                         ${selected 
                             ? menu 
                                 ? "text-theme dark:text-theme bg-theme/5 dark:bg-theme/10" 
-                                : "text-theme dark:text-theme" 
+                                : "text-theme dark:text-theme bg-theme/5 dark:bg-theme/10" 
                             : menu 
                                 ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white" 
                                 : "text-gray-700 dark:text-gray-300 hover:text-theme dark:hover:text-theme hover:bg-gray-100/70 dark:hover:bg-gray-800/70"}
@@ -142,6 +134,10 @@ function NavItem({ menu, title, selected, href, when = true, onClick }: {
                     aria-current={selected ? 'page' : undefined}
                 >
                     {title}
+                    {/* 为选中项添加底部指示器 */}
+                    {!menu && selected && (
+                        <span className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1/2 h-0.5 bg-theme rounded-full"></span>
+                    )}
                     {menu && selected && (
                         <span className="absolute right-3 text-theme">
                             <i className="ri-arrow-right-s-line"></i>
@@ -576,19 +572,6 @@ function MobileMenu() {
                                         </div>
                                     </div>
 
-                                    {/* 新增的新建文章按钮 - 仅在用户有权限时显示 */}
-                                    {profile?.permission && (
-                                        <div className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-800">
-                                            <Link href="/writing/new" 
-                                                className="w-full px-4 py-3 rounded-xl text-sm font-medium flex items-center justify-center bg-theme text-white transition-all hover:bg-theme-hover active:bg-theme-active"
-                                                onClick={onClose}
-                                            >
-                                                <i className="ri-add-line mr-2 text-lg"></i>
-                                                <span>{t('new_article')}</span>
-                                            </Link>
-                                        </div>
-                                    )}
-
                                     {/* 导航链接区域 */}
                                     <div className="flex-1 overflow-y-auto overscroll-contain p-3">
                                         <div className="space-y-1.5">
@@ -805,18 +788,18 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
         
         // 使用编程式导航而不改变滚动位置
         setLocation(`/search/${key}`, { replace: false });
-    }
-
+    };
+    
     // 处理键盘事件
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            setIsExpanded(false);
-        } else if (e.key === 'Enter') {
+        if (e.key === 'Enter') {
             onSearch();
+        } else if (e.key === 'Escape') {
+            setIsExpanded(false);
         }
     };
     
-    // 点击外部关闭搜索框
+    // 监听点击外部关闭搜索框
     useEffect(() => {
         if (!isExpanded) return;
         
@@ -835,19 +818,15 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
         };
     }, [isExpanded]);
     
-    // 搜索框展开时自动聚焦
-    useEffect(() => {
-        if (isExpanded && searchInputRef.current) {
-            searchInputRef.current.focus();
-        }
-    }, [isExpanded]);
-    
-    // 监听快捷键(Ctrl+K或Command+K)打开搜索框
+    // 监听快捷键唤起搜索框
     useEffect(() => {
         const handleKeyPress = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 setIsExpanded(true);
+                setTimeout(() => {
+                    searchInputRef.current?.focus();
+                }, 10);
             }
         };
         
@@ -856,144 +835,116 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
             window.removeEventListener('keydown', handleKeyPress);
         };
     }, []);
-
-    // 获取正确的翻译文本
+    
+    // 获取翻译文本，带有备选显示
     const getTranslatedText = (key: string, fallback: string) => {
         const translated = t(key);
-        // 检查翻译是否就是键名本身(未翻译)
         return translated === key ? fallback : translated;
     };
-
-    // 根据屏幕宽度计算搜索框宽度类名
+    
+    // 根据屏幕宽度动态计算搜索框宽度
     const getSearchInputWidthClass = () => {
-        if (windowWidth < 360) return 'w-[160px]';
-        if (windowWidth < 480) return 'w-[180px]';  
-        if (windowWidth < 640) return 'w-[200px]';
-        if (windowWidth < 768) return 'w-[220px]';
-        return 'w-[240px]';
+        if (windowWidth >= 1024) {
+            return 'w-72';
+        } else if (windowWidth >= 768) {
+            return 'w-64';
+        } else {
+            return 'w-full';
+        }
     };
-
-    // 计算历史记录下拉框的定位类名
+    
+    // 历史下拉框位置调整
     const getHistoryDropdownPositionClass = () => {
-        if (windowWidth < 480) return 'left-0 right-0';
-        if (windowWidth < 640) return 'right-0 w-[240px]';
-        return 'right-0 w-[280px]';
+        if (windowWidth >= 768) {
+            return 'right-0';
+        } else {
+            return 'left-0 right-0';
+        }
     };
-
+    
     return (
-        <div ref={searchContainerRef} className={`${className || ""} search-container relative flex items-center`} role="search">
-            {!isExpanded ? (
+        <div 
+            ref={searchContainerRef}
+            className={`${className || ""} relative flex items-center`}
+        >
+            {/* 搜索按钮 - 未展开状态 */}
+            {!isExpanded && (
                 <button 
-                    onClick={() => setIsExpanded(true)} 
-                    title={label} 
+                    onClick={() => {
+                        setIsExpanded(true);
+                        setTimeout(() => searchInputRef.current?.focus(), 10);
+                    }} 
+                    title={label}
                     aria-label={label}
-                    className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-110"
+                    className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105 group"
                 >
-                    <i className="ri-search-line text-xl"></i>
-                </button>
-            ) : (
-                <div className="flex items-center relative">
-                    <div className="relative flex items-center animate-expandWidth">
-                        <input
-                            ref={searchInputRef}
-                            type="text"
-                            value={value}
-                            onChange={(e) => setValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder={getTranslatedText('article.search.placeholder', '搜索文章...')}
-                            className={`${getSearchInputWidthClass()} py-2 pl-8 pr-9 bg-white dark:bg-gray-800 border border-pink-300 dark:border-pink-500/40 rounded-full text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-pink-400/30 focus:border-pink-400 dark:focus:border-pink-400 shadow-sm hover:shadow focus:shadow-md transition-all duration-200 text-xs`}
-                            aria-expanded={isExpanded}
-                            autoComplete="off"
-                            aria-autocomplete="list"
-                            aria-controls={searchHistory.length > 0 ? "search-history-dropdown" : undefined}
-                        />
-                        <i className="ri-search-line absolute left-3 text-gray-400 text-sm"></i>
-                        <div className="absolute right-2 flex space-x-1">
-                            {value.trim() && (
-                                <button 
-                                    onClick={() => setValue('')}
-                                    className="p-1 text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
-                                    aria-label={getTranslatedText('clear', '清除')}
-                                    type="button"
-                                >
-                                    <i className="ri-close-circle-line text-sm"></i>
-                                </button>
-                            )}
-                            <button 
-                                onClick={() => {
-                                    if (value.trim()) {
-                                        onSearch();
-                                    } else {
-                                        setIsExpanded(false);
-                                    }
-                                }}
-                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
-                                aria-label={value.trim() ? getTranslatedText('search', '搜索') : getTranslatedText('close', '关闭')}
-                                type="button"
-                            >
-                                {value.trim() ? (
-                                    <i className="ri-arrow-right-circle-line text-sm"></i>
-                                ) : (
-                                    <i className="ri-close-line text-sm"></i>
-                                )}
-                            </button>
-                        </div>
+                    <div className="flex items-center">
+                        <i className="ri-search-line text-xl group-hover:text-theme transition-colors"></i>
+                        <span className="hidden sm:inline ml-1.5 text-xs font-medium opacity-80">Ctrl + K</span>
                     </div>
+                </button>
+            )}
+            
+            {/* 搜索框 - 展开状态 */}
+            {isExpanded && (
+                <div className={`flex items-center ${getSearchInputWidthClass()} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-md animate-slideIn relative group`}>
+                    <div className="absolute left-3 text-gray-500 dark:text-gray-400 group-focus-within:text-theme">
+                        <i className="ri-search-line text-lg"></i>
+                    </div>
+                    <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={getTranslatedText('article.search.placeholder', '搜索文章...')}
+                        className="w-full py-2 pl-10 pr-10 bg-transparent text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none text-sm"
+                    />
+                    {value && (
+                        <button
+                            onClick={() => setValue('')}
+                            className="absolute right-9 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 focus:outline-none"
+                            title={getTranslatedText('clear', '清除')}
+                        >
+                            <i className="ri-close-line text-lg"></i>
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setIsExpanded(false)}
+                        className="absolute right-2 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 focus:outline-none p-1"
+                        title={getTranslatedText('close', '关闭')}
+                    >
+                        <i className="ri-close-circle-line text-lg"></i>
+                    </button>
                     
                     {/* 搜索历史下拉框 */}
-                    {isExpanded && searchHistory.length > 0 && (
-                        <div 
-                            id="search-history-dropdown"
-                            className={`absolute top-full mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg z-50 overflow-hidden animate-slideDown ${getHistoryDropdownPositionClass()}`}
-                            role="listbox"
-                            style={{boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)'}}
-                        >
-                            <div className="max-h-48 overflow-y-auto">
-                                <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-gray-700">
-                                    <span className="flex items-center">
-                                        <i className="ri-history-line mr-1.5 text-pink-400/70"></i>
-                                        {getTranslatedText('article.search.history', '搜索历史')}
-                                    </span>
-                                    <button 
-                                        onClick={() => {
-                                            setSearchHistory([]);
-                                            localStorage.removeItem('search_history');
-                                        }}
-                                        className="text-xs px-1.5 py-0.5 rounded text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
-                                        aria-label={getTranslatedText('article.search.clear_history', '清除搜索历史')}
-                                        type="button"
+                    {isExpanded && value.length === 0 && searchHistory.length > 0 && (
+                        <div className={`absolute ${getHistoryDropdownPositionClass()} top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl overflow-hidden z-50 animate-fadeIn max-h-60 overflow-y-auto`}>
+                            <div className="p-2 text-sm font-medium text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 flex items-center">
+                                <i className="ri-history-line mr-1.5 text-theme"></i>
+                                {getTranslatedText('article.search.history', '搜索历史')}
+                            </div>
+                            <div className="p-1">
+                                {searchHistory.map((term, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => handleHistoryClick(term)}
+                                        className="w-full text-left px-3 py-2 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center justify-between group/item"
                                     >
-                                        <span className="flex items-center">
-                                            <i className="ri-delete-bin-line mr-0.5 text-xs"></i>
-                                            {getTranslatedText('article.search.clear_history', '清除')}
-                                        </span>
+                                        <div className="flex items-center">
+                                            <i className="ri-history-line mr-2 text-gray-400 dark:text-gray-500"></i>
+                                            <span className="truncate">{term}</span>
+                                        </div>
+                                        <i className="ri-arrow-right-up-line opacity-0 group-hover/item:opacity-100 transition-opacity text-theme"></i>
                                     </button>
-                                </div>
-                                <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                                    {searchHistory.map((term, index) => (
-                                        <button 
-                                            key={index}
-                                            className="w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/70 text-left flex items-center transition-colors duration-150 group"
-                                            onClick={() => handleHistoryClick(term)}
-                                            role="option"
-                                            aria-selected={value === term}
-                                            type="button"
-                                        >
-                                            <i className="ri-time-line mr-2 text-gray-400 group-hover:text-theme transition-colors duration-150"></i>
-                                            <span className="truncate flex-1">{term}</span>
-                                            <span className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded transition-opacity duration-150">
-                                                {getTranslatedText('search.use', '使用')}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
+                                ))}
                             </div>
                         </div>
                     )}
                 </div>
             )}
         </div>
-    )
+    );
 }
 
 function UserAvatar({ className, profile, onClose }: { className?: string, profile?: Profile, onClose?: () => void }) {
