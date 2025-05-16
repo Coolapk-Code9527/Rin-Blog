@@ -4,7 +4,6 @@ import {timeago} from "../utils/timeago";
 import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
 import React, { memo } from "react";
-import { FiCalendar } from "react-icons/fi";
 import dayjs from "dayjs";
 
 export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt }:
@@ -122,7 +121,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                             <div className="absolute bottom-2 right-2 z-10 bg-gray-800/80 text-white text-xs px-2 py-1 rounded-md">
                                 {createdAt && (
                                     <div className="flex items-center space-x-1">
-                                        <FiCalendar className="w-3 h-3" />
+                                        <i className="ri-calendar-line text-xs mr-1"></i>
                                         <span>
                                             {dayjs(createdAt).format("YYYY-MM-DD")}
                                         </span>
