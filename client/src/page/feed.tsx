@@ -187,7 +187,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full flex flex-row justify-center ani-show">
+      <div className="w-full flex flex-row justify-center ani-show max-w-5xl mx-auto gap-8">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -206,10 +206,10 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <div className="hidden xl:block xl:w-12 2xl:w-32" />
-            <main className="w-full max-w-3xl 2xl:max-w-4xl flex-1">
+            <div className="hidden xl:block xl:w-72 flex-shrink-0" />
+            <main className="flex-1 min-w-0 max-w-3xl">
               <article
-                className="rounded-2xl bg-w m-2 px-8 py-6 shadow-lg"
+                className="rounded-2xl bg-w m-2 px-6 py-4"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
@@ -280,7 +280,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                   {feed.hashtags.length > 0 && (
                     <div className="flex flex-row flex-wrap gap-x-2">
                       {feed.hashtags.map(({ name }, index) => (
-                        <HashTag key={index} name={name} />
+                        <HashTag name={name} key={index} />
                       ))}
                     </div>
                   )}
@@ -301,7 +301,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
             </main>
-            <aside className="w-80 hidden lg:block relative">
+            <aside className="w-80 hidden lg:block relative flex flex-col gap-6">
               <div className="start-0 end-0 top-[5.5rem] sticky flex flex-col gap-6">
                 <TOC />
                 <RecentPosts />
@@ -563,14 +563,14 @@ type Comment = {
 };
 
 function Comments({ id }: { id: string }) {
-  const config = useContext(ClientConfigContext);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [error, setError] = useState<string>();
-  const [loading, setLoading] = useState(false);
-  const ref = useRef("");
+  const config = React.useContext(ClientConfigContext);
+  const [comments, setComments] = React.useState<Comment[]>([]);
+  const [error, setError] = React.useState<string>();
+  const [loading, setLoading] = React.useState(false);
+  const ref = React.useRef("");
   const { t } = useTranslation();
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalComments, setTotalComments] = useState(0);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [totalComments, setTotalComments] = React.useState(0);
   const commentsPerPage = 5; // 每页显示5条评论
 
   function loadComments() {
@@ -601,7 +601,7 @@ function Comments({ id }: { id: string }) {
       });
   }
   
-  useEffect(() => {
+  React.useEffect(() => {
     if (ref.current == id) return;
     loadComments();
     ref.current = id;
@@ -693,11 +693,11 @@ function Comments({ id }: { id: string }) {
                   </div>
                   
                   <div className="space-y-3">
-                    {currentComments.map((comment) => (
+                    {currentComments.map((comment, idx) => (
                       <CommentItem
-                        key={comment.id}
                         comment={comment}
                         onRefresh={loadComments}
+                        key={comment.id || idx}
                       />
                     ))}
                   </div>
@@ -740,7 +740,7 @@ function CommentItem({
   const { showConfirm, ConfirmUI } = useConfirm();
   const { showAlert, AlertUI } = useAlert();
   const { t } = useTranslation();
-  const profile = useContext(ProfileContext);
+  const profile = React.useContext(ProfileContext);
   
   function deleteComment() {
     showConfirm(
