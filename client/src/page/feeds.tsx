@@ -191,8 +191,8 @@ export function FeedsPage() {
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
                 <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
                     <div className="w-auto w-full max-w-6xl">
-                        <div className="flex flex-col space-y-4 mb-8">
-                            <div className="flex items-center justify-between py-4 sm:py-6 border-b border-gray-200/50 dark:border-gray-700/50">
+                        <div className="flex flex-col space-y-4 mb-4">
+                            <div className="flex items-center justify-between py-4 sm:py-6">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
                                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group">
                             {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
@@ -231,6 +231,11 @@ export function FeedsPage() {
                             }
                             </div>
                             
+                            {/* 上方渐变分割线 */}
+                            <div className="w-full mb-3">
+                                <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+                            </div>
+                            
                             <div className="flex justify-between items-center -mt-2 sm:mt-0">
                                 {(listState === 'draft' || listState === 'unlisted') && (
                                     <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-2 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-md">
@@ -256,7 +261,7 @@ export function FeedsPage() {
                                     </div>
                                     
                                     {/* 分页控制 - 改进视觉样式和交互 */}
-                                    <div className="flex justify-center mt-8 w-full">
+                                    <div className="flex justify-center mt-8 mb-2 w-full">
                                         <Pagination
                                             currentPage={page}
                                             totalPages={Math.ceil(feeds[listState].size / limit)}
@@ -266,7 +271,7 @@ export function FeedsPage() {
                                     </div>
                                     
                                     {/* 底部分隔线 */}
-                                    <div className="w-full mt-2 mb-8">
+                                    <div className="w-full mb-8">
                                         <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                                     </div>
                                 </>
