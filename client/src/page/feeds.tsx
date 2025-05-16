@@ -215,20 +215,18 @@ export function FeedsPage() {
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
                                         <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center shadow-sm
+                                            className={`w-8 h-8 rounded-md text-xs font-medium transition-all flex items-center justify-center shadow-sm
                                             ${listState === 'draft' 
                                             ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
                                             : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
-                                            <i className="ri-draft-line mr-1.5 sm:mr-2"></i>
-                                            <span className="hidden xs:inline">{t('draft_bin')}</span>
+                                            <i className="ri-draft-line"></i>
                                         </Link>
                                         <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center shadow-sm
+                                            className={`w-8 h-8 rounded-md text-xs font-medium transition-all flex items-center justify-center shadow-sm
                                             ${listState === 'unlisted' 
                                             ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
                                             : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
-                                            <i className="ri-eye-off-line mr-1.5 sm:mr-2"></i>
-                                            <span className="hidden xs:inline">{t('unlisted')}</span>
+                                            <i className="ri-eye-off-line"></i>
                                         </Link>
                                     </div>
                                 }
