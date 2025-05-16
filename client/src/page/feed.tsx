@@ -205,93 +205,95 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <div className="hidden xl:block xl:w-64" />
-            <main className="w-full max-w-4xl mx-auto px-2 sm:px-4 md:px-8 flex-1">
+            <div className="xl:w-64" />
+            <main className="wauto">
               <article
-                className="rounded-2xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 m-0 md:m-4 px-0 md:px-8 py-6 md:py-10 transition-all duration-300"
+                className="rounded-2xl bg-w m-2 px-6 py-4"
                 aria-label={feed.title ?? "Unnamed"}
               >
-                {headImage && (
-                  <div className="w-full mb-6">
-                    <img
-                      src={headImage}
-                      alt={feed.title ?? "cover"}
-                      className="w-full h-64 object-cover rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
-                      loading="lazy"
-                    />
+                <div className="flex justify-between">
+                  <div>
+                    <div className="mt-1 mb-1 flex gap-1">
+                      <p
+                        className="text-gray-400 text-[12px]"
+                        title={new Date(feed.createdAt).toLocaleString()}
+                      >
+                        {t("published_at")} {timeago(feed.createdAt)}
+                      </p>
+
+                      {feed.createdAt !== feed.updatedAt && (
+                        <p
+                          className="text-gray-400 text-[12px]"
+                          title={new Date(feed.updatedAt).toLocaleString()}
+                        >
+                          {t("feed_card.updated$time", {
+                            time: timeago(feed.updatedAt),
+                          })}
+                        </p>
+                      )}
+                    </div>
+                    {counterEnabled && <p className='text-[12px] text-gray-400 font-normal link-line'>
+                      {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
+                    </p>}
+                    <div className="flex flex-row items-center">
+                      <h1 className="text-2xl font-bold t-primary break-all">
+                        {feed.title}
+                      </h1>
+                      <div className="flex-1 w-0" />
+                    </div>
                   </div>
-                )}
-                <div className="flex flex-col gap-2 mb-4">
-                  <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white leading-tight mb-2">
-                    {feed.title}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                    <span title={new Date(feed.createdAt).toLocaleString()}>
-                      <i className="ri-calendar-line mr-1"></i>
-                      {t("published_at")} {timeago(feed.createdAt)}
-                    </span>
-                    {feed.createdAt !== feed.updatedAt && (
-                      <span title={new Date(feed.updatedAt).toLocaleString()}>
-                        <i className="ri-history-line mr-1"></i>
-                        {t("feed_card.updated$time", { time: timeago(feed.updatedAt) })}
-                      </span>
-                    )}
-                    {counterEnabled && (
-                      <span>
-                        <i className="ri-eye-line mr-1"></i>{t("count.pv")} {feed.pv} | <i className="ri-user-3-line mr-1"></i>{t("count.uv")} {feed.uv}
-                      </span>
+                  <div className="pt-2">
+                    {profile?.permission && (
+                      <div className="flex gap-2">
+                        <button
+                          aria-label={top > 0 ? t("untop.title") : t("top.title")}
+                          onClick={topFeed}
+                          className={`w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center ${
+                            top > 0 
+                              ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
+                              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
+                          }`}
+                        >
+                          <i className="ri-skip-up-line" />
+                        </button>
+                        <Link
+                          aria-label={t("edit")}
+                          href={`/writing/${feed.id}`}
+                          className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
+                        >
+                          <i className="ri-edit-2-line" />
+                        </Link>
+                        <button
+                          aria-label={t("delete.title")}
+                          onClick={deleteFeed}
+                          className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <i className="ri-delete-bin-7-line" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-4 mb-6">
-                  <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-900/40 px-3 py-2 rounded-lg shadow-sm">
-                    <img
-                      src={feed.user.avatar || "/avatar.png"}
-                      className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
-                      alt={feed.user.username}
-                    />
-                    <span className="text-gray-700 dark:text-gray-200 font-medium text-base">{feed.user.username}</span>
-                  </div>
+                <Markdown content={feed.content} />
+                <div className="mt-6 flex flex-col gap-2">
                   {feed.hashtags.length > 0 && (
-                    <div className="flex flex-row flex-wrap gap-2">
+                    <div className="flex flex-row flex-wrap gap-x-2">
                       {feed.hashtags.map(({ name }, index) => (
                         <HashTag key={index} name={name} />
                       ))}
                     </div>
                   )}
-                  <div className="flex-1" />
-                  {profile?.permission && (
-                    <div className="flex gap-2">
-                      <button
-                        aria-label={top > 0 ? t("untop.title") : t("top.title")}
-                        onClick={topFeed}
-                        className={`w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center ${
-                          top > 0
-                            ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20"
-                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
-                        }`}
-                      >
-                        <i className="ri-skip-up-line" />
-                      </button>
-                      <Link
-                        aria-label={t("edit")}
-                        href={`/writing/${feed.id}`}
-                        className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
-                      >
-                        <i className="ri-edit-2-line" />
-                      </Link>
-                      <button
-                        aria-label={t("delete.title")}
-                        onClick={deleteFeed}
-                        className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      >
-                        <i className="ri-delete-bin-7-line" />
-                      </button>
+                  <div className="flex flex-row items-center">
+                    <img
+                      src={feed.user.avatar || "/avatar.png"}
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <div className="ml-2">
+                      <span className="text-gray-400 text-sm cursor-default">
+                        {feed.user.username}
+                      </span>
                     </div>
-                  )}
-                </div>
-                <div className="prose prose-lg dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-100 mb-8">
-                  <Markdown content={feed.content} />
+                  </div>
                 </div>
               </article>
               <AdjacentSection id={id} setError={setError}/>
@@ -299,7 +301,9 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               <div className="h-16" />
             </main>
             <div className="w-80 hidden lg:block relative">
-              <div className={`start-0 end-0 top-[5.5rem] sticky`}>
+              <div
+                  className={`start-0 end-0 top-[5.5rem] sticky`}
+              >
                 <TOC />
               </div>
             </div>
