@@ -401,6 +401,5 @@
   "no_articles_description": "这里还没有任何文章，之后会添加的~",
   "image_load_error": "图片加载失败",
   "unlisted_description": "未列出的文章，有链接才能访问",
-  "draft_description": "文章草稿区，仅自己可见",
-  "recent_articles": "近期文章"
+  "draft_description": "文章草稿区，仅自己可见"
 }
