@@ -189,16 +189,16 @@ export function FeedsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
-                <main className="w-full flex flex-col justify-center items-center mb-12 px-3 sm:px-6">
+                <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
                     <div className="w-auto w-full max-w-6xl">
-                        <div className="flex flex-col space-y-3 mb-4">
-                            <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between py-3 sm:py-6 gap-3 xs:gap-0">
+                        <div className="flex flex-col space-y-4 mb-4">
+                            <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between py-4 sm:py-6 gap-2 xs:gap-0">
                                 <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                                    <h1 className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group">
+                                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group">
                             {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                                     </h1>
-                                    <div className="px-2 py-1 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm self-start sm:self-auto">
+                                    <div className="px-2 py-1 sm:mt-0 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm self-start sm:self-auto">
                                         <i className="ri-article-line mr-1.5"></i>
                                 {t('article.total$count', { count: feeds[listState]?.size })}
                                     </div>
@@ -209,34 +209,34 @@ export function FeedsPage() {
                                         <Link href="/writing/new"
                                             className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
                                             <i className="ri-add-line mr-1 sm:mr-2"></i>
-                                            <span className="text-xs xs:text-sm">{t('new_article')}</span>
+                                            <span className="inline text-xs sm:text-sm">{t('new_article')}</span>
                                         </Link>
                                         <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`w-8 h-8 xs:w-auto xs:h-auto px-0 xs:px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center xs:justify-start shadow-sm
+                                            className={`w-8 h-8 sm:w-auto sm:h-auto px-0 xs:px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center sm:justify-start shadow-sm
                                             ${listState === 'draft' 
                                             ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow" 
                                             : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
                                             <i className="ri-draft-line xs:mr-1 sm:mr-2"></i>
-                                            <span className="hidden xs:inline text-xs xs:text-sm">{t('draft_bin')}</span>
+                                            <span className="hidden sm:inline">{t('draft_bin')}</span>
                                     </Link>
                                         <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`w-8 h-8 xs:w-auto xs:h-auto px-0 xs:px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center xs:justify-start shadow-sm
+                                            className={`w-8 h-8 sm:w-auto sm:h-auto px-0 xs:px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center sm:justify-start shadow-sm
                                             ${listState === 'unlisted' 
                                             ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow" 
                                             : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
                                             <i className="ri-eye-off-line xs:mr-1 sm:mr-2"></i>
-                                            <span className="hidden xs:inline text-xs xs:text-sm">{t('unlisted')}</span>
+                                            <span className="hidden sm:inline">{t('unlisted')}</span>
                                     </Link>
                                 </div>
                             }
                             </div>
                             
                             {/* 上方渐变分割线 */}
-                            <div className="w-full mb-2 sm:mb-3">
+                            <div className="w-full mb-3">
                                 <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                             </div>
                             
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center -mt-2 sm:mt-0">
                                 {(listState === 'draft' || listState === 'unlisted') && (
                                     <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-2 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-md">
                                     {listState === 'draft' 
@@ -254,14 +254,14 @@ export function FeedsPage() {
                         <Waiting for={status === 'idle'}>
                             {feeds[listState]?.data?.length > 0 ? (
                                 <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 xs:gap-4 sm:gap-5 w-full">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full">
                                         {feeds[listState].data.map((feed, i) => (
                                             <LazyFeedCard key={`feed-card-${feed.id}-${i}`} {...feed} />
                                         ))}
                                     </div>
                                     
                                     {/* 分页控制 - 改进视觉样式和交互 */}
-                                    <div className="flex justify-center mt-6 sm:mt-8 mb-2 w-full">
+                                    <div className="flex justify-center mt-8 mb-2 w-full">
                                         <Pagination
                                             currentPage={page}
                                             totalPages={Math.ceil(feeds[listState].size / limit)}
@@ -271,7 +271,7 @@ export function FeedsPage() {
                                     </div>
                                     
                                     {/* 底部分隔线 */}
-                                    <div className="w-full mb-6 sm:mb-8">
+                                    <div className="w-full mb-8">
                                         <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                                     </div>
                                 </>

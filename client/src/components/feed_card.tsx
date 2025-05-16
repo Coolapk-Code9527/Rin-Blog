@@ -102,7 +102,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
                 ? 'border-theme/30 dark:border-theme/20 shadow-md' 
                 : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
-                flex flex-col min-h-[240px] xs:min-h-[260px] sm:min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
+                flex flex-col min-h-[260px] xs:min-h-[280px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
             aria-labelledby={`article-title-${id}`}
             onMouseEnter={prefetchArticle}
             onTouchStart={handleTouchStart}
@@ -110,7 +110,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             onClick={handleClick}
         >
             {/* 卡片顶部区域 - 根据屏幕大小调整高度 */}
-            <div className={`w-full h-36 xs:h-40 sm:h-48 overflow-hidden rounded-t-xl relative`}>
+            <div className={`w-full h-40 xs:h-44 sm:h-48 overflow-hidden rounded-t-xl relative`}>
                 {/* 渐变背景占位 - 根据文章标题生成的稳定渐变色 */}
                 <div 
                     className="absolute inset-0 w-full h-full z-0"
@@ -128,15 +128,15 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                         {/* 图片加载状态指示器 */}
                         {!imageLoaded && !imageError && (
                             <div className="absolute inset-0 flex items-center justify-center z-5">
-                                <div className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 border-2 border-white/70 border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-white/70 border-t-transparent rounded-full animate-spin"></div>
                             </div>
                         )}
                         
                         {/* 图片加载错误占位符 */}
                         {imageError && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center z-5">
-                                <i className="ri-image-line text-2xl xs:text-3xl text-white/80 mb-1 xs:mb-2"></i>
-                                <span className="text-xs text-white/80 bg-black/30 px-2 py-0.5 xs:py-1 rounded">{t('image_load_error')}</span>
+                                <i className="ri-image-line text-2xl sm:text-3xl text-white/80 mb-1 sm:mb-2"></i>
+                                <span className="text-xs text-white/80 bg-black/30 px-2 py-0.5 sm:py-1 rounded">{t('image_load_error')}</span>
                             </div>
                         )}
                         
@@ -159,17 +159,17 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 {!avatar && (
                     <div className="absolute inset-0 flex items-center justify-center z-5">
                         <div className="text-white/90 text-center px-4">
-                            <i className="ri-article-line text-3xl xs:text-4xl mb-1 xs:mb-2 drop-shadow-md"></i>
-                            <p className="text-xs xs:text-sm font-medium drop-shadow-md">{title.substring(0, 20)}{title.length > 20 ? '...' : ''}</p>
+                            <i className="ri-article-line text-3xl sm:text-4xl mb-1 sm:mb-2 drop-shadow-md"></i>
+                            <p className="text-xs sm:text-sm font-medium drop-shadow-md">{title.substring(0, 20)}{title.length > 20 ? '...' : ''}</p>
                         </div>
                     </div>
                 )}
                     
                 {/* 置顶标识 - 优化位置居中 */}
                 {top === 1 && (
-                    <div className="absolute top-2 xs:top-3 right-2 xs:right-3 z-20 flex items-center justify-center">
-                        <div className="bg-theme text-white text-[10px] xs:text-xs font-medium px-1.5 xs:px-2.5 py-1 xs:py-1.5 rounded-full shadow-md flex items-center">
-                            <i className="ri-pushpin-line mr-0.5 xs:mr-1"></i>
+                    <div className="absolute top-3 right-3 z-20 flex items-center justify-center">
+                        <div className="bg-theme text-white text-xs font-medium px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full shadow-md flex items-center">
+                            <i className="ri-pushpin-line mr-1"></i>
                             <span>{t('article.top.title')}</span>
                         </div>
                     </div>
@@ -177,7 +177,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 
                 {/* 今日发布标识 */}
                 {isToday() && (
-                    <div className="absolute top-2 xs:top-3 left-2 xs:left-3 bg-emerald-500 text-white text-[10px] xs:text-xs font-medium px-1.5 xs:px-2.5 py-1 xs:py-1.5 rounded-full shadow-md z-20 flex items-center justify-center">
+                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-medium px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full shadow-md z-20 flex items-center justify-center">
                         <i className="ri-time-line mr-1"></i>
                         <span className="hidden xs:inline">{t('today')}</span>
                     </div>
@@ -185,17 +185,17 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             </div>
             
             {/* 卡片内容区域 */}
-            <div className="p-3 xs:p-4 sm:p-5 flex-1 flex flex-col">
+            <div className="p-4 sm:p-5 flex-1 flex flex-col">
                 {/* 文章标题 */}
-                <h2 id={`article-title-${id}`} className="text-base xs:text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 line-clamp-2">
+                <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 line-clamp-2">
                     {title}
                 </h2>
                     
                 {/* 日期和状态区域 - 移动端紧凑设计 */}
-                <div className="flex flex-wrap justify-between items-center gap-1 mb-2 xs:mb-3 text-[10px] xs:text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex flex-wrap justify-between items-center gap-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
                     {/* 左侧日期显示 */}
-                    <div className="flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-1.5 xs:px-2 py-0.5">
-                        <i className="ri-calendar-line mr-0.5 xs:mr-1"></i>
+                    <div className="flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-2 py-0.5">
+                        <i className="ri-calendar-line mr-1"></i>
                         {formatDate(createdAt)}
                         {createdAt !== updatedAt &&
                             <span className="ml-2 flex items-center" title={new Date(updatedAt).toLocaleString()}>
