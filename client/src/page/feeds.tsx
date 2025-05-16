@@ -19,6 +19,7 @@ import { LazyFeedCard } from '../components/feed_card';
 import { FeedsPageSkeleton } from '../components/skeleton';
 import { ThemeContext } from '../state/theme.context';
 import usePageVisibility from '../hooks/use_page_visibility';
+import { useLocation } from 'react-router-dom';
 
 type FeedsData = {
     size: number,
@@ -153,7 +154,8 @@ export function FeedsPage() {
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = React.useRef("")
-    
+    const [, setLocation] = useLocation(); // 确保 useLocation 已引入和使用
+
     // 使用useCallback优化函数
     const fetchFeeds = React.useCallback((type: FeedType) => {
         client.feed.index.get({
@@ -178,16 +180,17 @@ export function FeedsPage() {
     React.useEffect(() => {
         const key = `${query.get("page")} ${query.get("type")}`
         if (ref.current == key) return
-        const type = query.get("type") as FeedType || 'normal'
-        if (type !== listState) {
-            _setListState(type)
+        const typeFromUrl = query.get("type") as FeedType || 'normal'
+        // _setListState(typeFromUrl); // listState 将由 URL 驱动，在此处直接使用 typeFromUrl
+        if (typeFromUrl !== listState) { // 只有当 URL 的 type 和当前 listState 不同时才更新 listState
+            _setListState(typeFromUrl);
         }
         setStatus('loading')
-        fetchFeeds(type)
+        fetchFeeds(typeFromUrl) // 始终基于 URL 的 type 来获取数据
         ref.current = key
-    }, [query.get("page"), query.get("type"), fetchFeeds])
-    
-    const { isLoading, isFetching, isError, data, error } = useQuery(
+    }, [query.get("page"), query.get("type"), fetchFeeds]); // 移除 listState 从依赖项，因为它由 query.get("type") 驱动
+
+    const { isLoading, isFetching, isError, data, error: queryError } = useQuery( // 重命名 error 防止与外部作用域冲突
         ['feeds', page, listState],
         () => fetchFeeds(listState),
         {
@@ -220,112 +223,97 @@ export function FeedsPage() {
             <Helmet>
                 <title>{`${t('article.title')} - ${process.env.NAME}`}</title>
                 <meta property="og:site_name" content={siteName} />
-                <meta property="og:title" content={t('article.title')} />
+                {/* 根据当前筛选状态动态更新标题 */}
+                <meta property="og:title" content={
+                    listState === 'draft' ? t('draft_bin') : 
+                    listState === 'unlisted' ? t('unlisted') : 
+                    t('article.title')
+                } />
                 <meta property="og:image" content={process.env.AVATAR} />
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
-                <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
-                    <div className="w-auto w-full max-w-6xl">
-                        {/* Bento风格的文章页头部设计 */}
-                        <div className="bento-header mb-8 pt-8 pb-4">
-                            {/* 标题和统计信息区 */}
-                            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8">
-                                {/* 左侧标题区 */}
-                                <div className="flex flex-col">
-                                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2 relative inline-block">
-                                        {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
-                                        <div className="absolute -bottom-1 left-0 h-1 w-24 bg-gradient-to-r from-theme to-theme-dark rounded-full"></div>
-                                    </h1>
-                                    
-                                    {/* 类型说明文字，有条件显示 */}
-                                    {(listState === 'draft' || listState === 'unlisted') && (
-                                        <div className="mt-3 text-sm text-gray-600 dark:text-gray-400 italic px-4 py-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-l-2 border-theme">
-                                            {listState === 'draft' 
-                                                ? t('draft_description') 
-                                                : t('unlisted_description')
-                                            }
-                                        </div>
-                                    )}
+                <main className="w-full flex flex-col justify-center items-center mb-12 px-3 sm:px-4 md:px-6">
+                    <div className="w-full max-w-6xl">
+                        {/* 新的页面头部布局 */}
+                        <div className="my-6 sm:my-8 space-y-5 sm:space-y-6">
+                            {/* 顶部区域: 页面标题和新建文章按钮 */}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                                    {t('article.title')} {/* 主标题固定为 "文章" */}
+                                </h1>
+                                {profile?.permission && (
+                                    <Link
+                                        href="/writing/new"
+                                        className="shrink-0 w-full sm:w-auto px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center shadow-md bg-gradient-to-r from-theme to-theme-dark text-white hover:shadow-lg hover:from-theme-hover hover:to-theme-dark-hover active:scale-95 focus:outline-none focus:ring-2 focus:ring-theme-dark focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                                    >
+                                        <i className="ri-add-circle-line text-lg mr-2"></i>
+                                        <span>{t('new_article')}</span>
+                                    </Link>
+                                )}
+                            </div>
+
+                            {/* 中部区域: 筛选器和当前视图文章统计 */}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                                <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shadow-sm">
+                                    {[
+                                        { type: 'normal', labelKey: 'article.all_articles', icon: 'ri-layout-grid-fill' },
+                                        { type: 'draft', labelKey: 'draft_bin', icon: 'ri-draft-fill' },
+                                        { type: 'unlisted', labelKey: 'unlisted', icon: 'ri-eye-off-fill' }
+                                    ].map(filter => (
+                                        (profile?.permission || filter.type === 'normal') ? (
+                                            <button
+                                                key={filter.type}
+                                                onClick={() => {
+                                                    const newType = filter.type as FeedType;
+                                                    const currentQuery = new URLSearchParams(query.toString());
+                                                    currentQuery.set("type", newType);
+                                                    currentQuery.set("page", "1"); 
+                                                    setLocation(`/?${currentQuery.toString()}`);
+                                                }}
+                                                title={t(filter.labelKey)}
+                                                className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 whitespace-nowrap
+                                                            ${listState === filter.type
+                                                                ? 'bg-white dark:bg-gray-700 text-theme dark:text-theme-light shadow'
+                                                                : 'text-gray-600 dark:text-gray-400 hover:bg-white/70 dark:hover:bg-gray-700/70 hover:text-gray-800 dark:hover:text-gray-100'
+                                                            }`}
+                                            >
+                                                <i className={`${filter.icon} text-sm sm:text-base`}></i>
+                                                <span className="hidden xs:inline">{t(filter.labelKey)}</span>
+                                            </button>
+                                        ) : null
+                                    ))}
                                 </div>
-                                
-                                {/* 右侧文章统计信息 */}
-                                <div className="flex items-center justify-start lg:justify-end">
-                                    <div className="flex items-center rounded-full px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium shadow-sm">
-                                        <span className="flex items-center justify-center w-8 h-8 bg-white dark:bg-gray-700 rounded-full shadow-sm mr-3">
-                                            <i className="ri-article-line text-theme"></i>
-                                        </span>
-                                        <span>{t('article.total$count', { count: feeds[listState]?.size })}</span>
-                                    </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 pt-1 sm:pt-0 sm:self-center">
+                                    {t('article.total_in_current_view$count', { count: feeds[listState]?.size || 0 })}
                                 </div>
                             </div>
-                            
-                            {/* 操作按钮区 */}
-                            {profile?.permission && (
-                                <div className="bento-actions grid grid-cols-1 sm:grid-cols-12 gap-4">
-                                    {/* 新建文章按钮 */}
-                                    <div className="sm:col-span-4">
-                                        <Link href="/writing/new"
-                                            className="group w-full relative overflow-hidden px-4 py-3 rounded-xl flex items-center justify-center transition-all duration-300 bg-gradient-to-r from-theme to-theme-dark text-white shadow-md hover:shadow-lg hover:scale-[1.02]">
-                                            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                                            <i className="ri-add-line mr-2 text-lg"></i>
-                                            <span className="font-medium">{t('new_article')}</span>
-                                        </Link>
-                                    </div>
-                                    
-                                    {/* 内容分类按钮组 */}
-                                    <div className="sm:col-span-8">
-                                        <div className="flex rounded-xl overflow-hidden shadow-md h-full border border-gray-100 dark:border-gray-700">
-                                            <Link href={listState === 'normal' ? '/' : '/?type=normal'} 
-                                                className={`flex-1 flex items-center justify-center px-4 py-3 transition-colors duration-300 ${
-                                                    listState === 'normal' 
-                                                    ? "bg-gray-50 dark:bg-gray-800/80 text-theme border-b-2 border-theme" 
-                                                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750"
-                                                }`}>
-                                                <i className="ri-file-list-line mr-2 text-lg"></i>
-                                                <span className="font-medium">{t('article.title')}</span>
-                                            </Link>
-                                            
-                                            <Link href={listState === 'draft' ? '/' : '/?type=draft'} 
-                                                className={`flex-1 flex items-center justify-center px-4 py-3 transition-colors duration-300 ${
-                                                    listState === 'draft' 
-                                                    ? "bg-gray-50 dark:bg-gray-800/80 text-theme border-b-2 border-theme" 
-                                                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750"
-                                                }`}>
-                                                <i className="ri-draft-line mr-2 text-lg"></i>
-                                                <span className="font-medium">{t('draft_bin')}</span>
-                                            </Link>
-                                            
-                                            <Link href={listState === 'unlisted' ? '/' : '/?type=unlisted'} 
-                                                className={`flex-1 flex items-center justify-center px-4 py-3 transition-colors duration-300 ${
-                                                    listState === 'unlisted' 
-                                                    ? "bg-gray-50 dark:bg-gray-800/80 text-theme border-b-2 border-theme" 
-                                                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750"
-                                                }`}>
-                                                <i className="ri-eye-off-line mr-2 text-lg"></i>
-                                                <span className="font-medium">{t('unlisted')}</span>
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                         
-                        {/* 渐变分割线 */}
-                        <div className="w-full h-[2px] mb-8 bg-gradient-to-r from-gray-100 dark:from-gray-800 via-theme-light/40 dark:via-theme-dark/40 to-gray-100 dark:to-gray-800 shadow-sm"></div>
+                        {/* 草稿箱/未列出状态的描述信息 */}
+                        { (listState === 'draft' || listState === 'unlisted') && profile?.permission && (
+                            <div className="mb-6 text-xs sm:text-sm text-yellow-700 dark:text-yellow-300 italic px-3.5 py-2.5 bg-yellow-50 dark:bg-yellow-900/40 border-l-4 border-yellow-400 dark:border-yellow-500 rounded-r-md shadow-sm">
+                                {listState === 'draft' ? t('draft_description') : t('unlisted_description')}
+                            </div>
+                        )}
+
+                        {/* 分隔线 */}
+                        <div className="w-full mb-6 sm:mb-8">
+                            <hr className="h-px border-0 bg-gradient-to-r from-transparent via-gray-300/50 dark:via-gray-700/40 to-transparent" />
+                        </div>
                         
+                        {/* 文章列表区域 */}
                         <Waiting for={status === 'idle'}>
                             {feeds[listState]?.data?.length > 0 ? (
                                 <>
-                                    {/* 文章卡片网格 */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 w-full">
                                         {feeds[listState].data.map((feed, i) => (
-                                            <LazyFeedCard key={`feed-card-${feed.id}-${i}`} {...feed} />
+                                            <LazyFeedCard key={`feed-card-${feed.id}-${i}`} {...feed} top={feed.top ?? 0} />
                                         ))}
                                     </div>
                                     
-                                    {/* 分页控制区 */}
+                                    {/* 分页控制 - 改进视觉样式和交互 */}
                                     <div className="flex justify-center mt-10 mb-4 w-full">
                                         <Pagination
                                             currentPage={page}
@@ -336,12 +324,12 @@ export function FeedsPage() {
                                     </div>
                                     
                                     {/* 底部分隔线 */}
-                                    <div className="w-full mb-8 mt-8">
-                                        <div className="h-[2px] bg-gradient-to-r from-gray-100 dark:from-gray-800 via-theme-light/40 dark:via-theme-dark/40 to-gray-100 dark:to-gray-800 shadow-sm"></div>
+                                    <div className="w-full mb-8">
+                                        <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent shadow-sm" />
                                     </div>
                                 </>
                             ) : status === 'loading' ? (
-                                // 加载骨架屏
+                                // 加载状态显示骨架屏
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full">
                                     {Array(6).fill(0).map((_, i) => (
                                         <div key={`skeleton-${i}`} className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
@@ -366,8 +354,8 @@ export function FeedsPage() {
                                                     <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                                                     <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                                                     <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-4/5 animate-pulse"></div>
-                                                </div>
-                                                
+                            </div>
+                            
                                                 {/* 标签占位 */}
                                                 <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30">
                                                     <div className="flex gap-2">
@@ -380,31 +368,29 @@ export function FeedsPage() {
                                     ))}
                                 </div>
                             ) : (
-                                // 空状态设计
-                                <div className="w-full py-16 sm:py-24 flex flex-col items-center justify-center text-center space-y-6 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                                    <div className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500">
-                                        <i className="ri-inbox-2-line text-4xl"></i>
+                                // 空状态 - 添加创建文章按钮
+                                <div className="w-full py-16 sm:py-24 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                                    <div className="text-5xl text-gray-300 dark:text-gray-600">
+                                        <i className="ri-inbox-2-line"></i>
                                     </div>
-                                    <div>
-                                        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('empty_list')}</h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                                            {listState === 'draft' 
-                                                ? t('empty_draft_description') 
-                                                : listState === 'unlisted' 
-                                                    ? t('empty_unlisted_description')
-                                                    : t('empty_article_description')
-                                            }
-                                        </p>
-                                    </div>
-                                    {profile?.permission && (
-                                        <Link href="/writing/new" className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 bg-theme text-white hover:bg-theme-dark shadow-sm hover:shadow-md hover:scale-105">
-                                            <i className="ri-add-line mr-2"></i>
-                                            {t('create_now')}
+                                    <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-300">{t('empty_list')}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                                        {listState === 'draft' 
+                                            ? t('empty_draft_description') 
+                                            : listState === 'unlisted' 
+                                                ? t('empty_unlisted_description')
+                                                : t('empty_article_description')
+                                        }
+                                    </p>
+                                    {profile?.permission && (listState === 'draft' || listState === 'unlisted' || feeds[listState]?.data?.length === 0) && (
+                                        <Link href="/writing/new" className="mt-4 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center shadow-md bg-gradient-to-r from-theme to-theme-dark text-white hover:shadow-lg hover:from-theme-hover hover:to-theme-dark-hover active:scale-95">
+                                            <i className="ri-add-circle-line text-lg mr-2"></i>
+                                            {t(feeds[listState]?.data?.length === 0 && listState === 'normal' ? 'create_first_article' : 'create_now')}
                                         </Link>
                                     )}
                                 </div>
-                            )}
-                        </Waiting>
+                        )}
+                    </Waiting>
                     </div>
                 </main>
             </Waiting>
