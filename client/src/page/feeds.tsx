@@ -26,6 +26,7 @@ type FeedsMap = {
 // 懒加载Feed卡片组件
 function LazyFeedCard({ id, ...props }: any) {
     const [isVisible, setIsVisible] = React.useState(false);
+    const [isIntersecting, setIsIntersecting] = React.useState(false); // 新增状态跟踪元素是否在视口内
     const cardRef = React.useRef<HTMLDivElement>(null);
     const { t } = useTranslation();
     
@@ -59,9 +60,14 @@ function LazyFeedCard({ id, ...props }: any) {
     React.useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
+                setIsIntersecting(entry.isIntersecting); // 更新元素是否在视口内的状态
                 if (entry.isIntersecting) {
-                    setIsVisible(true);
-                    observer.disconnect();
+                    // 当元素进入视口时，设置一个短暂延迟后显示实际内容，以便平滑过渡
+                    const timer = setTimeout(() => {
+                        setIsVisible(true);
+                        observer.disconnect();
+                    }, 150); // 添加一个短暂延迟以实现错落有致的加载效果
+                    return () => clearTimeout(timer);
                 }
             },
             { threshold: 0.1, rootMargin: '200px 0px' }
@@ -81,7 +87,7 @@ function LazyFeedCard({ id, ...props }: any) {
             {isVisible ? (
                 <FeedCard id={id} {...props} />
             ) : (
-                <div className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
+                <div className={`block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px] transition-opacity duration-300 ${isIntersecting ? 'opacity-100' : 'opacity-40'}`}>
                     {/* 占位符卡片顶部 */}
                     <div className={`w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`}>
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -215,12 +221,12 @@ export function FeedsPage() {
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
                                         <Link href="/writing/new"
-                                            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active">
+                                            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105">
                                             <i className="ri-add-line sm:mr-2"></i>
                                             <span className="hidden sm:inline">{t('new_article')}</span>
                                         </Link>
                                         <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                            className={`w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center justify-center sm:justify-start shadow-sm
+                                            className={`w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center sm:justify-start shadow-sm
                                             ${listState === 'draft' 
                                             ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
                                             : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
@@ -228,7 +234,7 @@ export function FeedsPage() {
                                             <span className="hidden sm:inline">{t('draft_bin')}</span>
                                     </Link>
                                         <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                            className={`w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center justify-center sm:justify-start shadow-sm
+                                            className={`w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center sm:justify-start shadow-sm
                                             ${listState === 'unlisted' 
                                             ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
                                             : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
@@ -242,9 +248,9 @@ export function FeedsPage() {
                             <div className="flex justify-between items-center -mt-2 sm:mt-0">
                                 <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
                                     {listState === 'draft' 
-                                        ? t('draft_description') || "文章草稿区，仅自己可见" 
+                                        ? t('draft_description')
                                         : listState === 'unlisted' 
-                                            ? t('unlisted_description') || "未列出的文章，有链接才能访问" 
+                                            ? t('unlisted_description')
                                             : ""}
                                 </div>
                                 <div className="flex space-x-2">
@@ -254,26 +260,26 @@ export function FeedsPage() {
                         </div>
                         
                         <Waiting for={status === 'idle'}>
-                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
+                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 ani-show w-full ${feeds[listState].data.length === 0 ? '' : 'mb-8'}`}>
                                 {feeds[listState].data.length > 0 ? (
                                     feeds[listState].data.map(({ id, ...feed }: any) => (
                                         <LazyFeedCard key={id} id={id} {...feed} />
                                     ))
                                 ) : (
-                                    <div className="col-span-full text-center py-20 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
-                                        <i className="ri-inbox-line text-5xl mb-4 block opacity-50"></i>
-                                        <p className="text-lg">{t('no_articles')}</p>
+                                    <div className="col-span-full text-center py-20 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                        <i className="ri-inbox-line text-5xl mb-4 block opacity-50 text-gray-400 dark:text-gray-500"></i>
+                                        <p className="text-lg font-medium">{t('no_articles')}</p>
                                         <p className="text-sm mt-2 text-gray-400 dark:text-gray-500">{t('no_articles_description')}</p>
                                     </div>
                                 )}
                             </div>
                             
-                            {/* 加载更多状态 */}
+                            {/* 加载更多状态 - 优化加载动画 */}
                             {status === 'loading' && feeds[listState].data.length > 0 && (
                                 <div className="w-full flex justify-center py-8">
                                     <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
                                         <div className="w-5 h-5 border-2 border-theme border-t-transparent rounded-full animate-spin"></div>
-                                        <span className="text-sm">{t('loading_more') || '加载更多...'}</span>
+                                        <span className="text-sm">{t('loading_more')}</span>
                                     </div>
                                 </div>
                             )}

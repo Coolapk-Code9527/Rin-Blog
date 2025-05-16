@@ -121,7 +121,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                         {imageError && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center z-5">
                                 <i className="ri-image-line text-3xl text-white/80 mb-2"></i>
-                                <span className="text-xs text-white/80 bg-black/30 px-2 py-1 rounded">{t('image_load_error') || '图片加载失败'}</span>
+                                <span className="text-xs text-white/80 bg-black/30 px-2 py-1 rounded">{t('image_load_error')}</span>
                             </div>
                         )}
                         
@@ -172,7 +172,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             {/* 卡片内容区域 */}
             <div className="p-4 sm:p-5 flex-1 flex flex-col">
                 {/* 文章标题 */}
-                <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors line-clamp-2">
+                <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-2 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 line-clamp-2">
                     {title}
                 </h2>
                     
@@ -208,7 +208,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 </div>
                 
                 {/* 文章摘要 - 无需显示"文章描述"文字 */}
-                <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 mb-auto h-[4.5rem] sm:h-[5rem] group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
+                <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 mb-auto h-[4.5rem] sm:h-[5rem] group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
                     <SimplifiedMarkdown content={cleanedSummary} />
                 </div>
                     
