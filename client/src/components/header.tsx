@@ -121,14 +121,14 @@ function NavItem({ menu, title, selected, href, when = true, onClick }: {
                         ${menu 
                             ? "block w-full relative px-4 py-2.5" 
                             : "inline-flex items-center relative px-3 py-2"} 
-                        text-sm font-medium rounded-lg transition-all duration-200 NavItem-common
+                        text-sm font-medium rounded-lg transition-all duration-300 NavItem-common
                         ${selected 
                             ? menu 
-                                ? "text-theme dark:text-theme bg-theme/5 dark:bg-theme/10" 
-                                : "text-theme dark:text-theme" 
+                                ? "text-theme dark:text-theme bg-theme/5 dark:bg-theme/10 font-semibold" 
+                                : "text-theme dark:text-theme font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-theme" 
                             : menu 
-                                ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white" 
-                                : "text-gray-700 dark:text-gray-300 hover:text-theme dark:hover:text-theme hover:bg-gray-100/70 dark:hover:bg-gray-800/70"}
+                                ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme" 
+                                : "text-gray-700 dark:text-gray-300 hover:text-theme dark:hover:text-theme hover:bg-gray-100/70 dark:hover:bg-gray-800/70 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-theme hover:after:w-full after:transition-all after:duration-300"}
                     `}
                     onClick={handleClick}
                     aria-current={selected ? 'page' : undefined}
@@ -589,7 +589,7 @@ function NavBar({ menu, onClick }: { menu: boolean, onClick?: () => void }) {
     const [location] = useLocation();
     const { t } = useTranslation()
     return (
-        <>
+        <div className={`${menu ? 'flex flex-col space-y-1 w-full' : 'flex items-center space-x-1'}`}>
             <NavItem menu={menu} onClick={onClick} title={t('article.title')}
                 selected={location === "/" || location.startsWith('/feed')} href="/" />
             <NavItem menu={menu} onClick={onClick} title={t('timeline')} selected={location === "/timeline"} href="/timeline" />
@@ -601,7 +601,7 @@ function NavBar({ menu, onClick }: { menu: boolean, onClick?: () => void }) {
             <NavItem menu={menu} onClick={onClick} when={profile?.permission == true} title={t('settings.title')}
                 selected={location === "/settings"}
                 href="/settings" />
-        </>
+        </div>
     )
 }
 

@@ -95,7 +95,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             onTouchStart={handleTouchStart}
         >
             {/* 卡片顶部区域 - 增加图片显示区域高度 */}
-            <div className={`w-full h-44 xs:h-52 sm:h-56 md:h-60 overflow-hidden rounded-t-xl relative`}>
+            <div className={`w-full h-40 xs:h-48 sm:h-56 md:h-60 overflow-hidden rounded-t-xl relative`}>
                 {/* 渐变背景占位 - 根据文章标题生成的稳定渐变色 */}
                 <div 
                     className="absolute inset-0 w-full h-full z-0"
@@ -106,7 +106,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 />
                 
                 {/* 顶部渐变遮罩层 */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-40 group-hover:opacity-60 transition-opacity duration-300 z-10"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-300 z-10"></div>
                 
                 {avatar && (
                     <>
@@ -177,9 +177,9 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 </h2>
                     
                 {/* 日期和状态区域 - 移动端紧凑设计 */}
-                <div className="flex flex-wrap justify-between items-center gap-1 mb-2 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex flex-wrap justify-between items-center gap-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
                     {/* 左侧日期显示 */}
-                    <div className="flex items-center">
+                    <div className="flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-2 py-0.5">
                         <i className="ri-calendar-line mr-1"></i>
                         {formatDate(createdAt)}
                         {createdAt !== updatedAt &&
@@ -207,13 +207,17 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     </div>
                 </div>
                 
-                {/* 文章摘要 - 无需显示"文章描述"文字 */}
-                <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 mb-auto h-[4.5rem] sm:h-[5rem] group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
-                    <SimplifiedMarkdown content={cleanedSummary} />
+                {/* 文章摘要 - 改进自适应显示 */}
+                <div className="flex-grow flex flex-col">
+                    <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
+                        <div className="line-clamp-3">
+                            <SimplifiedMarkdown content={cleanedSummary} />
+                        </div>
+                    </div>
                 </div>
                     
                 {/* 标签区域 - 统一分割线样式和对齐方式 */}
-                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/30">
+                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/30">
                     {hashtags.length > 0 ? (
                         <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
                             {hashtags.map(({id, name}) => (

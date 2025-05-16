@@ -204,7 +204,7 @@ export function FeedsPage() {
             </Helmet>
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
                 <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
-                    <div className="wauto w-full max-w-6xl">
+                    <div className="w-auto w-full max-w-6xl">
                         <div className="flex flex-col space-y-4 mb-8">
                             <div className="flex items-center justify-between py-4 sm:py-6 border-b border-gray-200/50 dark:border-gray-700/50">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
@@ -214,21 +214,21 @@ export function FeedsPage() {
                                     </h1>
                                     <div className="px-2 py-1 mt-1 sm:mt-0 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm self-start sm:self-auto">
                                         <i className="ri-article-line mr-1.5"></i>
-                                {t('article.total$count', { count: feeds[listState]?.size })}
+                                        {t('article.total$count', { count: feeds[listState]?.size })}
                                     </div>
                                 </div>
                                 
                             {profile?.permission &&
                                     <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
                                         <Link href="/writing/new"
-                                            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105">
+                                            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
                                             <i className="ri-add-line sm:mr-2"></i>
                                             <span className="hidden sm:inline">{t('new_article')}</span>
                                         </Link>
                                         <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
                                             className={`w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center sm:justify-start shadow-sm
                                             ${listState === 'draft' 
-                                            ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
+                                            ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow" 
                                             : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
                                             <i className="ri-draft-line sm:mr-2"></i>
                                             <span className="hidden sm:inline">{t('draft_bin')}</span>
@@ -236,7 +236,7 @@ export function FeedsPage() {
                                         <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
                                             className={`w-8 h-8 sm:w-auto sm:h-auto px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center sm:justify-start shadow-sm
                                             ${listState === 'unlisted' 
-                                            ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
+                                            ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow" 
                                             : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
                                             <i className="ri-eye-off-line sm:mr-2"></i>
                                             <span className="hidden sm:inline">{t('unlisted')}</span>
@@ -246,12 +246,12 @@ export function FeedsPage() {
                             </div>
                             
                             <div className="flex justify-between items-center -mt-2 sm:mt-0">
-                                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
+                                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-2 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-md">
                                     {listState === 'draft' 
                                         ? t('draft_description')
                                         : listState === 'unlisted' 
                                             ? t('unlisted_description')
-                                            : ""}
+                                            : t('article.public_description') || "公开发布的文章，所有人可见"}
                                 </div>
                                 <div className="flex space-x-2">
                                     {/* 未来可添加排序按钮、视图切换按钮等 */}
@@ -270,6 +270,14 @@ export function FeedsPage() {
                                         <i className="ri-inbox-line text-5xl mb-4 block opacity-50 text-gray-400 dark:text-gray-500"></i>
                                         <p className="text-lg font-medium">{t('no_articles')}</p>
                                         <p className="text-sm mt-2 text-gray-400 dark:text-gray-500">{t('no_articles_description')}</p>
+                                        {profile?.permission && (
+                                            <Link href="/writing/new" 
+                                                className="mt-6 inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md"
+                                            >
+                                                <i className="ri-add-line mr-2"></i>
+                                                <span>{t('new_article')}</span>
+                                            </Link>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -277,7 +285,7 @@ export function FeedsPage() {
                             {/* 加载更多状态 - 优化加载动画 */}
                             {status === 'loading' && feeds[listState].data.length > 0 && (
                                 <div className="w-full flex justify-center py-8">
-                                    <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
+                                    <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 px-4 py-2 rounded-full shadow-sm">
                                         <div className="w-5 h-5 border-2 border-theme border-t-transparent rounded-full animate-spin"></div>
                                         <span className="text-sm">{t('loading_more')}</span>
                                     </div>
