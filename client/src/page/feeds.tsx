@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useRef, useContext, useCallback } from "react"
+import React from "react"
 import { Helmet } from 'react-helmet'
-import { Link, useLocation, useRoute } from "wouter"
+import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
-import { PageDivider } from "../components/page_divider"
 import { client } from "../main"
 import { ProfileContext } from "../state/profile"
 import { headersWithAuth } from "../utils/auth"
@@ -65,8 +64,8 @@ function LazyFeedCard({ id, ...props }: any) {
                 if (entry.isIntersecting) {
                     // 当元素进入视口时，设置一个短暂延迟后显示实际内容，以便平滑过渡
                     const timer = setTimeout(() => {
-                        setIsVisible(true);
-                        observer.disconnect();
+                    setIsVisible(true);
+                    observer.disconnect();
                     }, 150); // 添加一个短暂延迟以实现错落有致的加载效果
                     return () => clearTimeout(timer);
                 }
@@ -133,117 +132,51 @@ function LazyFeedCard({ id, ...props }: any) {
 
 export function FeedsPage() {
     const { t } = useTranslation()
-    const [location, navigate] = useLocation();
-    const [isHomePage] = useRoute("/");  // 检查是否在首页
-    const searchParams = new URLSearchParams(isHomePage ? location.slice(location.indexOf('?')) : "");
-    
+    const query = new URLSearchParams(useSearch());
     const profile = React.useContext(ProfileContext);
-    const [listState, _setListState] = React.useState<FeedType>(searchParams.get("type") as FeedType || 'normal')
+    const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
     const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
     const [feeds, setFeeds] = React.useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
         unlisted: { size: 0, data: [], hasNext: false },
         normal: { size: 0, data: [], hasNext: false }
     })
-    
-    // 正确解析页码参数
-    const page = tryInt(1, searchParams.get("page"));
-    const limit = tryInt(10, searchParams.get("limit"), process.env.PAGE_SIZE);
-    const ref = React.useRef("");
-    
-    // 记录当前请求状态，防止重复请求
-    const currentRequestRef = React.useRef<string | null>(null);
+    const page = tryInt(1, query.get("page"))
+    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
+    const ref = React.useRef("")
     
     // 使用useCallback优化函数
-    const fetchFeeds = React.useCallback((type: FeedType, pageNum: number = page) => {
-        // 创建请求标识
-        const requestId = `${type}-${pageNum}-${Date.now()}`;
-        currentRequestRef.current = requestId;
-        
-        setStatus('loading');
-        
+    const fetchFeeds = React.useCallback((type: FeedType) => {
         client.feed.index.get({
             query: {
-                page: pageNum,
+                page: page,
                 limit: limit,
                 type: type
             },
             headers: headersWithAuth()
         }).then(({ data }) => {
-            // 确保是最新请求的响应
-            if (currentRequestRef.current !== requestId) return;
-            
             if (data && typeof data !== 'string') {
-                setFeeds(prev => ({
-                    ...prev,
+                setFeeds({
+                    ...feeds,
                     [type]: data
-                }));
+                })
                 
-                // 预加载下一页数据
-                if (data.hasNext) {
-                    setTimeout(() => {
-                        client.feed.index.get({
-                            query: {
-                                page: pageNum + 1,
-                                limit: limit,
-                                type: type
-                            },
-                            headers: headersWithAuth()
-                        });
-                    }, 2000);
-                }
-                
-                setStatus('idle');
+                setStatus('idle')
             }
-        }).catch(err => {
-            // 确保是最新请求的响应
-            if (currentRequestRef.current !== requestId) return;
-            
-            console.error('加载文章列表失败', err);
-            setStatus('idle');
-        });
-    }, [limit]);
+        })
+    }, [page, limit, feeds]);
     
-    // 处理URL参数变化
     React.useEffect(() => {
-        // 确保正确获取查询参数
-        const urlParams = new URLSearchParams(isHomePage ? location.slice(location.indexOf('?')) : "");
-        const pageParam = urlParams.get("page");
-        const typeParam = urlParams.get("type");
-        const key = `${pageParam || '1'}-${typeParam || 'normal'}`;
-        
-        if (ref.current === key) return;
-        
-        const type = typeParam as FeedType || 'normal';
+        const key = `${query.get("page")} ${query.get("type")}`
+        if (ref.current == key) return
+        const type = query.get("type") as FeedType || 'normal'
         if (type !== listState) {
-            _setListState(type);
+            _setListState(type)
         }
-        
-        const pageNum = pageParam ? parseInt(pageParam) : 1;
-        
-        fetchFeeds(type, pageNum);
-        ref.current = key;
-        
-        // 记录当前分页位置到会话存储，方便返回时恢复
-        try {
-            sessionStorage.setItem('last_feed_page', JSON.stringify({
-                page: pageNum,
-                type: type
-            }));
-        } catch (e) {
-            // 忽略存储错误
-        }
-    }, [location, fetchFeeds, listState, isHomePage]);
-    
-    // 处理分页变化
-    const handlePageChange = (newPage: number) => {
-        const params = new URLSearchParams(location.slice(location.indexOf('?')));
-        params.set('page', newPage.toString());
-        if (listState !== 'normal') {
-            params.set('type', listState);
-        }
-        navigate(`/?${params.toString()}`);
-    };
+        setStatus('loading')
+        fetchFeeds(type)
+        ref.current = key
+    }, [query.get("page"), query.get("type"), fetchFeeds])
     
     return (
         <>
@@ -267,7 +200,7 @@ export function FeedsPage() {
                                     </h1>
                                     <div className="px-2 py-1 mt-1 sm:mt-0 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm self-start sm:self-auto">
                                         <i className="ri-article-line mr-1.5"></i>
-                                        {t('article.total$count', { count: feeds[listState]?.size })}
+                                {t('article.total$count', { count: feeds[listState]?.size })}
                                     </div>
                                 </div>
                                 
@@ -301,16 +234,16 @@ export function FeedsPage() {
                             <div className="flex justify-between items-center -mt-2 sm:mt-0">
                                 {(listState === 'draft' || listState === 'unlisted') && (
                                     <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-2 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-md">
-                                        {listState === 'draft' 
+                                    {listState === 'draft' 
                                             ? t('draft_description')
                                             : t('unlisted_description')
                                         }
-                                    </div>
+                                </div>
                                 )}
                                 <div className="flex space-x-2">
                                     {/* 未来可添加排序按钮、视图切换按钮等 */}
-                                </div>
-                            </div>
+                        </div>
+                    </div>
                         </div>
                         
                         <Waiting for={status === 'idle'}>
@@ -322,24 +255,20 @@ export function FeedsPage() {
                                         ))}
                                     </div>
                                     
-                                    {/* 分页控制 - 使用客户端回调和 URL 两种方式 */}
+                                    {/* 分页控制 - 改进视觉样式和交互 */}
                                     <div className="flex justify-center mt-8 w-full">
                                         <Pagination
                                             currentPage={page}
                                             totalPages={Math.ceil(feeds[listState].size / limit)}
-                                            onPageChange={handlePageChange}
-                                            basePath="/"
-                                            pageParam="page"
-                                            linkClassName="pagination-button"
-                                            activeClassName="active"
-                                            inactiveClassName=""
-                                            prevNextClassName=""
-                                            ellipsisClassName="pagination-ellipsis"
+                                            basePath={`/?type=${listState}`}
+                                            className="gap-2"
                                         />
                                     </div>
                                     
-                                    {/* 添加页面分隔线 */}
-                                    <PageDivider className="mt-12" text={t('end_of_list', '列表结束')} />
+                                    {/* 底部分隔线 */}
+                                    <div className="w-full mt-2 mb-8">
+                                        <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+                                    </div>
                                 </>
                             ) : status === 'loading' ? (
                                 // 加载状态显示骨架屏
@@ -367,8 +296,8 @@ export function FeedsPage() {
                                                     <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                                                     <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
                                                     <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-4/5 animate-pulse"></div>
-                                                </div>
-                                                
+                            </div>
+                            
                                                 {/* 标签占位 */}
                                                 <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30">
                                                     <div className="flex gap-2">
@@ -402,8 +331,8 @@ export function FeedsPage() {
                                         </Link>
                                     )}
                                 </div>
-                            )}
-                        </Waiting>
+                        )}
+                    </Waiting>
                     </div>
                 </main>
             </Waiting>

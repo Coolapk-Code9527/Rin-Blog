@@ -98,7 +98,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     } as React.CSSProperties;
 
     return (
-        <Link href={`/feed/${id}`} 
+            <Link href={`/feed/${id}`} 
             className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
                 ? 'border-theme/30 dark:border-theme/20 shadow-md' 
                 : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
@@ -225,7 +225,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 {/* 文章摘要 - 完全重构自适应显示 */}
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                     <div className="text-pretty dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300 overflow-hidden line-clamp-3">
-                        <SimplifiedMarkdown content={cleanedSummary} />
+                    <SimplifiedMarkdown content={cleanedSummary} />
                     </div>
                 </div>
                     

@@ -9,6 +9,8 @@ export default {
     extend: {
       colors: {
         'theme': '#fc466b',
+        'theme-light': '#fd778e',
+        'theme-dark': '#d13353',
         'theme-hover': '#b13049',
         'theme-active': '#972038',
         'background': {
