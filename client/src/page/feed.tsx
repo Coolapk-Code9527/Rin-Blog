@@ -187,7 +187,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full flex flex-row justify-center ani-show max-w-7xl mx-auto gap-4 md:gap-6 px-3 md:px-5 lg:px-8">
+      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-6 px-3 md:px-5 lg:px-6">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -206,36 +206,39 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <div className="hidden xl:block flex-shrink-0 w-0 xl:w-64 2xl:w-72" />
-            <main className="flex-1 min-w-0 max-w-5xl">
+            <main className="flex-1 min-w-0 max-w-4xl lg:max-w-5xl xl:max-w-6xl pt-2">
               <article
-                className="rounded-2xl bg-w m-2 px-4 sm:px-6 py-5 sm:py-6 shadow-sm hover:shadow transition-shadow duration-300"
+                className="rounded-2xl bg-w m-2 px-5 sm:px-7 py-5 sm:py-6 shadow-sm hover:shadow transition-shadow duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
-                  <div>
-                    <div className="mt-1 mb-1.5 flex gap-1.5">
+                  <div className="w-full pr-2">
+                    <div className="mt-1 mb-1.5 flex flex-wrap gap-x-3 gap-y-1">
                       <p
-                        className="text-gray-400 text-[13px]"
+                        className="text-gray-400 text-[13px] flex items-center"
                         title={new Date(feed.createdAt).toLocaleString()}
                       >
+                        <i className="ri-calendar-line mr-1"></i>
                         {t("published_at")} {timeago(feed.createdAt)}
                       </p>
 
                       {feed.createdAt !== feed.updatedAt && (
                         <p
-                          className="text-gray-400 text-[13px]"
+                          className="text-gray-400 text-[13px] flex items-center"
                           title={new Date(feed.updatedAt).toLocaleString()}
                         >
+                          <i className="ri-history-line mr-1"></i>
                           {t("feed_card.updated$time", {
                             time: timeago(feed.updatedAt),
                           })}
                         </p>
                       )}
+                      
+                      {counterEnabled && <p className='text-[13px] text-gray-400 font-normal flex items-center'>
+                        <i className="ri-eye-line mr-1"></i>
+                        {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
+                      </p>}
                     </div>
-                    {counterEnabled && <p className='text-[13px] text-gray-400 font-normal link-line mb-1.5'>
-                      {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
-                    </p>}
                     <div className="flex flex-row items-center">
                       <h1 className="text-2xl sm:text-3xl font-bold t-primary break-all leading-tight">
                         {feed.title}
@@ -243,7 +246,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                       <div className="flex-1 w-0" />
                     </div>
                   </div>
-                  <div className="pt-2">
+                  <div className="pt-2 flex-shrink-0">
                     {profile?.permission && (
                       <div className="flex gap-2">
                         <button
@@ -275,25 +278,34 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                     )}
                   </div>
                 </div>
-                <div className="mt-5">
+                <div className="mt-6 prose prose-lg dark:prose-invert max-w-none">
                   <Markdown content={feed.content} />
                 </div>
-                <div className="mt-6 flex flex-col gap-3">
+                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/30 flex flex-col gap-3">
                   {feed.hashtags.length > 0 && (
                     <div className="flex flex-row flex-wrap gap-x-2 gap-y-1.5">
                       {feed.hashtags.map(({ name }, index) => (
-                        <HashTag name={name} key={index} />
+                        <span key={`hashtag-${index}`}>
+                          <HashTag name={name} />
+                        </span>
                       ))}
                     </div>
                   )}
                   <div className="flex flex-row items-center mt-2">
-                    <img
-                      src={feed.user.avatar || "/avatar.png"}
-                      className="w-9 h-9 rounded-full"
-                      alt={feed.user.username}
-                    />
+                    <div className="relative flex-shrink-0">
+                      <img
+                        src={feed.user.avatar || "/avatar.png"}
+                        className="w-10 h-10 rounded-full border border-gray-100 dark:border-gray-700"
+                        alt={feed.user.username}
+                      />
+                      {profile?.permission && (
+                        <div className="absolute -top-0.5 -right-0.5 bg-theme text-white rounded-full w-4 h-4 flex items-center justify-center">
+                          <i className="ri-verified-badge-fill text-[10px]"></i>
+                        </div>
+                      )}
+                    </div>
                     <div className="ml-2.5">
-                      <span className="text-gray-500 text-sm cursor-default hover:text-gray-700 transition-colors">
+                      <span className="text-gray-700 dark:text-gray-300 text-sm font-medium cursor-default hover:text-gray-900 dark:hover:text-white transition-colors">
                         {feed.user.username}
                       </span>
                     </div>
@@ -305,19 +317,18 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               <div className="h-16" />
             </main>
             <aside
-              className="w-full lg:w-72 xl:w-80 mt-8 lg:mt-0 lg:block flex-shrink-0"
-              style={{ 
-                height: 'calc(100vh - 5.5rem)', 
-                position: 'sticky', 
-                top: '5.5rem', 
-                overflow: 'auto', 
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(0,0,0,0.1) transparent'
-              }}
+              className="w-full lg:w-80 xl:w-96 lg:pt-2 hidden lg:block"
             >
-              <div className="flex flex-col gap-6 pr-2">
-                <TOC />
-                <RecentPosts />
+              <div className="sticky top-[5.5rem]">
+                <div className="bg-w rounded-2xl p-4 mb-6 shadow-sm">
+                  <TOC />
+                </div>
+                <div className="bg-w rounded-2xl p-4 shadow-sm">
+                  <div className="max-h-[30rem] overflow-hidden relative">
+                    <RecentPosts />
+                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white dark:from-gray-800 to-transparent"></div>
+                  </div>
+                </div>
               </div>
             </aside>
           </>
@@ -336,7 +347,8 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
     <div className="lg:hidden">
       <button
         onClick={() => setIsOpened(true)}
-        className="w-10 h-10 rounded-full flex flex-row items-center justify-center"
+        className="w-10 h-10 rounded-full flex flex-row items-center justify-center bg-white dark:bg-gray-800 shadow-sm"
+        aria-label="显示目录"
       >
         <i className="ri-menu-2-fill t-primary ri-lg"></i>
       </button>
@@ -358,6 +370,8 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
             justifyContent: "center",
             alignItems: "center",
             background: "none",
+            maxHeight: "80vh",
+            maxWidth: "90vw",
           },
           overlay: {
             backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -366,7 +380,20 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
         }}
         onRequestClose={() => setIsOpened(false)}
       >
-        <div className="w-[80vw] sm:w-[60vw] lg:w-[40vw] overflow-clip relative t-primary">
+        <div className="w-[85vw] sm:w-[60vw] lg:w-[40vw] overflow-hidden relative t-primary bg-white dark:bg-gray-800 rounded-2xl p-5 max-h-[70vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="font-medium">
+              <i className="ri-list-unordered mr-2"></i>
+              目录
+            </h3>
+            <button 
+              onClick={() => setIsOpened(false)}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              aria-label="关闭目录"
+            >
+              <i className="ri-close-line text-lg"></i>
+            </button>
+          </div>
           <TOC />
         </div>
       </ReactModal>
@@ -642,8 +669,8 @@ function Comments({ id }: { id: string }) {
     <>
       {config.get<boolean>('comment.enabled') && (
         <div id="comments-section" className="m-2 flex flex-col justify-center items-center space-y-5">
-          <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gray-50 px-5 py-4 border-b border-gray-100">
+          <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-gray-50 dark:bg-gray-750 px-5 py-4 border-b border-gray-100 dark:border-gray-700">
               <h2 className="text-lg font-medium flex items-center justify-between">
                 <div className="flex items-center">
                   <i className="ri-chat-3-line mr-2 text-theme"></i>
@@ -661,21 +688,21 @@ function Comments({ id }: { id: string }) {
           <CommentInput id={id} onRefresh={loadComments} />
           
           {loading ? (
-            <div className="w-full bg-white rounded-lg p-8 flex justify-center shadow-sm">
+            <div className="w-full bg-white dark:bg-gray-800 rounded-2xl p-8 flex justify-center shadow-sm">
               <div className="flex items-center space-x-3">
                 <div className="h-5 w-5">
                   <i className="ri-loader-4-line animate-spin text-theme"></i>
                 </div>
-                <p className="text-gray-500 text-sm">{t("loading")}</p>
+                <p className="text-gray-500 dark:text-gray-300 text-sm">{t("loading")}</p>
               </div>
             </div>
           ) : error ? (
-            <div className="w-full rounded-lg bg-white p-6 shadow-sm">
+            <div className="w-full rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-sm">
               <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-3">
-                  <i className="ri-error-warning-line text-xl text-red-500"></i>
+                <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-3">
+                  <i className="ri-error-warning-line text-xl text-red-500 dark:text-red-400"></i>
                 </div>
-                <h3 className="text-base font-medium text-gray-800 mb-2">{error}</h3>
+                <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{error}</h3>
                 <button
                   className="mt-2 bg-theme text-white px-4 py-2 rounded-lg hover:bg-theme-hover transition-colors flex items-center text-sm"
                   onClick={loadComments}
@@ -689,14 +716,14 @@ function Comments({ id }: { id: string }) {
             <>
               {comments.length > 0 ? (
                 <div className="w-full space-y-4">
-                  <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+                  <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="bg-gray-50 dark:bg-gray-750 px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                       <h3 className="text-base font-medium flex items-center">
                         <i className="ri-list-check text-theme mr-2"></i>
                         {t("comment.list.title", { count: comments.length })}
                       </h3>
                       <button
-                        className="text-xs text-gray-500 flex items-center hover:text-theme transition-colors"
+                        className="text-xs text-gray-500 dark:text-gray-400 flex items-center hover:text-theme transition-colors"
                         onClick={loadComments}
                       >
                         <i className="ri-refresh-line mr-1"></i>
@@ -722,19 +749,19 @@ function Comments({ id }: { id: string }) {
                         totalPages={totalPages}
                         onPageChange={handlePageChange}
                         siblingCount={1}
-                        className="shadow-sm bg-white rounded-lg py-2 px-3"
+                        className="shadow-sm bg-white dark:bg-gray-800 rounded-2xl py-3 px-4"
                         aria-label={t("comment.pagination.title", { defaultValue: "评论分页" })}
                       />
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="w-full bg-white rounded-lg p-8 shadow-sm">
+                <div className="w-full bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm">
                   <div className="flex flex-col items-center">
-                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                      <i className="ri-chat-1-line text-xl text-gray-400"></i>
+                    <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
+                      <i className="ri-chat-1-line text-xl text-gray-400 dark:text-gray-500"></i>
                     </div>
-                    <h3 className="text-base font-medium text-gray-800 mb-2">{t("comment.empty_list")}</h3>
+                    <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{t("comment.empty_list")}</h3>
                   </div>
                 </div>
               )}
@@ -788,7 +815,7 @@ function CommentItem({
     (profile.permission || (!isAnonymous && comment.user && profile.id === comment.user.id));
 
   return (
-    <div className="bg-white rounded-lg shadow-sm hover:shadow transition-all duration-300 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow transition-all duration-300 overflow-hidden">
       <div className="p-5">
         <div className="flex justify-between">
           <div className="flex items-start">
@@ -796,7 +823,7 @@ function CommentItem({
               <div className="flex items-center">
                 <div className="relative flex-shrink-0">
                   <img
-                    className="w-10 h-10 rounded-full object-cover border border-gray-100"
+                    className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-gray-700"
                     src={comment.user.avatar || "/avatar.png"}
                     alt={comment.user.username}
                   />
@@ -807,7 +834,7 @@ function CommentItem({
                   )}
                 </div>
                 <div className="ml-3">
-                  <h4 className="text-sm font-medium text-gray-800">{comment.user.username}</h4>
+                  <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">{comment.user.username}</h4>
                   <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
                     addSuffix: true,
                   })}</span>
@@ -815,13 +842,13 @@ function CommentItem({
               </div>
             ) : (
               <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <i className="ri-user-line text-gray-400"></i>
+                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                  <i className="ri-user-line text-gray-400 dark:text-gray-500"></i>
                 </div>
                 <div className="ml-3">
                   <div className="flex items-center">
-                    <h4 className="text-sm font-medium text-gray-800">{comment.nickname}</h4>
-                    <span className="ml-2 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{t("comment.anonymous.tag")}</span>
+                    <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">{comment.nickname}</h4>
+                    <span className="ml-2 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">{t("comment.anonymous.tag")}</span>
                   </div>
                   <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
                     addSuffix: true,
@@ -833,7 +860,7 @@ function CommentItem({
           
           {canDelete && (
             <button
-              className="text-gray-400 hover:text-red-500 transition-colors text-sm flex items-center"
+              className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors text-sm flex items-center"
               onClick={deleteComment}
               title={t("delete.title")}
             >
@@ -842,7 +869,7 @@ function CommentItem({
           )}
         </div>
         
-        <div className="mt-4 pt-4 border-t border-gray-50 prose prose-sm max-w-none text-gray-700">
+        <div className="mt-4 pt-4 border-t border-gray-50 dark:border-gray-700/30 prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
           <Markdown content={comment.content} />
         </div>
       </div>
