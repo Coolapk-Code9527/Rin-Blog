@@ -254,5 +254,6 @@
   "published_at": "公開日時",
   "date_format": {
     "month_day": "MM月DD日"
-  }
+  },
+  "recommended_posts": "おすすめ記事"
 }
