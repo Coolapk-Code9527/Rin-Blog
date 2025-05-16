@@ -86,11 +86,6 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         };
     }, [id, title]);
 
-    // 处理点击事件
-    const handleClick = () => {
-        setLocation(`/feed/${id}`);
-    };
-
     // CSS变量定义，用于支持渐变遮罩效果
     const cardStyle = {
         '--card-bg': 'white',
@@ -107,7 +102,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             onMouseEnter={prefetchArticle}
             onTouchStart={handleTouchStart}
             style={cardStyle}
-            onClick={handleClick}
+            replace={false}
         >
             {/* 卡片顶部区域 - 根据屏幕大小调整高度 */}
             <div className={`w-full h-36 xs:h-40 sm:h-44 md:h-48 overflow-hidden rounded-t-xl relative`}>

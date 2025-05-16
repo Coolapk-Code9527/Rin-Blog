@@ -196,7 +196,9 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               )}
               <Button
                 title={t("index.back")}
-                onClick={() => (window.location.href = "/")}
+                onClick={() => {
+                  window.history.back();
+                }}
               />
             </div>
           </>

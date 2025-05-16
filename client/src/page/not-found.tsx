@@ -44,7 +44,13 @@ export function NotFoundPage() {
             </Link>
 
             <button
-              onClick={() => window.history.back()}
+              onClick={() => {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.href = '/';
+                }
+              }}
               className="px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 flex items-center justify-center font-medium"
             >
               <i className="ri-arrow-left-line mr-2"></i>
