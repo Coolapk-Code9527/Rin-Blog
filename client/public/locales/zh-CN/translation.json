@@ -31,7 +31,8 @@
       "confirm": "确定取消置顶这篇文章吗？",
       "success": "取消置顶成功",
       "title": "取消置顶"
-    }
+    },
+    "public_description": "公开发布的文章，所有人可见"
   },
   "avatar": {
     "url": "头像 URL"

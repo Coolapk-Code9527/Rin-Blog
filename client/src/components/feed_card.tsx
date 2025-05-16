@@ -193,14 +193,14 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     {/* 右侧状态显示 - 改进草稿和未列出标签样式 */}
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {draft === 1 && 
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-700/50 shadow-sm">
-                                <i className="ri-draft-line mr-1 text-amber-500 dark:text-amber-400"></i>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
+                                <i className="ri-draft-line mr-1 text-theme"></i>
                                 <span>{t("draft")}</span>
                             </span>
                         }
                         {listed === 0 && 
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-700/50 shadow-sm">
-                                <i className="ri-eye-off-line mr-1 text-indigo-500 dark:text-indigo-400"></i>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
+                                <i className="ri-eye-off-line mr-1 text-theme"></i>
                                 <span>{t("unlisted")}</span>
                             </span>
                         }

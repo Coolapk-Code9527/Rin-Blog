@@ -58,7 +58,7 @@ export function useAlert() {
                 overlay: {
                     backgroundColor: 'rgba(0, 0, 0, 0.75)',
                     backdropFilter: 'blur(4px)',
-                    zIndex: 1000
+                    zIndex: 10001
                 }
             }}
         >
@@ -121,7 +121,7 @@ export function useConfirm() {
                 overlay: {
                     backgroundColor: 'rgba(0, 0, 0, 0.75)',
                     backdropFilter: 'blur(4px)',
-                    zIndex: 1000
+                    zIndex: 10001
                 }
             }}
         >

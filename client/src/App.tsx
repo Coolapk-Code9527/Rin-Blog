@@ -69,6 +69,16 @@ function App() {
           <Helmet>
             {favicon &&
               <link rel="icon" href={favicon} />}
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <meta charSet="utf-8" />
+            <meta name="description" content={process.env.DESCRIPTION || '个人博客'} />
+            <meta property="og:site_name" content={process.env.NAME || '个人博客'} />
+            <meta property="og:type" content="website" />
+            <meta property="og:image" content={process.env.AVATAR} />
+            <meta name="twitter:card" content="summary" />
+            <meta name="twitter:title" content={process.env.NAME || '个人博客'} />
+            <meta name="twitter:description" content={process.env.DESCRIPTION || '个人博客'} />
+            <meta name="twitter:image" content={process.env.AVATAR} />
           </Helmet>
           <Switch>
             <RouteMe path="/">
