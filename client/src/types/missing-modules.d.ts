@@ -3,6 +3,15 @@
 declare module 'react' {
   // React模块已经由 @types/react 提供，这里只是为了避免可能的导入错误
   export * from 'react';
+  
+  // 显式添加常用hooks导出
+  export const useState: any;
+  export const useEffect: any;
+  export const useContext: any;
+  export const useRef: any;
+  export const useCallback: any;
+  export const useMemo: any;
+  export const useReducer: any;
 }
 
 declare module 'reactjs-popup' {

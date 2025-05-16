@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { client } from "../main";
@@ -13,13 +13,16 @@ interface RecommendedFeed {
 
 export function RecommendedFeeds({ currentId }: { currentId: string }) {
   const { t } = useTranslation();
-  const [feeds, setFeeds] = useState<RecommendedFeed[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [feeds, setFeeds] = React.useState<RecommendedFeed[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [mounted, setMounted] = React.useState(true);
 
   // 获取推荐文章列表
-  useEffect(() => {
+  React.useEffect(() => {
+    let isMounted = true;
     setLoading(true);
+    
     client.feed.index
       .get({
         headers: {},
@@ -30,6 +33,8 @@ export function RecommendedFeeds({ currentId }: { currentId: string }) {
         }
       })
       .then(({ data, error }) => {
+        if (!isMounted) return;
+        
         setLoading(false);
         if (error) {
           setError(error.value as string);
@@ -40,13 +45,25 @@ export function RecommendedFeeds({ currentId }: { currentId: string }) {
         }
       })
       .catch((err) => {
+        if (!isMounted) return;
+        
         setLoading(false);
         setError(String(err));
       });
+      
+    return () => {
+      isMounted = false;
+    };
   }, [currentId]);
 
-  if (error) {
-    return null; // 如果出错，不显示任何内容
+  // 组件挂载状态管理，防止组件卸载后状态更新
+  React.useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  if (!mounted || (error && !loading && feeds.length === 0)) {
+    return null; // 如果出错并且没有数据，不显示任何内容
   }
 
   return (
