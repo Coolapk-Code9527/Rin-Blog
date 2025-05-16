@@ -24,6 +24,45 @@ import { SearchPage } from './page/search.tsx'
 import { Tips, TipsPage } from './components/tips.tsx'
 import { useTranslation } from 'react-i18next'
 
+// 返回顶部按钮组件
+function BackToTop() {
+  const [visible, setVisible] = useState(false);
+  
+  useEffect(() => {
+    const toggleVisibility = () => {
+      if (window.pageYOffset > 500) {
+        setVisible(true);
+      } else {
+        setVisible(false);
+      }
+    };
+    
+    window.addEventListener('scroll', toggleVisibility);
+    return () => window.removeEventListener('scroll', toggleVisibility);
+  }, []);
+  
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+  
+  return (
+    <>
+      {visible && (
+        <button
+          onClick={scrollToTop}
+          className="fixed right-5 bottom-5 z-50 w-10 h-10 rounded-full bg-theme text-white shadow-lg flex items-center justify-center transition-all hover:bg-theme-hover focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2"
+          aria-label="返回顶部"
+        >
+          <i className="ri-arrow-up-line"></i>
+        </button>
+      )}
+    </>
+  );
+}
+
 function App() {
   const ref = useRef(false)
   const { t } = useTranslation()
@@ -175,6 +214,7 @@ function App() {
           </Switch>
         </ProfileContext.Provider>
       </ClientConfigContext.Provider>
+      <BackToTop />
     </>
   )
 }
