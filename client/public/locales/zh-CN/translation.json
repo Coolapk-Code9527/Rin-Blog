@@ -56,16 +56,15 @@
       "switch": "匿名评论",
       "tag": "匿名用户"
     },
-    "empty": {
-      "list": "暂无评论，来说点什么吧"
-    },
+    "empty_list": "暂无评论，来说点什么吧",
     "list": {
       "title": "全部评论 ({{count}}条)"
     },
     "pagination": {
       "previous": "上一页",
       "next": "下一页",
-      "page": "第 {{page}} 页"
+      "page": "第 {{page}} 页",
+      "title": "评论分页"
     }
   },
   "comparison": "对比",

@@ -44,7 +44,14 @@
     },
     "submit": "コメントを投稿",
     "success": "コメントに成功しました",
-    "title": "コメント"
+    "title": "コメント",
+    "empty_list": "コメントはまだありません。最初のコメントを投稿してください！",
+    "pagination": {
+      "previous": "前のページ",
+      "next": "次のページ",
+      "page": "{{page}}ページ目",
+      "title": "コメントページネーション"
+    }
   },
   "comparison": "対比",
   "confirm": "確認",

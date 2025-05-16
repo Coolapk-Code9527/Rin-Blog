@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react"
+import React, { useState, useEffect } from "react"
 import {Helmet} from 'react-helmet'
 import {Link, useLocation} from "wouter"
 import {Waiting} from "../components/loading"
@@ -13,8 +13,10 @@ export function TimelinePage() {
     const [length, setLength] = useState(0)
     const { t } = useTranslation()
     const [location] = useLocation();
+    const [error, setError] = useState<string | null>(null);
 
     function fetchFeeds() {
+        setError(null);
         client.feed.timeline.get({
             headers: headersWithAuth()
         }).then(({ data }) => {
@@ -22,14 +24,17 @@ export function TimelinePage() {
                 setLength(data.length)
                 const groups = Object.groupBy(data, ({ createdAt }) => new Date(createdAt).getFullYear())
                 setFeeds(groups)
+                setError(null);
             } else if (data === null || (typeof data === 'object' && Object.keys(data).length === 0)) {
                 setLength(0);
                 setFeeds({});
+                setError(null);
             }
         }).catch(error => {
             console.error("Error fetching timeline feeds:", error);
             setLength(0);
             setFeeds({});
+            setError(t('load_failed') || '加载失败');
         })
     }
 
@@ -58,13 +63,18 @@ export function TimelinePage() {
                                 {t('article.total$count', { count: length })}
                             </p>
                         </div>
-                        <button 
-                            onClick={fetchFeeds} 
-                            className="mt-2 mb-4 px-4 py-2 bg-theme text-white rounded hover:bg-theme-dark dark:bg-theme-dark dark:hover:bg-theme-light focus:outline-none focus:ring-2 focus:ring-theme-focus"
-                            aria-label={t('reload') || "Reload"}
-                        >
-                            {t('reload')}
-                        </button>
+                        {error && (
+                          <div className="mt-2 mb-4 flex flex-col items-start">
+                            <span className="text-red-500 text-sm mb-2">{error}</span>
+                            <button 
+                                onClick={fetchFeeds} 
+                                className="px-4 py-2 bg-theme text-white rounded hover:bg-theme-dark dark:bg-theme-dark dark:hover:bg-theme-light focus:outline-none focus:ring-2 focus:ring-theme-focus"
+                                aria-label={t('reload') || "Reload"}
+                            >
+                                {t('reload')}
+                            </button>
+                          </div>
+                        )}
                     </div>
                     {feeds && Object.keys(feeds).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
                         <div key={year} className="wauto flex flex-col justify-center items-start">
@@ -78,8 +88,7 @@ export function TimelinePage() {
                             </h1>
                             <div className="w-full flex flex-col justify-center items-start my-4">
                                 {feeds[+year]?.map(({ id, title, createdAt }) => (
-                                    <FeedItem key={id} id={id.toString()} title={title || t('unlisted')}
-                                              createdAt={new Date(createdAt)}/>
+                                    <FeedItem key={id} id={id.toString()} title={title || t('unlisted')} createdAt={new Date(createdAt)} />
                                 ))}
                             </div>
                         </div>

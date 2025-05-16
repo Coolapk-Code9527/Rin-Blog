@@ -54,16 +54,15 @@
       "switch": "Comment Anonymously",
       "tag": "Anonymous"
     },
-    "empty": {
-      "list": "No comments yet. Be the first to comment!"
-    },
+    "empty_list": "No comments yet. Be the first to comment!",
     "list": {
       "title": "All Comments ({{count}})"
     },
     "pagination": {
       "previous": "Previous",
       "next": "Next",
-      "page": "Page {{page}}"
+      "page": "Page {{page}}",
+      "title": "Comment Pagination"
     }
   },
   "comparison": "Comparison",

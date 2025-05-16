@@ -42,6 +42,11 @@ export interface PaginationProps {
    * CSS类名
    */
   className?: string;
+  
+  /**
+   * 无障碍标签
+   */
+  "aria-label"?: string;
 }
 
 export function Pagination({
@@ -53,6 +58,7 @@ export function Pagination({
   showEllipsis = true,
   siblingCount = 1,
   className = "",
+  "aria-label": ariaLabel,
 }: PaginationProps) {
   const { t } = useTranslation();
   
@@ -244,7 +250,7 @@ export function Pagination({
   
   return (
     <div className={`flex justify-center py-4 sm:py-8 ${className}`}>
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2" aria-label={ariaLabel}>
         {renderPreviousButton()}
         
         {getPageNumbers().map((pageNumber) => {

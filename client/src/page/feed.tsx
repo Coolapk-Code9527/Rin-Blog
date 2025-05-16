@@ -708,6 +708,7 @@ function Comments({ id }: { id: string }) {
                       totalPages={totalPages}
                       onPageChange={handlePageChange}
                       siblingCount={1}
+                      aria-label={t("comment.pagination.title", { defaultValue: "评论分页" })}
                     />
                   )}
                 </div>
@@ -717,8 +718,7 @@ function Comments({ id }: { id: string }) {
                     <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
                       <i className="ri-chat-1-line text-xl text-gray-400"></i>
                     </div>
-                    <h3 className="text-base font-medium text-gray-800 mb-2">{t("comment.empty")}</h3>
-                    <p className="text-sm text-gray-500 text-center max-w-sm">{t("comment.empty.desc")}</p>
+                    <h3 className="text-base font-medium text-gray-800 mb-2">{t("comment.empty_list")}</h3>
                   </div>
                 </div>
               )}

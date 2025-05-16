@@ -44,7 +44,25 @@
     },
     "submit": "發表留言",
     "success": "留言成功",
-    "title": "留言"
+    "title": "留言",
+    "anonymous": {
+      "title": "匿名留言",
+      "nickname": "暱稱",
+      "nickname_empty": "暱稱不能為空",
+      "nickname_placeholder": "請輸入暱稱",
+      "switch": "匿名留言",
+      "tag": "匿名用戶"
+    },
+    "empty_list": "暫無留言，來說點什麼吧",
+    "list": {
+      "title": "全部留言 ({{count}}條)"
+    },
+    "pagination": {
+      "previous": "上一頁",
+      "next": "下一頁",
+      "page": "第 {{page}} 頁",
+      "title": "留言分頁"
+    }
   },
   "comparison": "比較",
   "confirm": "確認",
@@ -193,7 +211,7 @@
     "import_success$success$skipped": "匯入成功，{{success}} 篇文章匯入成功，{{skipped}} 篇文章跳過",
     "login": {
       "enable": {
-        "desc": "開啟/關閉右上角登入按钮，關閉後可通過「雙擊」底部文字 "© 2024 Powered by" 「三次」觸發登入入口",
+        "desc": "開啟/關閉右上角登入按钮，關閉後可通過「雙擊」底部文字 \"© 2024 Powered by\" 「三次」觸發登入入口",
         "title": "啟用右上角登入按钮"
       }
     },
