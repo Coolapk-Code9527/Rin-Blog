@@ -1,6 +1,6 @@
-import React from "react"
+import React, { useEffect, useState, useRef, useContext, useCallback } from "react"
 import { Helmet } from 'react-helmet'
-import { Link, useSearch } from "wouter"
+import { Link, useLocation } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
@@ -132,41 +132,74 @@ function LazyFeedCard({ id, ...props }: any) {
 
 export function FeedsPage() {
     const { t } = useTranslation()
-    const query = new URLSearchParams(useSearch());
-    const profile = React.useContext(ProfileContext);
-    const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
-    const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
-    const [feeds, setFeeds] = React.useState<FeedsMap>({
+    const [location] = useLocation();
+    const query = new URLSearchParams(location);
+    const profile = useContext(ProfileContext);
+    const [listState, _setListState] = useState<FeedType>(query.get("type") as FeedType || 'normal')
+    const [status, setStatus] = useState<'loading' | 'idle'>('idle')
+    const [feeds, setFeeds] = useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
         unlisted: { size: 0, data: [], hasNext: false },
         normal: { size: 0, data: [], hasNext: false }
     })
+    const [loadingMore, setLoadingMore] = useState(false);
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
-    const ref = React.useRef("")
+    const ref = useRef("")
+    const scrollObserverRef = useRef<IntersectionObserver | null>(null);
+    const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+    
+    // 是否启用无限滚动 (可以通过设置或用户偏好决定)
+    const [infiniteScrollEnabled, setInfiniteScrollEnabled] = useState(() => {
+        try {
+            const savedPreference = localStorage.getItem('infinite_scroll_enabled');
+            return savedPreference === null ? true : savedPreference === 'true';
+        } catch (e) {
+            return true;
+        }
+    });
     
     // 使用useCallback优化函数
-    const fetchFeeds = React.useCallback((type: FeedType) => {
+    const fetchFeeds = useCallback((type: FeedType, pageNum: number = page, shouldAppend: boolean = false) => {
+        if (shouldAppend) {
+            setLoadingMore(true);
+        } else {
+            setStatus('loading');
+        }
+        
         client.feed.index.get({
             query: {
-                page: page,
+                page: pageNum,
                 limit: limit,
                 type: type
             },
             headers: headersWithAuth()
         }).then(({ data }) => {
             if (data && typeof data !== 'string') {
-                setFeeds({
-                    ...feeds,
-                    [type]: data
-                })
+                if (shouldAppend) {
+                    // 合并新数据到现有数据
+                    setFeeds(prev => ({
+                        ...prev,
+                        [type]: {
+                            ...data,
+                            data: [...prev[type].data, ...data.data]
+                        }
+                    }));
+                    setLoadingMore(false);
+                } else {
+                    // 替换当前数据
+                    setFeeds(prev => ({
+                        ...prev,
+                        [type]: data
+                    }));
+                }
                 
                 // 预加载下一页数据
                 if (data.hasNext) {
                     setTimeout(() => {
                         client.feed.index.get({
                             query: {
-                                page: page + 1,
+                                page: pageNum + 1,
                                 limit: limit,
                                 type: type
                             },
@@ -175,22 +208,87 @@ export function FeedsPage() {
                     }, 2000);
                 }
                 
-                setStatus('idle')
+                setStatus('idle');
             }
-        })
-    }, [page, limit, feeds]);
+        }).catch(err => {
+            console.error('加载文章列表失败', err);
+            setStatus('idle');
+            setLoadingMore(false);
+        });
+    }, [page, limit]);
     
-    React.useEffect(() => {
+    // 加载更多内容
+    const loadMore = useCallback(() => {
+        if (loadingMore || !feeds[listState].hasNext) return;
+        
+        const nextPage = Math.ceil(feeds[listState].data.length / limit) + 1;
+        fetchFeeds(listState, nextPage, true);
+    }, [loadingMore, feeds, listState, limit, fetchFeeds]);
+    
+    // 设置滚动监听器
+    useEffect(() => {
+        if (!infiniteScrollEnabled || !loadMoreTriggerRef.current) return;
+        
+        scrollObserverRef.current = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && feeds[listState].hasNext) {
+                    loadMore();
+                }
+            },
+            { rootMargin: '200px 0px' }
+        );
+        
+        scrollObserverRef.current.observe(loadMoreTriggerRef.current);
+        
+        return () => {
+            if (scrollObserverRef.current) {
+                scrollObserverRef.current.disconnect();
+            }
+        };
+    }, [infiniteScrollEnabled, feeds, listState, loadMore]);
+    
+    // 处理URL参数变化
+    useEffect(() => {
         const key = `${query.get("page")} ${query.get("type")}`
-        if (ref.current == key) return
-        const type = query.get("type") as FeedType || 'normal'
+        if (ref.current === key) return;
+        
+        const type = query.get("type") as FeedType || 'normal';
         if (type !== listState) {
-            _setListState(type)
+            _setListState(type);
         }
-        setStatus('loading')
-        fetchFeeds(type)
-        ref.current = key
-    }, [query.get("page"), query.get("type"), fetchFeeds])
+        
+        setStatus('loading');
+        fetchFeeds(type);
+        ref.current = key;
+        
+        // 记录当前分页位置到会话存储，方便返回时恢复
+        try {
+            sessionStorage.setItem('last_feed_page', JSON.stringify({
+                page: page,
+                type: type
+            }));
+        } catch (e) {
+            // 忽略存储错误
+        }
+    }, [query.get("page"), query.get("type"), fetchFeeds, listState]);
+    
+    // 构造分页基础URL，确保类型参数正确传递
+    const getPaginationBaseUrl = () => {
+        return `/?type=${listState}`;
+    };
+    
+    // 切换无限滚动模式
+    const toggleInfiniteScroll = () => {
+        setInfiniteScrollEnabled(prev => {
+            const newValue = !prev;
+            try {
+                localStorage.setItem('infinite_scroll_enabled', String(newValue));
+            } catch (e) {
+                // 忽略存储错误
+            }
+            return newValue;
+        });
+    };
     
     return (
         <>
@@ -269,18 +367,50 @@ export function FeedsPage() {
                                         ))}
                                     </div>
                                     
-                                    {/* 分页控制 - 改进视觉样式和交互 */}
-                                    <div className="flex justify-center mt-8 w-full">
-                                        <Pagination
-                                            current={page}
-                                            total={Math.ceil(feeds[listState].size / limit)}
-                                            baseUrl={`/?type=${listState}`}
-                                            linkClassName="w-9 h-9 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 hover:scale-105"
-                                            activeClassName="bg-theme text-white shadow-md hover:shadow-lg"
-                                            inactiveClassName="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme"
-                                            prevNextClassName="bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme"
-                                            ellipsisClassName="text-gray-400 dark:text-gray-500"
-                                        />
+                                    {/* 无限滚动加载指示器/触发器 */}
+                                    {infiniteScrollEnabled ? (
+                                        <div ref={loadMoreTriggerRef} className="w-full py-8 flex justify-center">
+                                            {loadingMore && (
+                                                <div className="flex items-center justify-center space-x-2">
+                                                    <div className="w-3 h-3 rounded-full bg-theme animate-bounce"></div>
+                                                    <div className="w-3 h-3 rounded-full bg-theme animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                                    <div className="w-3 h-3 rounded-full bg-theme animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                                                </div>
+                                            )}
+                                            {!loadingMore && feeds[listState].hasNext && (
+                                                <button
+                                                    onClick={loadMore}
+                                                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-200"
+                                                >
+                                                    {t('load_more')}
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        /* 传统分页控制 */
+                                        <div className="flex justify-center mt-8 w-full">
+                                            <Pagination
+                                                currentPage={page}
+                                                totalPages={Math.ceil(feeds[listState].size / limit)}
+                                                basePath={getPaginationBaseUrl()}
+                                                linkClassName="w-9 h-9 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 hover:scale-105"
+                                                activeClassName="bg-theme text-white shadow-md hover:shadow-lg"
+                                                inactiveClassName="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme"
+                                                prevNextClassName="bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme"
+                                                ellipsisClassName="text-gray-400 dark:text-gray-500"
+                                            />
+                                        </div>
+                                    )}
+                                    
+                                    {/* 分页模式切换按钮 */}
+                                    <div className="flex justify-center mt-4">
+                                        <button
+                                            onClick={toggleInfiniteScroll}
+                                            className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+                                        >
+                                            <i className={`ri-${infiniteScrollEnabled ? 'pages-line' : 'swap-line'}`}></i>
+                                            {infiniteScrollEnabled ? t('use_pagination') : t('use_infinite_scroll')}
+                                        </button>
                                     </div>
                                 </>
                             ) : status === 'loading' ? (

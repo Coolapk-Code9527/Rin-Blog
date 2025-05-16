@@ -42,6 +42,31 @@ export interface PaginationProps {
    * CSS类名
    */
   className?: string;
+  
+  /**
+   * 链接按钮的类名
+   */
+  linkClassName?: string;
+  
+  /**
+   * 当前活跃页的类名
+   */
+  activeClassName?: string;
+  
+  /**
+   * 非活跃页的类名
+   */
+  inactiveClassName?: string;
+  
+  /**
+   * 上一页/下一页按钮的类名
+   */
+  prevNextClassName?: string;
+  
+  /**
+   * 省略号的类名
+   */
+  ellipsisClassName?: string;
 }
 
 export function Pagination({
@@ -53,6 +78,11 @@ export function Pagination({
   showEllipsis = true,
   siblingCount = 1,
   className = "",
+  linkClassName = "",
+  activeClassName = "",
+  inactiveClassName = "",
+  prevNextClassName = "",
+  ellipsisClassName = "",
 }: PaginationProps) {
   const { t } = useTranslation();
   
@@ -65,20 +95,46 @@ export function Pagination({
   
   // 生成页码链接
   const getPageUrl = (page: number) => {
-    // 拼接完整URL，确保basePath最后有问号或&
-    const connector = basePath.includes("?") ? 
-      (basePath.endsWith("&") || basePath.endsWith("?") ? "" : "&") : 
-      "?";
-    
-    return `${basePath}${connector}${pageParam}=${page}`;
+    // 如果基础URL已包含查询参数（有?或&）
+    if (basePath.includes('?')) {
+      // 确保URL以?或&结尾，否则添加&
+      const connector = basePath.endsWith('&') || basePath.endsWith('?') ? '' : '&';
+      return `${basePath}${connector}${pageParam}=${page}`;
+    } 
+    // 使用URL构造（没有?）
+    else if (basePath.startsWith('/')) {
+      // 处理路径式URL
+      const hasTrailingSlash = basePath.endsWith('/');
+      return `${basePath}${hasTrailingSlash ? '' : '/'}?${pageParam}=${page}`;
+    }
+    // 默认情况使用简单的查询参数
+    else {
+      return `${basePath}?${pageParam}=${page}`;
+    }
   };
   
   // 生成页码按钮
   const renderPageButton = (pageNumber: number, label?: string) => {
     const isCurrentPage = pageNumber === currentPage;
-    const commonClasses = `w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium transition-all`;
-    const activeClasses = "bg-theme text-white shadow-sm";
-    const inactiveClasses = "bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200";
+    
+    // 省略号使用特殊渲染
+    if (pageNumber < 0) {
+      return (
+        <span
+          key={`ellipsis-${pageNumber}`}
+          className={`w-8 h-8 flex items-center justify-center text-gray-400 ${ellipsisClassName}`}
+          aria-hidden="true"
+        >
+          &hellip;
+        </span>
+      );
+    }
+    
+    // 使用自定义样式或默认样式
+    const commonClasses = `${linkClassName || "w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium transition-all"}`;
+    
+    const activeClasses = activeClassName || "bg-theme text-white shadow-sm";
+    const inactiveClasses = inactiveClassName || "bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200";
     
     const fullClasses = `${commonClasses} ${isCurrentPage ? activeClasses : inactiveClasses}`;
     const ariaLabel = label || t("pagination.page", { page: pageNumber });
@@ -86,7 +142,7 @@ export function Pagination({
     return onPageChange ? (
       // 客户端分页模式
       <button
-        key={pageNumber}
+        key={`page-${pageNumber}`}
         onClick={() => handlePageClick(pageNumber)}
         className={fullClasses}
         aria-label={ariaLabel}
@@ -97,7 +153,7 @@ export function Pagination({
     ) : (
       // URL分页模式
       <Link
-        key={pageNumber}
+        key={`page-${pageNumber}`}
         href={getPageUrl(pageNumber)}
         className={fullClasses}
         aria-label={ariaLabel}
@@ -111,10 +167,11 @@ export function Pagination({
   // 渲染上一页按钮
   const renderPreviousButton = () => {
     const disabled = currentPage === 1;
-    const classes = `w-8 h-8 flex items-center justify-center rounded-full transition-all ${
+    const baseClasses = linkClassName || "w-8 h-8 flex items-center justify-center rounded-full transition-all";
+    const classes = `${baseClasses} ${
       disabled
         ? 'text-gray-300 cursor-not-allowed'
-        : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200'
+        : `${prevNextClassName || 'bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200'}`
     }`;
     
     if (onPageChange) {
@@ -154,10 +211,11 @@ export function Pagination({
   // 渲染下一页按钮
   const renderNextButton = () => {
     const disabled = currentPage === totalPages;
-    const classes = `w-8 h-8 flex items-center justify-center rounded-full transition-all ${
+    const baseClasses = linkClassName || "w-8 h-8 flex items-center justify-center rounded-full transition-all";
+    const classes = `${baseClasses} ${
       disabled
         ? 'text-gray-300 cursor-not-allowed'
-        : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200'
+        : `${prevNextClassName || 'bg-white text-gray-600 hover:bg-gray-50 hover:text-theme shadow-sm border border-gray-200'}`
     }`;
     
     if (onPageChange) {
@@ -248,14 +306,18 @@ export function Pagination({
         {renderPreviousButton()}
         
         {getPageNumbers().map((pageNumber) => {
-          if (pageNumber === -1) {
-            // 左省略号
-            return <span key="ellipsis-left" className="text-gray-400 px-0.5">...</span>;
-          } else if (pageNumber === -2) {
-            // 右省略号
-            return <span key="ellipsis-right" className="text-gray-400 px-0.5">...</span>;
+          if (pageNumber < 0) {
+            // 渲染省略号
+            return (
+              <span 
+                key={`ellipsis-${pageNumber}`} 
+                className={`w-8 h-8 flex items-center justify-center text-gray-400 ${ellipsisClassName}`}
+                aria-hidden="true"
+              >
+                &hellip;
+              </span>
+            );
           }
-          
           return renderPageButton(pageNumber);
         })}
         
