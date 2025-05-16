@@ -193,38 +193,34 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     {/* 右侧状态显示 - 改进草稿和未列出标签样式 */}
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {draft === 1 && 
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-200 border border-amber-200/80 dark:border-amber-700/40">
-                                <i className="ri-draft-line mr-1 text-amber-500 dark:text-amber-400"></i>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50 shadow-sm">
+                                <i className="ri-draft-line mr-1.5 text-amber-500 dark:text-amber-400"></i>
                                 <span>{t("draft")}</span>
                             </span>
                         }
                         {listed === 0 && 
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-200 border border-indigo-200/80 dark:border-indigo-700/40">
-                                <i className="ri-eye-off-line mr-1 text-indigo-500 dark:text-indigo-400"></i>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-700/50 shadow-sm">
+                                <i className="ri-eye-off-line mr-1.5 text-indigo-500 dark:text-indigo-400"></i>
                                 <span>{t("unlisted")}</span>
                             </span>
                         }
                     </div>
                 </div>
                 
-                {/* 文章摘要 - 不显示"文章描述"提示文字 */}
-                <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 mb-auto">
+                {/* 文章摘要 - 直接显示内容，不添加"文章描述"文字 */}
+                <div className="text-pretty overflow-hidden dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed line-clamp-3 mb-auto group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
                     <SimplifiedMarkdown content={cleanedSummary} />
                 </div>
                     
-                {/* 标签区域 - 统一分割线样式和位置 */}
-                <div className="pt-3 border-t border-gray-100 dark:border-gray-700/30 mt-3">
-                    {hashtags.length > 0 ? (
-                        <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
-                            {hashtags.map(({id, name}) => (
-                                <div key={id} className="animate-fadeIn">
-                                    <HashTag name={name} />
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="h-6"></div> // 占位，保持底部对齐
-                    )}
+                {/* 标签区域 - 统一分割线样式和对齐方式 */}
+                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/30">
+                    <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2 min-h-6">
+                        {hashtags.map(({id, name}) => (
+                            <div key={id} className="animate-fadeIn">
+                                <HashTag name={name} />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </Link>

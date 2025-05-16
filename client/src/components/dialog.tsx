@@ -1,6 +1,6 @@
-import * as React from "react";
-import { useTranslation } from "react-i18next";
-import Modal from "react-modal";
+import React, {useContext, useEffect, useRef, useState} from "react";
+import {useTranslation} from "react-i18next";
+import ReactModal from "react-modal";
 import { Button, ButtonWithLoading } from "./button";
 
 export type Confirm = {
@@ -17,8 +17,8 @@ export type Alert = {
 export type ShowAlertType = (msg: string, onConfirm?: () => (Promise<void> | void)) => void;
 
 export function useAlert() {
-    const [alert, setAlert] = React.useState<Alert | null>(null)
-    const [isOpen, setIsOpen] = React.useState(false)
+    const [alert, setAlert] = useState<Alert | null>(null)
+    const [isOpen, setIsOpen] = useState(false)
     const close = () => {
         alert?.onConfirm()
         setIsOpen(false)
@@ -33,7 +33,7 @@ export function useAlert() {
     }
     const { t } = useTranslation()
     const AlertUI = () => (
-        <Modal isOpen={isOpen}
+        <ReactModal isOpen={isOpen}
             shouldCloseOnOverlayClick={true}
             shouldCloseOnEsc={true}
             onRequestClose={close}
@@ -56,32 +56,32 @@ export function useAlert() {
                     maxWidth: '40em'
                 },
                 overlay: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                    backdropFilter: 'blur(4px)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backdropFilter: 'blur(8px)',
                     zIndex: 1000
                 }
             }}
         >
-            <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full min-w-56 sm:min-w-96 shadow-xl">
-                <h1 className="text-2xl font-bold t-primary">
+            <div className="flex flex-col items-start p-6 bg-white dark:bg-gray-800 space-y-4 w-full min-w-56 sm:min-w-96 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
                     {t("alert")}
                 </h1>
-                <p className="text-base t-primary">
+                <p className="text-base text-gray-600 dark:text-gray-300">
                     {alert?.message}
                 </p>
-                <div className="w-full flex flex-row items-center justify-center space-x-2 mt-4">
+                <div className="w-full flex flex-row items-center justify-end space-x-3 mt-4">
                     <Button onClick={close} title={t('confirm')} />
                 </div>
             </div>
-        </Modal>
+        </ReactModal>
     )
     return { showAlert, close, AlertUI }
 }
 
 export function useConfirm() {
-    const [confirm, setConfirm] = React.useState<Confirm | null>(null)
-    const [isOpen, setIsOpen] = React.useState(false)
-    const [loading, setLoading] = React.useState(false);
+    const [confirm, setConfirm] = useState<Confirm | null>(null)
+    const [isOpen, setIsOpen] = useState(false)
+    const [loading, setLoading] = useState(false);
     const close = () => {
         setConfirm(null)
         setIsOpen(false)
@@ -96,7 +96,7 @@ export function useConfirm() {
     }
     const { t } = useTranslation()
     const ConfirmUI = () => (
-        <Modal isOpen={isOpen}
+        <ReactModal isOpen={isOpen}
             shouldCloseOnOverlayClick={true}
             shouldCloseOnEsc={true}
             onRequestClose={close}
@@ -119,20 +119,20 @@ export function useConfirm() {
                     maxWidth: '40em'
                 },
                 overlay: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                    backdropFilter: 'blur(4px)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backdropFilter: 'blur(8px)',
                     zIndex: 1000
                 }
             }}
         >
-            <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full min-w-56 sm:min-w-96 shadow-xl">
-                <h1 className="text-2xl font-bold t-primary">
+            <div className="flex flex-col items-start p-6 bg-white dark:bg-gray-800 space-y-4 w-full min-w-56 sm:min-w-96 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
                     {confirm?.title}
                 </h1>
-                <p className="text-base t-primary">
+                <p className="text-base text-gray-600 dark:text-gray-300">
                     {confirm?.message}
                 </p>
-                <div className="w-full flex flex-row items-center justify-center space-x-2 mt-4">
+                <div className="w-full flex flex-row items-center justify-end space-x-3 mt-4">
                     <ButtonWithLoading
                         loading={loading}
                         onClick={async () => {
@@ -145,7 +145,7 @@ export function useConfirm() {
                     <Button secondary onClick={close} title={t('cancel')} />
                 </div>
             </div>
-        </Modal>
+        </ReactModal>
     )
     return { showConfirm, close, ConfirmUI }
 }
