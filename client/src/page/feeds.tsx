@@ -154,28 +154,6 @@ export function FeedsPage() {
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = React.useRef("")
     
-    // 临时添加缺失的本地化翻译键
-    const localizedTexts = {
-        'draft_description_short': '草稿模式，仅自己可见',
-        'article_description_short': '已发布的文章',
-        'unlisted_description_short': '未公开显示的文章',
-        'draft_bin_short': '草稿箱',
-        'unlisted_short': '未列出'
-    };
-    
-    // 模拟t函数对于缺失的翻译键
-    const getLocalizedText = (key: string, ...args: any[]) => {
-        // 如果是已知的临时翻译键，返回对应的值
-        if (key in localizedTexts) {
-            return localizedTexts[key as keyof typeof localizedTexts];
-        }
-        // 否则使用原有的t函数
-        return t(key, ...args);
-    };
-    
-    // 使用优化的getLocalizedText替代t函数
-    const tExt = getLocalizedText;
-    
     // 使用useCallback优化函数
     const fetchFeeds = React.useCallback((type: FeedType) => {
         client.feed.index.get({
@@ -248,103 +226,79 @@ export function FeedsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
-                <main className="w-full flex flex-col justify-center items-center mb-12 px-3 sm:px-4 md:px-6">
+                <main className="w-full flex flex-col justify-center items-center mb-12 px-4 sm:px-6">
                     <div className="w-auto w-full max-w-6xl">
-                        {/* 页面标题区域 - 全新设计 */}
-                        <div className="mt-4 sm:mt-6 mb-6 sm:mb-8">
-                            {/* 标题和统计信息 */}
-                            <div className="flex flex-col space-y-4">
-                                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-                                    {/* 左侧标题 */}
-                                    <div>
-                                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white inline-block relative">
-                                            <span>
-                                                {listState === 'draft' 
-                                                    ? t('draft_bin') 
-                                                    : listState === 'normal' 
-                                                        ? t('article.title') 
-                                                        : t('unlisted')}
-                                            </span>
-                                            <div className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-theme via-theme-light to-transparent w-full rounded-full transform origin-left"></div>
-                                        </h1>
-                                        <div className="mt-2 flex items-center">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                                                {t('article.total$count', { count: feeds[listState]?.size })}
-                                            </span>
-                                            <span className="mx-2 text-gray-300 dark:text-gray-600">•</span>
-                                            <span className="text-xs text-gray-500 dark:text-gray-500">
-                                                {listState === 'draft' 
-                                                    ? tExt('draft_description_short') 
-                                                    : listState === 'normal' 
-                                                        ? tExt('article_description_short')
-                                                        : tExt('unlisted_description_short')}
-                                            </span>
-                                        </div>
+                        <div className="flex flex-col space-y-4 mb-6">
+                            <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between py-4 sm:py-6 gap-2 xs:gap-0">
+                                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white relative group">
+                            {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
+                                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-theme/70 to-theme-dark/70 group-hover:w-full transition-all duration-300"></span>
+                                    </h1>
+                                    <div className="px-2 py-1 sm:mt-0 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm self-start sm:self-auto">
+                                        <i className="ri-article-line mr-1.5"></i>
+                                {t('article.total$count', { count: feeds[listState]?.size })}
                                     </div>
-
-                                    {/* 右侧操作按钮组 - 仅在授权用户时显示 */}
-                                    {profile?.permission && (
-                                        <div className="flex flex-wrap gap-2 mt-3 sm:mt-0">
-                                            {/* 新建文章按钮 */}
-                                            <Link href="/writing/new"
-                                                className="flex-none min-w-[100px] px-4 py-2 sm:py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-theme to-theme-dark text-white shadow hover:shadow-md transition-all hover:translate-y-[-2px] flex items-center justify-center">
-                                                <i className="ri-add-line mr-1.5"></i>
-                                                <span>{t('new_article')}</span>
-                                            </Link>
-
-                                            {/* 分类筛选按钮组 */}
-                                            <div className="flex gap-2 flex-1 sm:flex-none">
-                                                <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
-                                                    className={`flex-1 sm:flex-none min-w-[90px] px-3 py-2 sm:py-2.5 rounded-lg text-sm font-medium flex items-center justify-center transition-all
-                                                    ${listState === 'draft' 
-                                                    ? "bg-theme/10 text-theme border border-theme/20 hover:bg-theme/20" 
-                                                    : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                                    <i className="ri-draft-line mr-1.5"></i>
-                                                    <span>{tExt('draft_bin_short')}</span>
-                                                </Link>
-                                                <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
-                                                    className={`flex-1 sm:flex-none min-w-[90px] px-3 py-2 sm:py-2.5 rounded-lg text-sm font-medium flex items-center justify-center transition-all
-                                                    ${listState === 'unlisted' 
-                                                    ? "bg-theme/10 text-theme border border-theme/20 hover:bg-theme/20" 
-                                                    : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>
-                                                    <i className="ri-eye-off-line mr-1.5"></i>
-                                                    <span>{tExt('unlisted_short')}</span>
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
+                                
+                            {profile?.permission &&
+                                    <div className="flex flex-row space-x-2 sm:space-x-3 items-center">
+                                        <Link href="/writing/new"
+                                            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
+                                            <i className="ri-add-line mr-1 sm:mr-2"></i>
+                                            <span className="inline text-xs sm:text-sm">{t('new_article')}</span>
+                                        </Link>
+                                        <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} 
+                                            className={`w-8 h-8 sm:w-auto sm:h-auto px-0 xs:px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center sm:justify-start shadow-sm
+                                            ${listState === 'draft' 
+                                            ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow" 
+                                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
+                                            <i className="ri-draft-line xs:mr-1 sm:mr-2"></i>
+                                            <span className="hidden sm:inline">{t('draft_bin')}</span>
+                                    </Link>
+                                        <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} 
+                                            className={`w-8 h-8 sm:w-auto sm:h-auto px-0 xs:px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center sm:justify-start shadow-sm
+                                            ${listState === 'unlisted' 
+                                            ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow" 
+                                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"}`}>
+                                            <i className="ri-eye-off-line xs:mr-1 sm:mr-2"></i>
+                                            <span className="hidden sm:inline">{t('unlisted')}</span>
+                                    </Link>
+                                </div>
+                            }
                             </div>
                             
-                            {/* 说明文本 - 仅在草稿和未列出状态下显示 */}
-                            {(listState === 'draft' || listState === 'unlisted') && (
-                                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700/50">
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        {listState === 'draft' 
-                                            ? t('draft_description') 
+                            {/* 上方渐变分割线 */}
+                            <div className="w-full mb-4">
+                                <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent shadow-sm" />
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                                {(listState === 'draft' || listState === 'unlisted') && (
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-2 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-md">
+                                    {listState === 'draft' 
+                                            ? t('draft_description')
                                             : t('unlisted_description')
                                         }
-                                    </p>
                                 </div>
-                            )}
+                                )}
+                                <div className="flex space-x-2">
+                                    {/* 未来可添加排序按钮、视图切换按钮等 */}
                         </div>
-
-                        {/* 渐变分割线 */}
-                        <div className="w-full mb-6 sm:mb-8">
-                            <div className="h-px bg-gradient-to-r from-transparent via-theme/30 to-transparent"></div>
+                    </div>
                         </div>
                         
                         <Waiting for={status === 'idle'}>
                             {feeds[listState]?.data?.length > 0 ? (
                                 <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 w-full">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 w-full">
                                         {feeds[listState].data.map((feed, i) => (
-                                            <FeedCard key={`feed-card-${feed.id}-${i}`} {...feed} />
+                                            <LazyFeedCard key={`feed-card-${feed.id}-${i}`} {...feed} />
                                         ))}
                                     </div>
                                     
                                     {/* 分页控制 - 改进视觉样式和交互 */}
-                                    <div className="flex justify-center mt-8 sm:mt-10 mb-4 w-full">
+                                    <div className="flex justify-center mt-10 mb-4 w-full">
                                         <Pagination
                                             currentPage={page}
                                             totalPages={Math.ceil(feeds[listState].size / limit)}
@@ -354,45 +308,43 @@ export function FeedsPage() {
                                     </div>
                                     
                                     {/* 底部分隔线 */}
-                                    <div className="w-full mb-6 sm:mb-8">
+                                    <div className="w-full mb-8">
                                         <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent shadow-sm" />
                                     </div>
                                 </>
                             ) : status === 'loading' ? (
                                 // 加载状态显示骨架屏
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 w-full">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full">
                                     {Array(6).fill(0).map((_, i) => (
                                         <div key={`skeleton-${i}`} className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[260px] xs:min-h-[280px]">
                                             {/* 骨架屏卡片顶部 */}
-                                            <div className="w-full h-40 xs:h-44 sm:h-48 overflow-hidden rounded-t-xl relative bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 animate-pulse">
-                                                {/* 顶部通知标识占位 */}
-                                                <div className="absolute top-3 right-3 w-16 h-6 rounded-full bg-gray-300/70 dark:bg-gray-600/70"></div>
+                                            <div className="w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gray-200 dark:bg-gray-700 animate-pulse">
                                             </div>
                                             
                                             {/* 骨架屏卡片内容区域 */}
                                             <div className="p-4 sm:p-5 flex-1 flex flex-col">
                                                 {/* 标题占位 */}
-                                                <div className="h-6 sm:h-7 bg-gray-200 dark:bg-gray-700 rounded-lg mb-2 w-3/4 animate-pulse"></div>
-                                                <div className="h-4 sm:h-5 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4 w-1/2 animate-pulse"></div>
+                                                <div className="h-6 sm:h-7 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4 mb-2 animate-pulse"></div>
+                                                <div className="h-4 sm:h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-1/2 mb-4 animate-pulse"></div>
                                                 
                                                 {/* 日期和状态占位 */}
                                                 <div className="flex justify-between mb-3">
-                                                    <div className="h-5 w-24 bg-gray-100 dark:bg-gray-800 rounded-full animate-pulse"></div>
-                                                    <div className="h-5 w-16 bg-gray-100 dark:bg-gray-800 rounded-full animate-pulse"></div>
+                                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/4 animate-pulse"></div>
+                                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/5 animate-pulse"></div>
                                                 </div>
                                                 
                                                 {/* 摘要占位 */}
                                                 <div className="space-y-2 mb-4">
-                                                    <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-full animate-pulse delay-75"></div>
-                                                    <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-full animate-pulse delay-100"></div>
-                                                    <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-4/5 animate-pulse delay-150"></div>
-                                                </div>
-                                                
+                                                    <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
+                                                    <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-full animate-pulse"></div>
+                                                    <div className="h-3 bg-gray-200 dark:bg-gray-700/70 rounded w-4/5 animate-pulse"></div>
+                            </div>
+                            
                                                 {/* 标签占位 */}
                                                 <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/30">
                                                     <div className="flex gap-2">
-                                                        <div className="h-6 w-16 bg-gray-100 dark:bg-gray-800 rounded-full animate-pulse delay-75"></div>
-                                                        <div className="h-6 w-10 bg-gray-100 dark:bg-gray-800 rounded-full animate-pulse delay-150"></div>
+                                                        <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
+                                                        <div className="h-6 w-10 bg-gray-200 dark:bg-gray-700/70 rounded-full animate-pulse"></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -401,30 +353,28 @@ export function FeedsPage() {
                                 </div>
                             ) : (
                                 // 空状态 - 添加创建文章按钮
-                                <div className="w-full py-12 sm:py-16 flex flex-col items-center justify-center text-center space-y-5 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-gray-800/30">
-                                    <div className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 mb-1">
-                                        <i className="ri-inbox-2-line text-4xl text-gray-400 dark:text-gray-500"></i>
+                                <div className="w-full py-16 sm:py-24 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                                    <div className="text-5xl text-gray-300 dark:text-gray-600">
+                                        <i className="ri-inbox-2-line"></i>
                                     </div>
-                                    <div className="max-w-md px-4">
-                                        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">{t('empty_list')}</h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                                            {listState === 'draft' 
-                                                ? t('empty_draft_description') 
-                                                : listState === 'unlisted' 
-                                                    ? t('empty_unlisted_description')
-                                                    : t('empty_article_description')
-                                            }
-                                        </p>
-                                    </div>
+                                    <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-300">{t('empty_list')}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                                        {listState === 'draft' 
+                                            ? t('empty_draft_description') 
+                                            : listState === 'unlisted' 
+                                                ? t('empty_unlisted_description')
+                                                : t('empty_article_description')
+                                        }
+                                    </p>
                                     {profile?.permission && (
-                                        <Link href="/writing/new" className="px-5 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-theme to-theme-dark text-white shadow hover:shadow-md transition-all hover:translate-y-[-2px] flex items-center justify-center">
+                                        <Link href="/writing/new" className="mt-4 px-5 py-2.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
                                             <i className="ri-add-line mr-2"></i>
                                             {t('create_now')}
                                         </Link>
                                     )}
                                 </div>
-                            )}
-                        </Waiting>
+                        )}
+                    </Waiting>
                     </div>
                 </main>
             </Waiting>
