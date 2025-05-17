@@ -208,7 +208,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           <>
             <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl pt-2">
               <article
-                className="rounded-2xl bg-w m-2 px-4 sm:px-6 md:px-7 py-5 sm:py-6 shadow-sm hover:shadow transition-shadow duration-300"
+                className="rounded-2xl bg-w m-2 px-4 sm:px-6 md:px-7 py-5 sm:py-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
@@ -316,12 +316,14 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
             </main>
-            <aside
-              className="w-full lg:w-60 xl:w-64 lg:pt-2 hidden lg:block"
-            >
+            <aside className="w-full lg:w-60 xl:w-64 pt-2 hidden lg:block">
               <div className="sticky top-[5.5rem]">
                 <div className="bg-w rounded-2xl p-4 mb-5 shadow-sm">
                   <div className="max-h-[50vh] overflow-auto custom-scrollbar pr-1">
+                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
+                      <i className="ri-list-unordered text-theme"></i>
+                      <h3 className="text-base font-medium">{t("toc.title", { defaultValue: "目录" })}</h3>
+                    </div>
                     <TOC />
                   </div>
                 </div>
@@ -343,6 +345,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
 
 export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
   const [isOpened, setIsOpened] = React.useState(false);
+  const { t } = useTranslation();
 
   return (
     <div className="lg:hidden">
@@ -383,9 +386,9 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
       >
         <div className="w-[85vw] sm:w-[60vw] lg:w-[40vw] overflow-hidden relative t-primary bg-white dark:bg-gray-800 rounded-2xl p-5 max-h-[70vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="font-medium">
-              <i className="ri-list-unordered mr-2"></i>
-              目录
+            <h3 className="font-medium flex items-center gap-2">
+              <i className="ri-list-unordered text-theme"></i>
+              {t("toc.title", { defaultValue: "目录" })}
             </h3>
             <button 
               onClick={() => setIsOpened(false)}
@@ -547,7 +550,7 @@ function CommentInput({
             <div className="flex-grow"></div>
             <button
               disabled={submitting}
-              className={`px-4 py-2 rounded-lg flex items-center text-sm ${
+              className={`px-4 py-2 rounded-2xl flex items-center text-sm ${
                 submitting 
                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
                   : 'bg-theme text-white hover:bg-theme-hover'
@@ -575,7 +578,7 @@ function CommentInput({
             <p className="text-gray-500 text-sm">{t("login.required")}</p>
           </div>
           <button
-            className="bg-theme text-white px-4 py-2 rounded-lg hover:bg-theme-hover transition-colors flex items-center text-sm"
+            className="bg-theme text-white px-4 py-2 rounded-2xl hover:bg-theme-hover transition-colors flex items-center text-sm"
             onClick={() => setIsOpened(true)}
           >
             <i className="ri-login-circle-line mr-1"></i>
@@ -707,7 +710,7 @@ function Comments({ id }: { id: string }) {
                 </div>
                 <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{error}</h3>
                 <button
-                  className="mt-2 bg-theme text-white px-4 py-2 rounded-lg hover:bg-theme-hover transition-colors flex items-center text-sm"
+                  className="mt-2 bg-theme text-white px-4 py-2 rounded-2xl hover:bg-theme-hover transition-colors flex items-center text-sm"
                   onClick={loadComments}
                 >
                   <i className="ri-refresh-line mr-1"></i>
