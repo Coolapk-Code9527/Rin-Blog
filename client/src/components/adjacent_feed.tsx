@@ -132,8 +132,8 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     }, [id, setError]);
     
     return (
-        <div className="my-4 mx-2">
-            <h3 className="text-lg font-medium px-2 mb-3 t-primary">
+        <div className="w-full mt-4 mb-4">
+            <h3 className="text-lg font-medium mb-3 t-primary">
                 <span className="flex items-center">
                     <i className="ri-arrow-left-right-line mr-2 text-theme"></i>
                     {t('article.navigation')}
