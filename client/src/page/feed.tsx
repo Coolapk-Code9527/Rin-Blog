@@ -208,7 +208,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           <>
             <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl">
               <article
-                className="rounded-2xl bg-w m-2 px-4 sm:px-6 md:px-7 py-5 sm:py-6 shadow-sm hover:shadow-md transition-all duration-300"
+                className="rounded-2xl bg-w mt-2 px-4 sm:px-6 md:px-7 py-5 sm:py-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
@@ -318,12 +318,12 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
             </main>
             <aside className="w-full lg:w-60 xl:w-64 hidden lg:block">
               <div className="sticky top-[5.5rem]">
-                <div className="bg-w rounded-2xl p-4 mb-5 shadow-sm">
+                <div className="bg-w rounded-2xl mt-2 p-4 mb-5 shadow-sm">
                   <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
                     <i className="ri-list-unordered text-theme"></i>
                     {t("toc.title", { defaultValue: "目录" })}
                   </h3>
-                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1">
+                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1 -mt-1">
                 <TOC />
               </div>
             </div>
@@ -561,19 +561,21 @@ function CommentInput({
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  if (emailError) {
-                    // 当用户开始输入时，清除错误提示
-                    validateEmail(e.target.value) ? setEmailError("") : setEmailError("请输入有效的邮箱地址");
+                  // 当用户输入时进行验证
+                  if (e.target.value && !validateEmail(e.target.value)) {
+                    setEmailError("请输入有效的邮箱地址");
+                  } else {
+                    setEmailError("");
                   }
                 }}
               />
-              {emailError && (
-                <p className="mt-1 text-xs text-red-500 flex items-center">
-                  <i className="ri-error-warning-line mr-1"></i>
-                  {emailError}
-                </p>
-              )}
             </div>
+            {emailError && (
+              <p className="mt-1 text-xs text-red-500 flex items-center">
+                <i className="ri-error-warning-line mr-1"></i>
+                {emailError}
+              </p>
+            )}
           </div>
         </div>
       )}

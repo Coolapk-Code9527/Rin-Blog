@@ -232,46 +232,47 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
     return {
         TOC: () => (
             <div className='rounded-2xl bg-w py-4 px-4 t-primary'>
-                <ul className="max-h-[calc(100vh-10.25rem)] overflow-auto custom-scrollbar" style={{ scrollbarWidth: "none" }}>
-                    {tableOfContents.length === 0 && (
+                <ul className="max-h-[calc(100vh-10.25rem)] overflow-auto custom-scrollbar mt-0" style={{ scrollbarWidth: "none", margin: 0, padding: 0 }}>
+                    {tableOfContents.length === 0 ? (
                         <li className="text-gray-500 italic py-2">{t("index.empty.title")}</li>
-                    )}
-                    {tableOfContents.map((item) => (
-                        <li
-                            key={`toc$${item.index}`}
-                            className={`${
-                                activeIndex === item.index ? "text-theme font-medium" : ""
-                            } py-1.5 hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2`}
-                            style={{ marginLeft: item.marginLeft }}
-                            onClick={() => {
-                                if (item.element && item.element.id) {
-                                    // 使用ID导航，更可靠
-                                    const element = document.getElementById(item.element.id);
-                                    if (element) {
-                                        // 计算位置，考虑顶部导航栏
+                    ) : (
+                        tableOfContents.map((item) => (
+                            <li
+                                key={`toc$${item.index}`}
+                                className={`${
+                                    activeIndex === item.index ? "text-theme font-medium" : ""
+                                } py-1.5 hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2`}
+                                style={{ marginLeft: item.marginLeft }}
+                                onClick={() => {
+                                    if (item.element && item.element.id) {
+                                        // 使用ID导航，更可靠
+                                        const element = document.getElementById(item.element.id);
+                                        if (element) {
+                                            // 计算位置，考虑顶部导航栏
+                                            const yOffset = -80;
+                                            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                                            
+                                            window.scrollTo({
+                                                top: y,
+                                                behavior: 'smooth'
+                                            });
+                                        }
+                                    } else {
+                                        // 备用：直接使用元素导航
                                         const yOffset = -80;
-                                        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                                        const y = item.element.getBoundingClientRect().top + window.pageYOffset + yOffset;
                                         
                                         window.scrollTo({
                                             top: y,
                                             behavior: 'smooth'
                                         });
                                     }
-                                } else {
-                                    // 备用：直接使用元素导航
-                                    const yOffset = -80;
-                                    const y = item.element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                                    
-                                    window.scrollTo({
-                                        top: y,
-                                        behavior: 'smooth'
-                                    });
-                                }
-                            }}
-                        >
-                            {item.text}
-                        </li>
-                    ))}
+                                }}
+                            >
+                                {item.text}
+                            </li>
+                        ))
+                    )}
                 </ul>
             </div>
         )
