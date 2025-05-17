@@ -27,7 +27,7 @@ import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { TagsDisplay } from '../components/tags';
 import AdjacentFeed from '../components/adjacent_feed';
-import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
+import ReactMarkdown from 'react-markdown';
 import '../page/index.css';
 import useToc from '../hooks/useTableOfContents';
 import TOC from '../components/TableOfContents';

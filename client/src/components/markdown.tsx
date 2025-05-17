@@ -8,6 +8,8 @@ import {
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
+import rehypeSlug from "rehype-slug";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import gfm from "remark-gfm";
 import remarkMermaid from "../remark/remarkMermaid";
 import { remarkAlert } from "remark-github-blockquote-alert";
@@ -20,8 +22,6 @@ import "yet-another-react-lightbox/styles.css";
 import { useColorMode } from "../utils/darkModeUtils";
 import { useTranslation } from "react-i18next";
 import Loading from 'react-loading';
-import rehypeSlug from 'rehype-slug';
-import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import './markdown.css';
 
 // 图片加载状态接口
@@ -164,7 +164,7 @@ interface MarkdownProps {
   onReady?: () => void;
 }
 
-const Markdown: React.FC<MarkdownProps> = ({ content, onReady }) => {
+const Markdown = ({ content, onReady }: MarkdownProps) => {
   const colorMode = useColorMode();
   const [index, setIndex] = React.useState(-1);
   const slides = useRef<SlideImage[]>();
