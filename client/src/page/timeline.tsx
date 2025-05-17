@@ -21,8 +21,14 @@ export function TimelinePage() {
         setLoading(true);
         client.feed.timeline.get({
             headers: headersWithAuth()
-        }).then(({ data }) => {
+        }).then(({ data, error: apiError }) => {
             setLoading(false);
+            if (apiError) {
+                setError(apiError.value as string);
+                setFeeds({});
+                return;
+            }
+            
             if (data && typeof data !== 'string') {
                 setLength(data.length)
                 const groups = Object.groupBy(data, ({ createdAt }) => new Date(createdAt).getFullYear())
@@ -33,8 +39,8 @@ export function TimelinePage() {
                 setFeeds({});
                 setError(null);
             }
-        }).catch(error => {
-            console.error("Error fetching timeline feeds:", error);
+        }).catch(err => {
+            console.error("Error fetching timeline feeds:", err);
             setLoading(false);
             setFeeds({});
             setError(t('load_failed') || '加载失败');

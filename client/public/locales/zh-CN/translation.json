@@ -42,7 +42,7 @@
   "clear": "清除",
   "close": "关闭",
   "comment": {
-    "empty": "评论内容不能为空",
+    "empty_content": "评论内容不能为空",
     "empty_list": "暂无评论，来说点什么吧",
     "placeholder": {
       "title": "说点什么吧"

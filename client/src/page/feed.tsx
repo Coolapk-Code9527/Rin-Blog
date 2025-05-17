@@ -318,15 +318,15 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
             </main>
             <aside className="w-full lg:w-60 xl:w-64 hidden lg:block">
               <div className="sticky top-[5.5rem]">
-                <div className="bg-w rounded-2xl mt-2 p-4 mb-5 shadow-sm">
-                  <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
+                <div className="bg-w rounded-2xl mt-2 p-3 mb-5 shadow-sm">
+                  <h3 className="text-lg font-medium t-primary mb-3 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
                     <i className="ri-list-unordered text-theme"></i>
                     {t("toc.title", { defaultValue: "目录" })}
                   </h3>
-                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1 -mt-1">
-                <TOC />
-              </div>
-            </div>
+                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1">
+                    <TOC />
+                  </div>
+                </div>
                 <div className="bg-w rounded-2xl shadow-sm">
                   <RecentPosts />
                 </div>
@@ -383,7 +383,7 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
         onRequestClose={() => setIsOpened(false)}
       >
         <div className="w-[85vw] sm:w-[60vw] lg:w-[40vw] overflow-hidden relative t-primary bg-white dark:bg-gray-800 rounded-2xl p-5 max-h-[70vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
+          <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">
             <h3 className="font-medium flex items-center gap-2">
               <i className="ri-list-unordered text-theme"></i>
               {t("toc.title", { defaultValue: "目录" })}
@@ -396,8 +396,8 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
               <i className="ri-close-line text-lg"></i>
             </button>
           </div>
-          <div className="custom-scrollbar overflow-y-auto max-h-[50vh]">
-          <TOC />
+          <div className="custom-scrollbar overflow-y-auto max-h-[50vh] pt-1">
+            <TOC />
           </div>
         </div>
       </ReactModal>
@@ -433,7 +433,7 @@ function CommentInput({
   
   function errorHumanize(error: string) {
     if (error === "Unauthorized") return t("login.required");
-    else if (error === "Content is required") return t("comment.empty");
+    else if (error === "Content is required") return t("comment.empty_content");
     else if (error === "Nickname is required for anonymous comments") return t("comment.anonymous.nickname_empty");
     return error;
   }
@@ -450,7 +450,7 @@ function CommentInput({
     }
     
     if (!content.trim()) {
-      setError(t("comment.empty"));
+      setError(t("comment.empty_content"));
       return;
     }
     

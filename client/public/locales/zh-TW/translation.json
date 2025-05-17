@@ -39,7 +39,7 @@
   "clear": "清除",
   "close": "關閉",
   "comment": {
-    "empty": "留言內容不能為空",
+    "empty_content": "留言內容不能為空",
     "empty_list": "暫無留言，來說點什麼吧",
     "placeholder": {
       "title": "說點什麼吧"
