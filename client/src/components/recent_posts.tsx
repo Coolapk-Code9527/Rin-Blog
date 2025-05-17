@@ -42,7 +42,7 @@ export function RecentPosts() {
   React.useEffect(() => {
     setLoading(true);
     setError(null);
-    client.feed.index.get({ query: { page: 1, limit: 5 }, headers: {} })
+    client.feed.index.get({ query: { page: 1, limit: 3 }, headers: {} })
       .then(({ data, error }) => {
         setLoading(false);
         if (error) {

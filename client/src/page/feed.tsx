@@ -319,10 +319,6 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
             <aside className="w-full lg:w-60 xl:w-64 pt-2 hidden lg:block">
               <div className="sticky top-[5.5rem]">
                 <div className="bg-w rounded-2xl p-4 mb-5 shadow-sm">
-                  <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-                    <i className="ri-list-unordered text-theme"></i>
-                    {t("toc.title", { defaultValue: "目录" })}
-                  </h3>
                   <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1">
                     <TOC />
                   </div>
