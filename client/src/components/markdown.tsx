@@ -51,7 +51,6 @@ const OptimizedImage = React.memo(({
   useEffect(() => {
     if (!src) return;
     
-    // 使用Intersection Observer API实现懒加载
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -88,13 +87,16 @@ const OptimizedImage = React.memo(({
     setImageState({ loaded: true, error: true });
   };
   
+  // 自适应响应式
+  const aspectRatio = '16/9'; // 默认宽高比
+  
   // 生成低质量图像的占位符
   const placeholderSrc = src 
-    ? `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'%3E%3C/svg%3E` 
+    ? `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'%3E%3C/svg%3E` 
     : '';
   
   return (
-    <div className="relative flex justify-center items-center">
+    <div className="relative flex justify-center items-center overflow-hidden" style={{ aspectRatio }}>
       {!imageState.loaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
           <Loading type="spin" height={24} width={24} color="#FC466B" />
@@ -114,8 +116,8 @@ const OptimizedImage = React.memo(({
         data-src={src}
         alt={alt}
         onClick={onClick}
-        className={`${className} transition-opacity duration-300 ${imageState.loaded ? 'opacity-100' : 'opacity-0'}`}
-        style={style}
+        className={`${className} transition-opacity duration-500 w-full h-auto object-cover ${imageState.loaded ? 'opacity-100' : 'opacity-0'}`}
+        style={{ ...style }}
         onLoad={handleLoad}
         onError={handleError}
         loading="lazy"

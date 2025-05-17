@@ -22,9 +22,6 @@ import {AdjacentSection} from "../components/adjacent_feed.tsx";
 import {formatDistance} from "date-fns";
 import { Pagination } from "../components/pagination";
 import { RecentPosts } from "../components/recent_posts";
-import { ReadingProgress } from "../components/reading-progress";
-import { TOCDrawer } from "../components/toc-drawer";
-import "../components/article-content.css";
 
 type Feed = {
   id: number;
@@ -193,7 +190,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full mx-auto flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
+      <div className="w-full mx-auto max-w-7xl flex flex-col lg:flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -212,13 +209,9 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <ReadingProgress />
-            <TOCDrawer>
-              <TOC />
-            </TOCDrawer>
-            <main className="flex-1 min-w-0 w-full lg:w-auto max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mt-5">
+            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto mt-5">
               <article
-                className="rounded-2xl bg-w px-4 sm:px-6 md:px-7 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
+                className="rounded-2xl bg-w px-4 sm:px-6 md:px-8 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
@@ -288,7 +281,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                     )}
                   </div>
                 </div>
-                <div className="mt-6 prose prose-lg md:prose-xl dark:prose-invert max-w-none article-content toc-content">
+                <div className="mt-6 prose prose-lg lg:prose-xl dark:prose-invert max-w-none toc-content">
                 <Markdown 
                   content={feed.content} 
                   onReady={() => {
@@ -333,13 +326,13 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               <div className="h-16" />
             </main>
             <aside className="w-full lg:w-72 xl:w-80 hidden lg:block mt-5">
-              <div className="sticky top-[5.5rem] space-y-6">
-                <div className="bg-w rounded-2xl pt-5 pb-4 shadow-sm hover:shadow-md transition-all duration-300 mb-0">
-                  <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700 px-4">
+              <div className="sticky top-[5.5rem] space-y-5">
+                <div className="bg-w rounded-2xl pt-5 px-3 pb-4 shadow-sm hover:shadow-md transition-all duration-300">
+                  <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
                     <i className="ri-list-unordered text-theme"></i>
                     {t("toc.title", { defaultValue: "目录" })}
                   </h3>
-                  <div className="toc-container overflow-auto custom-scrollbar max-h-[calc(40vh-3rem)] px-2">
+                  <div className="max-h-[calc(35vh)] overflow-auto custom-scrollbar pr-1 pt-1">
                     <TOC />
                   </div>
                 </div>
@@ -365,8 +358,8 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
     <div className="lg:hidden">
       <button
         onClick={() => setIsOpened(true)}
-        className="w-10 h-10 rounded-full flex flex-row items-center justify-center bg-white dark:bg-gray-800 shadow-sm"
-        aria-label="显示目录"
+        className="w-12 h-12 rounded-full flex items-center justify-center bg-white/90 dark:bg-gray-800/90 shadow-md backdrop-blur-sm fixed bottom-20 right-5 z-40"
+        aria-label={t("toc.show", { defaultValue: "显示目录" })}
       >
         <i className="ri-menu-2-fill t-primary ri-lg"></i>
       </button>
@@ -388,18 +381,19 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
             justifyContent: "center",
             alignItems: "center",
             background: "none",
-            maxHeight: "80vh",
-            maxWidth: "90vw",
+            maxHeight: "90vh",
+            maxWidth: "95vw",
           },
           overlay: {
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(4px)",
             zIndex: 1000,
           },
         }}
         onRequestClose={() => setIsOpened(false)}
       >
-        <div className="w-[85vw] sm:w-[60vw] lg:w-[40vw] overflow-hidden relative t-primary bg-white dark:bg-gray-800 rounded-2xl p-5 max-h-[70vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">
+        <div className="w-[90vw] sm:w-[70vw] overflow-hidden relative t-primary bg-white dark:bg-gray-800 rounded-xl p-5 shadow-xl max-h-[80vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
             <h3 className="font-medium flex items-center gap-2">
               <i className="ri-list-unordered text-theme"></i>
               {t("toc.title", { defaultValue: "目录" })}
@@ -407,12 +401,12 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
             <button 
               onClick={() => setIsOpened(false)}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-              aria-label="关闭目录"
+              aria-label={t("close", { defaultValue: "关闭" })}
             >
               <i className="ri-close-line text-lg"></i>
             </button>
           </div>
-          <div className="custom-scrollbar overflow-y-auto max-h-[50vh] pt-1 pl-1">
+          <div className="custom-scrollbar overflow-y-auto max-h-[60vh] pr-2">
             <TOC />
           </div>
         </div>

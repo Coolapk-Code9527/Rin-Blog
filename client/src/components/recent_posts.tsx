@@ -90,7 +90,7 @@ export function RecentPosts() {
       ) : posts.length === 0 ? (
         <div className="text-gray-400 text-sm py-3">{t("recent_posts.empty", { defaultValue: "暂无最新文章" })}</div>
       ) : (
-        <div className="recent-posts-content overflow-y-auto max-h-[calc(40vh-3rem)] custom-scrollbar pr-1">
+        <div className="recent-posts-content overflow-y-auto max-h-[calc(30vh)] custom-scrollbar pr-1">
           <ul className="space-y-4">
             {posts.map((post, index) => (
               <li key={post.id} className={`py-3 ${index !== posts.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>

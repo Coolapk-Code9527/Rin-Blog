@@ -1371,3 +1371,159 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(156, 163, 175, 0.3);
 }
+
+/* 博客文章内容响应式优化 */
+.toc-content {
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem); /* 响应式字体大小 */
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+}
+
+.toc-content p {
+  margin-bottom: 1.5em;
+}
+
+.toc-content img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 2rem 0;
+  transition: transform 0.3s ease;
+}
+
+.toc-content img:hover {
+  transform: scale(1.01);
+}
+
+/* 优化引用块样式 */
+.toc-content blockquote {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-left: 4px solid var(--theme);
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  border-radius: 0.25rem;
+}
+
+.dark .toc-content blockquote {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* 优化标题样式 */
+.toc-content h1,
+.toc-content h2,
+.toc-content h3 {
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+  line-height: 1.3;
+  scroll-margin-top: 6rem;
+}
+
+.toc-content h4,
+.toc-content h5,
+.toc-content h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  scroll-margin-top: 6rem;
+}
+
+/* 优化代码块样式 */
+.toc-content pre {
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.toc-content code {
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.toc-content pre code {
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.95em;
+}
+
+/* 优化表格样式 */
+.toc-content table {
+  width: 100%;
+  margin: 2rem 0;
+  border-collapse: collapse;
+  overflow-x: auto;
+  display: block;
+}
+
+.toc-content table th,
+.toc-content table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .toc-content table th,
+.dark .toc-content table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toc-content table th {
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dark .toc-content table th {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+@media (max-width: 640px) {
+  .toc-content table {
+    font-size: 0.9em;
+  }
+  
+  .toc-content table th,
+  .toc-content table td {
+    padding: 0.5rem;
+  }
+}
+
+/* 优化列表样式 */
+.toc-content ul,
+.toc-content ol {
+  padding-left: 1.5rem;
+  margin: 1.25rem 0;
+}
+
+.toc-content li {
+  margin-bottom: 0.5rem;
+}
+
+/* TOC和最近发布模块样式优化 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(252, 70, 107, 0.3);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(252, 70, 107, 0.5);
+}
+
+/* 图片导航滑入效果 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toc-content img {
+  animation: slideIn 0.5s ease-out forwards;
+}
