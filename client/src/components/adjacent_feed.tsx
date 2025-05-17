@@ -1,43 +1,33 @@
-import * as React from "react";
-import { useTranslation } from "react-i18next";
+import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { client } from "../main";
+import { client } from "../utils/api";
 import { headersWithAuth } from "../utils/auth";
-import { timeago } from "../utils/timeago";
+import { useTranslation } from "react-i18next";
 
-type Feed = {
-  id: number;
-  title: string | null;
-  content: string;
-  uid: number;
-  createdAt: Date;
-  updatedAt: Date;
-  hashtags: {
-    id: number;
-    name: string;
-  }[];
-  user: {
-    avatar: string | null;
-    id: number;
-    username: string;
-  };
-};
-
-interface AdjacentSectionProps {
+interface AdjacentFeed {
   id: string;
-  setError: (error: string) => void;
+  title: string;
+  createdAt: string;
 }
 
-export function AdjacentSection({ id, setError }: AdjacentSectionProps) {
+export const AdjacentSection = ({
+  id,
+  setError,
+}: {
+  id: string;
+  setError: (error: string) => void;
+}) => {
   const { t } = useTranslation();
-  const [prev, setPrev] = React.useState<Feed | null>(null);
-  const [next, setNext] = React.useState<Feed | null>(null);
-  const [related, setRelated] = React.useState<Feed[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [prev, setPrev] = useState<AdjacentFeed | null>(null);
+  const [next, setNext] = useState<AdjacentFeed | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
-    setIsLoading(true);
-    client.feed
+  useEffect(() => {
+    if (id === "about") {
+      setIsLoading(false);
+      return;
+    }
+    client
       .adjacent({ id })
       .get({
         headers: headersWithAuth(),
@@ -46,137 +36,66 @@ export function AdjacentSection({ id, setError }: AdjacentSectionProps) {
         if (error) {
           setError(error.value as string);
         } else if (data) {
-          setPrev(data.previous || null);
-          setNext(data.next || null);
-          
-          // 获取相关文章
-          client.feed
-            .related({ id })
-            .get({
-              headers: headersWithAuth(),
-            })
-            .then(({ data: relatedData, error: relatedError }) => {
-              if (!relatedError && relatedData) {
-                setRelated(relatedData.slice(0, 3)); // 最多显示3篇相关文章
-              }
-              setIsLoading(false);
-            });
+          setPrev(data.prev);
+          setNext(data.next);
         }
+        setIsLoading(false);
       });
   }, [id, setError]);
-  
-  // 提取文章封面图
-  const extractCoverImage = (content: string): string | null => {
-    const imgRegex = /!\[.*?\]\((.*?)\)/;
-    const imgMatch = imgRegex.exec(content);
-    return imgMatch && imgMatch[1] ? imgMatch[1] : null;
-  };
 
-  if (isLoading) {
-    return (
-      <div className="animate-pulse bg-w rounded-2xl p-5 shadow-sm">
-        <div className="h-6 mb-4 bg-gray-200 dark:bg-gray-700 w-1/3 rounded"></div>
-        <div className="flex flex-row space-x-4">
-          {[1, 2].map((i) => (
-            <div key={i} className="w-full h-32 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (!prev && !next && (!related || related.length === 0)) {
-    return null;
-  }
+  if (isLoading || (!prev && !next)) return null;
 
   return (
-    <div className="bg-w rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300">
-      <h3 className="text-lg font-medium mb-4 t-primary flex items-center">
-        <i className="ri-article-line mr-2 text-theme"></i>
-        {t("related_articles")}
-      </h3>
-      
-      {/* 上一篇/下一篇导航 */}
-      {(prev || next) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          {prev && (
-            <Link href={`/feed/${prev.id}`} className="group">
-              <div className="flex flex-col p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-theme dark:hover:border-theme hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center mb-1.5">
-                  <i className="ri-arrow-left-line mr-1"></i>
-                  {t("previous_article")}
-                </div>
-                <div className="font-medium group-hover:text-theme transition-colors line-clamp-1">
-                  {prev.title || t("unnamed")}
-                </div>
-              </div>
-            </Link>
-          )}
-          
-          {next && (
-            <Link href={`/feed/${next.id}`} className="group">
-              <div className="flex flex-col p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-theme dark:hover:border-theme hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end mb-1.5">
-                  {t("next_article")}
-                  <i className="ri-arrow-right-line ml-1"></i>
-                </div>
-                <div className="font-medium text-right group-hover:text-theme transition-colors line-clamp-1">
-                  {next.title || t("unnamed")}
-                </div>
-              </div>
-            </Link>
-          )}
-        </div>
-      )}
-      
-      {/* 相关文章推荐 */}
-      {related && related.length > 0 && (
-        <div>
-          <h4 className="text-sm font-medium mb-3 text-gray-600 dark:text-gray-300 flex items-center">
-            <i className="ri-links-line mr-1.5"></i>
-            {t("you_might_like")}
-          </h4>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {related.map((article) => {
-              const coverImage = extractCoverImage(article.content);
-              
-              return (
-                <Link 
-                  key={article.id} 
-                  href={`/feed/${article.id}`} 
-                  className="group block bg-gray-50 dark:bg-gray-800/30 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600 transition-all"
-                >
-                  {coverImage && (
-                    <div className="relative w-full pt-[56%] overflow-hidden">
-                      <img
-                        src={coverImage}
-                        alt={article.title || "Cover"}
-                        className="absolute top-0 left-0 w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-                  
-                  <div className="p-3">
-                    <h5 className="font-medium mb-1 line-clamp-2 group-hover:text-theme transition-colors">
-                      {article.title || t("unnamed")}
-                    </h5>
-                    
-                    <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                      <span>{article.user.username}</span>
-                      <span className="flex items-center">
-                        <i className="ri-time-line mr-1"></i>
-                        {timeago(article.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+    <nav className="mt-8 mb-5">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        {prev && (
+          <Link
+            href={`/feed/${prev.id}`}
+            className="group flex flex-col p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300"
+          >
+            <div className="flex items-center text-gray-500 dark:text-gray-400 mb-2">
+              <i className="ri-arrow-left-s-line mr-1"></i>
+              <span className="text-sm">{t("previous_article")}</span>
+            </div>
+            <h3 className="text-base md:text-lg font-medium text-gray-800 dark:text-gray-200 group-hover:text-theme transition-colors line-clamp-2">
+              {prev.title}
+            </h3>
+            <time 
+              className="mt-2 text-xs text-gray-500 dark:text-gray-400" 
+              dateTime={new Date(prev.createdAt).toISOString()}
+            >
+              {new Date(prev.createdAt).toLocaleDateString()}
+            </time>
+            <div className="mt-auto pt-2">
+              <div className="w-8 h-1 bg-gray-200 dark:bg-gray-700 group-hover:bg-theme transition-colors duration-300 rounded"></div>
+            </div>
+          </Link>
+        )}
+        
+        {next && (
+          <Link
+            href={`/feed/${next.id}`}
+            className={`group flex flex-col p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 ${!prev ? "sm:col-start-2" : ""}`}
+          >
+            <div className="flex items-center justify-end text-gray-500 dark:text-gray-400 mb-2">
+              <span className="text-sm">{t("next_article")}</span>
+              <i className="ri-arrow-right-s-line ml-1"></i>
+            </div>
+            <h3 className="text-base md:text-lg font-medium text-gray-800 dark:text-gray-200 group-hover:text-theme transition-colors text-right line-clamp-2">
+              {next.title}
+            </h3>
+            <time 
+              className="mt-2 text-xs text-gray-500 dark:text-gray-400 block text-right" 
+              dateTime={new Date(next.createdAt).toISOString()}
+            >
+              {new Date(next.createdAt).toLocaleDateString()}
+            </time>
+            <div className="mt-auto pt-2 flex justify-end">
+              <div className="w-8 h-1 bg-gray-200 dark:bg-gray-700 group-hover:bg-theme transition-colors duration-300 rounded"></div>
+            </div>
+          </Link>
+        )}
+      </div>
+    </nav>
   );
-}
+};

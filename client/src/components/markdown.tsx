@@ -156,22 +156,21 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
   return false;
 };
 
-// 添加复制到剪贴板功能
-function copyToClipboard(text: string) {
-  navigator.clipboard.writeText(text).then(() => {
-    // 可以添加复制成功提示
-  }).catch(err => {
-    console.error('复制失败:', err);
-  });
+interface MarkdownProps {
+  content: string;
+  onReady?: () => void;
 }
 
-export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
+export function Markdown({ content, onReady }: MarkdownProps) {
   const colorMode = useColorMode();
   const [index, setIndex] = React.useState(-1);
   const slides = useRef<SlideImage[]>();
   const { t } = useTranslation();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isReady, setIsReady] = useState(false);
+  const [isDark, setIsDark] = React.useState(
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
 
   useEffect(() => {
     slides.current = undefined;
@@ -187,6 +186,15 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
     }
     setImageUrls(urls);
   }, [content]);
+
+  useEffect(() => {
+    // Listen for theme changes
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => setIsDark(e.matches);
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   // 当内容渲染完成后触发onReady回调
   useEffect(() => {
@@ -233,86 +241,89 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
       children={content}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
-        img({ node, src, alt, ...props }) {
-          const [isLoaded, setIsLoaded] = React.useState(false);
-          const [isError, setIsError] = React.useState(false);
-          
-          // 检测是否为表情符号
-          const isEmoji = src && src.includes('emoji');
-          
-          return (
-            <div className={`image-container relative ${isEmoji ? 'inline-block align-middle' : 'w-full my-6 flex justify-center'}`}>
-              {!isLoaded && !isError && !isEmoji && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
-                  <div className="w-10 h-10 border-2 border-theme border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              )}
-              
-              {isError && !isEmoji && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 rounded p-4">
-                  <i className="ri-image-line text-2xl text-red-500 mb-2"></i>
-                  <p className="text-sm text-gray-500 text-center">{alt || '图片加载失败'}</p>
-                </div>
-              )}
-              
-              <img
-                src={src}
-                alt={alt}
-                loading="lazy"
-                decoding="async"
-                onLoad={() => setIsLoaded(true)}
-                onError={() => {
-                  setIsError(true);
-                  setIsLoaded(true);
-                }}
-                onClick={() => !isEmoji && show(src)}
-                className={`${isEmoji ? 'inline-block h-6 w-6 align-middle m-0' : 'max-w-full rounded-lg shadow-sm hover:shadow-md transition-shadow'} ${
-                  isLoaded ? 'opacity-100' : 'opacity-0'
-                } ${!isEmoji ? 'cursor-zoom-in' : ''}`}
-                {...props}
-              />
-            </div>
+        img({ node, src, ...props }) {
+          const offset = node!.position!.start.offset!;
+          const previousContent = content.slice(0, offset);
+          const newlinesBefore = countNewlinesBeforeNode(
+            previousContent,
+            offset
           );
+          
+          // 优化的图片组件
+          const ImageComponent = ({
+            rounded,
+            scale,
+          }: {
+            rounded: boolean;
+            scale: string;
+          }) => (
+            <OptimizedImage
+              src={src}
+              alt={props.alt}
+              onClick={() => show(src)}
+              className={`mx-auto ${rounded ? "rounded-xl" : ""}`}
+              style={{ zoom: scale }}
+            />
+          );
+          
+          if (
+            newlinesBefore >= 1 ||
+            previousContent.trim().length === 0 ||
+            isMarkdownImageLinkAtEnd(previousContent)
+          ) {
+            return (
+              <span className="block w-full text-center my-4">
+                <ImageComponent scale="0.75" rounded={true} />
+              </span>
+            );
+          } else {
+            return (
+              <span className="inline-block align-middle mx-1">
+                <ImageComponent scale="0.5" rounded={false} />
+              </span>
+            );
+          }
         },
         code({ node, inline, className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || '');
-          const language = match && match[1] ? match[1] : '';
+          const match = /language-(\w+)/.exec(className || "");
+          const language = match && match[1] ? match[1] : "";
           
           if (!inline && match) {
             return (
-              <div className="code-block-container relative group my-6 rounded-lg overflow-hidden">
-                {/* 语言标签 */}
-                {language && (
-                  <div className="code-language absolute top-2 right-2 px-2 py-0.5 bg-gray-700/50 text-gray-300 text-xs rounded-md font-mono z-10">
-                    {language}
-                  </div>
-                )}
-                
-                {/* 复制按钮 */}
-                <button 
-                  onClick={() => copyToClipboard(String(children).replace(/\n$/, ''))}
-                  className="copy-button absolute top-2 right-16 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-2 py-0.5 bg-theme/80 hover:bg-theme text-white text-xs rounded-md"
-                  aria-label="复制代码"
-                >
-                  <i className="ri-file-copy-line mr-1"></i>
-                  复制
-                </button>
-                
+              <div className="markdown-code-wrapper relative group rounded-lg overflow-hidden">
+                <div className="code-header bg-gray-100 dark:bg-gray-800 flex items-center justify-between px-4 py-2 text-xs font-mono text-gray-600 dark:text-gray-400">
+                  <span>{language}</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(children).replace(/\n$/, ""));
+                    }}
+                    className="copy-button opacity-0 group-hover:opacity-100 transition-opacity duration-200 py-1 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300"
+                    aria-label={t("copy_code", { defaultValue: "复制代码" })}
+                  >
+                    <i className="ri-file-copy-line text-sm mr-1"></i>
+                    {t("copy", { defaultValue: "复制" })}
+                  </button>
+                </div>
                 <SyntaxHighlighter
-                  style={colorMode === 'dark' ? oneDarkStyle : oneLightStyle}
+                  style={isDark ? oneDarkStyle : oneLightStyle}
                   language={language}
                   PreTag="div"
                   wrapLongLines={true}
                   {...props}
                 >
-                  {String(children).replace(/\n$/, '')}
+                  {String(children).replace(/\n$/, "")}
                 </SyntaxHighlighter>
               </div>
             );
+          } else if (inline) {
+            return (
+              <code className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-1.5 py-0.5 rounded font-mono text-sm" {...props}>
+                {children}
+              </code>
+            );
           }
-          
           return (
-            <code className={`px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-theme rounded text-sm ${className}`} {...props}>
+            <code className={className} {...props}>
               {children}
             </code>
           );
@@ -320,7 +331,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         blockquote({ children, ...props }) {
           return (
             <blockquote 
-              className="border-l-4 border-theme pl-4 py-1 my-6 bg-gray-50 dark:bg-gray-800/50 rounded-r-lg" 
+              className="border-l-4 border-theme pl-4 italic text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/30 py-2 px-2 rounded-r-md"
               {...props}
             >
               {children}
@@ -366,13 +377,18 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             </li>
           );
         },
-        a({ children, ...props }) {
+        a({ href, children, ...props }) {
+          const isExternal = href?.startsWith('http');
           return (
-            <a
-              className="text-blue-600 dark:text-blue-400 font-medium relative hover:text-blue-800 dark:hover:text-blue-300"
+            <a 
+              href={href} 
+              target={isExternal ? "_blank" : undefined} 
+              rel={isExternal ? "noopener noreferrer" : undefined}
+              className="text-theme hover:underline transition-colors duration-200"
               {...props}
             >
               {children}
+              {isExternal && <i className="ri-external-link-line ml-1 text-xs align-text-top"></i>}
             </a>
           );
         },
@@ -443,21 +459,17 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           );
         },
         p({ children, node, ...props }) {
-          // 检测段落中是否只包含图片
-          const childArray = React.Children.toArray(children);
-          const containsOnlyImage = childArray.length === 1 && 
-            React.isValidElement(childArray[0]) && 
-            (childArray[0].type === 'img' || (childArray[0].props && childArray[0].props.src));
+          // 检查是否为图片后的描述文本
+          const isImageCaption = 
+            node?.children?.length === 1 && 
+            node?.children[0]?.type === "emphasis" && 
+            node?.prev?.children?.some(child => child.type === "image");
           
-          if (containsOnlyImage) {
-            return (
-              <figure className="my-8 text-center">
-                {children}
-              </figure>
-            );
-          }
-          
-          return <p className="mb-4 leading-relaxed" {...props}>{children}</p>;
+          return (
+            <p className={`${isImageCaption ? "text-center text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-4" : "mt-2 py-1"}`} {...props}>
+              {children}
+            </p>
+          );
         },
         hr({ children, ...props }) {
           return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" {...props} />;
@@ -561,7 +573,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         },
       }}
     />
-  ), [content, colorMode, imageUrls]);
+  ), [content, colorMode, imageUrls, isDark]);
 
   return (
     <>

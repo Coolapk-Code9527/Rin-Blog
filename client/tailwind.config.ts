@@ -1,10 +1,12 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+import type { Config } from "tailwindcss";
+
+const config: Config = {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  darkMode: ['selector','[data-color-mode="dark"]'],
+  darkMode: ["class", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
@@ -28,6 +30,7 @@ export default {
         'theme-700': 'rgba(252, 70, 107, 0.7)',
         'theme-800': 'rgba(252, 70, 107, 0.8)',
         'theme-900': 'rgba(252, 70, 107, 0.9)',
+        'w': "var(--color-bg)",
       },
       transitionProperty: {
         'height': 'height',
@@ -37,6 +40,10 @@ export default {
       animation: {
         'gradient-x': 'gradient-x 10s ease infinite',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in-down': "fade-in-down 0.5s ease-out",
+        'fade-in-up': "fade-in-up 0.5s ease-out",
+        'fade-in': "fade-in 0.3s ease-out",
+        'pulse-light': "pulse-light 2s ease-in-out infinite",
       },
       keyframes: {
         'gradient-x': {
@@ -49,11 +56,51 @@ export default {
             'background-position': 'right center'
           },
         },
+        'fade-in-down': {
+          '0%': {
+            opacity: '0',
+            transform: 'translateY(-10px)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+        },
+        'fade-in-up': {
+          '0%': {
+            opacity: '0',
+            transform: 'translateY(10px)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+        },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'pulse-light': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.7' },
+        }
       },
+      fontFamily: {
+        emoji: ["Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"],
+      },
+      fontSize: {
+        "2xs": "0.625rem", // 10px
+      },
+      textColor: {
+        primary: "var(--color-text-primary)",
+        secondary: "var(--color-text-secondary)",
+      }
     },
   },
   plugins: [
     require('@tailwindcss/typography'),
   ],
 }
+
+export default config;
 

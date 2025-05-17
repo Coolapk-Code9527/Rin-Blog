@@ -403,14 +403,5 @@
   "no_articles_description": "这里还没有任何文章，之后会添加的~",
   "image_load_error": "图片加载失败",
   "unlisted_description": "未列出的文章，有链接才能访问",
-  "draft_description": "文章草稿区，仅自己可见",
-  "related_articles": "相关文章",
-  "you_might_like": "你可能也喜欢",
-  "previous_article": "上一篇",
-  "next_article": "下一篇",
-  "recent_posts": "最近发布",
-  "no_posts_yet": "暂无文章",
-  "enter_reading_mode": "进入阅读模式",
-  "exit_reading_mode": "退出阅读模式",
-  "pinned": "置顶"
+  "draft_description": "文章草稿区，仅自己可见"
 }
