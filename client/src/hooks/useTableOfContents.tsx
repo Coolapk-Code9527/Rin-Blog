@@ -231,18 +231,18 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
 
     return {
         TOC: () => (
-            <div className='rounded-2xl bg-w py-1 px-0 t-primary'>
-                <ul className="max-h-[calc(100vh-10.25rem)] overflow-auto custom-scrollbar mt-0 pl-1" style={{ scrollbarWidth: "none", margin: 0, padding: 0 }}>
+            <div className='rounded-2xl bg-w py-1 px-1 t-primary'>
+                <ul className="max-h-[calc(100vh-10.25rem)] overflow-auto custom-scrollbar mt-0 pl-2" style={{ scrollbarWidth: "none", margin: 0 }}>
                     {tableOfContents.length === 0 ? (
-                        <li className="text-gray-500 italic py-2">{t("index.empty.title")}</li>
+                        <li className="text-gray-500 italic py-2 text-sm">{t("index.empty.title")}</li>
                     ) : (
                         tableOfContents.map((item) => (
                             <li
                                 key={`toc$${item.index}`}
                                 className={`${
                                     activeIndex === item.index ? "text-theme font-medium" : ""
-                                } py-[0.15rem] hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2`}
-                                style={{ marginLeft: item.marginLeft, paddingLeft: '0.25rem' }}
+                                } py-[0.1rem] hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2 text-sm`}
+                                style={{ marginLeft: item.marginLeft }}
                                 onClick={() => {
                                     if (item.element && item.element.id) {
                                         // 使用ID导航，更可靠

@@ -14,4 +14,4 @@ Strictly adhere to the above protocol.
 
 (Most linter errors are primarily caused by issues with project dependencies and may not affect the actual execution of the code, so they can be temporarily ignored while continuing optimization.)
 
-- 于项目使用Cloudflare Pages部署前后端，这些修改需要推送到仓库并通过GitHub Actions部署后才能在线上环境（blog.115694.xyz）看到效果
+- 由于项目使用Cloudflare Pages部署前后端，这些修改需要推送到仓库并通过GitHub Actions部署后才能在线上环境（blog.115694.xyz）看到效果

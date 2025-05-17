@@ -187,7 +187,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-4 px-3 md:px-4 lg:px-5">
+      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5 mt-2">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -208,7 +208,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           <>
             <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl">
               <article
-                className="rounded-2xl bg-w mt-2 px-4 sm:px-6 md:px-7 py-5 sm:py-6 shadow-sm hover:shadow-md transition-all duration-300"
+                className="rounded-2xl bg-w px-4 sm:px-6 md:px-7 py-5 sm:py-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
@@ -318,7 +318,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
             </main>
             <aside className="w-full lg:w-60 xl:w-64 hidden lg:block">
               <div className="sticky top-[5.5rem]">
-                <div className="bg-w rounded-2xl mt-2 p-3 mb-5 shadow-sm">
+                <div className="bg-w rounded-2xl p-3 mb-5 shadow-sm">
                   <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
                     <i className="ri-list-unordered text-theme"></i>
                     {t("toc.title", { defaultValue: "目录" })}
@@ -726,7 +726,7 @@ function Comments({ id }: { id: string }) {
   return (
     <>
       {config.get<boolean>('comment.enabled') && (
-        <div id="comments-section" className="m-2 flex flex-col justify-center items-center space-y-5">
+        <div id="comments-section" className="m-0 flex flex-col justify-center items-center space-y-5 w-full">
           
           <CommentInput id={id} onRefresh={loadComments} />
           
@@ -792,8 +792,8 @@ function Comments({ id }: { id: string }) {
                       totalPages={totalPages}
                       onPageChange={handlePageChange}
                       siblingCount={1}
-                        className="shadow-sm bg-white dark:bg-gray-800 rounded-2xl py-3 px-4"
-                        aria-label={t("comment.pagination.title", { defaultValue: "评论分页" })}
+                      className=""
+                      aria-label={t("comment.pagination.title", { defaultValue: "评论分页" })}
                     />
                     </div>
                   )}
