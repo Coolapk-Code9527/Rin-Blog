@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import React from "react";
 import {client} from "../main.tsx";
 import {timeago} from "../utils/timeago.ts";
 import {Link} from "wouter";
@@ -52,15 +52,15 @@ const extractImageUrl = (content: string): string | null => {
 const fetchFullArticle = async (id: number): Promise<string | null> => {
     try {
         const response = await client.feed({ id: id.toString() }).get();
-        if (!response.error && response.data) {
-            console.log(`获取文章 ${id} 的完整信息:`, response.data);
-            if (response.data.avatar) {
-                return response.data.avatar;
+        if (!response.error && response.data && typeof response.data !== "string") {
+            // 检查数据是否包含avatar字段
+            if ('avatar' in response.data) {
+                return response.data.avatar as string;
             }
             
             // 如果没有avatar字段，从content中提取第一张图片
-            if (response.data.content) {
-                return extractImageUrl(response.data.content);
+            if ('content' in response.data) {
+                return extractImageUrl(response.data.content as string);
             }
         }
     } catch (error) {
@@ -73,12 +73,12 @@ const fetchFullArticle = async (id: number): Promise<string | null> => {
 const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
 
 export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
-    const [adjacentFeeds, setAdjacentFeeds] = useState<AdjacentFeeds>();
-    const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
-    const [loading, setLoading] = useState<boolean>(true);
+    const [adjacentFeeds, setAdjacentFeeds] = React.useState<AdjacentFeeds>();
+    const [thumbnails, setThumbnails] = React.useState<Record<string, string>>({});
+    const [loading, setLoading] = React.useState<boolean>(true);
     const {t} = useTranslation();
 
-    useEffect(() => {
+    React.useEffect(() => {
         setLoading(true);
         client.feed
             .adjacent({id})
@@ -133,7 +133,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     
     return (
         <div className="w-full mt-3 sm:mt-4 mb-3 sm:mb-4">
-            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-700">
+            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700">
                 <AdjacentCard 
                     data={adjacentFeeds?.previousFeed}
                     type="previous"
@@ -167,66 +167,62 @@ export function AdjacentCard({
     
     if (!data) {
         return (
-            <div className="w-full py-2 px-2 xs:p-2 sm:p-3 md:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20">
-                <p className={`t-secondary text-xs sm:text-sm w-full ${direction} flex items-center ${type === "next" ? "justify-end" : "justify-start"}`}>
-                    {type === "previous" ? (
-                        <span className="flex items-center"><i className="ri-arrow-left-line mr-1"></i> {t("previous")}</span>
-                    ) : (
-                        <span className="flex items-center">{t("next")} <i className="ri-arrow-right-line ml-1"></i></span>
-                    )}
-                </p>
-                <h1 className={`text-xs sm:text-sm md:text-base text-gray-700 dark:text-white text-pretty truncate ${direction} mt-0.5`}>
-                    {t('no_more')}
-                </h1>
+            <div className="w-full p-3 sm:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center">
+                <span className="text-sm text-gray-400">{t('no_more')}</span>
             </div>
         );
     }
     
     return (
         <Link href={`/feed/${data.id}`} 
-              className={`w-full py-2 px-2 xs:p-2 sm:p-3 md:p-4 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 group`}>
-            <p className={`t-secondary text-xs sm:text-sm w-full ${direction} flex items-center ${type === "next" ? "justify-end" : "justify-start"}`}>
-                {type === "previous" ? (
-                    <span className="flex items-center"><i className="ri-arrow-left-line mr-1"></i> {t("previous")}</span>
-                ) : (
-                    <span className="flex items-center">{t("next")} <i className="ri-arrow-right-line ml-1"></i></span>
-                )}
-            </p>
-            <div className={`flex items-center gap-1 xs:gap-1.5 sm:gap-2 mt-0.5 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className="flex-shrink-0 w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12">
+              className={`w-full p-2.5 xs:p-3 sm:p-4 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group`}>
+            <div className={`flex items-center gap-2 sm:gap-3 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
+                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden">
                     {loading ? (
-                        <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center animate-pulse">
-                            <i className="ri-image-line text-gray-400 dark:text-gray-600 text-xs xs:text-sm sm:text-base"></i>
+                        <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center animate-pulse">
+                            <i className="ri-image-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
                         </div>
                     ) : thumbnail ? (
-                        <img 
-                            src={thumbnail} 
-                            alt={data.title || ""} 
-                            className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 object-cover rounded-md border border-gray-200 dark:border-gray-700 group-hover:border-theme transition-colors"
-                            loading="lazy"
-                            onError={(e) => {
-                                console.log(`图片加载失败: ${data.id}, 使用默认图标`);
-                                const target = e.currentTarget as HTMLImageElement;
-                                const container = target.parentElement;
-                                if (container) {
-                                    container.innerHTML = `
-                                        <div class="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
-                                            <i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-xs xs:text-sm sm:text-base"></i>
-                                        </div>
-                                    `;
-                                }
-                            }}
-                        />
+                        <div className="w-full h-full relative overflow-hidden">
+                            <img 
+                                src={thumbnail} 
+                                alt={data.title || ""} 
+                                className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+                                loading="lazy"
+                                onError={(e) => {
+                                    const target = e.currentTarget as HTMLImageElement;
+                                    const container = target.parentElement?.parentElement;
+                                    if (container) {
+                                        container.innerHTML = `
+                                            <div class="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                                <i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
+                                            </div>
+                                        `;
+                                    }
+                                }}
+                            />
+                        </div>
                     ) : (
-                        <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
-                            <i className="ri-file-text-line text-gray-400 dark:text-gray-600 text-xs xs:text-sm sm:text-base"></i>
+                        <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                            <i className="ri-file-text-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
                         </div>
                     )}
                 </div>
-                <div className={`flex-1 min-w-0 ${direction}`}>
-                    <h1 className={`text-xs xs:text-sm sm:text-base font-medium text-gray-700 dark:text-white text-pretty truncate group-hover:text-theme transition-colors`}>
+                <div className={`flex-1 ${direction}`}>
+                    <h2 className={`text-sm sm:text-base font-medium text-gray-700 dark:text-white line-clamp-2 group-hover:text-theme transition-colors`}>
                         {data.title}
-                    </h1>
+                    </h2>
+                    <div className={`flex items-center text-xs text-gray-400 mt-1.5 ${type === "next" ? "justify-end" : "justify-start"}`}>
+                        {type === "previous" ? (
+                            <span className="flex items-center transition-transform group-hover:-translate-x-0.5">
+                                <i className="ri-arrow-left-line mr-1 text-theme"></i> {t("previous")}
+                            </span>
+                        ) : (
+                            <span className="flex items-center transition-transform group-hover:translate-x-0.5">
+                                {t("next")} <i className="ri-arrow-right-line ml-1 text-theme"></i>
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
         </Link>
