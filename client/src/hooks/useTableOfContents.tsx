@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export interface TableOfContent {
@@ -232,7 +232,6 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
     return {
         TOC: () => (
             <div className='rounded-2xl bg-w py-4 px-4 t-primary'>
-                <h2 className="text-lg font-bold mb-2">{t("index.title")}</h2>
                 <ul className="max-h-[calc(100vh-10.25rem)] overflow-auto custom-scrollbar" style={{ scrollbarWidth: "none" }}>
                     {tableOfContents.length === 0 && (
                         <li className="text-gray-500 italic py-2">{t("index.empty.title")}</li>

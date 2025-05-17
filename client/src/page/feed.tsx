@@ -206,7 +206,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl pt-2">
+            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl">
               <article
                 className="rounded-2xl bg-w m-2 px-4 sm:px-6 md:px-7 py-5 sm:py-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
@@ -316,7 +316,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
             </main>
-            <aside className="w-full lg:w-60 xl:w-64 pt-2 hidden lg:block">
+            <aside className="w-full lg:w-60 xl:w-64 hidden lg:block">
               <div className="sticky top-[5.5rem]">
                 <div className="bg-w rounded-2xl p-4 mb-5 shadow-sm">
                   <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
@@ -416,12 +416,20 @@ function CommentInput({
   const [content, setContent] = React.useState("");
   const [nickname, setNickname] = React.useState("");
   const [email, setEmail] = React.useState("");
+  const [emailError, setEmailError] = React.useState("");
   const [isAnonymous, setIsAnonymous] = React.useState(false);
   const [error, setError] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   const { showAlert, AlertUI } = useAlert();
   const profile = React.useContext(ProfileContext);
   const { LoginModal, setIsOpened } = useLoginModal()
+  
+  // 邮箱格式验证函数
+  function validateEmail(email: string): boolean {
+    if (!email) return true; // 邮箱为空是允许的，因为是选填
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(email);
+  }
   
   function errorHumanize(error: string) {
     if (error === "Unauthorized") return t("login.required");
@@ -444,6 +452,14 @@ function CommentInput({
     if (!content.trim()) {
       setError(t("comment.empty"));
       return;
+    }
+    
+    // 验证邮箱格式
+    if (email && !validateEmail(email)) {
+      setEmailError("请输入有效的邮箱地址");
+      return;
+    } else {
+      setEmailError("");
     }
     
     setSubmitting(true);
@@ -545,8 +561,18 @@ function CommentInput({
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
+                  if (emailError) {
+                    // 当用户开始输入时，清除错误提示
+                    validateEmail(e.target.value) ? setEmailError("") : setEmailError("请输入有效的邮箱地址");
+                  }
                 }}
               />
+              {emailError && (
+                <p className="mt-1 text-xs text-red-500 flex items-center">
+                  <i className="ri-error-warning-line mr-1"></i>
+                  {emailError}
+                </p>
+              )}
             </div>
           </div>
         </div>
