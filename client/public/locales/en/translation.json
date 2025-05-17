@@ -56,10 +56,7 @@
       "nickname_empty": "Nickname cannot be empty",
       "nickname_placeholder": "Please enter your nickname",
       "switch": "Comment Anonymously",
-      "tag": "Anonymous",
-      "email": "Email Address",
-      "email_invalid": "Invalid email format",
-      "email_placeholder": "Enter your email (optional)"
+      "tag": "Anonymous"
     },
     "list": {
       "title": "All Comments ({{count}})"
@@ -355,6 +352,5 @@
     "insert": "Insert",
     "advanced": "Advanced",
     "tools": "Tools"
-  },
-  "optional": "optional"
+  }
 }

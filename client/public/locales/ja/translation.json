@@ -53,10 +53,7 @@
       "nickname_empty": "ニックネームを入力してください",
       "nickname_placeholder": "ニックネームを入力",
       "switch": "匿名でコメント",
-      "tag": "匿名ユーザー",
-      "email": "メールアドレス",
-      "email_invalid": "メールアドレスの形式が無効です",
-      "email_placeholder": "メールアドレスを入力（省略可）"
+      "tag": "匿名ユーザー"
     },
     "list": {
       "title": "全てのコメント ({{count}}件)"
@@ -269,6 +266,5 @@
   "published_at": "公開日時",
   "date_format": {
     "month_day": "MM月DD日"
-  },
-  "optional": "省略可"
+  }
 }

@@ -70,12 +70,12 @@ export function TimelinePage() {
                         {error && (
                           <div className="mt-2 mb-4 flex flex-col items-start">
                             <span className="text-red-500 text-sm mb-2">{error}</span>
-                            <button 
-                                onClick={fetchFeeds} 
+                        <button 
+                            onClick={fetchFeeds} 
                                 className="px-4 py-2 bg-theme text-white rounded hover:bg-theme-dark dark:bg-theme-dark dark:hover:bg-theme-light focus:outline-none focus:ring-2 focus:ring-theme-focus"
-                                aria-label={t('reload') || "Reload"}
+                            aria-label={t('reload') || "Reload"}
                                 disabled={loading}
-                            >
+                        >
                                 {loading ? 
                                     <span className="flex items-center">
                                         <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -86,7 +86,7 @@ export function TimelinePage() {
                                     </span> : 
                                     t('reload')
                                 }
-                            </button>
+                        </button>
                           </div>
                         )}
                     </div>

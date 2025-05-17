@@ -40,8 +40,7 @@ export function CommentService() {
                                 return {
                                     ...comment,
                                     userId: undefined, // 隐藏真实userId
-                                    user: undefined, // 隐藏真实user信息
-                                    // email字段会自动包含在返回中
+                                    user: undefined // 隐藏真实user信息
                                 };
                             }
                             return comment;
@@ -73,13 +72,15 @@ export function CommentService() {
                                 return 'Nickname is required for anonymous comments';
                             }
                             
+                            // 将昵称和邮箱组合，使用 | 作为分隔符
+                            const nicknameWithEmail = email ? `${nickname}|${email}` : nickname;
+                            
                             // 尝试添加评论，使用系统用户ID作为匿名评论的用户ID
                             try {
                                 await db.insert(comments).values({
                                     feedId,
                                     userId: ANONYMOUS_USER_ID, // 使用系统用户ID
-                                    nickname,
-                                    email, // 保存email字段
+                                    nickname: nicknameWithEmail,
                                     content
                                 });
                             } catch (e) {

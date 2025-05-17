@@ -53,10 +53,7 @@
       "nickname_empty": "暱稱不能為空",
       "nickname_placeholder": "請輸入暱稱",
       "switch": "匿名留言",
-      "tag": "匿名用戶",
-      "email": "郵箱地址",
-      "email_invalid": "郵箱格式無效",
-      "email_placeholder": "請輸入郵箱（選填）"
+      "tag": "匿名用戶"
     },
     "list": {
       "title": "全部留言 ({{count}}條)"
@@ -269,6 +266,5 @@
   "published_at": "發布於",
   "date_format": {
     "month_day": "MM/DD"
-  },
-  "optional": "選填"
+  }
 }

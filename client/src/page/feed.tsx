@@ -22,7 +22,6 @@ import {AdjacentSection} from "../components/adjacent_feed.tsx";
 import {formatDistance} from "date-fns";
 import { Pagination } from "../components/pagination";
 import { RecentPosts } from "../components/recent_posts";
-import { isValidEmail, maskEmail } from "../utils/validator";
 
 type Feed = {
   id: number;
@@ -447,11 +446,6 @@ function CommentInput({
       return;
     }
     
-    if (isAnonymous && email && !isValidEmail(email)) {
-      setError(t("comment.anonymous.email_invalid") || "邮箱格式无效");
-      return;
-    }
-    
     setSubmitting(true);
     setError("");
     
@@ -518,27 +512,27 @@ function CommentInput({
       {isAnonymous && (
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-3">
           <div className="w-full sm:w-[48%]">
-            <label htmlFor="nickname" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t("comment.anonymous.nickname")}{" *"}</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                <i className="ri-user-smile-line text-gray-400"></i>
-              </div>
-              <input
+            <label htmlFor="nickname" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">昵称 *</label>
+          <div className="relative">
+            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <i className="ri-user-smile-line text-gray-400"></i>
+            </div>
+            <input
                 id="nickname"
-                type="text"
+              type="text"
                 className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
-                placeholder={t("comment.anonymous.nickname_placeholder")}
-                value={nickname}
-                onChange={(e) => {
-                  setNickname(e.target.value);
-                  setError("");
-                }}
-              />
+              placeholder={t("comment.anonymous.nickname_placeholder")}
+              value={nickname}
+              onChange={(e) => {
+                setNickname(e.target.value);
+                setError("");
+              }}
+            />
             </div>
           </div>
           
           <div className="w-full sm:w-[48%]">
-            <label htmlFor="email" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t("comment.anonymous.email")} ({t("optional", {defaultValue: "选填"})})</label>
+            <label htmlFor="email" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">邮箱 (选填)</label>
             <div className="relative">
               <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <i className="ri-mail-line text-gray-400"></i>
@@ -547,7 +541,7 @@ function CommentInput({
                 id="email"
                 type="email"
                 className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
-                placeholder={t("comment.anonymous.email_placeholder")}
+                placeholder="your@email.com (选填)"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -630,7 +624,6 @@ type Comment = {
   updatedAt: Date;
   userId?: number;
   nickname?: string;
-  email?: string;
   user?: {
     id: number;
     username: string;
@@ -807,6 +800,21 @@ function CommentItem({
   const { t } = useTranslation();
   const profile = React.useContext(ProfileContext);
   
+  // 解析昵称和邮箱
+  function parseNicknameAndEmail(nicknameField?: string) {
+    if (!nicknameField) return { nickname: '', email: '' };
+    
+    const parts = nicknameField.split('|');
+    if (parts.length >= 2) {
+      return {
+        nickname: parts[0],
+        email: parts[1]
+      };
+    }
+    
+    return { nickname: nicknameField, email: '' };
+  }
+  
   function deleteComment() {
     showConfirm(
       t("delete.comment.title"),
@@ -831,6 +839,9 @@ function CommentItem({
 
   // 判断是否是匿名评论
   const isAnonymous = !!comment.nickname;
+  
+  // 解析昵称和邮箱
+  const { nickname: displayName, email: displayEmail } = parseNicknameAndEmail(comment.nickname);
   
   // 判断是否有删除权限 - 修改逻辑，使用permission替代admin
   const canDelete = profile && 
@@ -869,20 +880,18 @@ function CommentItem({
                 </div>
                 <div className="ml-3">
                   <div className="flex items-center">
-                    <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">{comment.nickname}</h4>
+                    <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">{displayName}</h4>
                     <span className="ml-2 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">{t("comment.anonymous.tag")}</span>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
-                      addSuffix: true,
-                    })}</span>
-                    {comment.email && (
-                      <span className="text-xs text-gray-400 flex items-center mt-0.5">
-                        <i className="ri-mail-line mr-1 text-gray-300"></i>
-                        {maskEmail(comment.email)}
-                      </span>
-                    )}
-                  </div>
+                  {displayEmail && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-0.5 mb-0.5">
+                      <i className="ri-mail-line mr-1 text-xs"></i>
+                      {displayEmail}
+                    </div>
+                  )}
+                  <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
+                    addSuffix: true,
+                  })}</span>
                 </div>
               </div>
             )}

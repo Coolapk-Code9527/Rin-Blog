@@ -56,10 +56,7 @@
       "nickname_empty": "昵称不能为空",
       "nickname_placeholder": "请输入昵称",
       "switch": "匿名评论",
-      "tag": "匿名用户",
-      "email": "邮箱地址",
-      "email_invalid": "邮箱格式无效",
-      "email_placeholder": "请输入邮箱（选填）"
+      "tag": "匿名用户"
     },
     "list": {
       "title": "全部评论 ({{count}}条)"
@@ -405,6 +402,5 @@
   "no_articles_description": "这里还没有任何文章，之后会添加的~",
   "image_load_error": "图片加载失败",
   "unlisted_description": "未列出的文章，有链接才能访问",
-  "draft_description": "文章草稿区，仅自己可见",
-  "optional": "选填"
+  "draft_description": "文章草稿区，仅自己可见"
 }
