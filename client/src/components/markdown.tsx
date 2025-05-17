@@ -156,51 +156,6 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
   return false;
 };
 
-// 添加阅读进度指示器组件
-export function ReadingProgress() {
-  const [progress, setProgress] = React.useState(0);
-  
-  React.useEffect(() => {
-    const updateProgress = () => {
-      // 获取文章内容元素
-      const article = document.querySelector('article');
-      if (!article) return;
-      
-      // 计算滚动进度
-      const totalHeight = article.clientHeight;
-      const windowHeight = window.innerHeight;
-      const scrollTop = window.scrollY;
-      const articleTop = article.getBoundingClientRect().top + scrollTop;
-      const scrolled = scrollTop - articleTop;
-      const maxScrollable = totalHeight - windowHeight;
-      
-      // 确保进度在0-100之间
-      const calculatedProgress = Math.min(Math.max((scrolled / maxScrollable) * 100, 0), 100);
-      setProgress(calculatedProgress);
-    };
-    
-    // 添加滚动事件监听
-    window.addEventListener('scroll', updateProgress);
-    
-    // 首次运行计算进度
-    updateProgress();
-    
-    // 清理事件监听
-    return () => {
-      window.removeEventListener('scroll', updateProgress);
-    };
-  }, []);
-  
-  return (
-    <div className="fixed top-0 left-0 w-full h-1 z-50">
-      <div 
-        className="h-full bg-gradient-to-r from-pink-500 to-blue-500" 
-        style={{ width: `${progress}%`, transition: 'width 0.1s ease-out' }}
-      />
-    </div>
-  );
-}
-
 export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
   const colorMode = useColorMode();
   const [index, setIndex] = React.useState(-1);
@@ -264,7 +219,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
 
   const Content = useMemo(() => (
     <ReactMarkdown
-      className="toc-content dark:text-neutral-300 markdown-content leading-relaxed"
+      className="toc-content dark:text-neutral-300"
       remarkPlugins={[gfm, remarkMermaid, remarkMath, remarkAlert]}
       children={content}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
@@ -551,19 +506,14 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           );
         },
         p({ children, node, ...props }) {
-          // 检查是否有父元素，如果有且为表格相关元素，直接渲染
-          const parent = node?.parent;
-          if (
-            parent &&
-            ["table", "thead", "tbody", "tr", "td", "th"].includes(
-              parent.tagName
-            )
-          ) {
-            return <p {...props}>{children}</p>;
-          }
-
+          // 检查是否为图片后的描述文本
+          const isImageCaption = 
+            node?.children?.length === 1 && 
+            node?.children[0]?.type === "emphasis" && 
+            node?.prev?.children?.some(child => child.type === "image");
+          
           return (
-            <p className="mb-6 leading-7 text-base sm:text-lg" {...props}>
+            <p className={`${isImageCaption ? "text-center text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-4" : "mt-2 py-1"}`} {...props}>
               {children}
             </p>
           );

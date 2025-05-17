@@ -7,7 +7,7 @@ import {Link, useLocation} from "wouter";
 import {useAlert, useConfirm} from "../components/dialog";
 import {HashTag} from "../components/hashtag";
 import {Waiting} from "../components/loading";
-import {Markdown, ReadingProgress} from "../components/markdown";
+import {Markdown} from "../components/markdown";
 import {client} from "../main";
 import {ClientConfigContext} from "../state/config";
 import {ProfileContext} from "../state/profile";
@@ -22,6 +22,9 @@ import {AdjacentSection} from "../components/adjacent_feed.tsx";
 import {formatDistance} from "date-fns";
 import { Pagination } from "../components/pagination";
 import { RecentPosts } from "../components/recent_posts";
+import { ReadingProgress } from "../components/reading-progress";
+import { TOCDrawer } from "../components/toc-drawer";
+import "../components/article-content.css";
 
 type Feed = {
   id: number;
@@ -190,8 +193,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      {feed && <ReadingProgress />}
-      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
+      <div className="w-full mx-auto flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -210,9 +212,13 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-4xl mt-5">
+            <ReadingProgress />
+            <TOCDrawer>
+              <TOC />
+            </TOCDrawer>
+            <main className="flex-1 min-w-0 w-full lg:w-auto max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mt-5">
               <article
-                className="rounded-2xl bg-w px-4 sm:px-6 md:px-8 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
+                className="rounded-2xl bg-w px-4 sm:px-6 md:px-7 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
@@ -282,150 +288,65 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                     )}
                   </div>
                 </div>
-                <div className="mt-6 prose prose-lg dark:prose-invert max-w-none toc-content">
-                  <div className="w-full markdown-body">
-                    <Markdown content={feed.content} />
-                  </div>
-
-                  <div className="border-t border-gray-100 dark:border-gray-700 mt-8 pt-6">
-                    {/* 文章标签 */}
-                    {feed.hashtags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {feed.hashtags.map(({ id, name }) => (
-                          <HashTag key={id} name={name} />
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* 分享按钮 */}
-                    <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-gray-100 dark:border-gray-700 pt-6">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-shrink-0">
-                          <img
-                            src={feed.user.avatar || "/avatar.png"}
-                            className="w-12 h-12 rounded-full border border-gray-200 dark:border-gray-700"
-                            alt={feed.user.username}
-                          />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-800 dark:text-gray-200">
-                            {feed.user.username}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {t("published_at")} {new Date(feed.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(window.location.href);
-                            showAlert(t("copied"));
-                          }}
-                          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          aria-label={t("copy_link")}
-                          title={t("copy_link")}
-                        >
-                          <i className="ri-link text-gray-500 dark:text-gray-400"></i>
-                        </button>
-                        
-                        <a
-                          href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                            feed.title || t("unnamed")
-                          )}&url=${encodeURIComponent(window.location.href)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          aria-label={t("share_to_twitter")}
-                          title={t("share_to_twitter")}
-                        >
-                          <i className="ri-twitter-x-line text-gray-500 dark:text-gray-400"></i>
-                        </a>
-                        
-                        <a
-                          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          aria-label={t("share_to_facebook")}
-                          title={t("share_to_facebook")}
-                        >
-                          <i className="ri-facebook-fill text-gray-500 dark:text-gray-400"></i>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 权限控制按钮 */}
-                  {(profile?.id === feed.user.id || profile?.permission) && (
-                    <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-gray-100 dark:border-gray-700 pt-6">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-shrink-0">
-                          <img
-                            src={feed.user.avatar || "/avatar.png"}
-                            className="w-12 h-12 rounded-full border border-gray-200 dark:border-gray-700"
-                            alt={feed.user.username}
-                          />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-800 dark:text-gray-200">
-                            {feed.user.username}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {t("published_at")} {new Date(feed.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(window.location.href);
-                            showAlert(t("copied"));
-                          }}
-                          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          aria-label={t("copy_link")}
-                          title={t("copy_link")}
-                        >
-                          <i className="ri-link text-gray-500 dark:text-gray-400"></i>
-                        </button>
-                        
-                        <a
-                          href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                            feed.title || t("unnamed")
-                          )}&url=${encodeURIComponent(window.location.href)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          aria-label={t("share_to_twitter")}
-                          title={t("share_to_twitter")}
-                        >
-                          <i className="ri-twitter-x-line text-gray-500 dark:text-gray-400"></i>
-                        </a>
-                        
-                        <a
-                          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          aria-label={t("share_to_facebook")}
-                          title={t("share_to_facebook")}
-                        >
-                          <i className="ri-facebook-fill text-gray-500 dark:text-gray-400"></i>
-                        </a>
-                      </div>
+                <div className="mt-6 prose prose-lg md:prose-xl dark:prose-invert max-w-none article-content toc-content">
+                <Markdown 
+                  content={feed.content} 
+                  onReady={() => {
+                    // Markdown内容渲染完成后设置标记
+                    setTimeout(() => setContentReady(true), 100);
+                  }}
+                />
+                </div>
+                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/30 flex flex-col gap-3">
+                  {feed.hashtags.length > 0 && (
+                    <div className="flex flex-row flex-wrap gap-x-2 gap-y-1.5">
+                      {feed.hashtags.map(({ name }, index) => (
+                        <span key={`hashtag-${index}`}>
+                          <HashTag name={name} />
+                        </span>
+                      ))}
                     </div>
                   )}
+                  <div className="mt-4 flex flex-col items-center justify-center">
+                    <div className="relative flex-shrink-0 mb-2">
+                    <img
+                      src={feed.user.avatar || "/avatar.png"}
+                        className="w-16 h-16 rounded-full border-2 border-gray-100 dark:border-gray-700 shadow-sm"
+                        alt={feed.user.username}
+                      />
+                      {profile?.permission && (
+                        <div className="absolute -top-1 -right-1 bg-theme text-white rounded-full w-6 h-6 flex items-center justify-center">
+                          <i className="ri-verified-badge-fill text-[12px]"></i>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <span className="text-gray-800 dark:text-gray-200 font-medium text-base cursor-default hover:text-gray-900 dark:hover:text-white transition-colors">
+                        {feed.user.username}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </article>
-              <AdjacentSection id={id} setError={() => {}} />
+              <AdjacentSection id={id} setError={setError}/>
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
             </main>
-            <aside className="hidden md:block w-72 lg:w-80 space-y-5 mt-5 flex-shrink-0">
-              <TOC />
-              <RecentPosts />
+            <aside className="w-full lg:w-72 xl:w-80 hidden lg:block mt-5">
+              <div className="sticky top-[5.5rem] space-y-6">
+                <div className="bg-w rounded-2xl pt-5 pb-4 shadow-sm hover:shadow-md transition-all duration-300 mb-0">
+                  <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700 px-4">
+                    <i className="ri-list-unordered text-theme"></i>
+                    {t("toc.title", { defaultValue: "目录" })}
+                  </h3>
+                  <div className="toc-container overflow-auto custom-scrollbar max-h-[calc(40vh-3rem)] px-2">
+                    <TOC />
+                  </div>
+                </div>
+                <div className="bg-w rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+                  <RecentPosts />
+                </div>
+              </div>
             </aside>
           </>
         )}
@@ -436,102 +357,66 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
   );
 }
 
-export function TOC() {
+export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
+  const [isOpened, setIsOpened] = React.useState(false);
   const { t } = useTranslation();
-  const [headings, setHeadings] = React.useState<{ id: string; text: string; level: number }[]>([]);
-  const [activeId, setActiveId] = React.useState<string>("");
 
-  React.useEffect(() => {
-    // 收集文章中的标题元素
-    const collectHeadings = () => {
-      const article = document.querySelector("article");
-      if (!article) return [];
-      
-      const elements = Array.from(article.querySelectorAll("h1, h2, h3, h4, h5, h6"));
-      return elements
-        .filter((el) => el.id) // 只获取有id的标题
-        .map((el) => ({
-          id: el.id,
-          text: el.textContent || "",
-          level: parseInt(el.tagName.substring(1)),
-        }));
-    };
-    
-    // 设置监听器追踪当前阅读位置
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-          }
-        });
-      },
-      { 
-        rootMargin: "-10% 0% -80% 0%", 
-        threshold: 0.1 
-      }
-    );
-    
-    // 初始化
-    const foundHeadings = collectHeadings();
-    setHeadings(foundHeadings);
-    
-    // 为每个标题添加观察
-    foundHeadings.forEach(({ id }) => {
-      const element = document.getElementById(id);
-      if (element) {
-        observer.observe(element);
-      }
-    });
-    
-    return () => {
-      // 清理观察器
-      foundHeadings.forEach(({ id }) => {
-        const element = document.getElementById(id);
-        if (element) {
-          observer.unobserve(element);
-        }
-      });
-    };
-  }, []);
-
-  // 显示目录
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 sticky top-24">
-      <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-        <i className="ri-list-unordered text-theme"></i>
-        {t("toc.title", { defaultValue: "目录" })}
-      </h3>
-      {headings.length === 0 ? (
-        <div className="text-gray-400 text-sm py-2">{t("toc.empty", { defaultValue: "暂无目录" })}</div>
-      ) : (
-        <nav className="toc-nav custom-scrollbar overflow-y-auto max-h-[calc(100vh-250px)]" aria-label="文章目录">
-          <ul className="space-y-1.5 text-[15px]">
-            {headings.map((heading) => (
-              <li
-                key={heading.id}
-                className={`pl-${(heading.level - 1) * 3} transition-colors duration-200`}
-              >
-                <a
-                  href={`#${heading.id}`}
-                  className={`block py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
-                    activeId === heading.id
-                      ? "text-theme font-medium bg-gray-50 dark:bg-gray-800/50"
-                      : "t-primary"
-                  }`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document.getElementById(heading.id)?.scrollIntoView({ behavior: "smooth" });
-                    setActiveId(heading.id);
-                  }}
-                >
-                  {heading.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+    <div className="lg:hidden">
+      <button
+        onClick={() => setIsOpened(true)}
+        className="w-10 h-10 rounded-full flex flex-row items-center justify-center bg-white dark:bg-gray-800 shadow-sm"
+        aria-label="显示目录"
+      >
+        <i className="ri-menu-2-fill t-primary ri-lg"></i>
+      </button>
+      <ReactModal
+        isOpen={isOpened}
+        style={{
+          content: {
+            top: "50%",
+            left: "50%",
+            right: "auto",
+            bottom: "auto",
+            marginRight: "-50%",
+            transform: "translate(-50%, -50%)",
+            padding: "0",
+            border: "none",
+            borderRadius: "16px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            background: "none",
+            maxHeight: "80vh",
+            maxWidth: "90vw",
+          },
+          overlay: {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            zIndex: 1000,
+          },
+        }}
+        onRequestClose={() => setIsOpened(false)}
+      >
+        <div className="w-[85vw] sm:w-[60vw] lg:w-[40vw] overflow-hidden relative t-primary bg-white dark:bg-gray-800 rounded-2xl p-5 max-h-[70vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="font-medium flex items-center gap-2">
+              <i className="ri-list-unordered text-theme"></i>
+              {t("toc.title", { defaultValue: "目录" })}
+            </h3>
+            <button 
+              onClick={() => setIsOpened(false)}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              aria-label="关闭目录"
+            >
+              <i className="ri-close-line text-lg"></i>
+            </button>
+          </div>
+          <div className="custom-scrollbar overflow-y-auto max-h-[50vh] pt-1 pl-1">
+            <TOC />
+          </div>
+        </div>
+      </ReactModal>
     </div>
   );
 }
