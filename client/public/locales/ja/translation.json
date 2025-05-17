@@ -47,6 +47,17 @@
     "submit": "コメントを投稿",
     "success": "コメントに成功しました",
     "title": "コメント",
+    "anonymous": {
+      "title": "匿名コメント",
+      "nickname": "ニックネーム",
+      "nickname_empty": "ニックネームを入力してください",
+      "nickname_placeholder": "ニックネームを入力",
+      "switch": "匿名でコメント",
+      "tag": "匿名ユーザー"
+    },
+    "list": {
+      "title": "全てのコメント ({{count}}件)"
+    },
     "pagination": {
       "previous": "前のページ",
       "next": "次のページ",
