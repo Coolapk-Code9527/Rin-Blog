@@ -266,7 +266,24 @@
   "visible": {
     "self_only": "Visible to self only"
   },
-  "writing": "Writing",
+  "writing": {
+    "save_success": "Save successful",
+    "title": "Writing"
+  },
+  "writing_options": {
+    "title": "Writing Options",
+    "close": "Close Panel"
+  },
+  "related_articles": "Related Articles",
+  "you_might_like": "You Might Also Like",
+  "previous_article": "Previous",
+  "next_article": "Next",
+  "recent_posts": "Recent Posts",
+  "no_posts_yet": "No posts yet",
+  "enter_reading_mode": "Enter Reading Mode",
+  "exit_reading_mode": "Exit Reading Mode",
+  "pinned": "Pinned",
+  "published_at": "Published at",
   "year$year": "{{year}}",
   "templates": {
     "templates": "Templates",
@@ -289,7 +306,6 @@
     "mermaid": "Mermaid Diagram"
   },
   "drop_or_click_to_upload": "Drop image here or click to upload",
-  "published_at": "Published at",
   "date_format": {
     "month_day": "MM/DD"
   },

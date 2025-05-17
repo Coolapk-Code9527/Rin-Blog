@@ -5,240 +5,150 @@ import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
 import React, { useMemo } from "react";
 import { useLocation } from "wouter";
+import { ClientConfigContext } from "../state/config";
+import { ProfileContext } from "../state/profile";
+import { extractContent } from "../utils/content";
 
-export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt }:
-    {
-        id: string, avatar?: string,
-        draft?: number, listed?: number, top?: number,
-        title: string, summary: string,
-        hashtags: { id: number, name: string }[],
-        createdAt: Date, updatedAt: Date
-    }) {
+export type Feed = {
+    id: number;
+    title: string | null;
+    content: string;
+    hashtags: {
+        id: number;
+        name: string;
+    }[];
+    user: {
+        id: number;
+        username: string;
+        avatar: string | null;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+    pv: number;
+    uv: number;
+    top: number;
+};
+
+export function FeedCard({ feed }: { feed: Feed }) {
     const { t } = useTranslation();
-    const [imageLoaded, setImageLoaded] = React.useState(false);
-    const [imageError, setImageError] = React.useState(false);
-    const [, setLocation] = useLocation();
+    const config = React.useContext(ClientConfigContext);
+    const counterEnabled = config.get<boolean>("counter.enabled");
+    const profile = React.useContext(ProfileContext);
 
-    // 预处理 summary，移除 Markdown 图片链接
-    const cleanedSummary = summary ? summary.replace(/!\[.*?\]\(.*?\)/g, "") : ""; 
-
-    // 判断是否为"今天"发布的文章
-    const isToday = () => {
-        const today = new Date();
-        const pubDate = new Date(createdAt);
-        return today.getDate() === pubDate.getDate() && 
-               today.getMonth() === pubDate.getMonth() &&
-               today.getFullYear() === pubDate.getFullYear();
-    };
+    // 检测 Markdown 中的第一张图片作为封面图
+    const [coverImage, setCoverImage] = React.useState<string | null>(null);
     
-    // 格式化日期显示
-    const formatDate = (date: Date) => {
-        const d = new Date(date);
-        return `${d.getMonth()+1}-${d.getDate()}`;
-    };
-
-    // 预加载文章详情页（当用户悬停卡片时）
-    const prefetchArticle = () => {
-        const link = document.createElement('link');
-        link.rel = 'prefetch';
-        link.href = `/feed/${id}`;
-        document.head.appendChild(link);
-    };
-    
-    // 触觉反馈支持 - 用于移动设备
-    const handleTouchStart = () => {
-        if ('vibrate' in navigator) {
-            navigator.vibrate(5); // 轻微振动5毫秒
+    React.useEffect(() => {
+        const imgRegex = /!\[.*?\]\((.*?)\)/;
+        const imgMatch = imgRegex.exec(feed.content);
+        if (imgMatch && imgMatch[1]) {
+            setCoverImage(imgMatch[1]);
         }
-    };
-    
-    // 为文章生成基于标题的稳定渐变背景
-    const generateGradient = React.useMemo(() => {
-        // 根据文章ID和标题生成一致的颜色
-        const getHashCode = (str: string) => {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = ((hash << 5) - hash) + str.charCodeAt(i);
-                hash = hash & hash; // 转换为32位整数
-            }
-            return Math.abs(hash);
-        };
-        
-        const colorPalettes = [
-            ['#4158D0', '#C850C0', '#FFCC70'], // 紫蓝到粉
-            ['#0093E9', '#80D0C7'], // 蓝到青
-            ['#8EC5FC', '#E0C3FC'], // 浅蓝到浅紫
-            ['#FFDEE9', '#B5FFFC'], // 粉到青
-            ['#FF9A8B', '#FF6A88', '#FF99AC'], // 珊瑚到粉
-            ['#FBAB7E', '#F7CE68'], // 橙到黄
-            ['#85FFBD', '#FFFB7D'], // 绿到黄
-            ['#FF3CAC', '#784BA0', '#2B86C5'], // 粉到紫再到蓝
-            ['#D9AFD9', '#97D9E1'], // 浅紫到浅蓝
-            ['#0250c5', '#d43f8d'], // 深蓝到玫红
-        ];
-        
-        const hash = getHashCode(`${id}-${title}`);
-        const paletteIndex = hash % colorPalettes.length;
-        
-        return {
-            colors: colorPalettes[paletteIndex],
-            angle: (hash % 360)
-        };
-    }, [id, title]);
+    }, [feed.content]);
 
-    // CSS变量定义，用于支持渐变遮罩效果
-    const cardStyle = {
-        '--card-bg': 'white',
-        '--card-bg-dark': '#1f2937',
-    } as React.CSSProperties;
+    // 提取没有 Markdown 符号的纯文本预览
+    const contentPreview = React.useMemo(() => {
+        const plainText = feed.content
+            .replace(/!\[.*?\]\(.*?\)/g, '') // 移除图片
+            .replace(/\[.*?\]\(.*?\)/g, '$1') // 将链接替换为链接文本
+            .replace(/#{1,6}\s+/g, '') // 移除标题标记
+            .replace(/(`{1,3}).*?\1/g, '') // 移除代码块
+            .replace(/\*\*|__|\*|_/g, '') // 移除加粗/斜体
+            .trim();
+        
+        return plainText.length > 150 ? plainText.substring(0, 150) + '...' : plainText;
+    }, [feed.content]);
+
+    // 是否有特色封面
+    const hasCover = !!coverImage;
 
     return (
-            <Link href={`/feed/${id}`} 
-            className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
-                ? 'border-theme/30 dark:border-theme/20 shadow-md' 
-                : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
-                flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
-            aria-labelledby={`article-title-${id}`}
-            onMouseEnter={prefetchArticle}
-            onTouchStart={handleTouchStart}
-            style={cardStyle}
-            replace={false}
+        <Link
+            href={`/feed/${feed.id}`}
+            className="block w-full h-full"
         >
-            {/* 卡片顶部区域 - 根据屏幕大小调整高度 */}
-            <div className={`w-full h-36 xs:h-40 sm:h-44 md:h-48 overflow-hidden rounded-t-xl relative`}>
-                {/* 渐变背景占位 - 根据文章标题生成的稳定渐变色 */}
-                <div 
-                    className="absolute inset-0 w-full h-full z-0"
-                    style={{
-                        background: `linear-gradient(${generateGradient.angle}deg, ${generateGradient.colors.join(', ')})`,
-                        opacity: avatar && imageLoaded ? 0 : 0.8
-                    }}
-                />
+            <article
+                className="bg-w rounded-2xl transition-all shadow-sm hover:shadow-md p-0 h-full flex flex-col overflow-hidden group"
+            >
+                {/* 置顶标记 */}
+                {feed.top > 0 && (
+                    <div className="absolute top-0 right-0 z-10">
+                        <div className="bg-theme text-white font-medium text-xs px-2 py-1 rounded-bl-lg flex items-center gap-1 shadow-sm">
+                            <i className="ri-pin-fill"></i>
+                            {t("pinned")}
+                        </div>
+                    </div>
+                )}
                 
-                {/* 顶部渐变遮罩层 */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-300 z-10"></div>
-                
-                {avatar && (
-                    <>
-                        {/* 图片加载状态指示器 */}
-                        {!imageLoaded && !imageError && (
-                            <div className="absolute inset-0 flex items-center justify-center z-5">
-                                <div className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-white/70 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                        )}
-                        
-                        {/* 图片加载错误占位符 */}
-                        {imageError && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center z-5">
-                                <i className="ri-image-line text-2xl sm:text-3xl text-white/80 mb-1 sm:mb-2"></i>
-                                <span className="text-xs text-white/80 bg-black/30 px-2 py-0.5 sm:py-1 rounded">{t('image_load_error')}</span>
-                            </div>
-                        )}
-                        
-                        <img 
-                            src={avatar} 
-                            alt={title}
+                {/* 文章封面图 */}
+                {hasCover && (
+                    <div className="relative w-full pt-[50%] overflow-hidden">
+                        <img
+                            src={coverImage}
+                            alt={feed.title || "Cover"}
+                            className="absolute top-0 left-0 w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
                             loading="lazy"
-                            decoding="async"
-                            className={`object-cover w-full h-full group-hover:scale-105 transition-all duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'} z-1`}
-                            onLoad={() => setImageLoaded(true)}
-                            onError={() => {
-                                setImageError(true);
-                                setImageLoaded(true);
-                            }}
                         />
-                    </>
-                )}
-                
-                {/* 无图片时的内容提示 */}
-                {!avatar && (
-                    <div className="absolute inset-0 flex items-center justify-center z-5">
-                        <div className="text-white/90 text-center px-4">
-                            <i className="ri-article-line text-3xl sm:text-4xl mb-1 sm:mb-2 drop-shadow-md"></i>
-                            <p className="text-xs sm:text-sm font-medium drop-shadow-md">{title.substring(0, 20)}{title.length > 20 ? '...' : ''}</p>
-                        </div>
-                    </div>
-                )}
-                    
-                {/* 置顶标识 - 优化位置居中 */}
-                {top === 1 && (
-                    <div className="absolute top-3 right-3 z-20 flex items-center justify-center">
-                        <div className="bg-theme text-white text-xs font-medium px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full shadow-md flex items-center">
-                            <i className="ri-pushpin-line mr-1"></i>
-                            <span>{t('article.top.title')}</span>
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30"></div>
                     </div>
                 )}
                 
-                {/* 今日发布标识 */}
-                {isToday() && (
-                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-medium px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full shadow-md z-20 flex items-center justify-center">
-                        <i className="ri-time-line mr-1"></i>
-                        <span className="hidden xs:inline">{t('today')}</span>
-                    </div>
-                )}
-            </div>
-            
-            {/* 卡片内容区域 */}
-            <div className="p-3 sm:p-4 flex-1 flex flex-col">
-                {/* 文章标题 */}
-                <h2 id={`article-title-${id}`} className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white text-pretty overflow-hidden mb-1 sm:mb-1.5 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 line-clamp-2">
-                    {title}
-                </h2>
+                {/* 文章主体内容 */}
+                <div className="p-4 sm:p-5 flex-1 flex flex-col">
+                    {/* 文章标题 */}
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2 line-clamp-2 group-hover:text-theme transition-colors">
+                        {feed.title || t('unnamed')}
+                    </h2>
                     
-                {/* 日期和状态区域 - 移动端紧凑设计 */}
-                <div className="flex flex-wrap justify-between items-center gap-1 mb-2 text-xs text-gray-500 dark:text-gray-400">
-                    {/* 左侧日期显示 */}
-                    <div className="flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-2 py-0.5">
-                        <i className="ri-calendar-line mr-1"></i>
-                        {formatDate(createdAt)}
-                        {createdAt !== updatedAt &&
-                            <span className="ml-2 flex items-center" title={new Date(updatedAt).toLocaleString()}>
-                                <i className="ri-history-line mr-1"></i>
-                                {formatDate(updatedAt)}
-                            </span>
-                        }
-                    </div>
+                    {/* 文章预览摘要 */}
+                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">
+                        {contentPreview}
+                    </p>
                     
-                    {/* 右侧状态显示 - 改进草稿和未列出标签样式 */}
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                        {draft === 1 && 
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
-                                <i className="ri-draft-line mr-1 text-theme"></i>
-                                <span>{t("draft")}</span>
-                            </span>
-                        }
-                        {listed === 0 && 
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
-                                <i className="ri-eye-off-line mr-1 text-theme"></i>
-                                <span>{t("unlisted")}</span>
-                            </span>
-                        }
-                    </div>
-                </div>
-                
-                {/* 文章摘要 - 完全重构自适应显示 */}
-                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                    <div className="text-pretty dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300 overflow-hidden line-clamp-3">
-                    <SimplifiedMarkdown content={cleanedSummary} />
-                    </div>
-                </div>
-                    
-                {/* 标签区域 - 统一分割线样式和对齐方式 */}
-                <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/30">
-                    {hashtags.length > 0 ? (
-                        <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
-                            {hashtags.map(({id, name}) => (
-                                <div key={id} className="animate-fadeIn">
-                                    <HashTag name={name} />
-                                </div>
+                    {/* 标签列表 */}
+                    {feed.hashtags.length > 0 && (
+                        <div className="mt-auto mb-3 flex flex-wrap gap-1.5">
+                            {feed.hashtags.map(({ name }, index) => (
+                                <span
+                                    key={`hashtag-${name}-${index}`}
+                                    onClick={(e) => e.preventDefault()}
+                                >
+                                    <HashTag name={name} size="small" />
+                                </span>
                             ))}
                         </div>
-                    ) : (
-                        <div className="h-6"></div> // 占位，保持底部对齐
                     )}
+                    
+                    {/* 文章元数据 */}
+                    <div className="mt-1 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center space-x-4">
+                            {/* 作者 */}
+                            <div className="flex items-center">
+                                <img 
+                                    src={feed.user.avatar || "/avatar.png"} 
+                                    alt={feed.user.username}
+                                    className="w-5 h-5 rounded-full mr-1.5"
+                                />
+                                <span>{feed.user.username}</span>
+                            </div>
+                            
+                            {/* 发布时间 */}
+                            <span className="flex items-center">
+                                <i className="ri-calendar-line mr-1"></i>
+                                {timeago(feed.createdAt)}
+                            </span>
+                        </div>
+                        
+                        {/* 阅读量 */}
+                        {counterEnabled && (
+                            <span className="flex items-center">
+                                <i className="ri-eye-line mr-1"></i>
+                                {feed.pv}
+                            </span>
+                        )}
+                    </div>
                 </div>
-            </div>
+            </article>
         </Link>
-    )
+    );
 }

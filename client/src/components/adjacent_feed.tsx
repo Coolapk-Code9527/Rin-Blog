@@ -1,230 +1,182 @@
-import React from "react";
-import {client} from "../main.tsx";
-import {timeago} from "../utils/timeago.ts";
-import {Link} from "wouter";
-import {useTranslation} from "react-i18next";
+import * as React from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "wouter";
+import { client } from "../main";
+import { headersWithAuth } from "../utils/auth";
+import { timeago } from "../utils/timeago";
 
-export type AdjacentFeed = {
+type Feed = {
+  id: number;
+  title: string | null;
+  content: string;
+  uid: number;
+  createdAt: Date;
+  updatedAt: Date;
+  hashtags: {
     id: number;
-    title: string | null;
-    summary: string;
-    hashtags: {
-        id: number;
-        name: string;
-    }[];
-    createdAt: Date;
-    updatedAt: Date;
-    avatar?: string;
-};
-export type AdjacentFeeds = {
-    nextFeed: AdjacentFeed | null;
-    previousFeed: AdjacentFeed | null;
+    name: string;
+  }[];
+  user: {
+    avatar: string | null;
+    id: number;
+    username: string;
+  };
 };
 
-// 提取图片URL的辅助函数
-const extractImageUrl = (content: string): string | null => {
-    if (!content) return null;
-    
-    try {
-        // 尝试从Markdown格式提取
-        const markdownRegex = /!\[.*?\]\((.*?)\)/;
-        const markdownMatch = markdownRegex.exec(content);
-        if (markdownMatch && markdownMatch[1]) {
-            console.log("从Markdown提取图片URL:", markdownMatch[1]);
-            return markdownMatch[1];
-        }
-        
-        // 尝试从HTML格式提取
-        const htmlRegex = /<img.*?src=["'](.*?)["']/;
-        const htmlMatch = htmlRegex.exec(content);
-        if (htmlMatch && htmlMatch[1]) {
-            console.log("从HTML提取图片URL:", htmlMatch[1]);
-            return htmlMatch[1];
-        }
-    } catch (error) {
-        console.error("提取图片URL时出错:", error);
-    }
-    
-    return null;
-};
-
-// 获取完整文章信息以获取avatar字段
-const fetchFullArticle = async (id: number): Promise<string | null> => {
-    try {
-        const response = await client.feed({ id: id.toString() }).get();
-        if (!response.error && response.data && typeof response.data !== "string") {
-            // 检查数据是否包含avatar字段
-            if ('avatar' in response.data) {
-                return response.data.avatar as string;
-            }
-            
-            // 如果没有avatar字段，从content中提取第一张图片
-            if ('content' in response.data) {
-                return extractImageUrl(response.data.content as string);
-            }
-        }
-    } catch (error) {
-        console.error(`获取文章 ${id} 信息失败:`, error);
-    }
-    return null;
-};
-
-// 默认图片常量
-const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
-
-export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
-    const [adjacentFeeds, setAdjacentFeeds] = React.useState<AdjacentFeeds>();
-    const [thumbnails, setThumbnails] = React.useState<Record<string, string>>({});
-    const [loading, setLoading] = React.useState<boolean>(true);
-    const {t} = useTranslation();
-
-    React.useEffect(() => {
-        setLoading(true);
-        client.feed
-            .adjacent({id})
-            .get()
-            .then(async ({data, error}) => {
-                if (error) {
-                    setError(error.value as string);
-                    setLoading(false);
-                } else if (data && typeof data !== "string") {
-                    setAdjacentFeeds(data);
-                    
-                    // 为每个相邻文章获取缩略图
-                    const extractedThumbnails: Record<string, string> = {};
-                    
-                    // 处理上一篇文章
-                    if (data.previousFeed) {
-                        // 先尝试从摘要中提取图片
-                        let thumbnail = extractImageUrl(data.previousFeed.summary);
-                        
-                        // 如果摘要中没有图片，获取完整文章信息
-                        if (!thumbnail) {
-                            thumbnail = await fetchFullArticle(data.previousFeed.id);
-                        }
-                        
-                        extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
-                        console.log(`上一篇文章(ID:${data.previousFeed.id})缩略图:`, extractedThumbnails[`prev-${data.previousFeed.id}`]);
-                    }
-                    
-                    // 处理下一篇文章
-                    if (data.nextFeed) {
-                        // 先尝试从摘要中提取图片
-                        let thumbnail = extractImageUrl(data.nextFeed.summary);
-                        
-                        // 如果摘要中没有图片，获取完整文章信息
-                        if (!thumbnail) {
-                            thumbnail = await fetchFullArticle(data.nextFeed.id);
-                        }
-                        
-                        extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
-                        console.log(`下一篇文章(ID:${data.nextFeed.id})缩略图:`, extractedThumbnails[`next-${data.nextFeed.id}`]);
-                    }
-                    
-                    setThumbnails(extractedThumbnails);
-                }
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error("获取相邻文章信息失败:", err);
-                setLoading(false);
-            });
-    }, [id, setError]);
-    
-    return (
-        <div className="w-full mt-3 sm:mt-4 mb-3 sm:mb-4">
-            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700">
-                <AdjacentCard 
-                    data={adjacentFeeds?.previousFeed}
-                    type="previous"
-                    thumbnail={adjacentFeeds?.previousFeed && !loading ? thumbnails[`prev-${adjacentFeeds.previousFeed.id}`] : undefined}
-                    loading={loading}
-                />
-                <AdjacentCard 
-                    data={adjacentFeeds?.nextFeed}
-                    type="next"
-                    thumbnail={adjacentFeeds?.nextFeed && !loading ? thumbnails[`next-${adjacentFeeds.nextFeed.id}`] : undefined}
-                    loading={loading}
-                />
-            </div>
-        </div>
-    )
+interface AdjacentSectionProps {
+  id: string;
+  setError: (error: string) => void;
 }
 
-export function AdjacentCard({
-    data,
-    type,
-    thumbnail,
-    loading
-}: {
-    data: AdjacentFeed | null | undefined,
-    type: "previous" | "next",
-    thumbnail: string | undefined,
-    loading: boolean
-}) {
-    const direction = type === "previous" ? "text-start" : "text-end";
-    const {t} = useTranslation();
-    
-    if (!data) {
-        return (
-            <div className="w-full p-3 sm:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center">
-                <span className="text-sm text-gray-400">{t('no_more')}</span>
-            </div>
-        );
-    }
-    
+export function AdjacentSection({ id, setError }: AdjacentSectionProps) {
+  const { t } = useTranslation();
+  const [prev, setPrev] = React.useState<Feed | null>(null);
+  const [next, setNext] = React.useState<Feed | null>(null);
+  const [related, setRelated] = React.useState<Feed[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    setIsLoading(true);
+    client.feed
+      .adjacent({ id })
+      .get({
+        headers: headersWithAuth(),
+      })
+      .then(({ data, error }) => {
+        if (error) {
+          setError(error.value as string);
+        } else if (data) {
+          setPrev(data.previous || null);
+          setNext(data.next || null);
+          
+          // 获取相关文章
+          client.feed
+            .related({ id })
+            .get({
+              headers: headersWithAuth(),
+            })
+            .then(({ data: relatedData, error: relatedError }) => {
+              if (!relatedError && relatedData) {
+                setRelated(relatedData.slice(0, 3)); // 最多显示3篇相关文章
+              }
+              setIsLoading(false);
+            });
+        }
+      });
+  }, [id, setError]);
+  
+  // 提取文章封面图
+  const extractCoverImage = (content: string): string | null => {
+    const imgRegex = /!\[.*?\]\((.*?)\)/;
+    const imgMatch = imgRegex.exec(content);
+    return imgMatch && imgMatch[1] ? imgMatch[1] : null;
+  };
+
+  if (isLoading) {
     return (
-        <Link href={`/feed/${data.id}`} 
-              className={`w-full p-2.5 xs:p-3 sm:p-4 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group`}>
-            <div className={`flex items-center gap-2 sm:gap-3 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden">
-                    {loading ? (
-                        <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center animate-pulse">
-                            <i className="ri-image-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
-                        </div>
-                    ) : thumbnail ? (
-                        <div className="w-full h-full relative overflow-hidden">
-                            <img 
-                                src={thumbnail} 
-                                alt={data.title || ""} 
-                                className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
-                                loading="lazy"
-                                onError={(e) => {
-                                    const target = e.currentTarget as HTMLImageElement;
-                                    const container = target.parentElement?.parentElement;
-                                    if (container) {
-                                        container.innerHTML = `
-                                            <div class="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                                <i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
-                                            </div>
-                                        `;
-                                    }
-                                }}
-                            />
-                        </div>
-                    ) : (
-                        <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <i className="ri-file-text-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
-                        </div>
-                    )}
+      <div className="animate-pulse bg-w rounded-2xl p-5 shadow-sm">
+        <div className="h-6 mb-4 bg-gray-200 dark:bg-gray-700 w-1/3 rounded"></div>
+        <div className="flex flex-row space-x-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="w-full h-32 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!prev && !next && (!related || related.length === 0)) {
+    return null;
+  }
+
+  return (
+    <div className="bg-w rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300">
+      <h3 className="text-lg font-medium mb-4 t-primary flex items-center">
+        <i className="ri-article-line mr-2 text-theme"></i>
+        {t("related_articles")}
+      </h3>
+      
+      {/* 上一篇/下一篇导航 */}
+      {(prev || next) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {prev && (
+            <Link href={`/feed/${prev.id}`} className="group">
+              <div className="flex flex-col p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-theme dark:hover:border-theme hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center mb-1.5">
+                  <i className="ri-arrow-left-line mr-1"></i>
+                  {t("previous_article")}
                 </div>
-                <div className={`flex-1 ${direction}`}>
-                    <h2 className={`text-sm sm:text-base font-medium text-gray-700 dark:text-white line-clamp-2 group-hover:text-theme transition-colors`}>
-                        {data.title}
-                    </h2>
-                    <div className={`flex items-center text-xs text-gray-400 mt-1.5 ${type === "next" ? "justify-end" : "justify-start"}`}>
-                        {type === "previous" ? (
-                            <span className="flex items-center transition-transform group-hover:-translate-x-0.5">
-                                <i className="ri-arrow-left-line mr-1 text-theme"></i> {t("previous")}
-                            </span>
-                        ) : (
-                            <span className="flex items-center transition-transform group-hover:translate-x-0.5">
-                                {t("next")} <i className="ri-arrow-right-line ml-1 text-theme"></i>
-                            </span>
-                        )}
+                <div className="font-medium group-hover:text-theme transition-colors line-clamp-1">
+                  {prev.title || t("unnamed")}
+                </div>
+              </div>
+            </Link>
+          )}
+          
+          {next && (
+            <Link href={`/feed/${next.id}`} className="group">
+              <div className="flex flex-col p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-theme dark:hover:border-theme hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end mb-1.5">
+                  {t("next_article")}
+                  <i className="ri-arrow-right-line ml-1"></i>
+                </div>
+                <div className="font-medium text-right group-hover:text-theme transition-colors line-clamp-1">
+                  {next.title || t("unnamed")}
+                </div>
+              </div>
+            </Link>
+          )}
+        </div>
+      )}
+      
+      {/* 相关文章推荐 */}
+      {related && related.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium mb-3 text-gray-600 dark:text-gray-300 flex items-center">
+            <i className="ri-links-line mr-1.5"></i>
+            {t("you_might_like")}
+          </h4>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {related.map((article) => {
+              const coverImage = extractCoverImage(article.content);
+              
+              return (
+                <Link 
+                  key={article.id} 
+                  href={`/feed/${article.id}`} 
+                  className="group block bg-gray-50 dark:bg-gray-800/30 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600 transition-all"
+                >
+                  {coverImage && (
+                    <div className="relative w-full pt-[56%] overflow-hidden">
+                      <img
+                        src={coverImage}
+                        alt={article.title || "Cover"}
+                        className="absolute top-0 left-0 w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
                     </div>
-                </div>
-            </div>
-        </Link>
-    )
+                  )}
+                  
+                  <div className="p-3">
+                    <h5 className="font-medium mb-1 line-clamp-2 group-hover:text-theme transition-colors">
+                      {article.title || t("unnamed")}
+                    </h5>
+                    
+                    <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                      <span>{article.user.username}</span>
+                      <span className="flex items-center">
+                        <i className="ri-time-line mr-1"></i>
+                        {timeago(article.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

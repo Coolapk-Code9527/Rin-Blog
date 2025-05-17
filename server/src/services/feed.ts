@@ -501,6 +501,177 @@ export function FeedService() {
                     await clearFeedCache(id_num, feed.alias, null);
                     return 'Deleted';
                 })
+                .get('/recent', async ({ set, query: { limit = '5' } }) => {
+                    try {
+                        const cache = PublicCache();
+                        const cacheKey = `feeds_recent_${limit}`;
+                        
+                        const cached = await cache.get(cacheKey);
+                        if (cached) {
+                            return cached;
+                        }
+                        
+                        const limitNum = Math.min(parseInt(limit), 10); // 最多返回10篇
+                        
+                        const recentPosts = await db.query.feeds.findMany({
+                            where: and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
+                            columns: {
+                                id: true,
+                                title: true,
+                                createdAt: true,
+                            },
+                            orderBy: [desc(feeds.createdAt)],
+                            limit: limitNum,
+                        });
+                        
+                        await cache.set(cacheKey, recentPosts);
+                        return recentPosts;
+                    } catch (error) {
+                        set.status = 500;
+                        return 'Internal server error';
+                    }
+                }, {
+                    query: t.Object({
+                        limit: t.Optional(t.String())
+                    })
+                })
+                .get('/related/:id', async ({ set, params: { id } }) => {
+                    try {
+                        // 先获取当前文章的信息，包括标签
+                        let id_num: number;
+                        
+                        // 检查是否为别名
+                        if (isNaN(parseInt(id))) {
+                            const aliasRecord = await db.query.feeds.findMany({
+                                where: eq(feeds.alias, id),
+                                columns: { id: true }
+                            });
+                            if (aliasRecord.length === 0) {
+                                set.status = 404;
+                                return 'Not found';
+                            }
+                            id_num = aliasRecord[0].id;
+                        } else {
+                            id_num = parseInt(id);
+                        }
+                        
+                        const cache = PublicCache();
+                        const cacheKey = `feeds_related_${id_num}`;
+                        
+                        const cached = await cache.get(cacheKey);
+                        if (cached) {
+                            return cached;
+                        }
+                        
+                        // 获取当前文章的标签
+                        const currentFeed = await db.query.feeds.findFirst({
+                            where: eq(feeds.id, id_num),
+                            with: {
+                                hashtags: {
+                                    columns: {},
+                                    with: {
+                                        hashtag: {
+                                            columns: { id: true, name: true }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        
+                        if (!currentFeed) {
+                            set.status = 404;
+                            return 'Not found';
+                        }
+                        
+                        const currentTags = currentFeed.hashtags.map(({ hashtag }) => hashtag.id);
+                        
+                        // 如果没有标签，返回最新的文章
+                        if (currentTags.length === 0) {
+                            const recentPosts = await db.query.feeds.findMany({
+                                where: and(
+                                    eq(feeds.draft, 0), 
+                                    eq(feeds.listed, 1),
+                                    or(
+                                        lt(feeds.id, id_num), 
+                                        gt(feeds.id, id_num)
+                                    ) // 排除当前文章
+                                ),
+                                columns: {
+                                    id: true,
+                                    title: true,
+                                    content: true,
+                                    createdAt: true,
+                                },
+                                with: {
+                                    user: {
+                                        columns: { id: true, username: true, avatar: true }
+                                    }
+                                },
+                                orderBy: [desc(feeds.createdAt)],
+                                limit: 5,
+                            });
+                            
+                            await cache.set(cacheKey, recentPosts);
+                            return recentPosts;
+                        }
+                        
+                        // 查找包含相同标签的文章
+                        const relatedFeeds = await db.query.feeds.findMany({
+                            where: and(
+                                eq(feeds.draft, 0),
+                                eq(feeds.listed, 1),
+                                or(
+                                    lt(feeds.id, id_num),
+                                    gt(feeds.id, id_num)
+                                )
+                            ),
+                            with: {
+                                hashtags: {
+                                    columns: {},
+                                    with: {
+                                        hashtag: {
+                                            columns: { id: true, name: true }
+                                        }
+                                    }
+                                },
+                                user: {
+                                    columns: { id: true, username: true, avatar: true }
+                                }
+                            },
+                            orderBy: [desc(feeds.createdAt)],
+                            limit: 10, // 先获取10篇，后续会筛选
+                        });
+                        
+                        // 根据标签匹配度排序
+                        const scoredFeeds = relatedFeeds.map(feed => {
+                            const feedTags = feed.hashtags.map(({ hashtag }) => hashtag.id);
+                            
+                            // 计算匹配的标签数量
+                            const matchCount = feedTags.filter(tag => currentTags.includes(tag)).length;
+                            
+                            return {
+                                ...feed,
+                                matchScore: matchCount
+                            };
+                        });
+                        
+                        // 根据匹配度排序并限制数量
+                        const result = scoredFeeds
+                            .sort((a, b) => b.matchScore - a.matchScore)
+                            .slice(0, 5)
+                            .map(({ matchScore, hashtags, ...feed }) => ({
+                                ...feed,
+                                hashtags: hashtags.map(({ hashtag }) => hashtag)
+                            }));
+                        
+                        await cache.set(cacheKey, result);
+                        return result;
+                        
+                    } catch (error) {
+                        set.status = 500;
+                        return 'Internal server error';
+                    }
+                })
         )
         .get('/search/:keyword', async ({ admin, params: { keyword }, query: { page, limit } }) => {
             keyword = decodeURI(keyword);

@@ -41,9 +41,8 @@ type Feed = {
   };
   pv: number;
   uv: number;
+  top: number;
 };
-
-
 
 export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
   const { t } = useTranslation();
@@ -59,101 +58,8 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
   const config = React.useContext(ClientConfigContext);
   const counterEnabled = config.get<boolean>('counter.enabled');
   const [contentReady, setContentReady] = React.useState<boolean>(false);
-  
-  // 新增阅读进度状态
-  const [readingProgress, setReadingProgress] = React.useState(0);
-  const [showMobileNav, setShowMobileNav] = React.useState(false);
-  const articleRef = React.useRef<HTMLDivElement>(null);
-  
-  // 分享相关状态
-  const [showShareOptions, setShowShareOptions] = React.useState(false);
-  const [linkCopied, setLinkCopied] = React.useState(false);
-  const shareOptionsRef = React.useRef<HTMLDivElement>(null);
-
-  // 点击外部关闭分享选项
-  React.useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (shareOptionsRef.current && !shareOptionsRef.current.contains(event.target as Node)) {
-        setShowShareOptions(false);
-      }
-    }
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // 复制链接功能
-  const copyLinkToClipboard = () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-      setShowShareOptions(false);
-      showAlert(t('link_copied'));
-    });
-  };
-
-  // 社交媒体分享
-  const shareToSocialMedia = (platform: string) => {
-    const url = encodeURIComponent(window.location.href);
-    const title = encodeURIComponent(feed?.title || '');
-    
-    let shareUrl = '';
-    
-    switch (platform) {
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
-        break;
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
-        break;
-      case 'weibo':
-        shareUrl = `http://service.weibo.com/share/share.php?url=${url}&title=${title}`;
-        break;
-      case 'wechat':
-        // 显示二维码或提示用户扫码分享
-        showAlert(t('wechat_scan_tip'));
-        return;
-    }
-    
-    if (shareUrl) {
-      window.open(shareUrl, '_blank', 'width=600,height=500');
-      setShowShareOptions(false);
-    }
-  };
-
-  // 监控阅读进度
-  React.useEffect(() => {
-    if (!contentReady) return;
-
-    const calculateReadingProgress = () => {
-      if (articleRef.current) {
-        const element = articleRef.current;
-        const totalHeight = element.scrollHeight - element.clientHeight;
-        const windowScrollTop = window.scrollY - element.offsetTop;
-        if (windowScrollTop >= 0) {
-          const scrolled = Math.min(100, Math.max(0, (windowScrollTop / totalHeight) * 100));
-          setReadingProgress(scrolled);
-        }
-      }
-    };
-
-    // 监控滚动事件以显示/隐藏移动导航栏
-    const handleScroll = () => {
-      calculateReadingProgress();
-      
-      // 仅在移动设备上添加底部导航
-      if (window.innerWidth < 1024) {
-        const scrollY = window.scrollY;
-        // 当滚动超过300px显示导航
-        setShowMobileNav(scrollY > 300);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [contentReady]);
+  const [readingMode, setReadingMode] = React.useState<boolean>(false);
+  const [scrollProgress, setScrollProgress] = React.useState<number>(0);
 
   function deleteFeed() {
     // Confirm
@@ -177,6 +83,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           });
       })
   }
+  
   function topFeed() {
     const isUnTop = !(top > 0)
     const topNew = isUnTop ? 1 : 0;
@@ -203,6 +110,21 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           });
       })
   }
+
+  // 监听滚动进度
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight;
+      const winHeight = window.innerHeight;
+      const scrollPercent = scrollTop / (docHeight - winHeight);
+      setScrollProgress(scrollPercent * 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
   React.useEffect(() => {
     if (ref.current == id) return;
     setFeed(undefined);
@@ -233,6 +155,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
       });
     ref.current = id;
   }, [id]);
+  
   React.useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
@@ -252,6 +175,12 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
       });
     })
   }, [feed]);
+
+  // 切换阅读模式
+  function toggleReadingMode() {
+    setReadingMode(!readingMode);
+    document.body.classList.toggle('reading-mode');
+  }
 
   return (
     <Waiting for={feed || error}>
@@ -284,14 +213,59 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                 : feed.content
             }
           />
+          <style>{`
+            .reading-mode .article-container {
+              max-width: 720px !important;
+            }
+            .reading-mode .article-sidebar,
+            .reading-mode .header-actions,
+            .reading-mode .article-meta-secondary {
+              display: none !important;
+            }
+            .reading-mode .article-content {
+              font-size: 18px !important;
+              line-height: 1.8 !important;
+            }
+            .article-progress-bar {
+              position: fixed;
+              top: 0;
+              left: 0;
+              height: 3px;
+              background: linear-gradient(90deg, #FC466B 0%, #3F5EFB 100%);
+              z-index: 1000;
+              transition: width 0.2s ease;
+            }
+            @media (max-width: 768px) {
+              .reading-mode .article-content {
+                font-size: 16px !important;
+              }
+            }
+          `}</style>
         </Helmet>
       )}
-      {/* 阅读进度指示器 */}
-      {feed && !error && contentReady && (
-        <div className="fixed top-0 left-0 z-50 h-1 bg-gradient-to-r from-theme to-pink-500 transition-all duration-200 ease-out" style={{ width: `${readingProgress}%` }} />
-      )}
       
-      <div className="w-full mx-auto max-w-7xl flex flex-col lg:flex-row justify-center ani-show gap-4 sm:gap-5 px-3 sm:px-4 md:px-5">
+      {/* 阅读进度条 */}
+      <div 
+        className="article-progress-bar" 
+        style={{ width: `${scrollProgress}%` }}
+      ></div>
+      
+      {/* 阅读模式切换按钮 */}
+      {feed && !error && (
+        <button 
+          aria-label={readingMode ? t("exit_reading_mode") : t("enter_reading_mode")}
+          onClick={toggleReadingMode}
+          className={`fixed bottom-5 right-5 z-50 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all ${
+            readingMode 
+              ? "bg-theme text-white" 
+              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+          }`}
+        >
+          <i className={`${readingMode ? "ri-fullscreen-exit-line" : "ri-fullscreen-line"}`} />
+        </button>
+      )}
+
+      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -308,137 +282,133 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
             </div>
           </>
         )}
+        
         {feed && !error && (
           <>
-            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl order-2 lg:order-1 mt-5">
+            <main className={`flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl mt-5 article-container ${readingMode ? 'reading-mode' : ''}`}>
               <article
-                ref={articleRef}
-                className="rounded-2xl bg-w px-4 sm:px-6 md:px-8 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
+                className="rounded-2xl bg-w px-4 sm:px-6 md:px-7 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
-                <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-                  <div className="w-full pr-0 sm:pr-2">
-                    <div className="mt-1 mb-3 flex flex-wrap gap-x-4 gap-y-2">
-                      <p
-                        className="text-gray-400 text-sm flex items-center"
-                        title={new Date(feed.createdAt).toLocaleString()}
-                      >
-                        <i className="ri-calendar-line mr-1.5"></i>
-                        {t("published_at")} {timeago(feed.createdAt)}
-                      </p>
-
-                      {feed.createdAt !== feed.updatedAt && (
-                        <p
-                          className="text-gray-400 text-sm flex items-center"
-                          title={new Date(feed.updatedAt).toLocaleString()}
-                        >
-                          <i className="ri-history-line mr-1.5"></i>
-                          {t("feed_card.updated$time", {
-                            time: timeago(feed.updatedAt),
-                          })}
-                        </p>
+                {/* 文章顶部区域 - 全新设计 */}
+                <div className="article-header mb-8">
+                  {/* 封面图 - 有条件渲染 */}
+                  {headImage && (
+                    <div className="cover-image-container relative w-full h-48 sm:h-60 md:h-72 lg:h-80 overflow-hidden rounded-xl mb-6">
+                      <img 
+                        src={headImage} 
+                        alt={feed.title || "文章封面"} 
+                        className="w-full h-full object-cover transform transition-transform duration-700 hover:scale-105"
+                        loading="eager"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                    </div>
+                  )}
+                  
+                  <div className="header-content">
+                    {/* 文章标题 */}
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 leading-tight text-gray-800 dark:text-white">
+                      {feed.title}
+                    </h1>
+                    
+                    {/* 文章元信息 - 主要信息 */}
+                    <div className="article-meta-primary flex flex-wrap items-start sm:items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      {/* 作者信息 */}
+                      <div className="flex items-center">
+                        <img 
+                          src={feed.user.avatar || "/avatar.png"} 
+                          alt={feed.user.username} 
+                          className="w-10 h-10 rounded-full mr-3 border border-gray-100 dark:border-gray-700"
+                        />
+                        <div>
+                          <div className="font-medium text-gray-800 dark:text-gray-200">{feed.user.username}</div>
+                          <div className="text-xs flex items-center gap-1">
+                            <i className="ri-calendar-line"></i>
+                            {t("published_at")} {timeago(feed.createdAt)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 分割线 */}
+                      <div className="hidden sm:block h-4 w-px bg-gray-200 dark:bg-gray-700/50"></div>
+                      
+                      {/* 次要元信息组 */}
+                      <div className="article-meta-secondary flex flex-wrap items-center gap-4">
+                        {/* 更新时间 */}
+                        {feed.createdAt !== feed.updatedAt && (
+                          <p
+                            className="text-gray-400 text-xs flex items-center"
+                            title={new Date(feed.updatedAt).toLocaleString()}
+                          >
+                            <i className="ri-history-line mr-1"></i>
+                            {t("feed_card.updated$time", {
+                              time: timeago(feed.updatedAt),
+                            })}
+                          </p>
+                        )}
+                        
+                        {/* 阅读数据 */}
+                        {counterEnabled && 
+                          <p className='text-xs text-gray-400 font-normal flex items-center'>
+                            <i className="ri-eye-line mr-1"></i>
+                            {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
+                          </p>
+                        }
+                      </div>
+                    </div>
+                    
+                    {/* 文章管理操作按钮 */}
+                    <div className="header-actions flex justify-between items-center mb-2">
+                      {/* 标签列表 */}
+                      {feed.hashtags.length > 0 && (
+                        <div className="flex flex-row flex-wrap gap-x-2 gap-y-1.5">
+                          {feed.hashtags.map(({ name }, index) => (
+                            <span key={`hashtag-${index}`}>
+                              <HashTag name={name} />
+                            </span>
+                          ))}
+                        </div>
                       )}
                       
-                      {counterEnabled && <p className='text-sm text-gray-400 font-normal flex items-center'>
-                        <i className="ri-eye-line mr-1.5"></i>
-                        {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
-                      </p>}
-                    </div>
-
-                    <div className="flex flex-row items-center">
-                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold t-primary break-all leading-tight">
-                        {feed.title}
-                      </h1>
-                      <div className="flex-1 w-0" />
-                    </div>
-                  </div>
-
-                  <div className="pt-0 sm:pt-2 flex-shrink-0">
-                    {/* 分享按钮 */}
-                    <div className="relative">
-                      <button
-                        aria-label={t("share")}
-                        onClick={() => setShowShareOptions(!showShareOptions)}
-                        className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
-                      >
-                        <i className="ri-share-line" />
-                      </button>
-                      
-                      {/* 分享选项弹窗 */}
-                      {showShareOptions && (
-                        <div 
-                          ref={shareOptionsRef}
-                          className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-2"
-                        >
-                          {/* 复制链接选项 */}
-                          <button 
-                            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-750 flex items-center text-sm text-gray-700 dark:text-gray-300 transition-colors"
-                            onClick={copyLinkToClipboard}
+                      {/* 管理功能按钮 */}
+                      {profile?.permission && (
+                        <div className="flex gap-2 ml-2 flex-shrink-0">
+                          <button
+                            aria-label={top > 0 ? t("untop.title") : t("top.title")}
+                            onClick={topFeed}
+                            className={`w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center ${
+                              top > 0 
+                                ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
+                                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
+                            }`}
                           >
-                            <i className="ri-link mr-2 text-gray-500"></i>
-                            {linkCopied ? t('copied') : t('copy_link')}
+                            <i className="ri-skip-up-line" />
                           </button>
-                          
-                          {/* 社交媒体分享选项 */}
-                          <button 
-                            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-750 flex items-center text-sm text-gray-700 dark:text-gray-300 transition-colors"
-                            onClick={() => shareToSocialMedia('twitter')}
+                          <Link
+                            aria-label={t("edit")}
+                            href={`/writing/${feed.id}`}
+                            className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
                           >
-                            <i className="ri-twitter-x-line mr-2 text-gray-500"></i>
-                            {t('share_to_twitter')}
-                          </button>
-                          
-                          <button 
-                            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-750 flex items-center text-sm text-gray-700 dark:text-gray-300 transition-colors"
-                            onClick={() => shareToSocialMedia('weibo')}
+                            <i className="ri-edit-2-line" />
+                          </Link>
+                          <button
+                            aria-label={t("delete.title")}
+                            onClick={deleteFeed}
+                            className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
-                            <i className="ri-weibo-line mr-2 text-gray-500"></i>
-                            {t('share_to_weibo')}
-                          </button>
-                          
-                          <button 
-                            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-750 flex items-center text-sm text-gray-700 dark:text-gray-300 transition-colors"
-                            onClick={() => shareToSocialMedia('wechat')}
-                          >
-                            <i className="ri-wechat-line mr-2 text-gray-500"></i>
-                            {t('share_to_wechat')}
+                            <i className="ri-delete-bin-7-line" />
                           </button>
                         </div>
                       )}
                     </div>
-                    
-                    {profile?.permission && (
-                      <div className="flex gap-2">
-                        <button
-                          aria-label={top > 0 ? t("untop.title") : t("top.title")}
-                          onClick={topFeed}
-                          className={`w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center ${
-                            top > 0 
-                              ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
-                              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
-                          }`}
-                        >
-                          <i className="ri-skip-up-line" />
-                        </button>
-                        <Link
-                          aria-label={t("edit")}
-                          href={`/writing/${feed.id}`}
-                          className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
-                        >
-                          <i className="ri-edit-2-line" />
-                        </Link>
-                        <button
-                          aria-label={t("delete.title")}
-                          onClick={deleteFeed}
-                          className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                          <i className="ri-delete-bin-7-line" />
-                        </button>
-                      </div>
-                    )}
                   </div>
+                  
+                  {/* 分隔线 */}
+                  <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700/50 to-transparent my-6"></div>
                 </div>
-                <div className="mt-8 prose prose-lg dark:prose-invert max-w-none toc-content">
+                
+                {/* 文章内容区 */}
+                <div className="mt-6 prose prose-lg dark:prose-invert max-w-none toc-content article-content">
                 <Markdown 
                   content={feed.content} 
                   onReady={() => {
@@ -447,20 +417,14 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                   }}
                 />
                 </div>
-                <div className="mt-10 pt-6 border-t border-gray-100 dark:border-gray-700/30 flex flex-col gap-4">
-                  {feed.hashtags.length > 0 && (
-                    <div className="flex flex-row flex-wrap gap-x-2 gap-y-2">
-                      {feed.hashtags.map(({ name }, index) => (
-                        <span key={`hashtag-${index}`}>
-                          <HashTag name={name} />
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="mt-6 flex flex-col items-center justify-center">
-                    <div className="relative flex-shrink-0 mb-3">
-                    <img
-                      src={feed.user.avatar || "/avatar.png"}
+                
+                {/* 文章底部区域 */}
+                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/30">
+                  {/* 作者信息卡片 */}
+                  <div className="mt-4 flex flex-col items-center justify-center">
+                    <div className="relative flex-shrink-0 mb-2">
+                      <img
+                        src={feed.user.avatar || "/avatar.png"}
                         className="w-16 h-16 rounded-full border-2 border-gray-100 dark:border-gray-700 shadow-sm"
                         alt={feed.user.username}
                       />
@@ -478,84 +442,40 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                   </div>
                 </div>
               </article>
-              <AdjacentSection id={id} setError={setError}/>
-              {feed && <Comments id={`${feed.id}`} />}
+              
+              {/* 相关文章部分 */}
+              <div className="mt-6">
+                <AdjacentSection id={id} setError={setError}/>
+              </div>
+              
+              {/* 评论部分 */}
+              <div className="mt-6">
+                {feed && <Comments id={`${feed.id}`} />}
+              </div>
+              
               <div className="h-16" />
             </main>
-            <aside className="w-full lg:w-64 xl:w-72 order-1 lg:order-2 mt-5 lg:sticky lg:top-20">
-              <div className="flex flex-col gap-5">
-                <div className="lg:hidden flex justify-end">
-                  <TOCHeader TOC={TOC} />
+            
+            {/* 侧边栏 */}
+            <aside className="w-full lg:w-60 xl:w-64 hidden lg:block mt-5 article-sidebar">
+              <div className="sticky top-[5.5rem]">
+                {/* 目录 */}
+                <div className="bg-w rounded-2xl pt-5 px-3 pb-4 mb-5 shadow-sm hover:shadow-md transition-all duration-300">
+                  <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
+                    <i className="ri-list-unordered text-theme"></i>
+                    {t("toc.title", { defaultValue: "目录" })}
+                  </h3>
+                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1 pt-1">
+                    <TOC />
+                  </div>
                 </div>
                 
-                <div className="hidden lg:block">
-                  <div className="bg-w rounded-2xl pt-5 px-3 pb-4 mb-5 shadow-sm hover:shadow-md transition-all duration-300">
-                    <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-                      <i className="ri-list-unordered text-theme"></i>
-                      {t("toc.title", { defaultValue: "目录" })}
-                    </h3>
-                    <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1 pt-1">
-                      <TOC />
-                    </div>
-                  </div>
-                  <div className="bg-w rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
-                    <RecentPosts />
-                  </div>
+                {/* 最近文章 */}
+                <div className="bg-w rounded-2xl shadow-sm">
+                  <RecentPosts />
                 </div>
               </div>
             </aside>
-            
-            {/* 移动设备底部导航栏 */}
-            <div 
-              className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-4 py-2 z-40 transition-transform duration-300 lg:hidden ${showMobileNav ? 'translate-y-0' : 'translate-y-full'}`}
-            >
-              <div className="flex justify-around items-center">
-                <button 
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-                  className="flex flex-col items-center text-gray-600 dark:text-gray-400 hover:text-theme"
-                >
-                  <i className="ri-arrow-up-line text-xl"></i>
-                  <span className="text-xs mt-1">{t("top")}</span>
-                </button>
-                
-                <button 
-                  onClick={() => document.querySelector('.toc-content')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="flex flex-col items-center text-gray-600 dark:text-gray-400 hover:text-theme"
-                >
-                  <i className="ri-book-read-line text-xl"></i>
-                  <span className="text-xs mt-1">{t("read")}</span>
-                </button>
-                
-                <button 
-                  onClick={() => document.querySelector('#comments')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="flex flex-col items-center text-gray-600 dark:text-gray-400 hover:text-theme"
-                >
-                  <i className="ri-chat-1-line text-xl"></i>
-                  <span className="text-xs mt-1">{t("comments")}</span>
-                </button>
-                
-                <button 
-                  className="flex flex-col items-center text-gray-600 dark:text-gray-400 hover:text-theme"
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: feed.title || t('unnamed'),
-                        url: window.location.href
-                      }).catch(err => {
-                        console.error('分享失败:', err);
-                      });
-                    } else {
-                      navigator.clipboard.writeText(window.location.href).then(() => {
-                        showAlert(t('link_copied'));
-                      });
-                    }
-                  }}
-                >
-                  <i className="ri-share-line text-xl"></i>
-                  <span className="text-xs mt-1">{t("share")}</span>
-                </button>
-              </div>
-            </div>
           </>
         )}
       </div>
@@ -647,15 +567,6 @@ function CommentInput({
   const { showAlert, AlertUI } = useAlert();
   const profile = React.useContext(ProfileContext);
   const { LoginModal, setIsOpened } = useLoginModal()
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-  
-  // 自动调整文本区域高度
-  React.useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(200, textareaRef.current.scrollHeight)}px`;
-    }
-  }, [content]);
   
   // 邮箱格式验证函数
   function validateEmail(email: string): boolean {
@@ -721,65 +632,62 @@ function CommentInput({
             setNickname("");
             setEmail("");
           }
-          onRefresh();
-          showAlert(t("comment.success"));
+          setError("");
+          showAlert(t("comment.success"), () => {
+            onRefresh();
+          });
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setSubmitting(false);
-        setError(t("network_error"));
+        setError(String(err));
       });
   }
-
+  
   return (
-    <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-      <div className="bg-gray-50 dark:bg-gray-750 px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-        <h3 className="text-base font-medium flex items-center t-primary">
-          <i className="ri-chat-new-line mr-2 text-theme"></i>
-          {t("comment.title")}
+    <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+      <div className="bg-gray-50 dark:bg-gray-750 px-5 py-3.5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+        <h3 className="text-base font-medium flex items-center gap-2">
+          <i className="ri-chat-new-line text-theme"></i>
+          {isAnonymous ? t("comment.anonymous.title") : t("comment.title")}
         </h3>
-      </div>
-
-      {/* 匿名评论选项 */}
-      {!profile && (
-        <div className="pt-4 px-4">
-          <div className="flex items-center mb-3">
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={isAnonymous} 
-                onChange={() => setIsAnonymous(!isAnonymous)} 
-                className="sr-only peer"
-              />
-              <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:translate-x-[-100%] peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
-              <span className="ms-3 text-sm font-medium t-primary">
-                {t("comment.anonymous.title")}
-              </span>
-            </label>
-          </div>
+        
+        <div className="flex items-center">
+          <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">{t("comment.anonymous.switch")}</span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={isAnonymous}
+              onChange={() => {
+                setIsAnonymous(!isAnonymous);
+                setError("");
+              }}
+            />
+            <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-focus:ring-2 peer-focus:ring-theme-light peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
+          </label>
         </div>
-      )}
+      </div>
       
-      {/* 匿名评论信息表单 */}
       {isAnonymous && (
-        <div className="flex flex-wrap gap-4 px-4">
+        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-3">
           <div className="w-full sm:w-[48%]">
-            <label htmlFor="nickname" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">昵称 (必填)</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                <i className="ri-user-line text-gray-400"></i>
-              </div>
-              <input
+            <label htmlFor="nickname" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">昵称 *</label>
+          <div className="relative">
+            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <i className="ri-user-smile-line text-gray-400"></i>
+            </div>
+            <input
                 id="nickname"
-                type="text"
-                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none transition-colors"
-                placeholder={t("comment.anonymous.nickname_placeholder")}
-                value={nickname}
-                onChange={(e) => {
-                  setNickname(e.target.value);
-                  setError("");
-                }}
-              />
+              type="text"
+                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
+              placeholder={t("comment.anonymous.nickname_placeholder")}
+              value={nickname}
+              onChange={(e) => {
+                setNickname(e.target.value);
+                setError("");
+              }}
+            />
             </div>
           </div>
           
@@ -792,7 +700,7 @@ function CommentInput({
               <input
                 id="email"
                 type="email"
-                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none transition-colors"
+                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
                 placeholder="your@email.com (选填)"
                 value={email}
                 onChange={(e) => {
@@ -816,28 +724,17 @@ function CommentInput({
         </div>
       )}
       
-      {/* 评论输入区 */}
       {(profile || isAnonymous) ? (
         <div className="px-4 py-4">
-          <div className="relative">
-            <textarea
-              ref={textareaRef}
-              placeholder={t("comment.placeholder.title")}
-              className="w-full min-h-24 p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-theme focus:border-theme focus:outline-none resize-y text-sm t-primary transition-colors"
-              value={content}
-              onChange={(e) => {
-                setContent(e.target.value);
-                setError("");
-              }}
-            />
-            
-            {/* 动态显示字数统计 */}
-            {content && (
-              <div className="absolute bottom-2 right-2 text-xs text-gray-400 px-2 py-1 bg-gray-50/80 dark:bg-gray-800/80 rounded">
-                {content.length} 字
-              </div>
-            )}
-          </div>
+          <textarea
+            placeholder={t("comment.placeholder.title")}
+            className="w-full min-h-24 p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-theme focus:border-theme focus:outline-none resize-y text-sm text-gray-900 dark:text-gray-100"
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value);
+              setError("");
+            }}
+          />
           
           <div className="flex justify-between items-center mt-3">
             {error && (
@@ -849,11 +746,11 @@ function CommentInput({
             <div className="flex-grow"></div>
             <button
               disabled={submitting}
-              className={`px-4 py-2 rounded-lg flex items-center text-sm ${
+              className={`px-4 py-2 rounded-2xl flex items-center text-sm ${
                 submitting 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
                   : 'bg-theme text-white hover:bg-theme-hover'
-              } transition-colors`}
+              }`}
               onClick={submit}
             >
               {submitting ? (
@@ -877,10 +774,10 @@ function CommentInput({
             <p className="text-gray-500 dark:text-gray-400 text-sm">{t("login.required")}</p>
           </div>
           <button
-            className="bg-theme text-white px-5 py-2 rounded-lg hover:bg-theme-hover transition-colors flex items-center text-sm"
+            className="bg-theme text-white px-4 py-2 rounded-2xl hover:bg-theme-hover transition-colors flex items-center text-sm"
             onClick={() => setIsOpened(true)}
           >
-            <i className="ri-login-circle-line mr-2"></i>
+            <i className="ri-login-circle-line mr-1"></i>
             {t("login.title")}
           </button>
         </div>
@@ -965,7 +862,7 @@ function Comments({ id }: { id: string }) {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({
-      top: document.getElementById('comments')?.offsetTop || 0,
+      top: document.getElementById('comments-section')?.offsetTop || 0,
       behavior: 'smooth'
     });
   };
@@ -973,7 +870,7 @@ function Comments({ id }: { id: string }) {
   return (
     <>
       {config.get<boolean>('comment.enabled') && (
-        <div id="comments" className="w-full flex flex-col justify-center items-center space-y-5 mt-8 mb-6">
+        <div id="comments-section" className="w-full flex flex-col justify-center items-center space-y-5">
           
           <CommentInput id={id} onRefresh={loadComments} />
           
@@ -994,7 +891,7 @@ function Comments({ id }: { id: string }) {
                 </div>
                 <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{error}</h3>
                 <button
-                  className="mt-2 bg-theme text-white px-4 py-2 rounded-lg hover:bg-theme-hover transition-colors flex items-center text-sm"
+                  className="mt-2 bg-theme text-white px-4 py-2 rounded-2xl hover:bg-theme-hover transition-colors flex items-center text-sm"
                   onClick={loadComments}
                 >
                   <i className="ri-refresh-line mr-1"></i>
@@ -1004,52 +901,57 @@ function Comments({ id }: { id: string }) {
             </div>
           ) : (
             <>
-              <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-                <div className="bg-gray-50 dark:bg-gray-750 px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                  <h3 className="text-base font-medium flex items-center">
-                    <i className="ri-chat-3-line mr-2 text-theme"></i>
-                    {t("comment.list.title", { count: comments.length })}
-                  </h3>
-                  <button
-                    className="text-xs text-gray-500 dark:text-gray-400 flex items-center hover:text-theme transition-colors"
-                    onClick={loadComments}
-                  >
-                    <i className="ri-refresh-line mr-1"></i>
-                    {t("reload")}
-                  </button>
-                </div>
-                
-                <div className="p-4">
-                  {comments.length === 0 ? (
-                    <div className="py-12 flex flex-col items-center">
-                      <i className="ri-chat-off-line text-5xl text-gray-300 dark:text-gray-600 mb-4"></i>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">{t("comment.empty")}</p>
-                      <p className="text-gray-400 dark:text-gray-500 text-xs mt-2">{t("comment.be_first")}</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
+              {comments.length > 0 ? (
+                <div className="w-full space-y-4">
+                  <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="bg-gray-50 dark:bg-gray-750 px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                      <h3 className="text-base font-medium flex items-center">
+                        <i className="ri-chat-3-line mr-2 text-theme"></i>
+                        {t("comment.list.title", { count: comments.length })}
+                      </h3>
+                      <button
+                        className="text-xs text-gray-500 dark:text-gray-400 flex items-center hover:text-theme transition-colors"
+                        onClick={loadComments}
+                      >
+                        <i className="ri-refresh-line mr-1"></i>
+                        {t("reload")}
+                      </button>
+                  </div>
+                  
+                    <div className="p-4 space-y-4">
                       {currentComments.map((comment, idx) => (
-                        <CommentItem
-                          comment={comment}
-                          onRefresh={loadComments}
+                      <CommentItem
+                        comment={comment}
+                        onRefresh={loadComments}
                           key={comment.id || idx}
-                        />
-                      ))}
+                      />
+                    ))}
                     </div>
-                  )}
-                </div>
-                
-                {/* 评论分页控件 */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center py-4 border-t border-gray-100 dark:border-gray-700">
+                  </div>
+                  
+                  {totalPages > 1 && (
+                    <div className="mt-6 flex justify-center">
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
                       onPageChange={handlePageChange}
+                      siblingCount={1}
+                      className=""
+                      aria-label={t("comment.pagination.title", { defaultValue: "评论分页" })}
                     />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="w-full bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm">
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
+                      <i className="ri-chat-1-line text-xl text-gray-400 dark:text-gray-500"></i>
+                    </div>
+                    <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{t("comment.empty_list")}</h3>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1065,30 +967,33 @@ function CommentItem({
   comment: Comment;
   onRefresh: () => void;
 }) {
-  const profile = React.useContext(ProfileContext);
-  const { t } = useTranslation();
   const { showConfirm, ConfirmUI } = useConfirm();
   const { showAlert, AlertUI } = useAlert();
-  const [replyVisible, setReplyVisible] = React.useState(false);
-
+  const { t } = useTranslation();
+  const profile = React.useContext(ProfileContext);
+  
+  // 解析昵称和邮箱
   function parseNicknameAndEmail(nicknameField?: string) {
-    if (!nicknameField) return { nickname: t('anonymous'), email: null };
+    if (!nicknameField) return { nickname: '', email: '' };
     
-    const parts = nicknameField.split('#');
-    if (parts.length > 1) {
-      return { nickname: parts[0], email: parts[1] };
+    const parts = nicknameField.split('|');
+    if (parts.length >= 2) {
+      return {
+        nickname: parts[0],
+        email: parts[1]
+      };
     }
     
-    return { nickname: nicknameField, email: null };
+    return { nickname: nicknameField, email: '' };
   }
-
+  
   function deleteComment() {
     showConfirm(
-      t("comment.delete.title"),
-      t("comment.delete.confirm"),
-      () => {
+      t("delete.comment.title"),
+      t("delete.comment.confirm"),
+      async () => {
         client
-          .feed.comment({ id: comment.id })
+          .comment({ id: comment.id })
           .delete(null, {
             headers: headersWithAuth(),
           })
@@ -1096,115 +1001,92 @@ function CommentItem({
             if (error) {
               showAlert(error.value as string);
             } else {
-              showAlert(t("delete.success"));
-              onRefresh();
+              showAlert(t("delete.success"), () => {
+                onRefresh();
+              });
             }
           });
-      }
-    );
+      })
   }
 
-  const { nickname } = parseNicknameAndEmail(comment.nickname);
-  const isOwner = profile && comment.userId && profile.id === comment.userId;
-  const isAdmin = profile && profile.permission === 1;
+  // 判断是否是匿名评论
+  const isAnonymous = !!comment.nickname;
+  
+  // 解析昵称和邮箱
+  const { nickname: displayName, email: displayEmail } = parseNicknameAndEmail(comment.nickname);
+  
+  // 判断是否有删除权限 - 修改逻辑，使用permission替代admin
+  const canDelete = profile && 
+    (profile.permission || (!isAnonymous && comment.user && profile.id === comment.user.id));
 
   return (
-    <div className="group animate-fadeIn bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4 hover:shadow-sm transition-shadow">
-      <ConfirmUI />
-      <AlertUI />
-      <div className="flex">
-        {/* 用户头像 */}
-        <div className="mr-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 dark:border-gray-600 flex-shrink-0">
-            {comment.user?.avatar ? (
-              <img
-                src={comment.user.avatar}
-                alt={comment.user.username}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300">
-                <i className="ri-user-3-line"></i>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow transition-all duration-300 overflow-hidden">
+      <div className="p-5">
+        <div className="flex justify-between">
+          <div className="flex items-start">
+            {!isAnonymous && comment.user ? (
+              <div className="flex items-center">
+                <div className="relative flex-shrink-0">
+                  <img
+                    className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-gray-700"
+                    src={comment.user.avatar || "/avatar.png"}
+                    alt={comment.user.username}
+                  />
+                  {comment.user.permission && (
+                    <div className="absolute -top-0.5 -right-0.5 bg-theme text-white rounded-full w-4 h-4 flex items-center justify-center">
+                      <i className="ri-verified-badge-fill text-[10px]"></i>
+                    </div>
+                  )}
+                </div>
+                <div className="ml-3">
+                  <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">{comment.user.username}</h4>
+                  <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
+                    addSuffix: true,
+                  })}</span>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* 评论内容区 */}
-        <div className="flex-1 min-w-0">
-          {/* 用户信息和日期 */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center">
-              <span className="font-medium text-gray-900 dark:text-white mr-2">
-                {comment.user ? comment.user.username : nickname}
-              </span>
-              {comment.user?.permission === 1 && (
-                <span className="bg-theme/10 text-theme text-xs px-1.5 py-0.5 rounded flex items-center">
-                  <i className="ri-admin-line mr-0.5"></i>
-                  {t("admin")}
-                </span>
-              )}
-            </div>
-            <div className="text-xs text-gray-400 dark:text-gray-500">
-              {formatDistance(
-                new Date(comment.createdAt),
-                new Date(),
-                {
-                  addSuffix: true,
-                }
-              )}
-            </div>
-          </div>
-
-          {/* 评论文本内容 */}
-          <div className="text-gray-800 dark:text-gray-200 text-sm whitespace-pre-wrap break-words">
-            {comment.content}
-          </div>
-
-          {/* 操作按钮 */}
-          <div className="mt-3 flex items-center text-xs text-gray-500 dark:text-gray-400">
-            <button 
-              onClick={() => setReplyVisible(!replyVisible)} 
-              className="flex items-center hover:text-theme transition-colors mr-4"
-            >
-              <i className="ri-reply-line mr-1"></i>
-              {t("reply")}
-            </button>
-            {(isOwner || isAdmin) && (
-              <button 
-                onClick={deleteComment} 
-                className="flex items-center hover:text-red-500 transition-colors"
-              >
-                <i className="ri-delete-bin-line mr-1"></i>
-                {t("delete")}
-              </button>
+            ) : (
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                  <i className="ri-user-line text-gray-400 dark:text-gray-500"></i>
+                </div>
+                <div className="ml-3">
+                  <div className="flex items-center">
+                    <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">{displayName}</h4>
+                    <span className="ml-2 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">{t("comment.anonymous.tag")}</span>
+                  </div>
+                  {displayEmail && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-0.5 mb-0.5">
+                      <i className="ri-mail-line mr-1 text-xs"></i>
+                      {displayEmail}
+                    </div>
+                  )}
+                  <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
+                    addSuffix: true,
+                  })}</span>
+                </div>
+              </div>
             )}
           </div>
           
-          {/* 快速回复表单 */}
-          {replyVisible && (
-            <div className="mt-3 border-t border-gray-100 dark:border-gray-700 pt-3">
-              <div className="relative">
-                <textarea 
-                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 p-2 bg-gray-50 dark:bg-gray-750 text-sm text-gray-800 dark:text-gray-200 focus:ring-theme focus:border-theme focus:outline-none"
-                  placeholder={t("comment.reply_to", { name: comment.user ? comment.user.username : nickname })}
-                  rows={3}
-                ></textarea>
-                <div className="flex justify-end mt-2">
-                  <button 
-                    className="py-1.5 px-3 bg-theme text-white text-xs rounded-lg hover:bg-theme-hover transition-colors"
-                    onClick={() => setReplyVisible(false)}
-                  >
-                    <i className="ri-send-plane-fill mr-1"></i>
-                    {t("submit")}
-                  </button>
-                </div>
-              </div>
-            </div>
+          {canDelete && (
+            <button
+              className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors text-sm flex items-center"
+              onClick={deleteComment}
+              title={t("delete.title")}
+            >
+              <i className="ri-delete-bin-line"></i>
+            </button>
           )}
         </div>
+        
+        <div className="mt-4 pt-4 border-t border-gray-50 dark:border-gray-700/30 prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+          <Markdown content={comment.content} />
+        </div>
       </div>
+      
+      <ConfirmUI />
+      <AlertUI />
     </div>
   );
 }

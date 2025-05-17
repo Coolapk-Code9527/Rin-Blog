@@ -94,7 +94,7 @@ const OptimizedImage = React.memo(({
     : '';
   
   return (
-    <div className="relative flex justify-center items-center my-6 rounded-lg overflow-hidden">
+    <div className="relative flex justify-center items-center">
       {!imageState.loaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
           <Loading type="spin" height={24} width={24} color="#FC466B" />
@@ -114,7 +114,7 @@ const OptimizedImage = React.memo(({
         data-src={src}
         alt={alt}
         onClick={onClick}
-        className={`${className} transition-opacity duration-300 ${imageState.loaded ? 'opacity-100' : 'opacity-0'} max-h-[70vh] object-contain`}
+        className={`${className} transition-opacity duration-300 ${imageState.loaded ? 'opacity-100' : 'opacity-0'}`}
         style={style}
         onLoad={handleLoad}
         onError={handleError}
@@ -156,6 +156,15 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
   return false;
 };
 
+// 添加复制到剪贴板功能
+function copyToClipboard(text: string) {
+  navigator.clipboard.writeText(text).then(() => {
+    // 可以添加复制成功提示
+  }).catch(err => {
+    console.error('复制失败:', err);
+  });
+}
+
 export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
   const colorMode = useColorMode();
   const [index, setIndex] = React.useState(-1);
@@ -163,7 +172,6 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
   const { t } = useTranslation();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isReady, setIsReady] = useState(false);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   useEffect(() => {
     slides.current = undefined;
@@ -218,13 +226,6 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
     }
   };
 
-  const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopiedCode(code);
-      setTimeout(() => setCopiedCode(null), 2000);
-    });
-  };
-
   const Content = useMemo(() => (
     <ReactMarkdown
       className="toc-content dark:text-neutral-300"
@@ -232,257 +233,361 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
       children={content}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
-        img({ node, src, ...props }) {
-          const offset = node!.position!.start.offset!;
-          const previousContent = content.slice(0, offset);
-          const newlinesBefore = countNewlinesBeforeNode(
-            previousContent,
-            offset
-          );
+        img({ node, src, alt, ...props }) {
+          const [isLoaded, setIsLoaded] = React.useState(false);
+          const [isError, setIsError] = React.useState(false);
           
-          // 优化的图片组件
-          const ImageComponent = ({
-            rounded,
-            scale,
-          }: {
-            rounded: boolean;
-            scale: string;
-          }) => (
-            <OptimizedImage
-              src={src}
-              alt={props.alt}
-              onClick={() => show(src)}
-              className={`mx-auto shadow-lg ${rounded ? "rounded-lg" : ""} hover:shadow-xl transition-shadow duration-300`}
-              style={{ zoom: scale }}
-            />
-          );
-
-          if (newlinesBefore >= 2) {
-            return <ImageComponent rounded scale="1" />;
-          }
-
-          const prevText = previousContent.split("\n").pop() || "";
-
-          if (isMarkdownImageLinkAtEnd(prevText)) {
-            return <ImageComponent rounded scale="1" />;
-          }
-
-          return <ImageComponent rounded scale="1" />;
-        },
-
-        code(props) {
-          const { className, children, node, ...rest } = props;
-          const match = /language-(\w+)/.exec(className || "");
-
-          if (!match) {
-            return (
-              <code
-                className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-sm font-mono t-primary"
-                {...rest}
-              >
-                {children}
-              </code>
-            );
-          }
-
-          // 提取代码内容并去除额外换行
-          const codeString = String(children).replace(/\n$/, "");
-          const language = match[1];
-
+          // 检测是否为表情符号
+          const isEmoji = src && src.includes('emoji');
+          
           return (
-            <div className="relative group my-6">
-              <div className="absolute top-0 right-0 m-2 z-10">
-                <button
-                  onClick={() => handleCopyCode(codeString)}
-                  className={`px-2 py-1 text-xs rounded-md transition-all focus:outline-none ${
-                    copiedCode === codeString
-                      ? "bg-green-500/90 text-white"
-                      : "bg-gray-700/50 hover:bg-gray-700/80 text-gray-200 opacity-0 group-hover:opacity-100"
-                  }`}
-                >
-                  {copiedCode === codeString ? t("copied") : t("copy")}
-                </button>
-              </div>
-              <SyntaxHighlighter
-                style={colorMode === "dark" ? oneDarkStyle : oneLightStyle}
-                language={language}
-                customStyle={{
-                  padding: "1.5rem",
-                  borderRadius: "0.5rem",
-                  fontSize: "0.9rem",
-                  lineHeight: "1.5",
-                  margin: "0",
+            <div className={`image-container relative ${isEmoji ? 'inline-block align-middle' : 'w-full my-6 flex justify-center'}`}>
+              {!isLoaded && !isError && !isEmoji && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
+                  <div className="w-10 h-10 border-2 border-theme border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+              
+              {isError && !isEmoji && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 rounded p-4">
+                  <i className="ri-image-line text-2xl text-red-500 mb-2"></i>
+                  <p className="text-sm text-gray-500 text-center">{alt || '图片加载失败'}</p>
+                </div>
+              )}
+              
+              <img
+                src={src}
+                alt={alt}
+                loading="lazy"
+                decoding="async"
+                onLoad={() => setIsLoaded(true)}
+                onError={() => {
+                  setIsError(true);
+                  setIsLoaded(true);
                 }}
-              >
-                {codeString}
-              </SyntaxHighlighter>
+                onClick={() => !isEmoji && show(src)}
+                className={`${isEmoji ? 'inline-block h-6 w-6 align-middle m-0' : 'max-w-full rounded-lg shadow-sm hover:shadow-md transition-shadow'} ${
+                  isLoaded ? 'opacity-100' : 'opacity-0'
+                } ${!isEmoji ? 'cursor-zoom-in' : ''}`}
+                {...props}
+              />
             </div>
           );
         },
-
+        code({ node, inline, className, children, ...props }) {
+          const match = /language-(\w+)/.exec(className || '');
+          const language = match && match[1] ? match[1] : '';
+          
+          if (!inline && match) {
+            return (
+              <div className="code-block-container relative group my-6 rounded-lg overflow-hidden">
+                {/* 语言标签 */}
+                {language && (
+                  <div className="code-language absolute top-2 right-2 px-2 py-0.5 bg-gray-700/50 text-gray-300 text-xs rounded-md font-mono z-10">
+                    {language}
+                  </div>
+                )}
+                
+                {/* 复制按钮 */}
+                <button 
+                  onClick={() => copyToClipboard(String(children).replace(/\n$/, ''))}
+                  className="copy-button absolute top-2 right-16 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-2 py-0.5 bg-theme/80 hover:bg-theme text-white text-xs rounded-md"
+                  aria-label="复制代码"
+                >
+                  <i className="ri-file-copy-line mr-1"></i>
+                  复制
+                </button>
+                
+                <SyntaxHighlighter
+                  style={colorMode === 'dark' ? oneDarkStyle : oneLightStyle}
+                  language={language}
+                  PreTag="div"
+                  wrapLongLines={true}
+                  {...props}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              </div>
+            );
+          }
+          
+          return (
+            <code className={`px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-theme rounded text-sm ${className}`} {...props}>
+              {children}
+            </code>
+          );
+        },
         blockquote({ children, ...props }) {
           return (
-            <blockquote
-              className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 py-2 text-gray-600 dark:text-gray-300 my-6"
+            <blockquote 
+              className="border-l-4 border-theme pl-4 py-1 my-6 bg-gray-50 dark:bg-gray-800/50 rounded-r-lg" 
               {...props}
             >
               {children}
             </blockquote>
           );
         },
-
         em({ children, ...props }) {
           return (
-            <em className="text-gray-700 dark:text-gray-300 font-italic" {...props}>
+            <em className="italic text-gray-800 dark:text-gray-200" {...props}>
               {children}
             </em>
           );
         },
-
         strong({ children, ...props }) {
           return (
-            <strong className="font-bold text-gray-800 dark:text-gray-100" {...props}>
+            <strong className="font-bold text-gray-900 dark:text-white" {...props}>
               {children}
             </strong>
           );
         },
 
         ul({ children, className, ...props }) {
+          const listClass = className?.includes("contains-task-list")
+            ? "list-none pl-2 my-4 space-y-1"
+            : "list-disc pl-6 my-4 space-y-1";
           return (
-            <ul
-              className={`list-disc pl-5 my-4 space-y-2 text-gray-700 dark:text-gray-300 ${className || ""}`}
-              {...props}
-            >
+            <ul className={listClass} {...props}>
               {children}
             </ul>
           );
         },
-
         ol({ children, ...props }) {
           return (
-            <ol className="list-decimal pl-5 my-4 space-y-2 text-gray-700 dark:text-gray-300" {...props}>
+            <ol className="list-decimal pl-6 my-4 space-y-1" {...props}>
               {children}
             </ol>
           );
         },
-
         li({ children, ...props }) {
           return (
-            <li className="my-1" {...props}>
+            <li className="mb-1" {...props}>
               {children}
             </li>
           );
         },
-
         a({ children, ...props }) {
           return (
             <a
-              className="text-theme hover:text-theme-dark underline transition-colors"
-              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 font-medium relative hover:text-blue-800 dark:hover:text-blue-300"
               {...props}
             >
               {children}
             </a>
           );
         },
-
         h1({ children, ...props }) {
           return (
             <h1
-              className="text-3xl sm:text-4xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 t-primary"
+              id={children?.toString()}
+              className="text-3xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
             </h1>
           );
         },
-
         h2({ children, ...props }) {
           return (
             <h2
-              className="text-2xl sm:text-3xl font-bold mt-6 mb-4 pb-1 border-b border-gray-200 dark:border-gray-700 t-primary"
+              id={children?.toString()}
+              className="text-2xl font-bold mt-6 mb-4 pb-1 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
             </h2>
           );
         },
-
         h3({ children, ...props }) {
           return (
             <h3
-              className="text-xl sm:text-2xl font-bold mt-6 mb-3 t-primary"
+              id={children?.toString()}
+              className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
             </h3>
           );
         },
-
         h4({ children, ...props }) {
           return (
             <h4
-              className="text-lg sm:text-xl font-bold mt-5 mb-3 t-primary"
+              id={children?.toString()}
+              className="text-lg font-bold mt-4 mb-3 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
             </h4>
           );
         },
-
         h5({ children, ...props }) {
           return (
             <h5
-              className="text-base sm:text-lg font-bold mt-4 mb-2 t-primary"
+              id={children?.toString()}
+              className="text-base font-bold mt-4 mb-2 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
             </h5>
           );
         },
-
         h6({ children, ...props }) {
           return (
             <h6
-              className="text-sm sm:text-base font-bold mt-4 mb-2 t-primary"
+              id={children?.toString()}
+              className="text-sm font-bold mt-4 mb-2 text-gray-700 dark:text-gray-300"
               {...props}
             >
               {children}
             </h6>
           );
         },
-
         p({ children, node, ...props }) {
+          // 检测段落中是否只包含图片
+          const childArray = React.Children.toArray(children);
+          const containsOnlyImage = childArray.length === 1 && 
+            React.isValidElement(childArray[0]) && 
+            (childArray[0].type === 'img' || (childArray[0].props && childArray[0].props.src));
+          
+          if (containsOnlyImage) {
+            return (
+              <figure className="my-8 text-center">
+                {children}
+              </figure>
+            );
+          }
+          
+          return <p className="mb-4 leading-relaxed" {...props}>{children}</p>;
+        },
+        hr({ children, ...props }) {
+          return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" {...props} />;
+        },
+        table: ({ node, ...props }) => {
+          // 检测是否为URL表格
+          let isUrlTable = false;
+          try {
+            // 检查表头是否包含URL列
+            const headerRow = node?.children?.[0]?.children?.[0];
+            const headerCells = headerRow?.children || [];
+            
+            // 判断表头是否包含URL或链接相关词汇
+            const hasUrlHeader = headerCells.some(cell => {
+              const cellText = cell?.children?.[0]?.value || '';
+              return /url|link|地址|链接/i.test(cellText);
+            });
+            
+            // 判断第二列是否包含多个URL格式内容
+            const bodyRows = (node?.children?.[1]?.children || []).slice(0, 3); // 获取前几行
+            let urlCount = 0;
+            
+            bodyRows.forEach(row => {
+              const cells = row?.children || [];
+              if (cells[1]) { // 第二列
+                const cellContent = cells[1]?.children?.[0]?.value || '';
+                if (/https?:\/\/[^\s]+/.test(cellContent)) {
+                  urlCount++;
+                }
+              }
+            });
+            
+            isUrlTable = hasUrlHeader || urlCount >= 2;
+          } catch (e) {
+            // 忽略错误
+          }
+          
+          const tableClass = isUrlTable ? 'table responsive url-table' : 'table responsive';
+          
           return (
-            <p className="my-4 leading-relaxed text-gray-700 dark:text-gray-300" {...props}>
-              {children}
-            </p>
+            <div className="overflow-hidden my-6">
+              <table className={tableClass + " w-full"} {...props} />
+            </div>
           );
         },
-
-        hr({ children, ...props }) {
+        th: ({ node, children, ...props }) => (
+          <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider" {...props}>
+            {children}
+          </th>
+        ),
+        td: ({ node, children, ...props }) => {
+          // 获取表头文本用于响应式显示
+          let headerText = '';
+          try {
+            const rowIndex = node?.position?.start?.line;
+            const table = node?.parent?.parent;
+            const headerRow = table?.children?.[0]?.children?.[0];
+            const cellIndex = node?.parent?.children?.findIndex(cell => cell === node);
+            
+            if (headerRow && cellIndex !== undefined && cellIndex >= 0) {
+              const headerCell = headerRow?.children?.[cellIndex];
+              headerText = headerCell?.children?.[0]?.value || '';
+            }
+          } catch (e) {
+            // 忽略错误，使用默认空字符串
+          }
+          
           return (
-            <hr
-              className="my-8 border-gray-200 dark:border-gray-700"
-              {...props}
-            />
+            <td className="px-4 py-3 whitespace-normal break-words" data-label={headerText} {...props}>
+              {children}
+            </td>
           );
+        },
+        sup: ({ children, ...props }) => (
+          <sup className="text-xs mr-[4px]" {...props}>
+            {children}
+          </sup>
+        ),
+        sub: ({ children, ...props }) => (
+          <sub className="text-xs mr-[4px]" {...props}>
+            {children}
+          </sub>
+        ),
+        section({ children, ...props }) {
+          if (props.hasOwnProperty("data-footnotes")) {
+            props.className = `${props.className || ""} mt-8`.trim();
+          }
+          const modifiedChildren = React.Children.map(children, (child) => {
+            if (isValidElement(child) && child.props.node.tagName === "ol") {
+              return cloneElement(child, {
+                ...child.props,
+                className: "list-decimal px-10 text-sm text-[#6B7280]",
+              } as React.HTMLAttributes<HTMLParagraphElement>);
+            }
+            return child;
+          });
+          return <section {...props}>{modifiedChildren}</section>;
+        },
+        div({ children, node, ...props }) {
+          return <div {...props}>{children}</div>;
         },
       }}
     />
-  ), [content, colorMode, t, copiedCode, imageUrls]);
+  ), [content, colorMode, imageUrls]);
 
   return (
     <>
+      {Content}
       <Lightbox
         open={index >= 0}
-        index={index}
         close={() => setIndex(-1)}
+        index={index}
         slides={generateSlides()}
-        plugins={[Counter, Download, Zoom]}
-        controller={{ closeOnBackdropClick: true }}
+        plugins={[Counter, Zoom, Download]}
+        controller={{
+          closeOnBackdropClick: true,
+          closeOnPullDown: true
+        }}
+        carousel={{
+          finite: imageUrls.length <= 1
+        }}
+        zoom={{
+          maxZoomPixelRatio: 5,
+          zoomInMultiplier: 2
+        }}
+        render={{
+          buttonPrev: imageUrls.length <= 1 ? () => null : undefined,
+          buttonNext: imageUrls.length <= 1 ? () => null : undefined,
+        }}
       />
-      {Content}
     </>
   );
 }
