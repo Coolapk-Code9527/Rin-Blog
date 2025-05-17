@@ -7,16 +7,15 @@
   "alias": "别名",
   "article": {
     "delete": {
-      "confirm": "确认删除此文章吗？",
+      "confirm": "确定删除这篇文章吗？",
       "title": "删除文章"
     },
-    "reading_time": "预计阅读 {{time}} 分钟",
     "search": {
-      "placeholder": "请输入关键词",
+      "placeholder": "请输入关键字",
       "title": "搜索",
-      "title$keyword": "搜索结果：{{keyword}}",
+      "title$keyword": "搜索：{{keyword}}",
       "history": "搜索历史",
-      "clear_history": "清空历史"
+      "clear_history": "清除历史"
     },
     "title": "文章",
     "top": {

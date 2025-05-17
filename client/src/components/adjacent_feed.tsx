@@ -132,12 +132,8 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     }, [id, setError]);
     
     return (
-        <div className="w-full mt-5 sm:mt-6 mb-3 sm:mb-4">
-            <h3 className="text-base sm:text-lg font-medium t-primary mb-3 flex items-center">
-                <i className="ri-navigation-fill text-theme mr-2"></i>
-                {t("article.navigation")}
-            </h3>
-            <div className="rounded-xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700">
+        <div className="w-full mt-3 sm:mt-4 mb-3 sm:mb-4">
+            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700">
                 <AdjacentCard 
                     data={adjacentFeeds?.previousFeed}
                     type="previous"
@@ -171,21 +167,17 @@ export function AdjacentCard({
     
     if (!data) {
         return (
-            <div className="w-full p-4 sm:p-5 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center min-h-24">
-                <span className="text-sm text-gray-400 flex items-center">
-                    {type === "previous" ? <i className="ri-arrow-left-line mr-1.5"></i> : null}
-                    {t('no_more')}
-                    {type === "next" ? <i className="ri-arrow-right-line ml-1.5"></i> : null}
-                </span>
+            <div className="w-full p-3 sm:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center">
+                <span className="text-sm text-gray-400">{t('no_more')}</span>
             </div>
         );
     }
     
     return (
         <Link href={`/feed/${data.id}`} 
-              className={`w-full p-3 xs:p-4 sm:p-5 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group`}>
-            <div className={`flex items-center gap-3 sm:gap-4 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden">
+              className={`w-full p-2.5 xs:p-3 sm:p-4 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group`}>
+            <div className={`flex items-center gap-2 sm:gap-3 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
+                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden">
                     {loading ? (
                         <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center animate-pulse">
                             <i className="ri-image-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
@@ -209,7 +201,6 @@ export function AdjacentCard({
                                     }
                                 }}
                             />
-                            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300"></div>
                         </div>
                     ) : (
                         <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
@@ -218,7 +209,10 @@ export function AdjacentCard({
                     )}
                 </div>
                 <div className={`flex-1 ${direction}`}>
-                    <div className={`flex items-center text-xs text-gray-400 mb-1.5 ${type === "next" ? "justify-end" : "justify-start"}`}>
+                    <h2 className={`text-sm sm:text-base font-medium text-gray-700 dark:text-white line-clamp-2 group-hover:text-theme transition-colors`}>
+                        {data.title}
+                    </h2>
+                    <div className={`flex items-center text-xs text-gray-400 mt-1.5 ${type === "next" ? "justify-end" : "justify-start"}`}>
                         {type === "previous" ? (
                             <span className="flex items-center transition-transform group-hover:-translate-x-0.5">
                                 <i className="ri-arrow-left-line mr-1 text-theme"></i> {t("previous")}
@@ -229,9 +223,6 @@ export function AdjacentCard({
                             </span>
                         )}
                     </div>
-                    <h2 className={`text-sm sm:text-base font-medium text-gray-700 dark:text-white line-clamp-2 group-hover:text-theme transition-colors`}>
-                        {data.title}
-                    </h2>
                 </div>
             </div>
         </Link>

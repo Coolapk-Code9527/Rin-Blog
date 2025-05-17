@@ -94,7 +94,7 @@ const OptimizedImage = React.memo(({
     : '';
   
   return (
-    <div className="relative flex justify-center items-center">
+    <div className="relative flex justify-center items-center my-6 rounded-lg overflow-hidden">
       {!imageState.loaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
           <Loading type="spin" height={24} width={24} color="#FC466B" />
@@ -114,7 +114,7 @@ const OptimizedImage = React.memo(({
         data-src={src}
         alt={alt}
         onClick={onClick}
-        className={`${className} transition-opacity duration-300 ${imageState.loaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`${className} transition-opacity duration-300 ${imageState.loaded ? 'opacity-100' : 'opacity-0'} max-h-[70vh] object-contain`}
         style={style}
         onLoad={handleLoad}
         onError={handleError}
@@ -163,6 +163,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
   const { t } = useTranslation();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isReady, setIsReady] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   useEffect(() => {
     slides.current = undefined;
@@ -217,6 +218,13 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
     }
   };
 
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 2000);
+    });
+  };
+
   const Content = useMemo(() => (
     <ReactMarkdown
       className="toc-content dark:text-neutral-300"
@@ -244,409 +252,237 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
               src={src}
               alt={props.alt}
               onClick={() => show(src)}
-              className={`mx-auto ${rounded ? "rounded-xl" : ""}`}
+              className={`mx-auto shadow-lg ${rounded ? "rounded-lg" : ""} hover:shadow-xl transition-shadow duration-300`}
               style={{ zoom: scale }}
             />
           );
-          
-          if (
-            newlinesBefore >= 1 ||
-            previousContent.trim().length === 0 ||
-            isMarkdownImageLinkAtEnd(previousContent)
-          ) {
-            return (
-              <span className="block w-full text-center my-4">
-                <ImageComponent scale="0.75" rounded={true} />
-              </span>
-            );
-          } else {
-            return (
-              <span className="inline-block align-middle mx-1">
-                <ImageComponent scale="0.5" rounded={false} />
-              </span>
-            );
+
+          if (newlinesBefore >= 2) {
+            return <ImageComponent rounded scale="1" />;
           }
+
+          const prevText = previousContent.split("\n").pop() || "";
+
+          if (isMarkdownImageLinkAtEnd(prevText)) {
+            return <ImageComponent rounded scale="1" />;
+          }
+
+          return <ImageComponent rounded scale="1" />;
         },
+
         code(props) {
-          const [copied, setCopied] = React.useState(false);
-          const { children, className, node, ...rest } = props;
+          const { className, children, node, ...rest } = props;
           const match = /language-(\w+)/.exec(className || "");
 
-          const curContent = content.slice(node?.position?.start.offset || 0);
-          const isCodeBlock = curContent.trimStart().startsWith("```");
-
-          const codeBlockStyle = {
-            fontFamily: 'var(--font-mono)',
-            fontSize: "14px",
-            fontVariantLigatures: "normal",
-            WebkitFontFeatureSettings: '"liga" 1',
-            fontFeatureSettings: '"liga" 1',
-          };
-
-          const inlineCodeStyle = {
-            ...codeBlockStyle,
-            fontSize: "13px",
-          };
-
-          const language = match ? match[1] : "";
-
-          if (isCodeBlock) {
-            return (
-              <div className="relative group my-6">
-                <SyntaxHighlighter
-                  PreTag="div"
-                  className="rounded-lg"
-                  language={language}
-                  style={
-                    colorMode === "dark"
-                      ? oneDarkStyle
-                      : oneLightStyle
-                  }
-                  wrapLongLines={true}
-                  showLineNumbers={true}
-                  lineNumberStyle={{ 
-                    minWidth: '2.5em', 
-                    paddingRight: '1em', 
-                    color: colorMode === 'dark' ? '#606366' : '#a5a5a5',
-                    textAlign: 'right',
-                    userSelect: 'none'
-                  }}
-                  customStyle={{
-                    margin: '0', 
-                    padding: '1.25em',
-                    borderRadius: '0',
-                    borderBottomLeftRadius: '0.75rem',
-                    borderBottomRightRadius: '0.75rem',
-                    fontSize: '14px',
-                    lineHeight: '1.6',
-                    boxShadow: 'none',
-                    borderTop: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
-                    borderLeft: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
-                    borderRight: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
-                    borderBottom: 'none',
-                    background: colorMode === 'dark' 
-                      ? '#1e1e2e' 
-                      : '#f8f9fc',
-                    overflow: 'auto', 
-                    maxHeight: '600px'
-                  }}
-                  codeTagProps={{ 
-                    style: {
-                      ...codeBlockStyle,
-                      fontWeight: 500
-                    } 
-                  }}
-                >
-                  {String(children).replace(/\n$/, "")}
-                </SyntaxHighlighter>
-                <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {language && (
-                    <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs text-gray-600 dark:text-gray-300 select-none shadow-sm">
-                      {language}
-                    </span>
-                  )}
-                  <button 
-                    className="px-2 py-1 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-md text-xs flex items-center gap-1 shadow-sm hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
-                    onClick={() => {
-                      navigator.clipboard.writeText(String(children));
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }}
-                  >
-                    {copied ? (
-                      <>
-                        <i className="ri-check-line" />
-                        <span>{t('code.copied')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <i className="ri-file-copy-line" />
-                        <span>{t('code.copy')}</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            );
-          } else {
+          if (!match) {
             return (
               <code
+                className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-sm font-mono t-primary"
                 {...rest}
-                className={`font-mono text-sm px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700 ${className || ""}`}
-                style={inlineCodeStyle}
               >
                 {children}
               </code>
             );
           }
+
+          // 提取代码内容并去除额外换行
+          const codeString = String(children).replace(/\n$/, "");
+          const language = match[1];
+
+          return (
+            <div className="relative group my-6">
+              <div className="absolute top-0 right-0 m-2 z-10">
+                <button
+                  onClick={() => handleCopyCode(codeString)}
+                  className={`px-2 py-1 text-xs rounded-md transition-all focus:outline-none ${
+                    copiedCode === codeString
+                      ? "bg-green-500/90 text-white"
+                      : "bg-gray-700/50 hover:bg-gray-700/80 text-gray-200 opacity-0 group-hover:opacity-100"
+                  }`}
+                >
+                  {copiedCode === codeString ? t("copied") : t("copy")}
+                </button>
+              </div>
+              <SyntaxHighlighter
+                style={colorMode === "dark" ? oneDarkStyle : oneLightStyle}
+                language={language}
+                customStyle={{
+                  padding: "1.5rem",
+                  borderRadius: "0.5rem",
+                  fontSize: "0.9rem",
+                  lineHeight: "1.5",
+                  margin: "0",
+                }}
+              >
+                {codeString}
+              </SyntaxHighlighter>
+            </div>
+          );
         },
+
         blockquote({ children, ...props }) {
           return (
             <blockquote
-              className="border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 pl-4 py-1 rounded-r-md italic text-gray-700 dark:text-gray-300"
+              className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 py-2 text-gray-600 dark:text-gray-300 my-6"
               {...props}
             >
               {children}
             </blockquote>
           );
         },
+
         em({ children, ...props }) {
           return (
-            <em className="italic text-gray-800 dark:text-gray-200" {...props}>
+            <em className="text-gray-700 dark:text-gray-300 font-italic" {...props}>
               {children}
             </em>
           );
         },
+
         strong({ children, ...props }) {
           return (
-            <strong className="font-bold text-gray-900 dark:text-white" {...props}>
+            <strong className="font-bold text-gray-800 dark:text-gray-100" {...props}>
               {children}
             </strong>
           );
         },
 
         ul({ children, className, ...props }) {
-          const listClass = className?.includes("contains-task-list")
-            ? "list-none pl-2 my-4 space-y-1"
-            : "list-disc pl-6 my-4 space-y-1";
           return (
-            <ul className={listClass} {...props}>
+            <ul
+              className={`list-disc pl-5 my-4 space-y-2 text-gray-700 dark:text-gray-300 ${className || ""}`}
+              {...props}
+            >
               {children}
             </ul>
           );
         },
+
         ol({ children, ...props }) {
           return (
-            <ol className="list-decimal pl-6 my-4 space-y-1" {...props}>
+            <ol className="list-decimal pl-5 my-4 space-y-2 text-gray-700 dark:text-gray-300" {...props}>
               {children}
             </ol>
           );
         },
+
         li({ children, ...props }) {
           return (
-            <li className="mb-1" {...props}>
+            <li className="my-1" {...props}>
               {children}
             </li>
           );
         },
+
         a({ children, ...props }) {
           return (
             <a
-              className="text-blue-600 dark:text-blue-400 font-medium relative hover:text-blue-800 dark:hover:text-blue-300"
+              className="text-theme hover:text-theme-dark underline transition-colors"
+              rel="noopener noreferrer"
               {...props}
             >
               {children}
             </a>
           );
         },
+
         h1({ children, ...props }) {
           return (
             <h1
-              id={children?.toString()}
-              className="text-3xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
+              className="text-3xl sm:text-4xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 t-primary"
               {...props}
             >
               {children}
             </h1>
           );
         },
+
         h2({ children, ...props }) {
           return (
             <h2
-              id={children?.toString()}
-              className="text-2xl font-bold mt-6 mb-4 pb-1 text-gray-900 dark:text-white"
+              className="text-2xl sm:text-3xl font-bold mt-6 mb-4 pb-1 border-b border-gray-200 dark:border-gray-700 t-primary"
               {...props}
             >
               {children}
             </h2>
           );
         },
+
         h3({ children, ...props }) {
           return (
             <h3
-              id={children?.toString()}
-              className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white"
+              className="text-xl sm:text-2xl font-bold mt-6 mb-3 t-primary"
               {...props}
             >
               {children}
             </h3>
           );
         },
+
         h4({ children, ...props }) {
           return (
             <h4
-              id={children?.toString()}
-              className="text-lg font-bold mt-4 mb-3 text-gray-900 dark:text-white"
+              className="text-lg sm:text-xl font-bold mt-5 mb-3 t-primary"
               {...props}
             >
               {children}
             </h4>
           );
         },
+
         h5({ children, ...props }) {
           return (
             <h5
-              id={children?.toString()}
-              className="text-base font-bold mt-4 mb-2 text-gray-900 dark:text-white"
+              className="text-base sm:text-lg font-bold mt-4 mb-2 t-primary"
               {...props}
             >
               {children}
             </h5>
           );
         },
+
         h6({ children, ...props }) {
           return (
             <h6
-              id={children?.toString()}
-              className="text-sm font-bold mt-4 mb-2 text-gray-700 dark:text-gray-300"
+              className="text-sm sm:text-base font-bold mt-4 mb-2 t-primary"
               {...props}
             >
               {children}
             </h6>
           );
         },
+
         p({ children, node, ...props }) {
-          // 检查是否为图片后的描述文本
-          const isImageCaption = 
-            node?.children?.length === 1 && 
-            node?.children[0]?.type === "emphasis" && 
-            node?.prev?.children?.some(child => child.type === "image");
-          
           return (
-            <p className={`${isImageCaption ? "text-center text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-4" : "mt-2 py-1"}`} {...props}>
+            <p className="my-4 leading-relaxed text-gray-700 dark:text-gray-300" {...props}>
               {children}
             </p>
           );
         },
+
         hr({ children, ...props }) {
-          return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" {...props} />;
-        },
-        table: ({ node, ...props }) => {
-          // 检测是否为URL表格
-          let isUrlTable = false;
-          try {
-            // 检查表头是否包含URL列
-            const headerRow = node?.children?.[0]?.children?.[0];
-            const headerCells = headerRow?.children || [];
-            
-            // 判断表头是否包含URL或链接相关词汇
-            const hasUrlHeader = headerCells.some(cell => {
-              const cellText = cell?.children?.[0]?.value || '';
-              return /url|link|地址|链接/i.test(cellText);
-            });
-            
-            // 判断第二列是否包含多个URL格式内容
-            const bodyRows = (node?.children?.[1]?.children || []).slice(0, 3); // 获取前几行
-            let urlCount = 0;
-            
-            bodyRows.forEach(row => {
-              const cells = row?.children || [];
-              if (cells[1]) { // 第二列
-                const cellContent = cells[1]?.children?.[0]?.value || '';
-                if (/https?:\/\/[^\s]+/.test(cellContent)) {
-                  urlCount++;
-                }
-              }
-            });
-            
-            isUrlTable = hasUrlHeader || urlCount >= 2;
-          } catch (e) {
-            // 忽略错误
-          }
-          
-          const tableClass = isUrlTable ? 'table responsive url-table' : 'table responsive';
-          
           return (
-            <div className="overflow-hidden my-6">
-              <table className={tableClass + " w-full"} {...props} />
-            </div>
+            <hr
+              className="my-8 border-gray-200 dark:border-gray-700"
+              {...props}
+            />
           );
-        },
-        th: ({ node, children, ...props }) => (
-          <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider" {...props}>
-            {children}
-          </th>
-        ),
-        td: ({ node, children, ...props }) => {
-          // 获取表头文本用于响应式显示
-          let headerText = '';
-          try {
-            const rowIndex = node?.position?.start?.line;
-            const table = node?.parent?.parent;
-            const headerRow = table?.children?.[0]?.children?.[0];
-            const cellIndex = node?.parent?.children?.findIndex(cell => cell === node);
-            
-            if (headerRow && cellIndex !== undefined && cellIndex >= 0) {
-              const headerCell = headerRow?.children?.[cellIndex];
-              headerText = headerCell?.children?.[0]?.value || '';
-            }
-          } catch (e) {
-            // 忽略错误，使用默认空字符串
-          }
-          
-          return (
-            <td className="px-4 py-3 whitespace-normal break-words" data-label={headerText} {...props}>
-              {children}
-            </td>
-          );
-        },
-        sup: ({ children, ...props }) => (
-          <sup className="text-xs mr-[4px]" {...props}>
-            {children}
-          </sup>
-        ),
-        sub: ({ children, ...props }) => (
-          <sub className="text-xs mr-[4px]" {...props}>
-            {children}
-          </sub>
-        ),
-        section({ children, ...props }) {
-          if (props.hasOwnProperty("data-footnotes")) {
-            props.className = `${props.className || ""} mt-8`.trim();
-          }
-          const modifiedChildren = React.Children.map(children, (child) => {
-            if (isValidElement(child) && child.props.node.tagName === "ol") {
-              return cloneElement(child, {
-                ...child.props,
-                className: "list-decimal px-10 text-sm text-[#6B7280]",
-              } as React.HTMLAttributes<HTMLParagraphElement>);
-            }
-            return child;
-          });
-          return <section {...props}>{modifiedChildren}</section>;
-        },
-        div({ children, node, ...props }) {
-          return <div {...props}>{children}</div>;
         },
       }}
     />
-  ), [content, colorMode, imageUrls]);
+  ), [content, colorMode, t, copiedCode, imageUrls]);
 
   return (
     <>
-      {Content}
       <Lightbox
         open={index >= 0}
-        close={() => setIndex(-1)}
         index={index}
+        close={() => setIndex(-1)}
         slides={generateSlides()}
-        plugins={[Counter, Zoom, Download]}
-        controller={{
-          closeOnBackdropClick: true,
-          closeOnPullDown: true
-        }}
-        carousel={{
-          finite: imageUrls.length <= 1
-        }}
-        zoom={{
-          maxZoomPixelRatio: 5,
-          zoomInMultiplier: 2
-        }}
-        render={{
-          buttonPrev: imageUrls.length <= 1 ? () => null : undefined,
-          buttonNext: imageUrls.length <= 1 ? () => null : undefined,
-        }}
+        plugins={[Counter, Download, Zoom]}
+        controller={{ closeOnBackdropClick: true }}
       />
+      {Content}
     </>
   );
 }
