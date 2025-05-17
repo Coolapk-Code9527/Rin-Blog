@@ -9,6 +9,7 @@ interface Post {
   title: string | null;
   createdAt: Date;
   content?: string;
+  avatar?: string;
 }
 
 export function RecentPosts() {
@@ -19,17 +20,19 @@ export function RecentPosts() {
   const [thumbnails, setThumbnails] = React.useState<Record<number, string | null>>({});
 
   const extractImageFromContent = (content: string): string | null => {
-    // 先尝试匹配Markdown格式的图片链接
+    // 优先从Markdown格式提取
     const markdownRegex = /!\[.*?\]\((.*?)\)/;
     const markdownMatch = markdownRegex.exec(content);
     if (markdownMatch && markdownMatch[1]) {
+      console.log("从Markdown提取图片:", markdownMatch[1]);
       return markdownMatch[1];
     }
     
-    // 再尝试匹配HTML格式的图片标签
+    // 尝试从HTML格式提取
     const htmlRegex = /<img.*?src=["'](.*?)["']/;
     const htmlMatch = htmlRegex.exec(content);
     if (htmlMatch && htmlMatch[1]) {
+      console.log("从HTML提取图片:", htmlMatch[1]);
       return htmlMatch[1];
     }
     
@@ -49,17 +52,19 @@ export function RecentPosts() {
             id: item.id,
             title: item.title,
             createdAt: new Date(item.createdAt),
-            content: item.content || ""
+            content: item.content || "",
+            avatar: item.avatar || ""
           }));
           setPosts(postsData);
           
-          // 提取缩略图
           const extractedThumbnails: Record<number, string | null> = {};
           postsData.forEach(post => {
-            if (post.content) {
+            if (post.avatar) {
+              console.log(`Post ${post.id}: 使用API提供的avatar ${post.avatar}`);
+              extractedThumbnails[post.id] = post.avatar;
+            } else if (post.content) {
               const thumbnail = extractImageFromContent(post.content);
-              // 打印调试信息
-              console.log(`Post ${post.id}: extracted thumbnail ${thumbnail}`);
+              console.log(`Post ${post.id}: 从内容提取缩略图 ${thumbnail}`);
               extractedThumbnails[post.id] = thumbnail;
             }
           });
@@ -97,11 +102,11 @@ export function RecentPosts() {
                           src={thumbnails[post.id] || ''} 
                           alt={post.title || t("unnamed")} 
                           className="w-16 h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700 transition-transform group-hover:scale-[1.02]"
+                          loading="lazy"
                           onError={(e) => {
-                            // 图片加载失败时显示默认图标
-                            console.log(`Image load error for post ${post.id}`);
-                            const target = e.currentTarget;
-                            target.onerror = null;
+                            console.log(`图片加载失败: ${post.id}, 路径: ${thumbnails[post.id]}`);
+                            const target = e.currentTarget as HTMLImageElement;
+                            target.style.display = "none";
                             const container = target.parentElement;
                             if (container) {
                               container.innerHTML = `

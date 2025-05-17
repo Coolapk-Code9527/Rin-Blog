@@ -14,6 +14,7 @@ export type AdjacentFeed = {
     }[];
     createdAt: Date;
     updatedAt: Date;
+    avatar?: string;
 };
 export type AdjacentFeeds = {
     nextFeed: AdjacentFeed | null;
@@ -61,21 +62,39 @@ export function AdjacentCard({data, type}: { data: AdjacentFeed | null | undefin
         <Link href={`/feed/${data.id}`} target="_blank"
               className={`w-full p-6 duration-300 bg-button ${radius}`}>
             <p className={`t-secondary w-full ${direction}`}>
-                {type === "previous" ? "Previous" : "Next"}
+                {type === "previous" ? t("previous") : t("next")}
             </p>
-            <h1 className={`text-xl font-bold text-gray-700 dark:text-white text-pretty truncate ${direction}`}>
-                {data.title}
-            </h1>
-            <p className={`space-x-2 ${direction}`}>
-                <span className="text-gray-400 text-sm" title={new Date(data.createdAt).toLocaleString()}>
-                    {data.createdAt === data.updatedAt ? timeago(data.createdAt) : t('feed_card.published$time', {time: timeago(data.createdAt)})}
-                </span>
-                {data.createdAt !== data.updatedAt &&
-                    <span className="text-gray-400 text-sm" title={new Date(data.updatedAt).toLocaleString()}>
-                        {t('feed_card.updated$time', {time: timeago(data.updatedAt)})}
-                    </span>
-                }
-            </p>
+            <div className={`flex items-center gap-3 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
+                {data.avatar && (
+                    <div className="flex-shrink-0">
+                        <img 
+                            src={data.avatar} 
+                            alt={data.title || ""} 
+                            className="w-16 h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700"
+                            loading="lazy"
+                            onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.style.display = "none";
+                            }} 
+                        />
+                    </div>
+                )}
+                <div className={`flex-1 ${direction}`}>
+                    <h1 className={`text-xl font-bold text-gray-700 dark:text-white text-pretty truncate`}>
+                        {data.title}
+                    </h1>
+                    <p className={`space-x-2`}>
+                        <span className="text-gray-400 text-sm" title={new Date(data.createdAt).toLocaleString()}>
+                            {data.createdAt === data.updatedAt ? timeago(data.createdAt) : t('feed_card.published$time', {time: timeago(data.createdAt)})}
+                        </span>
+                        {data.createdAt !== data.updatedAt &&
+                            <span className="text-gray-400 text-sm" title={new Date(data.updatedAt).toLocaleString()}>
+                                {t('feed_card.updated$time', {time: timeago(data.updatedAt)})}
+                            </span>
+                        }
+                    </p>
+                </div>
+            </div>
         </Link>
     )
 }

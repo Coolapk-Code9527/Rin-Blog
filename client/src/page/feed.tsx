@@ -327,10 +327,8 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                     <TOC />
                   </div>
                 </div>
-                <div className="bg-w rounded-2xl shadow-sm overflow-hidden">
-                  <div className="max-h-[40vh] overflow-auto custom-scrollbar">
-                    <RecentPosts />
-                  </div>
+                <div className="bg-w rounded-2xl shadow-sm">
+                  <RecentPosts />
                 </div>
               </div>
             </aside>
