@@ -266,7 +266,7 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
                                 key={`toc$${item.index}`}
                                 className={`${
                                     activeIndex === item.index ? "text-theme font-medium" : ""
-                                } py-[0.1rem] hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2 text-sm`}
+                                } py-[0.2rem] hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2 text-sm`}
                                 style={{ marginLeft: item.marginLeft }}
                                 onClick={() => {
                                     if (item.element && item.element.id) {

@@ -190,7 +190,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5 pt-2">
+      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -209,7 +209,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl">
+            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl mt-5">
               <article
                 className="rounded-2xl bg-w px-4 sm:px-6 md:px-7 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
@@ -325,14 +325,14 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
             </main>
-            <aside className="w-full lg:w-60 xl:w-64 hidden lg:block">
+            <aside className="w-full lg:w-60 xl:w-64 hidden lg:block mt-5">
               <div className="sticky top-[5.5rem]">
-                <div className="bg-w rounded-2xl p-3 mb-5 shadow-sm">
+                <div className="bg-w rounded-2xl pt-5 px-3 pb-4 mb-5 shadow-sm hover:shadow-md transition-all duration-300">
                   <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
                     <i className="ri-list-unordered text-theme"></i>
                     {t("toc.title", { defaultValue: "目录" })}
                   </h3>
-                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1 mt-2">
+                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1 pt-1">
                     <TOC />
                   </div>
                 </div>
