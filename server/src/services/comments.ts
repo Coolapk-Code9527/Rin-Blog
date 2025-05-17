@@ -40,7 +40,8 @@ export function CommentService() {
                                 return {
                                     ...comment,
                                     userId: undefined, // 隐藏真实userId
-                                    user: undefined // 隐藏真实user信息
+                                    user: undefined, // 隐藏真实user信息
+                                    // email字段会自动包含在返回中
                                 };
                             }
                             return comment;
@@ -78,6 +79,7 @@ export function CommentService() {
                                     feedId,
                                     userId: ANONYMOUS_USER_ID, // 使用系统用户ID
                                     nickname,
+                                    email, // 保存email字段
                                     content
                                 });
                             } catch (e) {
