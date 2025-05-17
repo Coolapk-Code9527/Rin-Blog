@@ -304,4 +304,62 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
     };
 };
 
+export function TableOfContents({ tableOfContents, activeIndex }: { tableOfContents: TableOfContent[], activeIndex: number }) {
+  const { t } = useTranslation();
+  
+  function scrollToHeader(element: HTMLElement) {
+    if (!element) return;
+    
+    // 获取标题顶部位置并考虑顶部导航栏高度
+    const elementTop = element.getBoundingClientRect().top + window.pageYOffset;
+    const offset = 80; // 顶部导航栏高度和额外间距
+    
+    window.scrollTo({
+      top: elementTop - offset,
+      behavior: 'smooth'
+    });
+  }
+  
+  if (!tableOfContents || tableOfContents.length === 0) {
+    return (
+      <div className="text-sm text-gray-500 dark:text-gray-400 italic p-2">
+        {t("toc.empty")}
+      </div>
+    );
+  }
+  
+  return (
+    <nav className="table-of-contents text-sm">
+      <ul className="space-y-1.5 pb-1">
+        {tableOfContents.map((item, index) => {
+          const isActive = index === activeIndex;
+          return (
+            <li 
+              key={`toc-${index}`} 
+              style={{ paddingLeft: `${item.marginLeft}px` }}
+              className="leading-tight"
+            >
+              <button
+                onClick={() => scrollToHeader(item.element)}
+                className={`block text-left w-full py-1 px-2 rounded ${
+                  isActive 
+                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium" 
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                }`}
+              >
+                <div className="flex items-start">
+                  <span className={`mr-1.5 mt-1 inline-block h-1.5 w-1.5 rounded-full ${
+                    isActive ? "bg-blue-500" : "bg-gray-400 dark:bg-gray-600"
+                  }`}></span>
+                  <span className="line-clamp-2">{item.text}</span>
+                </div>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
 export default useTableOfContents

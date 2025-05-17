@@ -12,6 +12,6 @@ When making modifications, pay attention to syntax errors; after optimizing, rem
 Subsequently, update or create a README.md document that includes the project structure, file functions, development environment, implementation logic, and error documentation; any newly added features should also be updated promptly.
 Strictly adhere to the above protocol.
 
-(Most linter errors are primarily caused by issues with project dependencies and may not affect the actual execution of the code, so they can be temporarily ignored while continuing optimization.)
+Most of the linter errors are caused by issues with project dependencies, TypeScript configuration, or React type definitions. Even though the linter shows errors, the code might actually be correct, so you can temporarily ignore these issues and continue with the optimization.
 
 - 由于项目使用Cloudflare Pages部署前后端，这些修改需要推送到仓库并通过GitHub Actions部署后才能在线上环境（blog.115694.xyz）看到效果

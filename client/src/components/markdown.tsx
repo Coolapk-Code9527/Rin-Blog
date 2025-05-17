@@ -1,5 +1,5 @@
 import "katex/dist/katex.min.css";
-import React, { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
@@ -51,6 +51,7 @@ const OptimizedImage = React.memo(({
   useEffect(() => {
     if (!src) return;
     
+    // 使用Intersection Observer API实现懒加载
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -87,16 +88,13 @@ const OptimizedImage = React.memo(({
     setImageState({ loaded: true, error: true });
   };
   
-  // 自适应响应式
-  const aspectRatio = '16/9'; // 默认宽高比
-  
   // 生成低质量图像的占位符
   const placeholderSrc = src 
-    ? `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'%3E%3C/svg%3E` 
+    ? `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'%3E%3C/svg%3E` 
     : '';
   
   return (
-    <div className="relative flex justify-center items-center overflow-hidden" style={{ aspectRatio }}>
+    <div className="relative flex justify-center items-center my-6">
       {!imageState.loaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
           <Loading type="spin" height={24} width={24} color="#FC466B" />
@@ -116,8 +114,8 @@ const OptimizedImage = React.memo(({
         data-src={src}
         alt={alt}
         onClick={onClick}
-        className={`${className} transition-opacity duration-500 w-full h-auto object-cover ${imageState.loaded ? 'opacity-100' : 'opacity-0'}`}
-        style={{ ...style }}
+        className={`${className} transition-opacity duration-300 rounded-lg shadow-sm hover:shadow-md ${imageState.loaded ? 'opacity-100' : 'opacity-0'}`}
+        style={style}
         onLoad={handleLoad}
         onError={handleError}
         loading="lazy"
@@ -220,435 +218,342 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
   };
 
   const Content = useMemo(() => (
-    <ReactMarkdown
-      className="toc-content dark:text-neutral-300"
-      remarkPlugins={[gfm, remarkMermaid, remarkMath, remarkAlert]}
-      children={content}
-      rehypePlugins={[rehypeKatex, rehypeRaw]}
-      components={{
-        img({ node, src, ...props }) {
-          const offset = node!.position!.start.offset!;
-          const previousContent = content.slice(0, offset);
-          const newlinesBefore = countNewlinesBeforeNode(
-            previousContent,
-            offset
-          );
-          
-          // 优化的图片组件
-          const ImageComponent = ({
-            rounded,
-            scale,
-          }: {
-            rounded: boolean;
-            scale: string;
-          }) => (
-            <OptimizedImage
-              src={src}
-              alt={props.alt}
-              onClick={() => show(src)}
-              className={`mx-auto ${rounded ? "rounded-xl" : ""}`}
-              style={{ zoom: scale }}
-            />
-          );
-          
-          if (
-            newlinesBefore >= 1 ||
-            previousContent.trim().length === 0 ||
-            isMarkdownImageLinkAtEnd(previousContent)
-          ) {
+    <div className="prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-headings:scroll-mt-16 prose-headings:font-medium prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-p:text-base prose-p:leading-relaxed">
+      <ReactMarkdown
+        remarkPlugins={[gfm, remarkMath, remarkMermaid, remarkAlert]}
+        rehypePlugins={[rehypeKatex, rehypeRaw]}
+        components={{
+          // 图片组件
+          img({ node, src, ...props }) {
             return (
-              <span className="block w-full text-center my-4">
-                <ImageComponent scale="0.75" rounded={true} />
-              </span>
+              <OptimizedImage 
+                src={src}
+                alt={props.alt || ''}
+                onClick={() => show(src)}
+                className="mx-auto max-h-[70vh] w-auto cursor-zoom-in transition-all duration-300 hover:brightness-105"
+                style={{ maxWidth: '100%' }}
+              />
             );
-          } else {
-            return (
-              <span className="inline-block align-middle mx-1">
-                <ImageComponent scale="0.5" rounded={false} />
-              </span>
-            );
-          }
-        },
-        code(props) {
-          const [copied, setCopied] = React.useState(false);
-          const { children, className, node, ...rest } = props;
-          const match = /language-(\w+)/.exec(className || "");
+          },
 
-          const curContent = content.slice(node?.position?.start.offset || 0);
-          const isCodeBlock = curContent.trimStart().startsWith("```");
+          // 代码块组件
+          code(props) {
+            const [copied, setCopied] = React.useState(false);
+            const { children, className, node, ...rest } = props;
+            const match = /language-(\w+)/.exec(className || "");
 
-          const codeBlockStyle = {
-            fontFamily: 'var(--font-mono)',
-            fontSize: "14px",
-            fontVariantLigatures: "normal",
-            WebkitFontFeatureSettings: '"liga" 1',
-            fontFeatureSettings: '"liga" 1',
-          };
+            const curContent = content.slice(node?.position?.start.offset || 0);
+            const isCodeBlock = curContent.trimStart().startsWith("```");
 
-          const inlineCodeStyle = {
-            ...codeBlockStyle,
-            fontSize: "13px",
-          };
+            const codeBlockStyle = {
+              fontFamily: 'var(--font-mono)',
+              fontSize: "14px",
+              fontVariantLigatures: "normal",
+              WebkitFontFeatureSettings: '"liga" 1',
+              fontFeatureSettings: '"liga" 1',
+            };
 
-          const language = match ? match[1] : "";
+            const inlineCodeStyle = {
+              ...codeBlockStyle,
+              fontSize: "13px",
+            };
 
-          if (isCodeBlock) {
-            return (
-              <div className="relative group my-6">
-                <SyntaxHighlighter
-                  PreTag="div"
-                  className="rounded-lg"
-                  language={language}
-                  style={
-                    colorMode === "dark"
-                      ? oneDarkStyle
-                      : oneLightStyle
-                  }
-                  wrapLongLines={true}
-                  showLineNumbers={true}
-                  lineNumberStyle={{ 
-                    minWidth: '2.5em', 
-                    paddingRight: '1em', 
-                    color: colorMode === 'dark' ? '#606366' : '#a5a5a5',
-                    textAlign: 'right',
-                    userSelect: 'none'
-                  }}
-                  customStyle={{
-                    margin: '0', 
-                    padding: '1.25em',
-                    borderRadius: '0',
-                    borderBottomLeftRadius: '0.75rem',
-                    borderBottomRightRadius: '0.75rem',
-                    fontSize: '14px',
-                    lineHeight: '1.6',
-                    boxShadow: 'none',
-                    borderTop: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
-                    borderLeft: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
-                    borderRight: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
-                    borderBottom: 'none',
-                    background: colorMode === 'dark' 
-                      ? '#1e1e2e' 
-                      : '#f8f9fc',
-                    overflow: 'auto', 
-                    maxHeight: '600px'
-                  }}
-                  codeTagProps={{ 
-                    style: {
-                      ...codeBlockStyle,
-                      fontWeight: 500
-                    } 
-                  }}
-                >
-                  {String(children).replace(/\n$/, "")}
-                </SyntaxHighlighter>
-                <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {language && (
-                    <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs text-gray-600 dark:text-gray-300 select-none shadow-sm">
-                      {language}
-                    </span>
-                  )}
-                  <button 
-                    className="px-2 py-1 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-md text-xs flex items-center gap-1 shadow-sm hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
-                    onClick={() => {
-                      navigator.clipboard.writeText(String(children));
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
+            const language = match ? match[1] : "";
+
+            if (isCodeBlock) {
+              return (
+                <div className="relative group my-6">
+                  <SyntaxHighlighter
+                    PreTag="div"
+                    className="rounded-lg"
+                    language={language}
+                    style={
+                      colorMode === "dark"
+                        ? oneDarkStyle
+                        : oneLightStyle
+                    }
+                    wrapLongLines={true}
+                    showLineNumbers={true}
+                    lineNumberStyle={{ 
+                      minWidth: '2.5em', 
+                      paddingRight: '1em', 
+                      color: colorMode === 'dark' ? '#606366' : '#a5a5a5',
+                      textAlign: 'right',
+                      userSelect: 'none'
+                    }}
+                    customStyle={{
+                      margin: '0', 
+                      padding: '1.25em',
+                      borderRadius: '0',
+                      borderBottomLeftRadius: '0.75rem',
+                      borderBottomRightRadius: '0.75rem',
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      boxShadow: 'none',
+                      borderTop: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                      borderLeft: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                      borderRight: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                      borderBottom: 'none',
+                      background: colorMode === 'dark' 
+                        ? '#1e1e2e' 
+                        : '#f8f9fc',
+                      overflow: 'auto', 
+                      maxHeight: '600px'
+                    }}
+                    codeTagProps={{ 
+                      style: {
+                        ...codeBlockStyle,
+                        fontWeight: 500
+                      } 
                     }}
                   >
-                    {copied ? (
-                      <>
-                        <i className="ri-check-line" />
-                        <span>{t('code.copied')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <i className="ri-file-copy-line" />
-                        <span>{t('code.copy')}</span>
-                      </>
+                    {String(children).replace(/\n$/, "")}
+                  </SyntaxHighlighter>
+                  <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {language && (
+                      <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs text-gray-600 dark:text-gray-300 select-none shadow-sm">
+                        {language}
+                      </span>
                     )}
-                  </button>
+                    <button 
+                      className="px-2 py-1 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-md text-xs flex items-center gap-1 shadow-sm hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
+                      onClick={() => {
+                        navigator.clipboard.writeText(String(children));
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                    >
+                      {copied ? (
+                        <>
+                          <i className="ri-check-line" />
+                          <span>{t('code.copied')}</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="ri-file-copy-line" />
+                          <span>{t('code.copy')}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          } else {
+              );
+            } else {
+              return (
+                <code
+                  {...rest}
+                  className={`font-mono text-sm px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700 ${className || ""}`}
+                  style={inlineCodeStyle}
+                >
+                  {children}
+                </code>
+              );
+            }
+          },
+
+          // 引用块组件
+          blockquote({ children, ...props }) {
             return (
-              <code
-                {...rest}
-                className={`font-mono text-sm px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700 ${className || ""}`}
-                style={inlineCodeStyle}
+              <blockquote className="border-l-4 border-blue-500 dark:border-blue-400 bg-gray-50 dark:bg-gray-800/50 pl-4 py-1 my-4 italic rounded-r" {...props}>
+                {children}
+              </blockquote>
+            );
+          },
+
+          // 强调文本
+          em({ children, ...props }) {
+            return (
+              <em className="text-gray-700 dark:text-gray-300 not-italic" {...props}>
+                {children}
+              </em>
+            );
+          },
+
+          // 加粗文本
+          strong({ children, ...props }) {
+            return (
+              <strong className="font-medium text-gray-900 dark:text-gray-100" {...props}>
+                {children}
+              </strong>
+            );
+          },
+
+          // 无序列表
+          ul({ children, className, ...props }) {
+            return (
+              <ul
+                className={`pl-6 space-y-2 list-disc marker:text-gray-500 dark:marker:text-gray-400 ${className || ''}`}
+                {...props}
               >
                 {children}
-              </code>
+              </ul>
             );
-          }
-        },
-        blockquote({ children, ...props }) {
-          return (
-            <blockquote
-              className="border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 pl-4 py-1 rounded-r-md italic text-gray-700 dark:text-gray-300"
-              {...props}
-            >
-              {children}
-            </blockquote>
-          );
-        },
-        em({ children, ...props }) {
-          return (
-            <em className="italic text-gray-800 dark:text-gray-200" {...props}>
-              {children}
-            </em>
-          );
-        },
-        strong({ children, ...props }) {
-          return (
-            <strong className="font-bold text-gray-900 dark:text-white" {...props}>
-              {children}
-            </strong>
-          );
-        },
+          },
 
-        ul({ children, className, ...props }) {
-          const listClass = className?.includes("contains-task-list")
-            ? "list-none pl-2 my-4 space-y-1"
-            : "list-disc pl-6 my-4 space-y-1";
-          return (
-            <ul className={listClass} {...props}>
-              {children}
-            </ul>
-          );
-        },
-        ol({ children, ...props }) {
-          return (
-            <ol className="list-decimal pl-6 my-4 space-y-1" {...props}>
-              {children}
-            </ol>
-          );
-        },
-        li({ children, ...props }) {
-          return (
-            <li className="mb-1" {...props}>
-              {children}
-            </li>
-          );
-        },
-        a({ children, ...props }) {
-          return (
-            <a
-              className="text-blue-600 dark:text-blue-400 font-medium relative hover:text-blue-800 dark:hover:text-blue-300"
-              {...props}
-            >
-              {children}
-            </a>
-          );
-        },
-        h1({ children, ...props }) {
-          return (
-            <h1
-              id={children?.toString()}
-              className="text-3xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
-              {...props}
-            >
-              {children}
-            </h1>
-          );
-        },
-        h2({ children, ...props }) {
-          return (
-            <h2
-              id={children?.toString()}
-              className="text-2xl font-bold mt-6 mb-4 pb-1 text-gray-900 dark:text-white"
-              {...props}
-            >
-              {children}
-            </h2>
-          );
-        },
-        h3({ children, ...props }) {
-          return (
-            <h3
-              id={children?.toString()}
-              className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white"
-              {...props}
-            >
-              {children}
-            </h3>
-          );
-        },
-        h4({ children, ...props }) {
-          return (
-            <h4
-              id={children?.toString()}
-              className="text-lg font-bold mt-4 mb-3 text-gray-900 dark:text-white"
-              {...props}
-            >
-              {children}
-            </h4>
-          );
-        },
-        h5({ children, ...props }) {
-          return (
-            <h5
-              id={children?.toString()}
-              className="text-base font-bold mt-4 mb-2 text-gray-900 dark:text-white"
-              {...props}
-            >
-              {children}
-            </h5>
-          );
-        },
-        h6({ children, ...props }) {
-          return (
-            <h6
-              id={children?.toString()}
-              className="text-sm font-bold mt-4 mb-2 text-gray-700 dark:text-gray-300"
-              {...props}
-            >
-              {children}
-            </h6>
-          );
-        },
-        p({ children, node, ...props }) {
-          // 检查是否为图片后的描述文本
-          const isImageCaption = 
-            node?.children?.length === 1 && 
-            node?.children[0]?.type === "emphasis" && 
-            node?.prev?.children?.some(child => child.type === "image");
-          
-          return (
-            <p className={`${isImageCaption ? "text-center text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-4" : "mt-2 py-1"}`} {...props}>
-              {children}
-            </p>
-          );
-        },
-        hr({ children, ...props }) {
-          return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" {...props} />;
-        },
-        table: ({ node, ...props }) => {
-          // 检测是否为URL表格
-          let isUrlTable = false;
-          try {
-            // 检查表头是否包含URL列
-            const headerRow = node?.children?.[0]?.children?.[0];
-            const headerCells = headerRow?.children || [];
-            
-            // 判断表头是否包含URL或链接相关词汇
-            const hasUrlHeader = headerCells.some(cell => {
-              const cellText = cell?.children?.[0]?.value || '';
-              return /url|link|地址|链接/i.test(cellText);
-            });
-            
-            // 判断第二列是否包含多个URL格式内容
-            const bodyRows = (node?.children?.[1]?.children || []).slice(0, 3); // 获取前几行
-            let urlCount = 0;
-            
-            bodyRows.forEach(row => {
-              const cells = row?.children || [];
-              if (cells[1]) { // 第二列
-                const cellContent = cells[1]?.children?.[0]?.value || '';
-                if (/https?:\/\/[^\s]+/.test(cellContent)) {
-                  urlCount++;
-                }
-              }
-            });
-            
-            isUrlTable = hasUrlHeader || urlCount >= 2;
-          } catch (e) {
-            // 忽略错误
-          }
-          
-          const tableClass = isUrlTable ? 'table responsive url-table' : 'table responsive';
-          
-          return (
-            <div className="overflow-hidden my-6">
-              <table className={tableClass + " w-full"} {...props} />
-            </div>
-          );
-        },
-        th: ({ node, children, ...props }) => (
-          <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider" {...props}>
-            {children}
-          </th>
-        ),
-        td: ({ node, children, ...props }) => {
-          // 获取表头文本用于响应式显示
-          let headerText = '';
-          try {
-            const rowIndex = node?.position?.start?.line;
-            const table = node?.parent?.parent;
-            const headerRow = table?.children?.[0]?.children?.[0];
-            const cellIndex = node?.parent?.children?.findIndex(cell => cell === node);
-            
-            if (headerRow && cellIndex !== undefined && cellIndex >= 0) {
-              const headerCell = headerRow?.children?.[cellIndex];
-              headerText = headerCell?.children?.[0]?.value || '';
-            }
-          } catch (e) {
-            // 忽略错误，使用默认空字符串
-          }
-          
-          return (
-            <td className="px-4 py-3 whitespace-normal break-words" data-label={headerText} {...props}>
-              {children}
-            </td>
-          );
-        },
-        sup: ({ children, ...props }) => (
-          <sup className="text-xs mr-[4px]" {...props}>
-            {children}
-          </sup>
-        ),
-        sub: ({ children, ...props }) => (
-          <sub className="text-xs mr-[4px]" {...props}>
-            {children}
-          </sub>
-        ),
-        section({ children, ...props }) {
-          if (props.hasOwnProperty("data-footnotes")) {
-            props.className = `${props.className || ""} mt-8`.trim();
-          }
-          const modifiedChildren = React.Children.map(children, (child) => {
-            if (isValidElement(child) && child.props.node.tagName === "ol") {
-              return cloneElement(child, {
-                ...child.props,
-                className: "list-decimal px-10 text-sm text-[#6B7280]",
-              } as React.HTMLAttributes<HTMLParagraphElement>);
-            }
-            return child;
-          });
-          return <section {...props}>{modifiedChildren}</section>;
-        },
-        div({ children, node, ...props }) {
-          return <div {...props}>{children}</div>;
-        },
-      }}
-    />
-  ), [content, colorMode, imageUrls]);
+          // 有序列表
+          ol({ children, ...props }) {
+            return (
+              <ol className="pl-6 space-y-2 list-decimal marker:text-gray-600 dark:marker:text-gray-400" {...props}>
+                {children}
+              </ol>
+            );
+          },
 
-  return (
-    <>
-      {Content}
+          // 列表项
+          li({ children, ...props }) {
+            return (
+              <li className="mb-1" {...props}>
+                {children}
+              </li>
+            );
+          },
+
+          // 链接
+          a({ children, ...props }) {
+            return (
+              <a
+                className="font-normal underline underline-offset-2 decoration-1 transition-all duration-200 hover:text-blue-700 dark:hover:text-blue-300"
+                target="_blank"
+                rel="noopener noreferrer"
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          },
+
+          // 标题样式优化
+          h1({ children, ...props }) {
+            return (
+              <h1
+                className="mt-8 mb-4 text-3xl font-bold tracking-tight border-b pb-1 border-gray-200 dark:border-gray-700"
+                {...props}
+              >
+                {children}
+              </h1>
+            );
+          },
+
+          h2({ children, ...props }) {
+            return (
+              <h2
+                className="mt-7 mb-3 text-2xl font-semibold tracking-tight border-b pb-1 border-gray-200 dark:border-gray-700"
+                {...props}
+              >
+                {children}
+              </h2>
+            );
+          },
+
+          h3({ children, ...props }) {
+            return (
+              <h3
+                className="mt-6 mb-3 text-xl font-semibold tracking-tight"
+                {...props}
+              >
+                {children}
+              </h3>
+            );
+          },
+
+          h4({ children, ...props }) {
+            return (
+              <h4
+                className="mt-5 mb-2 text-lg font-medium"
+                {...props}
+              >
+                {children}
+              </h4>
+            );
+          },
+
+          h5({ children, ...props }) {
+            return (
+              <h5
+                className="mt-4 mb-1 text-base font-medium"
+                {...props}
+              >
+                {children}
+              </h5>
+            );
+          },
+
+          h6({ children, ...props }) {
+            return (
+              <h6
+                className="mt-3 mb-1 text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide"
+                {...props}
+              >
+                {children}
+              </h6>
+            );
+          },
+
+          // 段落组件
+          p({ children, node, ...props }) {
+            // 检查是否为图片后的描述文本
+            const isImageCaption = 
+              node?.children?.length === 1 && 
+              node?.children[0]?.type === "emphasis" && 
+              node?.prev?.children?.some(child => child.type === "image");
+            
+            return (
+              <p className={`${isImageCaption ? "text-center text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-4" : "mt-2 py-1"}`} {...props}>
+                {children}
+              </p>
+            );
+          },
+
+          // 水平线
+          hr({ children, ...props }) {
+            return <hr className="my-8 border-gray-200 dark:border-gray-700" {...props} />;
+          },
+        }}
+      >
+        {content}
+      </ReactMarkdown>
       <Lightbox
         open={index >= 0}
         close={() => setIndex(-1)}
         index={index}
         slides={generateSlides()}
         plugins={[Counter, Zoom, Download]}
-        controller={{
-          closeOnBackdropClick: true,
-          closeOnPullDown: true
-        }}
-        carousel={{
-          finite: imageUrls.length <= 1
-        }}
+        carousel={{ padding: 0, spacing: 8 }}
+        counter={{ container: { style: { top: "unset", bottom: 0 } } }}
         zoom={{
           maxZoomPixelRatio: 5,
-          zoomInMultiplier: 2
+          zoomInMultiplier: 2,
         }}
         render={{
-          buttonPrev: imageUrls.length <= 1 ? () => null : undefined,
-          buttonNext: imageUrls.length <= 1 ? () => null : undefined,
+          iconDownload: () => (
+            <i className="ri-download-fill text-xl" title={t("download")}></i>
+          ),
+          iconZoomIn: () => (
+            <i className="ri-zoom-in-line text-xl" title={t("zoom_in")}></i>
+          ),
+          iconZoomOut: () => (
+            <i className="ri-zoom-out-line text-xl" title={t("zoom_out")}></i>
+          ),
+          iconNext: () => (
+            <i className="ri-arrow-right-s-line text-xl" title={t("next")}></i>
+          ),
+          iconPrev: () => (
+            <i className="ri-arrow-left-s-line text-xl" title={t("prev")}></i>
+          ),
+          iconClose: () => (
+            <i className="ri-close-line text-xl" title={t("close")}></i>
+          ),
+        }}
+        controller={{
+          closeOnBackdropClick: true,
         }}
       />
+    </div>
+  ), [content, colorMode, imageUrls]);
+
+  return (
+    <>
+      {Content}
     </>
   );
 }
