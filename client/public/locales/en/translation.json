@@ -132,6 +132,7 @@
   },
   "languages": "Languages",
   "listed": "Listed in articles",
+  "load_failed": "Failed to load, please try again later",
   "login": {
     "oauth_only": "Please log in to continue",
     "password": {

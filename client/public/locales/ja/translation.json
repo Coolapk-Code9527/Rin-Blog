@@ -129,6 +129,7 @@
   },
   "languages": "言語",
   "listed": "記事一覧に表示",
+  "load_failed": "読み込みに失敗しました。後でもう一度お試しください",
   "login": {
     "oauth_only": "続行するにはログインしてください",
     "password": {

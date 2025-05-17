@@ -129,6 +129,8 @@
   },
   "languages": "語言",
   "listed": "展示在文章列表",
+  "load_failed": "加載失敗，請稍後重試",
+  "loading": "加載中",
   "login": {
     "oauth_only": "請登入後繼續",
     "password": {

@@ -144,6 +144,7 @@
   },
   "last_updated": "最近更新",
   "listed": "展示在文章列表",
+  "load_failed": "加载失败，请稍后重试",
   "loading": "加载中",
   "login": {
     "oauth_only": "请登录后继续",
