@@ -12,44 +12,27 @@ interface Post {
   avatar?: string;
 }
 
-interface RecentPostsProps {
-  limit?: number;       // 要显示的文章数量
-  current?: string;     // 当前文章ID，用于排除当前文章
-  className?: string;   // 额外的CSS类
-  showImages?: boolean; // 是否显示缩略图
-}
-
-export function RecentPosts({
-  limit = 4,
-  current,
-  className = "",
-  showImages = true
-}: RecentPostsProps) {
+export function RecentPosts() {
   const { t } = useTranslation();
   const [posts, setPosts] = React.useState<Post[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [thumbnails, setThumbnails] = React.useState<Record<number, string | null>>({});
+  const [imageStates, setImageStates] = React.useState<Record<number, {loaded: boolean, error: boolean}>>({});
 
   const extractImageFromContent = (content: string): string | null => {
-    if (!content) return null;
+    // 优先从Markdown格式提取
+    const markdownRegex = /!\[.*?\]\((.*?)\)/;
+    const markdownMatch = markdownRegex.exec(content);
+    if (markdownMatch && markdownMatch[1]) {
+      return markdownMatch[1];
+    }
     
-    try {
-      // 优先从Markdown格式提取
-      const markdownRegex = /!\[.*?\]\((.*?)\)/;
-      const markdownMatch = markdownRegex.exec(content);
-      if (markdownMatch && markdownMatch[1]) {
-        return markdownMatch[1];
-      }
-      
-      // 尝试从HTML格式提取
-      const htmlRegex = /<img.*?src=["'](.*?)["']/;
-      const htmlMatch = htmlRegex.exec(content);
-      if (htmlMatch && htmlMatch[1]) {
-        return htmlMatch[1];
-      }
-    } catch (e) {
-      console.error("提取图片时出错:", e);
+    // 尝试从HTML格式提取
+    const htmlRegex = /<img.*?src=["'](.*?)["']/;
+    const htmlMatch = htmlRegex.exec(content);
+    if (htmlMatch && htmlMatch[1]) {
+      return htmlMatch[1];
     }
     
     return null;
@@ -58,129 +41,146 @@ export function RecentPosts({
   React.useEffect(() => {
     setLoading(true);
     setError(null);
-    
-    // 增加限制数量，以便在排除当前文章后仍有足够文章
-    const requestLimit = current ? limit + 1 : limit;
-    
-    client.feed.index.get({ query: { page: 1, limit: requestLimit }, headers: {} })
+    client.feed.index.get({ query: { page: 1, limit: 5 }, headers: {} })
       .then(({ data, error }) => {
         setLoading(false);
         if (error) {
           setError(error.value as string);
         } else if (data && Array.isArray(data.data)) {
-          let postsData = data.data
-            .map((item: any) => ({
-              id: item.id,
-              title: item.title,
-              createdAt: new Date(item.createdAt),
-              content: item.content || "",
-              avatar: item.avatar || ""
-            }));
-          
-          // 排除当前文章
-          if (current) {
-            postsData = postsData.filter(post => post.id !== parseInt(current));
-          }
-          
-          // 限制数量
-          postsData = postsData.slice(0, limit);
-          
+          const postsData = data.data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            createdAt: new Date(item.createdAt),
+            content: item.content || "",
+            avatar: item.avatar || ""
+          }));
           setPosts(postsData);
           
-          // 如果需要显示图片，则提取缩略图
-          if (showImages) {
-            const extractedThumbnails: Record<number, string | null> = {};
-            postsData.forEach(post => {
-              if (post.avatar) {
-                extractedThumbnails[post.id] = post.avatar;
-              } else if (post.content) {
-                const thumbnail = extractImageFromContent(post.content);
-                extractedThumbnails[post.id] = thumbnail;
-              }
-            });
-            setThumbnails(extractedThumbnails);
-          }
+          const extractedThumbnails: Record<number, string | null> = {};
+          const initialImageStates: Record<number, {loaded: boolean, error: boolean}> = {};
+          
+          postsData.forEach(post => {
+            if (post.avatar) {
+              extractedThumbnails[post.id] = post.avatar;
+            } else if (post.content) {
+              const thumbnail = extractImageFromContent(post.content);
+              extractedThumbnails[post.id] = thumbnail;
+            }
+            initialImageStates[post.id] = { loaded: false, error: false };
+          });
+          
+          setThumbnails(extractedThumbnails);
+          setImageStates(initialImageStates);
         }
       })
       .catch((err) => {
         setLoading(false);
         setError(String(err));
       });
-  }, [current, limit, showImages]);
+  }, []);
+
+  const handleImageLoad = (postId: number) => {
+    setImageStates(prev => ({
+      ...prev,
+      [postId]: { ...prev[postId], loaded: true }
+    }));
+  };
+  
+  const handleImageError = (postId: number) => {
+    setImageStates(prev => ({
+      ...prev,
+      [postId]: { ...prev[postId], error: true }
+    }));
+  };
 
   return (
-    <div className={className}>
+    <section className="bg-white dark:bg-gray-900 rounded-2xl p-4 p-5" aria-label={t("recent_posts.title", { defaultValue: "最近发布" })}>
+      <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
+        <i className="ri-time-line text-theme"></i>
+        {t("recent_posts.title", { defaultValue: "最近发布" })}
+      </h3>
+      
       {loading ? (
-        <div className="py-3 flex items-center justify-center text-gray-400">
-          <div className="flex items-center gap-2">
-            <i className="ri-loader-4-line animate-spin"></i>
-            <span className="text-sm">{t("loading")}</span>
-          </div>
+        <div className="animate-pulse space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={`skeleton-${i}`} className="flex gap-3 py-3">
+              <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : error ? (
-        <div className="py-3 text-red-500 text-sm">{error}</div>
+        <div className="text-red-500 text-sm py-3 flex items-center gap-2">
+          <i className="ri-error-warning-line"></i>
+          {error}
+        </div>
       ) : posts.length === 0 ? (
-        <div className="py-3 text-gray-400 text-sm text-center">{t("recent_posts.empty", { defaultValue: "暂无最新文章" })}</div>
+        <div className="text-gray-400 text-sm py-3 flex items-center justify-center">
+          <i className="ri-inbox-line mr-1.5"></i>
+          {t("recent_posts.empty", { defaultValue: "暂无最新文章" })}
+        </div>
       ) : (
-        <ul className="space-y-3">
-          {posts.map((post) => (
-            <li key={post.id} className="group">
-              <Link href={`/feed/${post.id}`} className="block group">
-                {showImages ? (
-                  <div className="flex gap-3 items-start">
-                    <div className="flex-shrink-0">
-                      {thumbnails[post.id] ? (
-                        <div className="w-14 h-14 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
+        <div className="recent-posts-content overflow-y-auto max-h-[calc(40vh-3rem)] custom-scrollbar pr-1">
+          <ul className="space-y-4">
+            {posts.map((post, index) => (
+              <li key={post.id} className={`py-3 ${index !== posts.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
+                <Link href={`/feed/${post.id}`} className="block group">
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 relative overflow-hidden w-16 h-16 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                      {thumbnails[post.id] && !imageStates[post.id]?.error ? (
+                        <>
+                          {!imageStates[post.id]?.loaded && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800/50">
+                              <i className="ri-loader-4-line animate-spin text-gray-400 dark:text-gray-500"></i>
+                            </div>
+                          )}
                           <img 
                             src={thumbnails[post.id] || ''} 
                             alt={post.title || t("unnamed")} 
-                            className="w-full h-full object-cover transition-all duration-300 group-hover:scale-110"
+                            className={`w-16 h-16 object-cover transition-all duration-300 group-hover:scale-110 ${imageStates[post.id]?.loaded ? 'opacity-100' : 'opacity-0'}`}
                             loading="lazy"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              target.style.display = "none";
-                              target.parentElement!.innerHTML = `
-                                <div class="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                  <i class="ri-file-text-line text-gray-400 dark:text-gray-600"></i>
-                                </div>
-                              `;
-                            }}
+                            onLoad={() => handleImageLoad(post.id)}
+                            onError={() => handleImageError(post.id)}
                           />
-                        </div>
+                        </>
                       ) : (
-                        <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
-                          <i className="ri-file-text-line text-gray-400 dark:text-gray-600"></i>
+                        <div className="w-full h-full flex items-center justify-center">
+                          <i className="ri-file-text-line text-gray-400 dark:text-gray-600 text-xl"></i>
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-800 dark:text-gray-200 line-clamp-2 group-hover:text-blue-500 transition-colors">
+                      <h3 className="font-medium text-gray-800 dark:text-gray-100 group-hover:text-theme line-clamp-2 transition-colors">
                         {post.title || t("unnamed")}
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1 flex items-center">
-                        <i className="ri-time-line mr-1"></i>
+                      </h3>
+                      <div className="text-xs text-gray-400 mt-1.5 flex items-center">
+                        <i className="ri-calendar-line mr-1"></i>
                         {timeago(post.createdAt)}
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <i className="ri-article-line text-gray-400 mr-2"></i>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-500 transition-colors">
-                        {post.title || t("unnamed")}
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-400 ml-2 whitespace-nowrap">
-                      {timeago(post.createdAt)}
+                    <div className="flex-shrink-0 self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <i className="ri-arrow-right-s-line text-theme"></i>
                     </div>
                   </div>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
-    </div>
+      
+      <div className="mt-4 pt-2 border-t border-gray-100 dark:border-gray-800 text-center">
+        <Link 
+          href="/archive" 
+          className="inline-flex items-center text-sm text-theme hover:text-theme-dark transition-colors gap-1 py-1 px-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          {t("view_more", { defaultValue: "查看更多" })}
+          <i className="ri-arrow-right-line"></i>
+        </Link>
+      </div>
+    </section>
   );
 } 

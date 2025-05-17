@@ -1,0 +1,191 @@
+/* 博客文章页面特定样式 */
+
+/* 代码块样式增强 */
+.code-block-container {
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.code-block-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 引用块样式增强 */
+blockquote {
+  border-width: 0 0 0 4px !important;
+  position: relative;
+  overflow: hidden;
+}
+
+blockquote:before {
+  content: '"';
+  position: absolute;
+  top: -0.5rem;
+  left: 0.5rem;
+  font-size: 3rem;
+  opacity: 0.1;
+  font-family: Georgia, serif;
+}
+
+blockquote p {
+  position: relative;
+  z-index: 1;
+}
+
+/* 目录高亮动画 */
+.toc-highlight {
+  animation: toc-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 1;
+}
+
+@keyframes toc-pulse {
+  0%, 100% {
+    background-color: rgba(252, 70, 107, 0);
+  }
+  50% {
+    background-color: rgba(252, 70, 107, 0.15);
+  }
+}
+
+/* 图片阴影和悬停效果 */
+.toc-content img {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.toc-content img:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* 表格样式增强 */
+.toc-content table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.toc-content th {
+  background-color: rgba(252, 70, 107, 0.05);
+  border-bottom: 2px solid rgba(252, 70, 107, 0.2);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.toc-content td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.toc-content tr:last-child td {
+  border-bottom: none;
+}
+
+.dark .toc-content table {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.dark .toc-content th {
+  background-color: rgba(252, 70, 107, 0.1);
+  border-bottom: 2px solid rgba(252, 70, 107, 0.25);
+}
+
+.dark .toc-content td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 标题下划线动画 */
+.toc-content h2::after,
+.toc-content h3::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 2px;
+  background: rgba(252, 70, 107, 0.5);
+  transition: width 0.3s ease;
+  margin-top: 0.3rem;
+}
+
+.toc-content h2:hover::after,
+.toc-content h3:hover::after {
+  width: 100%;
+}
+
+/* 阅读进度条动画 */
+@keyframes progress-shine {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.reading-progress-bar {
+  background: linear-gradient(90deg, rgba(252, 70, 107, 0.8) 0%, rgb(63, 94, 251, 0.8) 50%, rgba(252, 70, 107, 0.8) 100%);
+  background-size: 200% auto;
+  animation: progress-shine 4s linear infinite;
+}
+
+/* 滚动条自定义样式 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(252, 70, 107, 0.2);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(252, 70, 107, 0.4);
+}
+
+/* 响应式调整 */
+@media (max-width: 640px) {
+  .toc-content h1 {
+    font-size: 1.75rem !important;
+  }
+  
+  .toc-content h2 {
+    font-size: 1.4rem !important;
+  }
+  
+  .toc-content h3 {
+    font-size: 1.2rem !important;
+  }
+  
+  .toc-content img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}
+
+/* 打印优化 */
+@media print {
+  .toc-content {
+    font-size: 11pt;
+  }
+  
+  .toc-content a {
+    text-decoration: none !important;
+    color: #000 !important;
+  }
+  
+  .toc-content pre, 
+  .toc-content code {
+    white-space: pre-wrap;
+    font-size: 9pt;
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+  }
+} 

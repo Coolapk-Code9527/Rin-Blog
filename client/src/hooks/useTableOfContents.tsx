@@ -6,6 +6,7 @@ const { useEffect, useRef, useState, useCallback } = React;
 export interface TableOfContent {
     index: number
     text: string
+    level: number // 标题级别（1-6）
     marginLeft: number
     element: HTMLElement
 }
@@ -35,22 +36,24 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
     }, []);
 
     const processHeaders = useCallback((headers: NodeListOf<HTMLElement>) => {
-        console.log(`[TOC] processHeaders: Processing ${headers.length} headers for selector '${selector}'.`);
         const intersectingList = intersectingListRef.current;
         
         // 确保所有标题都有有效ID
         ensureValidIds(headers);
         
         // 设置目录数据
-        const tocData = Array.from(headers).map<TableOfContent>((header, i) => ({
-            index: i,
-            text: header.textContent || '',
-            marginLeft: (Number(header.tagName.charAt(1)) - 1) * 10,
-            element: header,
-        }));
+        const tocData = Array.from(headers).map<TableOfContent>((header, i) => {
+            const level = Number(header.tagName.charAt(1));
+            return {
+                index: i,
+                text: header.textContent || '',
+                level: level,
+                marginLeft: (level - 1) * 12, // 调整间距更美观
+                element: header,
+            };
+        });
         
         setTableOfContents(tocData);
-        console.log(`[TOC] 设置目录数据：`, tocData);
         intersectingList.length = 0; // 重置数组
         
         // 创建新的IntersectionObserver
@@ -73,12 +76,15 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
                     if (visibleHeaders.length > 0) {
                         // 选择第一个可见标题
                         setActiveIndex(visibleHeaders[0].idx);
+                    } else if (entry.boundingClientRect.top < 0 && entry.isIntersecting === false) {
+                        // 如果标题往上滚出了视口，激活下一个标题
+                        setActiveIndex(index);
                     }
                 }
             });
         }, {
-            rootMargin: "-60px 0px -60px 0px", // 调整阈值区域
-            threshold: [0, 0.25, 0.5] // 多个阈值提高准确性
+            rootMargin: "-80px 0px -80px 0px", // 调整阈值区域
+            threshold: [0, 0.25, 0.5, 0.75, 1] // 多个阈值提高准确性
         });
         
         // 观察所有标题
@@ -86,11 +92,33 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
             if (io.current) io.current.observe(header);
             intersectingList.push(false);
         });
-    }, [ensureValidIds, selector]);
+    }, [ensureValidIds]);
+
+    // 滚动到指定标题
+    const scrollToHeader = useCallback((index: number) => {
+        if (tableOfContents[index]) {
+            const header = tableOfContents[index].element;
+            const headerTop = header.getBoundingClientRect().top + window.pageYOffset;
+            
+            // 顺滑滚动并留出顶部空间
+            window.scrollTo({
+                top: headerTop - 90, // 顶部留出空间
+                behavior: 'smooth'
+            });
+            
+            // 更新激活的索引
+            setActiveIndex(index);
+            
+            // 给标题添加一个短暂的高亮效果
+            header.classList.add('toc-highlight');
+            setTimeout(() => {
+                header.classList.remove('toc-highlight');
+            }, 1500);
+        }
+    }, [tableOfContents]);
 
     const attemptGetHeadersAndContent = useCallback((attemptCount: number = 0, maxAttempts: number = 20) => {
         attemptCountRef.current = attemptCount; // 存储尝试次数
-        console.log(`[TOC] attemptGetHeadersAndContent: 尝试第 ${attemptCount + 1} 次查找选择器 '${selector}' 的内容。`);
         if (attemptCount >= maxAttempts) {
             console.warn(`[TOC] 失败：在 ${maxAttempts} 次尝试后仍未找到选择器 '${selector}' 的内容或标题。`);
             setTableOfContents([]); // 明确设置为空数组
@@ -106,7 +134,6 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
         }
 
         if (!content) {
-            console.log(`[TOC] 未找到选择器 '${selector}' 的内容元素。将在 500ms 后重试。`);
             if (attemptTimeoutRef.current) clearTimeout(attemptTimeoutRef.current);
             attemptTimeoutRef.current = setTimeout(() => {
                 attemptGetHeadersAndContent(attemptCount + 1, maxAttempts);
@@ -114,21 +141,18 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
             return;
         }
         
-        console.log(`[TOC] 已找到选择器 '${selector}' 的内容元素:`, content);
         contentElementRef.current = content;
 
         // 尝试查找标题
         let headers: NodeListOf<HTMLElement>;
         try {
             headers = content.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6');
-        console.log(`[TOC] 在选择器 '${selector}' 内找到 ${headers.length} 个标题。`);
         } catch (error) {
             console.error(`[TOC] 查找标题时出错：`, error);
             headers = document.createDocumentFragment().querySelectorAll('h1');
         }
 
         if (headers.length === 0 && attemptCount < maxAttempts - 1) {
-            console.log(`[TOC] 在选择器 '${selector}' 中找到了内容元素，但没有标题标签。将在 500ms 后重试。`);
             
             // 设置 MutationObserver 监视内容变化
             if (!mutationObserverRef.current && content) {
@@ -146,7 +170,6 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
                     });
                     
                     if (hasRelevantChanges) {
-                        console.log(`[TOC] 内容变化检测到新的标题元素`);
                         // 在短暂延迟后尝试重新处理，确保DOM完全更新
                         if (attemptTimeoutRef.current) clearTimeout(attemptTimeoutRef.current);
                         attemptTimeoutRef.current = setTimeout(() => {
@@ -160,7 +183,6 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
                     subtree: true,
                     characterData: true
                 });
-                console.log(`[TOC] 设置了内容变化观察器`);
             }
             
             if (attemptTimeoutRef.current) clearTimeout(attemptTimeoutRef.current);
@@ -171,7 +193,6 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
         }
         
         if (headers.length > 0) {
-            console.log(`[TOC] 找到标题，处理中...`);
             processHeaders(headers);
             
             // 成功找到并处理标题后，设置一个备份定时器，定期检查内容是否有变化
@@ -181,7 +202,6 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
                 if (currentContent) {
                     const currentHeaders = currentContent.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6');
                     if (currentHeaders.length !== headers.length) {
-                        console.log(`[TOC] 定期检查发现标题数量变化，重新处理目录`);
                         processHeaders(currentHeaders);
                     }
                 }
@@ -193,7 +213,16 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
     }, [selector, processHeaders]);
 
     useEffect(() => {
-        console.log(`[TOC] useEffect 触发，选择器: '${selector}'，contentReadySignal:`, contentReadySignal);
+        // 添加TOC高亮样式
+        const style = document.createElement('style');
+        style.textContent = `
+            .toc-highlight {
+                transition: background-color 0.5s ease;
+                background-color: rgba(252, 70, 107, 0.1);
+                border-radius: 4px;
+            }
+        `;
+        document.head.appendChild(style);
         
         // 清理之前的状态
         if (io.current) {
@@ -214,11 +243,9 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
         const checkContentExistence = () => {
             const contentElement = document.querySelector(selector);
             if (contentElement) {
-                console.log(`[TOC] 首次检查已找到 '${selector}' 的内容元素`);
                 // 如果内容元素存在，但没有标题，设置一个更长的延迟
                 const headers = contentElement.querySelectorAll('h1, h2, h3, h4, h5, h6');
                 if (headers.length === 0) {
-                    console.log(`[TOC] 内容元素存在但没有标题，等待Markdown渲染完成...`);
                     setTimeout(() => {
                         attemptGetHeadersAndContent(0, 30); // 增加最大尝试次数
                     }, 500);
@@ -240,7 +267,6 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
         setTimeout(checkContentExistence, 200);
 
         return () => {
-            console.log(`[TOC] 清理选择器: '${selector}' 的资源`);
             if (io.current) {
                 io.current.disconnect();
             }
@@ -251,115 +277,56 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
             if (attemptTimeoutRef.current) {
                 clearTimeout(attemptTimeoutRef.current);
             }
+            document.head.removeChild(style);
         };
     }, [selector, contentReadySignal, attemptGetHeadersAndContent]);
 
-    return {
-        TOC: () => (
-            <div className='rounded-2xl bg-w py-1 px-1 t-primary'>
-                <ul className="max-h-[calc(100vh-10.25rem)] overflow-auto custom-scrollbar mt-0 pl-2" style={{ scrollbarWidth: "none", margin: 0 }}>
-                    {tableOfContents.length === 0 ? (
-                        <li className="text-gray-500 italic py-2 text-sm">{t("index.empty.title")}</li>
-                    ) : (
-                        tableOfContents.map((item) => (
-                            <li
-                                key={`toc$${item.index}`}
-                                className={`${
-                                    activeIndex === item.index ? "text-theme font-medium" : ""
-                                } py-[0.2rem] hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2 text-sm`}
-                                style={{ marginLeft: item.marginLeft }}
-                                onClick={() => {
-                                    if (item.element && item.element.id) {
-                                        // 使用ID导航，更可靠
-                                        const element = document.getElementById(item.element.id);
-                                        if (element) {
-                                            // 计算位置，考虑顶部导航栏
-                                            const yOffset = -80;
-                                            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                                            
-                                            window.scrollTo({
-                                                top: y,
-                                                behavior: 'smooth'
-                                            });
-                                        }
-                                    } else {
-                                        // 备用：直接使用元素导航
-                                        const yOffset = -80;
-                                        const y = item.element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                                        
-                                        window.scrollTo({
-                                            top: y,
-                                            behavior: 'smooth'
-                                        });
-                                    }
-                                }}
+    // 渲染目录
+    function TableOfContents() {
+        return (
+            <nav aria-label={t("toc.title", { defaultValue: "目录" })}>
+                {tableOfContents.length === 0 ? (
+                    <div className="text-gray-400 text-sm py-2 text-center italic">
+                        {t("toc.empty", { defaultValue: "暂无目录" })}
+                    </div>
+                ) : (
+                    <ul className="space-y-1 text-sm">
+                        {tableOfContents.map((toc, idx) => (
+                            <li 
+                                key={`toc-${idx}`} 
+                                style={{ paddingLeft: `${toc.marginLeft}px` }}
                             >
-                                {item.text}
+                                <a
+                                    href={`#${toc.element.id}`}
+                                    className={`
+                                        block py-1.5 px-2 rounded-md transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 
+                                        ${activeIndex === idx 
+                                            ? 'text-theme font-medium bg-gray-50 dark:bg-gray-800/60 border-l-2 border-theme' 
+                                            : 'text-gray-700 dark:text-gray-300'}
+                                    `}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        scrollToHeader(idx);
+                                    }}
+                                >
+                                    <span className="line-clamp-2">
+                                        {toc.text}
+                                    </span>
+                                </a>
                             </li>
-                        ))
-                    )}
-                </ul>
-            </div>
-        )
+                        ))}
+                    </ul>
+                )}
+            </nav>
+        );
+    }
+
+    return {
+        activeIndex,
+        tableOfContents,
+        TableOfContents,
+        scrollToHeader
     };
 };
 
-export function TableOfContents({ tableOfContents, activeIndex }: { tableOfContents: TableOfContent[], activeIndex: number }) {
-  const { t } = useTranslation();
-  
-  function scrollToHeader(element: HTMLElement) {
-    if (!element) return;
-    
-    // 获取标题顶部位置并考虑顶部导航栏高度
-    const elementTop = element.getBoundingClientRect().top + window.pageYOffset;
-    const offset = 80; // 顶部导航栏高度和额外间距
-    
-    window.scrollTo({
-      top: elementTop - offset,
-      behavior: 'smooth'
-    });
-  }
-  
-  if (!tableOfContents || tableOfContents.length === 0) {
-    return (
-      <div className="text-sm text-gray-500 dark:text-gray-400 italic p-2">
-        {t("toc.empty")}
-      </div>
-    );
-  }
-  
-  return (
-    <nav className="table-of-contents text-sm">
-      <ul className="space-y-1.5 pb-1">
-        {tableOfContents.map((item, index) => {
-          const isActive = index === activeIndex;
-          return (
-            <li 
-              key={`toc-${index}`} 
-              style={{ paddingLeft: `${item.marginLeft}px` }}
-              className="leading-tight"
-            >
-              <button
-                onClick={() => scrollToHeader(item.element)}
-                className={`block text-left w-full py-1 px-2 rounded ${
-                  isActive 
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium" 
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                }`}
-              >
-                <div className="flex items-start">
-                  <span className={`mr-1.5 mt-1 inline-block h-1.5 w-1.5 rounded-full ${
-                    isActive ? "bg-blue-500" : "bg-gray-400 dark:bg-gray-600"
-                  }`}></span>
-                  <span className="line-clamp-2">{item.text}</span>
-                </div>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
-}
-
-export default useTableOfContents
+export default useTableOfContents;
