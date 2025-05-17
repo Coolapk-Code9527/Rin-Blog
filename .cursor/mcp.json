@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "FileScopeMCP": {
+      "command": "node",
+      "args": [
+        "H:/Program Data/Cursor/MCPservers/FileScopeMCP/dist/mcp-server.js",
+        "--base-dir=H:/Program Data/Cursor/Rin-Blog"
+      ],
+      "transport": "stdio",
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}
