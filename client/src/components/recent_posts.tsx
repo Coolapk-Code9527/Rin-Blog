@@ -24,7 +24,6 @@ export function RecentPosts() {
     const markdownRegex = /!\[.*?\]\((.*?)\)/;
     const markdownMatch = markdownRegex.exec(content);
     if (markdownMatch && markdownMatch[1]) {
-      console.log("从Markdown提取图片:", markdownMatch[1]);
       return markdownMatch[1];
     }
     
@@ -32,7 +31,6 @@ export function RecentPosts() {
     const htmlRegex = /<img.*?src=["'](.*?)["']/;
     const htmlMatch = htmlRegex.exec(content);
     if (htmlMatch && htmlMatch[1]) {
-      console.log("从HTML提取图片:", htmlMatch[1]);
       return htmlMatch[1];
     }
     
@@ -42,7 +40,7 @@ export function RecentPosts() {
   React.useEffect(() => {
     setLoading(true);
     setError(null);
-    client.feed.index.get({ query: { page: 1, limit: 3 }, headers: {} })
+    client.feed.index.get({ query: { page: 1, limit: 5 }, headers: {} })
       .then(({ data, error }) => {
         setLoading(false);
         if (error) {
@@ -60,11 +58,9 @@ export function RecentPosts() {
           const extractedThumbnails: Record<number, string | null> = {};
           postsData.forEach(post => {
             if (post.avatar) {
-              console.log(`Post ${post.id}: 使用API提供的avatar ${post.avatar}`);
               extractedThumbnails[post.id] = post.avatar;
             } else if (post.content) {
               const thumbnail = extractImageFromContent(post.content);
-              console.log(`Post ${post.id}: 从内容提取缩略图 ${thumbnail}`);
               extractedThumbnails[post.id] = thumbnail;
             }
           });
@@ -78,42 +74,52 @@ export function RecentPosts() {
   }, []);
 
   return (
-    <section className="bg-white dark:bg-gray-900 rounded-2xl p-4" aria-label={t("recent_posts.title", { defaultValue: "最近发布" })}>
+    <section className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 sticky top-24" aria-label={t("recent_posts.title", { defaultValue: "最近发布" })}>
       <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
         <i className="ri-time-line text-theme"></i>
         {t("recent_posts.title", { defaultValue: "最近发布" })}
       </h3>
       {loading ? (
-        <div className="text-gray-400 text-sm flex items-center gap-2 py-3"><i className="ri-loader-4-line animate-spin"></i>{t("loading")}</div>
+        <div className="flex items-center justify-center py-6">
+          <div className="animate-pulse flex flex-col w-full gap-4">
+            {[...Array(3)].map((_, index) => (
+              <div key={index} className="flex gap-3">
+                <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : error ? (
         <div className="text-red-500 text-sm py-3">{error}</div>
       ) : posts.length === 0 ? (
         <div className="text-gray-400 text-sm py-3">{t("recent_posts.empty", { defaultValue: "暂无最新文章" })}</div>
       ) : (
-        <div className="recent-posts-content overflow-y-auto max-h-[calc(40vh-3rem)] custom-scrollbar pr-1">
-          <ul className="space-y-4">
+        <div className="recent-posts-content overflow-y-auto max-h-[calc(50vh-3rem)] custom-scrollbar pr-1">
+          <ul className="space-y-4 divide-y divide-gray-100 dark:divide-gray-800">
             {posts.map((post, index) => (
-              <li key={post.id} className={`py-3 ${index !== posts.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
-                <Link href={`/feed/${post.id}`} className="block group">
+              <li key={post.id} className="group py-3">
+                <Link href={`/feed/${post.id}`} className="block hover:no-underline">
                   <div className="flex gap-3">
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 overflow-hidden rounded-md">
                       {thumbnails[post.id] ? (
                         <img 
                           src={thumbnails[post.id] || ''} 
                           alt={post.title || t("unnamed")} 
-                          className="w-16 h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700 transition-transform group-hover:scale-[1.02]"
+                          className="w-16 h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700 transition-all duration-300 group-hover:scale-105"
                           loading="lazy"
                           onError={(e) => {
-                            console.log(`图片加载失败: ${post.id}, 路径: ${thumbnails[post.id]}`);
                             const target = e.currentTarget as HTMLImageElement;
                             target.style.display = "none";
-                            const container = target.parentElement;
-                            if (container) {
-                              container.innerHTML = `
-                                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
-                                  <i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-xl"></i>
-                                </div>
-                              `;
+                            const parent = target.parentElement;
+                            if (parent) {
+                              const placeholder = document.createElement('div');
+                              placeholder.className = 'w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center';
+                              placeholder.innerHTML = '<i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-xl"></i>';
+                              parent.appendChild(placeholder);
                             }
                           }}
                         />
@@ -137,6 +143,12 @@ export function RecentPosts() {
               </li>
             ))}
           </ul>
+          <div className="mt-4 text-center">
+            <Link href="/feeds" className="inline-flex items-center text-sm text-theme hover:underline">
+              {t("recent_posts.view_all", { defaultValue: "查看全部" })}
+              <i className="ri-arrow-right-line ml-1"></i>
+            </Link>
+          </div>
         </div>
       )}
     </section>
