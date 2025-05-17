@@ -13,3 +13,5 @@ Subsequently, update or create a README.md document that includes the project st
 Strictly adhere to the above protocol.
 
 (Most linter errors are primarily caused by issues with project dependencies and may not affect the actual execution of the code, so they can be temporarily ignored while continuing optimization.)
+
+- 项目不在本地部署，修改优化cloudflare  Pages部署成功后才能看到最新效果，前端地址https://blog.115694.xyz/

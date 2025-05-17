@@ -40,7 +40,7 @@
   "close": "閉じる",
   "comment": {
     "empty": "コメント内容を入力してください",
-    "empty_list": "まだコメントはありません。最初のコメントを書いてみませんか？",
+    "no_comments": "まだコメントはありません。最初のコメントを書いてみませんか？",
     "placeholder": {
       "title": "何か言ってください..."
     },
@@ -58,6 +58,9 @@
       "email": "メール",
       "email_placeholder": "your@email.com (任意)",
       "email_help": "メールは返信通知に使用され、公開表示されません"
+    },
+    "list": {
+      "title": "すべてのコメント ({{count}}件)"
     },
     "pagination": {
       "previous": "前のページ",

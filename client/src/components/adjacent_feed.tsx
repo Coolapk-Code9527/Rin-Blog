@@ -180,10 +180,10 @@ export function AdjacentCard({
                     ) : (
                         <span className="flex items-center">{t("next")} <i className="ri-arrow-right-line ml-1"></i></span>
                     )}
-                </p>
+            </p>
                 <h1 className={`text-xl text-gray-700 dark:text-white text-pretty truncate ${direction} mt-1`}>
-                    {t('no_more')}
-                </h1>
+                {t('no_more')}
+            </h1>
             </div>
         );
     }
@@ -231,18 +231,18 @@ export function AdjacentCard({
                 </div>
                 <div className={`flex-1 ${direction}`}>
                     <h1 className={`text-xl font-bold text-gray-700 dark:text-white text-pretty truncate group-hover:text-theme transition-colors`}>
-                        {data.title}
-                    </h1>
+                {data.title}
+            </h1>
                     <p className={`space-x-2`}>
-                        <span className="text-gray-400 text-sm" title={new Date(data.createdAt).toLocaleString()}>
-                            {data.createdAt === data.updatedAt ? timeago(data.createdAt) : t('feed_card.published$time', {time: timeago(data.createdAt)})}
-                        </span>
-                        {data.createdAt !== data.updatedAt &&
-                            <span className="text-gray-400 text-sm" title={new Date(data.updatedAt).toLocaleString()}>
-                                {t('feed_card.updated$time', {time: timeago(data.updatedAt)})}
-                            </span>
-                        }
-                    </p>
+                <span className="text-gray-400 text-sm" title={new Date(data.createdAt).toLocaleString()}>
+                    {data.createdAt === data.updatedAt ? timeago(data.createdAt) : t('feed_card.published$time', {time: timeago(data.createdAt)})}
+                </span>
+                {data.createdAt !== data.updatedAt &&
+                    <span className="text-gray-400 text-sm" title={new Date(data.updatedAt).toLocaleString()}>
+                        {t('feed_card.updated$time', {time: timeago(data.updatedAt)})}
+                    </span>
+                }
+            </p>
                 </div>
             </div>
         </Link>

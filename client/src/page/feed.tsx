@@ -236,8 +236,8 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                       
                       {counterEnabled && <p className='text-[13px] text-gray-400 font-normal flex items-center'>
                         <i className="ri-eye-line mr-1"></i>
-                        {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
-                      </p>}
+                      {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
+                    </p>}
                     </div>
                     <div className="flex flex-row items-center">
                       <h1 className="text-2xl sm:text-3xl font-bold t-primary break-all leading-tight">
@@ -279,7 +279,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                   </div>
                 </div>
                 <div className="mt-6 prose prose-lg dark:prose-invert max-w-none">
-                  <Markdown content={feed.content} />
+                <Markdown content={feed.content} />
                 </div>
                 <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/30 flex flex-col gap-3">
                   {feed.hashtags.length > 0 && (
@@ -293,8 +293,8 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                   )}
                   <div className="mt-4 flex flex-col items-center justify-center">
                     <div className="relative flex-shrink-0 mb-2">
-                      <img
-                        src={feed.user.avatar || "/avatar.png"}
+                    <img
+                      src={feed.user.avatar || "/avatar.png"}
                         className="w-16 h-16 rounded-full border-2 border-gray-100 dark:border-gray-700 shadow-sm"
                         alt={feed.user.username}
                       />
@@ -324,9 +324,9 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                     {t("toc.title", { defaultValue: "目录" })}
                   </h3>
                   <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1">
-                    <TOC />
-                  </div>
-                </div>
+                <TOC />
+              </div>
+            </div>
                 <div className="bg-w rounded-2xl shadow-sm">
                   <RecentPosts />
                 </div>
@@ -397,7 +397,7 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
             </button>
           </div>
           <div className="custom-scrollbar overflow-y-auto max-h-[50vh]">
-            <TOC />
+          <TOC />
           </div>
         </div>
       </ReactModal>
@@ -527,21 +527,21 @@ function CommentInput({
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-3 animate-fadeIn overflow-hidden">
           <div className="w-full sm:w-[48%]">
             <label htmlFor="nickname" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">昵称 *</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                <i className="ri-user-smile-line text-gray-400"></i>
-              </div>
-              <input
+          <div className="relative">
+            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <i className="ri-user-smile-line text-gray-400"></i>
+            </div>
+            <input
                 id="nickname"
-                type="text"
+              type="text"
                 className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
-                placeholder={t("comment.anonymous.nickname_placeholder")}
-                value={nickname}
-                onChange={(e) => {
-                  setNickname(e.target.value);
-                  setError("");
-                }}
-              />
+              placeholder={t("comment.anonymous.nickname_placeholder")}
+              value={nickname}
+              onChange={(e) => {
+                setNickname(e.target.value);
+                setError("");
+              }}
+            />
             </div>
           </div>
           
@@ -771,29 +771,29 @@ function Comments({ id }: { id: string }) {
                         <i className="ri-refresh-line mr-1"></i>
                         {t("reload")}
                       </button>
-                    </div>
+                  </div>
                   
                     <div className="p-4 space-y-4">
                       {currentComments.map((comment, idx) => (
-                        <CommentItem
-                          comment={comment}
-                          onRefresh={loadComments}
+                      <CommentItem
+                        comment={comment}
+                        onRefresh={loadComments}
                           key={comment.id || idx}
-                        />
-                      ))}
+                      />
+                    ))}
                     </div>
                   </div>
                   
                   {totalPages > 1 && (
                     <div className="mt-6 flex justify-center">
-                      <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        siblingCount={1}
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                      siblingCount={1}
                         className="shadow-sm bg-white dark:bg-gray-800 rounded-2xl py-3 px-4"
                         aria-label={t("comment.pagination.title", { defaultValue: "评论分页" })}
-                      />
+                    />
                     </div>
                   )}
                 </div>
@@ -803,7 +803,7 @@ function Comments({ id }: { id: string }) {
                     <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
                       <i className="ri-chat-1-line text-xl text-gray-400 dark:text-gray-500"></i>
                     </div>
-                    <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{t("comment.empty_list")}</h3>
+                    <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{t("comment.no_comments")}</h3>
                   </div>
                 </div>
               )}

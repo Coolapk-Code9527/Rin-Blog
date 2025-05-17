@@ -40,7 +40,7 @@
   "close": "Close",
   "comment": {
     "empty": "Comment content cannot be empty",
-    "empty_list": "No comments yet, be the first to comment!",
+    "no_comments": "No comments yet, be the first to comment!",
     "placeholder": {
       "title": "Say something..."
     },
