@@ -25,6 +25,22 @@ cd Rin-Blog
 bun install
 ```
 
+如果遇到 lockfile 冻结错误：
+```
+error: lockfile had changes, but lockfile is frozen
+```
+
+请确保不使用 `--frozen-lockfile` 标志：
+```bash
+bun install
+```
+
+然后提交更新后的 lockfile：
+```bash
+git add bun.lockb
+git commit -m "更新 lockfile 以匹配新的依赖"
+```
+
 ### 3. 修复react-markdown导入问题
 
 如果遇到以下错误：
@@ -96,6 +112,11 @@ bun run build
    - 环境变量：
      - `NODE_VERSION`: `18`
 
+   如果遇到 lockfile 错误，可以修改构建命令：
+   ```bash
+   asdf install bun latest && asdf global bun latest && bun i --no-frozen-lockfile && bun b
+   ```
+
 ### 3. 高级设置（可选）
 
 如果需要自定义构建过程，可以在项目根目录创建一个`_worker.js`文件，以处理特定路由或实现自定义逻辑。
@@ -118,5 +139,8 @@ bun run build
 2. 检查构建日志中的详细错误信息
 3. 尝试使用`bun run build --debug`获取更多调试信息
 4. 在本地环境中确认构建可以成功，然后再推送到GitHub
+5. 如果遇到 lockfile 相关错误，可以尝试：
+   - 删除 `bun.lockb` 文件并重新生成：`rm bun.lockb && bun install`
+   - 在 CI/CD 环境中添加 `--no-frozen-lockfile` 标志
 
 如有进一步问题，请参考[官方文档](https://developers.cloudflare.com/pages/)或在GitHub仓库中提交Issue。 
