@@ -76,6 +76,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     const [adjacentFeeds, setAdjacentFeeds] = useState<AdjacentFeeds>();
     const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState<boolean>(true);
+    const {t} = useTranslation();
 
     useEffect(() => {
         setLoading(true);
@@ -131,19 +132,27 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     }, [id, setError]);
     
     return (
-        <div className="rounded-2xl bg-w m-2 grid grid-cols-1 sm:grid-cols-2">
-            <AdjacentCard 
-                data={adjacentFeeds?.previousFeed}
-                type="previous"
-                thumbnail={adjacentFeeds?.previousFeed && !loading ? thumbnails[`prev-${adjacentFeeds.previousFeed.id}`] : undefined}
-                loading={loading}
-            />
-            <AdjacentCard 
-                data={adjacentFeeds?.nextFeed}
-                type="next"
-                thumbnail={adjacentFeeds?.nextFeed && !loading ? thumbnails[`next-${adjacentFeeds.nextFeed.id}`] : undefined}
-                loading={loading}
-            />
+        <div className="my-4 mx-2">
+            <h3 className="text-lg font-medium px-2 mb-3 t-primary">
+                <span className="flex items-center">
+                    <i className="ri-arrow-left-right-line mr-2 text-theme"></i>
+                    {t('article.navigation')}
+                </span>
+            </h3>
+            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700">
+                <AdjacentCard 
+                    data={adjacentFeeds?.previousFeed}
+                    type="previous"
+                    thumbnail={adjacentFeeds?.previousFeed && !loading ? thumbnails[`prev-${adjacentFeeds.previousFeed.id}`] : undefined}
+                    loading={loading}
+                />
+                <AdjacentCard 
+                    data={adjacentFeeds?.nextFeed}
+                    type="next"
+                    thumbnail={adjacentFeeds?.nextFeed && !loading ? thumbnails[`next-${adjacentFeeds.nextFeed.id}`] : undefined}
+                    loading={loading}
+                />
+            </div>
         </div>
     )
 }
@@ -159,28 +168,37 @@ export function AdjacentCard({
     thumbnail: string | undefined,
     loading: boolean
 }) {
-    const direction = type === "previous" ? "text-start" : "text-end"
-    const radius = type === "previous" ? "rounded-t-2xl sm:rounded-none sm:rounded-l-2xl" : "rounded-b-2xl sm:rounded-none sm:rounded-r-2xl"
-    const {t} = useTranslation()
+    const direction = type === "previous" ? "text-start" : "text-end";
+    const {t} = useTranslation();
     
     if (!data) {
-        return (<div className="w-full p-6 duration-300">
-            <p className={`t-secondary w-full ${direction}`}>
-                {type === "previous" ? t("previous") : t("next")}
-            </p>
-            <h1 className={`text-xl text-gray-700 dark:text-white text-pretty truncate ${direction}`}>
-                {t('no_more')}
-            </h1>
-        </div>);
+        return (
+            <div className="w-full p-6 duration-300 bg-gray-50/50 dark:bg-gray-800/20">
+                <p className={`t-secondary w-full ${direction} flex items-center ${type === "next" ? "justify-end" : "justify-start"}`}>
+                    {type === "previous" ? (
+                        <span className="flex items-center"><i className="ri-arrow-left-line mr-1"></i> {t("previous")}</span>
+                    ) : (
+                        <span className="flex items-center">{t("next")} <i className="ri-arrow-right-line ml-1"></i></span>
+                    )}
+                </p>
+                <h1 className={`text-xl text-gray-700 dark:text-white text-pretty truncate ${direction} mt-1`}>
+                    {t('no_more')}
+                </h1>
+            </div>
+        );
     }
     
     return (
-        <Link href={`/feed/${data.id}`} target="_blank"
-              className={`w-full p-6 duration-300 bg-button ${radius}`}>
-            <p className={`t-secondary w-full ${direction}`}>
-                {type === "previous" ? t("previous") : t("next")}
+        <Link href={`/feed/${data.id}`} 
+              className={`w-full p-6 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 group`}>
+            <p className={`t-secondary w-full ${direction} flex items-center ${type === "next" ? "justify-end" : "justify-start"}`}>
+                {type === "previous" ? (
+                    <span className="flex items-center"><i className="ri-arrow-left-line mr-1"></i> {t("previous")}</span>
+                ) : (
+                    <span className="flex items-center">{t("next")} <i className="ri-arrow-right-line ml-1"></i></span>
+                )}
             </p>
-            <div className={`flex items-center gap-3 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
+            <div className={`flex items-center gap-3 mt-2 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
                 <div className="flex-shrink-0 w-16 h-16">
                     {loading ? (
                         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center animate-pulse">
@@ -190,7 +208,7 @@ export function AdjacentCard({
                         <img 
                             src={thumbnail} 
                             alt={data.title || ""} 
-                            className="w-16 h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700"
+                            className="w-16 h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700 group-hover:border-theme transition-colors"
                             loading="lazy"
                             onError={(e) => {
                                 console.log(`图片加载失败: ${data.id}, 使用默认图标`);
@@ -212,7 +230,7 @@ export function AdjacentCard({
                     )}
                 </div>
                 <div className={`flex-1 ${direction}`}>
-                    <h1 className={`text-xl font-bold text-gray-700 dark:text-white text-pretty truncate`}>
+                    <h1 className={`text-xl font-bold text-gray-700 dark:text-white text-pretty truncate group-hover:text-theme transition-colors`}>
                         {data.title}
                     </h1>
                     <p className={`space-x-2`}>

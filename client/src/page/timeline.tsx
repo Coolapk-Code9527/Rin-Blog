@@ -14,12 +14,15 @@ export function TimelinePage() {
     const { t } = useTranslation()
     const [location] = useLocation();
     const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
     function fetchFeeds() {
         setError(null);
+        setLoading(true);
         client.feed.timeline.get({
             headers: headersWithAuth()
         }).then(({ data }) => {
+            setLoading(false);
             if (data && typeof data !== 'string') {
                 setLength(data.length)
                 const groups = Object.groupBy(data, ({ createdAt }) => new Date(createdAt).getFullYear())
@@ -32,6 +35,7 @@ export function TimelinePage() {
             }
         }).catch(error => {
             console.error("Error fetching timeline feeds:", error);
+            setLoading(false);
             setLength(0);
             setFeeds({});
             setError(t('load_failed') || '加载失败');
@@ -66,13 +70,23 @@ export function TimelinePage() {
                         {error && (
                           <div className="mt-2 mb-4 flex flex-col items-start">
                             <span className="text-red-500 text-sm mb-2">{error}</span>
-                        <button 
-                            onClick={fetchFeeds} 
+                            <button 
+                                onClick={fetchFeeds} 
                                 className="px-4 py-2 bg-theme text-white rounded hover:bg-theme-dark dark:bg-theme-dark dark:hover:bg-theme-light focus:outline-none focus:ring-2 focus:ring-theme-focus"
-                            aria-label={t('reload') || "Reload"}
-                        >
-                            {t('reload')}
-                        </button>
+                                aria-label={t('reload') || "Reload"}
+                                disabled={loading}
+                            >
+                                {loading ? 
+                                    <span className="flex items-center">
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        {t('loading')}
+                                    </span> : 
+                                    t('reload')
+                                }
+                            </button>
                           </div>
                         )}
                     </div>

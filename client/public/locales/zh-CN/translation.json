@@ -32,7 +32,8 @@
       "success": "取消置顶成功",
       "title": "取消置顶"
     },
-    "public_description": "公开发布的文章，所有人可见"
+    "public_description": "公开发布的文章，所有人可见",
+    "navigation": "相关文章"
   },
   "avatar": {
     "url": "头像 URL"
@@ -42,6 +43,7 @@
   "close": "关闭",
   "comment": {
     "empty": "评论内容不能为空",
+    "empty_list": "暂无评论，来说点什么吧",
     "placeholder": {
       "title": "说点什么吧"
     },
@@ -56,7 +58,6 @@
       "switch": "匿名评论",
       "tag": "匿名用户"
     },
-    "empty_list": "暂无评论，来说点什么吧",
     "list": {
       "title": "全部评论 ({{count}}条)"
     },
@@ -157,11 +158,11 @@
   },
   "logout": "退出登录",
   "main_content": "正文",
-  "next": "下一页",
+  "next": "下一篇",
   "no_more": "没有更多了",
   "preview": "预览",
   "preview.image": "图片",
-  "previous": "上一页",
+  "previous": "上一篇",
   "publish": {
     "success": "发布成功",
     "title": "发布"

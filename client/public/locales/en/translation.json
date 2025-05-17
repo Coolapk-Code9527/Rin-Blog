@@ -13,24 +13,27 @@
     "search": {
       "placeholder": "Please enter keywords",
       "title": "Search",
-      "title$keyword": "Search: {{keyword}}"
+      "title$keyword": "Search: {{keyword}}",
+      "history": "Search History",
+      "clear_history": "Clear History"
     },
-    "title": "Articles",
+    "title": "Article",
     "top": {
       "confirm": "Are you sure you want to top this article?",
-      "success": "Topped successfully",
+      "success": "Top successful",
       "title": "Top"
     },
-    "total_short$count_one": "{{count}} articles",
+    "total_short$count_one": "{{count}} article",
     "total_short$count_other": "{{count}} articles",
-    "total$count_one": "{{count}} articles in total",
-    "total$count_other": "{{count}} articles in total",
+    "total$count_one": "Total {{count}} article",
+    "total$count_other": "Total {{count}} articles",
     "untop": {
       "confirm": "Are you sure you want to untop this article?",
-      "success": "Untopped successfully",
+      "success": "Untop successful",
       "title": "Untop"
     },
-    "public_description": "Public articles visible to everyone"
+    "public_description": "Publicly published articles, visible to everyone",
+    "navigation": "Related Articles"
   },
   "avatar": {
     "url": "Avatar URL"
@@ -39,9 +42,10 @@
   "clear": "Clear",
   "close": "Close",
   "comment": {
-    "empty": "Comment cannot be empty",
+    "empty": "Comment content cannot be empty",
+    "empty_list": "No comments yet, be the first to comment!",
     "placeholder": {
-      "title": "Say something"
+      "title": "Say something..."
     },
     "submit": "Submit Comment",
     "success": "Comment successful",
@@ -54,7 +58,6 @@
       "switch": "Comment Anonymously",
       "tag": "Anonymous"
     },
-    "empty_list": "No comments yet. Be the first to comment!",
     "list": {
       "title": "All Comments ({{count}})"
     },
