@@ -187,7 +187,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-6 px-3 md:px-4 lg:px-5">
+      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-4 px-3 md:px-4 lg:px-5">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -319,11 +319,11 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
             <aside className="w-full lg:w-60 xl:w-64 hidden lg:block">
               <div className="sticky top-[5.5rem]">
                 <div className="bg-w rounded-2xl mt-2 p-3 mb-5 shadow-sm">
-                  <h3 className="text-lg font-medium t-primary mb-3 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
+                  <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
                     <i className="ri-list-unordered text-theme"></i>
                     {t("toc.title", { defaultValue: "目录" })}
                   </h3>
-                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1">
+                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1 mt-2">
                     <TOC />
                   </div>
                 </div>
@@ -396,7 +396,7 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
               <i className="ri-close-line text-lg"></i>
             </button>
           </div>
-          <div className="custom-scrollbar overflow-y-auto max-h-[50vh] pt-1">
+          <div className="custom-scrollbar overflow-y-auto max-h-[50vh] pt-1 pl-1">
             <TOC />
           </div>
         </div>
