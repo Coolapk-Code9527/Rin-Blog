@@ -133,14 +133,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     
     return (
         <div className="w-full mt-3 sm:mt-4 mb-3 sm:mb-4">
-            <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 t-primary">
-                <span className="flex items-center">
-                    <i className="ri-arrow-left-right-line mr-2 text-theme"></i>
-                    <span className="hidden xs:inline">{t('article.navigation')}</span>
-                    <span className="xs:hidden">{t('previous')}/{t('next')}</span>
-                </span>
-            </h3>
-            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700">
+            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-700">
                 <AdjacentCard 
                     data={adjacentFeeds?.previousFeed}
                     type="previous"
@@ -174,15 +167,15 @@ export function AdjacentCard({
     
     if (!data) {
         return (
-            <div className="w-full p-2.5 xs:p-3 sm:p-4 md:p-6 duration-300 bg-gray-50/50 dark:bg-gray-800/20">
-                <p className={`t-secondary text-sm w-full ${direction} flex items-center ${type === "next" ? "justify-end" : "justify-start"}`}>
+            <div className="w-full py-2 px-2 xs:p-2 sm:p-3 md:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20">
+                <p className={`t-secondary text-xs sm:text-sm w-full ${direction} flex items-center ${type === "next" ? "justify-end" : "justify-start"}`}>
                     {type === "previous" ? (
                         <span className="flex items-center"><i className="ri-arrow-left-line mr-1"></i> {t("previous")}</span>
                     ) : (
                         <span className="flex items-center">{t("next")} <i className="ri-arrow-right-line ml-1"></i></span>
                     )}
                 </p>
-                <h1 className={`text-sm sm:text-base md:text-xl text-gray-700 dark:text-white text-pretty truncate ${direction} mt-0.5 sm:mt-1`}>
+                <h1 className={`text-xs sm:text-sm md:text-base text-gray-700 dark:text-white text-pretty truncate ${direction} mt-0.5`}>
                     {t('no_more')}
                 </h1>
             </div>
@@ -191,25 +184,25 @@ export function AdjacentCard({
     
     return (
         <Link href={`/feed/${data.id}`} 
-              className={`w-full p-2.5 xs:p-3 sm:p-4 md:p-6 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 group`}>
-            <p className={`t-secondary text-sm w-full ${direction} flex items-center ${type === "next" ? "justify-end" : "justify-start"}`}>
+              className={`w-full py-2 px-2 xs:p-2 sm:p-3 md:p-4 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 group`}>
+            <p className={`t-secondary text-xs sm:text-sm w-full ${direction} flex items-center ${type === "next" ? "justify-end" : "justify-start"}`}>
                 {type === "previous" ? (
                     <span className="flex items-center"><i className="ri-arrow-left-line mr-1"></i> {t("previous")}</span>
                 ) : (
                     <span className="flex items-center">{t("next")} <i className="ri-arrow-right-line ml-1"></i></span>
                 )}
             </p>
-            <div className={`flex items-center gap-1.5 xs:gap-2 sm:gap-3 mt-0.5 xs:mt-1 sm:mt-2 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16">
+            <div className={`flex items-center gap-1 xs:gap-1.5 sm:gap-2 mt-0.5 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
+                <div className="flex-shrink-0 w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12">
                     {loading ? (
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center animate-pulse">
-                            <i className="ri-image-line text-gray-400 dark:text-gray-600 text-base sm:text-lg md:text-xl"></i>
+                        <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center animate-pulse">
+                            <i className="ri-image-line text-gray-400 dark:text-gray-600 text-xs xs:text-sm sm:text-base"></i>
                         </div>
                     ) : thumbnail ? (
                         <img 
                             src={thumbnail} 
                             alt={data.title || ""} 
-                            className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700 group-hover:border-theme transition-colors"
+                            className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 object-cover rounded-md border border-gray-200 dark:border-gray-700 group-hover:border-theme transition-colors"
                             loading="lazy"
                             onError={(e) => {
                                 console.log(`图片加载失败: ${data.id}, 使用默认图标`);
@@ -217,33 +210,23 @@ export function AdjacentCard({
                                 const container = target.parentElement;
                                 if (container) {
                                     container.innerHTML = `
-                                        <div class="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
-                                            <i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-base sm:text-lg md:text-xl"></i>
+                                        <div class="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
+                                            <i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-xs xs:text-sm sm:text-base"></i>
                                         </div>
                                     `;
                                 }
                             }}
                         />
                     ) : (
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
-                            <i className="ri-file-text-line text-gray-400 dark:text-gray-600 text-base sm:text-lg md:text-xl"></i>
+                        <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
+                            <i className="ri-file-text-line text-gray-400 dark:text-gray-600 text-xs xs:text-sm sm:text-base"></i>
                         </div>
                     )}
                 </div>
-                <div className={`flex-1 ${direction}`}>
-                    <h1 className={`text-sm xs:text-base sm:text-lg md:text-xl font-medium xs:font-bold text-gray-700 dark:text-white text-pretty truncate group-hover:text-theme transition-colors`}>
+                <div className={`flex-1 min-w-0 ${direction}`}>
+                    <h1 className={`text-xs xs:text-sm sm:text-base font-medium text-gray-700 dark:text-white text-pretty truncate group-hover:text-theme transition-colors`}>
                         {data.title}
                     </h1>
-                    <p className={`hidden sm:block space-x-2`}>
-                        <span className="text-xs sm:text-sm text-gray-400" title={new Date(data.createdAt).toLocaleString()}>
-                            {data.createdAt === data.updatedAt ? timeago(data.createdAt) : t('feed_card.published$time', {time: timeago(data.createdAt)})}
-                        </span>
-                        {data.createdAt !== data.updatedAt &&
-                            <span className="text-xs sm:text-sm text-gray-400 hidden sm:inline" title={new Date(data.updatedAt).toLocaleString()}>
-                                {t('feed_card.updated$time', {time: timeago(data.updatedAt)})}
-                            </span>
-                        }
-                    </p>
                 </div>
             </div>
         </Link>
