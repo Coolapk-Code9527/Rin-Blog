@@ -689,6 +689,7 @@ function Comments({ id }: { id: string }) {
           if (currentPage > totalPages && totalPages > 0) {
             setCurrentPage(1);
           }
+          setError(undefined);
         }
       })
       .catch((err) => {

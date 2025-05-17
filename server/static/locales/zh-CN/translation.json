@@ -42,6 +42,7 @@
   "close": "关闭",
   "comment": {
     "empty": "评论内容不能为空",
+    "empty_list": "暂无评论，来说点什么吧",
     "placeholder": {
       "title": "说点什么吧"
     },
@@ -54,9 +55,12 @@
       "nickname_empty": "昵称不能为空",
       "nickname_placeholder": "请输入昵称",
       "switch": "匿名评论",
-      "tag": "匿名用户"
+      "tag": "匿名用户",
+      "email_invalid": "请输入有效的电子邮箱地址",
+      "email": "邮箱",
+      "email_placeholder": "your@email.com (选填)",
+      "email_help": "邮箱将用于接收回复通知，不会公开显示"
     },
-    "empty_list": "暂无评论，来说点什么吧",
     "list": {
       "title": "全部评论 ({{count}}条)"
     },

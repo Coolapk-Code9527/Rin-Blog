@@ -39,9 +39,10 @@
   "clear": "Clear",
   "close": "Close",
   "comment": {
-    "empty": "Comment cannot be empty",
+    "empty": "Comment content cannot be empty",
+    "empty_list": "No comments yet, be the first to comment!",
     "placeholder": {
-      "title": "Say something"
+      "title": "Say something..."
     },
     "submit": "Submit Comment",
     "success": "Comment successful",
@@ -52,9 +53,12 @@
       "nickname_empty": "Nickname cannot be empty",
       "nickname_placeholder": "Please enter your nickname",
       "switch": "Comment Anonymously",
-      "tag": "Anonymous"
+      "tag": "Anonymous",
+      "email_invalid": "Please enter a valid email address",
+      "email": "Email",
+      "email_placeholder": "your@email.com (optional)",
+      "email_help": "Email will be used for reply notifications and won't be publicly displayed"
     },
-    "empty_list": "No comments yet. Be the first to comment!",
     "list": {
       "title": "All Comments ({{count}})"
     },
