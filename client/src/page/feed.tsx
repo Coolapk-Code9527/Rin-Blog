@@ -319,6 +319,10 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
             <aside className="w-full lg:w-60 xl:w-64 pt-2 hidden lg:block">
               <div className="sticky top-[5.5rem]">
                 <div className="bg-w rounded-2xl p-4 mb-5 shadow-sm">
+                  <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
+                    <i className="ri-list-unordered text-theme"></i>
+                    {t("toc.title", { defaultValue: "目录" })}
+                  </h3>
                   <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1">
                     <TOC />
                   </div>
@@ -411,6 +415,7 @@ function CommentInput({
   const { t } = useTranslation();
   const [content, setContent] = React.useState("");
   const [nickname, setNickname] = React.useState("");
+  const [email, setEmail] = React.useState("");
   const [isAnonymous, setIsAnonymous] = React.useState(false);
   const [error, setError] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
@@ -450,7 +455,8 @@ function CommentInput({
         { 
           content, 
           isAnonymous, 
-          nickname: isAnonymous ? nickname : undefined 
+          nickname: isAnonymous ? nickname : undefined,
+          email: isAnonymous && email.trim() ? email : undefined
         },
         {
           headers: headersWithAuth(),
@@ -464,6 +470,7 @@ function CommentInput({
           setContent("");
           if (isAnonymous) {
             setNickname("");
+            setEmail("");
           }
           setError("");
           showAlert(t("comment.success"), () => {
@@ -503,21 +510,44 @@ function CommentInput({
       </div>
       
       {isAnonymous && (
-        <div className="px-4 py-3 border-b border-gray-100">
-          <div className="relative">
-            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-              <i className="ri-user-smile-line text-gray-400"></i>
+        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-3">
+          <div className="w-full sm:w-[48%]">
+            <label htmlFor="nickname" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">昵称 *</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <i className="ri-user-smile-line text-gray-400"></i>
+              </div>
+              <input
+                id="nickname"
+                type="text"
+                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
+                placeholder={t("comment.anonymous.nickname_placeholder")}
+                value={nickname}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  setError("");
+                }}
+              />
             </div>
-            <input
-              type="text"
-              className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
-              placeholder={t("comment.anonymous.nickname_placeholder")}
-              value={nickname}
-              onChange={(e) => {
-                setNickname(e.target.value);
-                setError("");
-              }}
-            />
+          </div>
+          
+          <div className="w-full sm:w-[48%]">
+            <label htmlFor="email" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">邮箱 (选填)</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <i className="ri-mail-line text-gray-400"></i>
+              </div>
+              <input
+                id="email"
+                type="email"
+                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
+                placeholder="your@email.com (选填)"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -526,7 +556,7 @@ function CommentInput({
         <div className="px-4 py-4">
           <textarea
             placeholder={t("comment.placeholder.title")}
-            className="w-full min-h-24 p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-theme focus:border-theme focus:outline-none resize-y text-sm"
+            className="w-full min-h-24 p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-theme focus:border-theme focus:outline-none resize-y text-sm text-gray-900 dark:text-gray-100"
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
@@ -536,7 +566,7 @@ function CommentInput({
           
           <div className="flex justify-between items-center mt-3">
             {error && (
-              <div className="text-red-500 text-xs bg-red-50 px-3 py-1.5 rounded-full flex items-center">
+              <div className="text-red-500 text-xs bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-full flex items-center">
                 <i className="ri-error-warning-line mr-1"></i>
                 {error}
               </div>
@@ -546,7 +576,7 @@ function CommentInput({
               disabled={submitting}
               className={`px-4 py-2 rounded-2xl flex items-center text-sm ${
                 submitting 
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
                   : 'bg-theme text-white hover:bg-theme-hover'
               }`}
               onClick={submit}
@@ -568,8 +598,8 @@ function CommentInput({
       ) : (
         <div className="flex flex-col items-center justify-center py-10 px-4">
           <div className="mb-4 text-center">
-            <i className="ri-user-follow-line text-5xl text-gray-200 mb-3 block"></i>
-            <p className="text-gray-500 text-sm">{t("login.required")}</p>
+            <i className="ri-user-follow-line text-5xl text-gray-200 dark:text-gray-700 mb-3 block"></i>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">{t("login.required")}</p>
           </div>
           <button
             className="bg-theme text-white px-4 py-2 rounded-2xl hover:bg-theme-hover transition-colors flex items-center text-sm"
@@ -704,7 +734,7 @@ function Comments({ id }: { id: string }) {
                   <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
                     <div className="bg-gray-50 dark:bg-gray-750 px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                       <h3 className="text-base font-medium flex items-center">
-                        <i className="ri-list-check text-theme mr-2"></i>
+                        <i className="ri-chat-3-line mr-2 text-theme"></i>
                         {t("comment.list.title", { count: comments.length })}
                       </h3>
                       <button
@@ -715,16 +745,16 @@ function Comments({ id }: { id: string }) {
                         {t("reload")}
                       </button>
                     </div>
-                  </div>
                   
-                  <div className="space-y-4">
-                    {currentComments.map((comment, idx) => (
-                      <CommentItem
-                        comment={comment}
-                        onRefresh={loadComments}
-                        key={comment.id || idx}
-                      />
-                    ))}
+                    <div className="p-4 space-y-4">
+                      {currentComments.map((comment, idx) => (
+                        <CommentItem
+                          comment={comment}
+                          onRefresh={loadComments}
+                          key={comment.id || idx}
+                        />
+                      ))}
+                    </div>
                   </div>
                   
                   {totalPages > 1 && (

@@ -23,85 +23,146 @@ export type AdjacentFeeds = {
 
 // 提取图片URL的辅助函数
 const extractImageUrl = (content: string): string | null => {
-    // 尝试从Markdown格式提取
-    const markdownRegex = /!\[.*?\]\((.*?)\)/;
-    const markdownMatch = markdownRegex.exec(content);
-    if (markdownMatch && markdownMatch[1]) {
-        return markdownMatch[1];
-    }
+    if (!content) return null;
     
-    // 尝试从HTML格式提取
-    const htmlRegex = /<img.*?src=["'](.*?)["']/;
-    const htmlMatch = htmlRegex.exec(content);
-    if (htmlMatch && htmlMatch[1]) {
-        return htmlMatch[1];
+    try {
+        // 尝试从Markdown格式提取
+        const markdownRegex = /!\[.*?\]\((.*?)\)/;
+        const markdownMatch = markdownRegex.exec(content);
+        if (markdownMatch && markdownMatch[1]) {
+            console.log("从Markdown提取图片URL:", markdownMatch[1]);
+            return markdownMatch[1];
+        }
+        
+        // 尝试从HTML格式提取
+        const htmlRegex = /<img.*?src=["'](.*?)["']/;
+        const htmlMatch = htmlRegex.exec(content);
+        if (htmlMatch && htmlMatch[1]) {
+            console.log("从HTML提取图片URL:", htmlMatch[1]);
+            return htmlMatch[1];
+        }
+    } catch (error) {
+        console.error("提取图片URL时出错:", error);
     }
     
     return null;
 };
 
+// 获取完整文章信息以获取avatar字段
+const fetchFullArticle = async (id: number): Promise<string | null> => {
+    try {
+        const response = await client.feed({ id: id.toString() }).get();
+        if (!response.error && response.data) {
+            console.log(`获取文章 ${id} 的完整信息:`, response.data);
+            if (response.data.avatar) {
+                return response.data.avatar;
+            }
+            
+            // 如果没有avatar字段，从content中提取第一张图片
+            if (response.data.content) {
+                return extractImageUrl(response.data.content);
+            }
+        }
+    } catch (error) {
+        console.error(`获取文章 ${id} 信息失败:`, error);
+    }
+    return null;
+};
+
+// 默认图片常量
+const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
+
 export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
     const [adjacentFeeds, setAdjacentFeeds] = useState<AdjacentFeeds>();
-    const [thumbnails, setThumbnails] = useState<Record<string, string | null>>({});
+    const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
+        setLoading(true);
         client.feed
             .adjacent({id})
             .get()
-            .then(({data, error}) => {
+            .then(async ({data, error}) => {
                 if (error) {
                     setError(error.value as string);
+                    setLoading(false);
                 } else if (data && typeof data !== "string") {
                     setAdjacentFeeds(data);
                     
-                    // 为每个相邻文章尝试提取缩略图
-                    const extractedThumbnails: Record<string, string | null> = {};
+                    // 为每个相邻文章获取缩略图
+                    const extractedThumbnails: Record<string, string> = {};
                     
                     // 处理上一篇文章
                     if (data.previousFeed) {
-                        extractedThumbnails[`prev-${data.previousFeed.id}`] = 
-                            data.previousFeed.avatar || extractImageUrl(data.previousFeed.summary);
+                        // 先尝试从摘要中提取图片
+                        let thumbnail = extractImageUrl(data.previousFeed.summary);
+                        
+                        // 如果摘要中没有图片，获取完整文章信息
+                        if (!thumbnail) {
+                            thumbnail = await fetchFullArticle(data.previousFeed.id);
+                        }
+                        
+                        extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
+                        console.log(`上一篇文章(ID:${data.previousFeed.id})缩略图:`, extractedThumbnails[`prev-${data.previousFeed.id}`]);
                     }
                     
                     // 处理下一篇文章
                     if (data.nextFeed) {
-                        extractedThumbnails[`next-${data.nextFeed.id}`] = 
-                            data.nextFeed.avatar || extractImageUrl(data.nextFeed.summary);
+                        // 先尝试从摘要中提取图片
+                        let thumbnail = extractImageUrl(data.nextFeed.summary);
+                        
+                        // 如果摘要中没有图片，获取完整文章信息
+                        if (!thumbnail) {
+                            thumbnail = await fetchFullArticle(data.nextFeed.id);
+                        }
+                        
+                        extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
+                        console.log(`下一篇文章(ID:${data.nextFeed.id})缩略图:`, extractedThumbnails[`next-${data.nextFeed.id}`]);
                     }
                     
                     setThumbnails(extractedThumbnails);
                 }
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error("获取相邻文章信息失败:", err);
+                setLoading(false);
             });
     }, [id, setError]);
     
     return (
         <div className="rounded-2xl bg-w m-2 grid grid-cols-1 sm:grid-cols-2">
             <AdjacentCard 
-                data={adjacentFeeds?.previousFeed} 
-                type="previous" 
-                thumbnail={adjacentFeeds?.previousFeed ? thumbnails[`prev-${adjacentFeeds.previousFeed.id}`] : null}
+                data={adjacentFeeds?.previousFeed}
+                type="previous"
+                thumbnail={adjacentFeeds?.previousFeed && !loading ? thumbnails[`prev-${adjacentFeeds.previousFeed.id}`] : undefined}
+                loading={loading}
             />
             <AdjacentCard 
-                data={adjacentFeeds?.nextFeed} 
+                data={adjacentFeeds?.nextFeed}
                 type="next"
-                thumbnail={adjacentFeeds?.nextFeed ? thumbnails[`next-${adjacentFeeds.nextFeed.id}`] : null}
+                thumbnail={adjacentFeeds?.nextFeed && !loading ? thumbnails[`next-${adjacentFeeds.nextFeed.id}`] : undefined}
+                loading={loading}
             />
         </div>
     )
 }
 
 export function AdjacentCard({
-    data, 
-    type, 
-    thumbnail
-}: { 
-    data: AdjacentFeed | null | undefined, 
+    data,
+    type,
+    thumbnail,
+    loading
+}: {
+    data: AdjacentFeed | null | undefined,
     type: "previous" | "next",
-    thumbnail: string | null | undefined
+    thumbnail: string | undefined,
+    loading: boolean
 }) {
     const direction = type === "previous" ? "text-start" : "text-end"
     const radius = type === "previous" ? "rounded-t-2xl sm:rounded-none sm:rounded-l-2xl" : "rounded-b-2xl sm:rounded-none sm:rounded-r-2xl"
     const {t} = useTranslation()
+    
     if (!data) {
         return (<div className="w-full p-6 duration-300">
             <p className={`t-secondary w-full ${direction}`}>
@@ -112,6 +173,7 @@ export function AdjacentCard({
             </h1>
         </div>);
     }
+    
     return (
         <Link href={`/feed/${data.id}`} target="_blank"
               className={`w-full p-6 duration-300 bg-button ${radius}`}>
@@ -119,20 +181,36 @@ export function AdjacentCard({
                 {type === "previous" ? t("previous") : t("next")}
             </p>
             <div className={`flex items-center gap-3 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
-                {thumbnail && (
-                    <div className="flex-shrink-0">
+                <div className="flex-shrink-0 w-16 h-16">
+                    {loading ? (
+                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center animate-pulse">
+                            <i className="ri-image-line text-gray-400 dark:text-gray-600 text-xl"></i>
+                        </div>
+                    ) : thumbnail ? (
                         <img 
                             src={thumbnail} 
                             alt={data.title || ""} 
                             className="w-16 h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700"
                             loading="lazy"
                             onError={(e) => {
+                                console.log(`图片加载失败: ${data.id}, 使用默认图标`);
                                 const target = e.currentTarget as HTMLImageElement;
-                                target.style.display = "none";
-                            }} 
+                                const container = target.parentElement;
+                                if (container) {
+                                    container.innerHTML = `
+                                        <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
+                                            <i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-xl"></i>
+                                        </div>
+                                    `;
+                                }
+                            }}
                         />
-                    </div>
-                )}
+                    ) : (
+                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
+                            <i className="ri-file-text-line text-gray-400 dark:text-gray-600 text-xl"></i>
+                        </div>
+                    )}
+                </div>
                 <div className={`flex-1 ${direction}`}>
                     <h1 className={`text-xl font-bold text-gray-700 dark:text-white text-pretty truncate`}>
                         {data.title}
