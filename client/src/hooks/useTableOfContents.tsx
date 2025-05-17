@@ -1,6 +1,7 @@
 /* eslint-disable */
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
+import { useMemo } from 'react'
 const { useEffect, useRef, useState, useCallback } = React;
 
 export interface TableOfContent {
@@ -8,6 +9,13 @@ export interface TableOfContent {
     text: string
     marginLeft: number
     element: HTMLElement
+}
+
+export interface TocItem {
+  id: string;
+  text: string;
+  depth: number;
+  children: TocItem[];
 }
 
 const useTableOfContents = (selector: string, contentReadySignal?: any) => {
@@ -304,4 +312,113 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
     };
 };
 
-export default useTableOfContents
+/**
+ * 从Markdown内容生成目录结构
+ * @param content Markdown内容
+ * @returns 目录结构
+ */
+export default function useToc(content: string): TocItem[] {
+  return useMemo(() => {
+    // 如果内容为空，返回空数组
+    if (!content) {
+      return [];
+    }
+
+    // 匹配标题的正则表达式
+    const headingRegex = /^(#{1,6})\s+(.+?)(?:\s*{#([^}]+)})?$/gm;
+    const headings: { level: number; text: string; id: string }[] = [];
+    let match;
+
+    // 提取所有标题
+    while ((match = headingRegex.exec(content)) !== null) {
+      const level = match[1].length;
+      const text = match[2].trim();
+      // 如果标题中有自定义ID，则使用该ID，否则生成一个ID
+      let id = match[3] || text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+      
+      headings.push({ level, text, id });
+    }
+
+    // 构建层次化的目录结构
+    const buildToc = (headings: { level: number; text: string; id: string }[]): TocItem[] => {
+      if (headings.length === 0) return [];
+
+      const toc: TocItem[] = [];
+      let currentLevel = headings[0].level;
+      let currentItem: TocItem | null = null;
+
+      headings.forEach((heading) => {
+        const item: TocItem = {
+          id: heading.id,
+          text: heading.text,
+          depth: heading.level,
+          children: [],
+        };
+
+        if (heading.level === currentLevel) {
+          // 同级标题，添加到同一级别
+          toc.push(item);
+          currentItem = item;
+        } else if (heading.level > currentLevel && currentItem) {
+          // 子标题，添加到当前标题的子项
+          const nestedHeadings = [heading];
+          let i = headings.indexOf(heading) + 1;
+          
+          // 收集所有子标题
+          while (i < headings.length && headings[i].level > currentLevel) {
+            nestedHeadings.push(headings[i]);
+            i++;
+          }
+          
+          // 递归构建子目录
+          currentItem.children = buildToc(nestedHeadings);
+          
+          // 跳过已处理的标题
+          headingRegex.lastIndex = i;
+          return toc;
+        }
+      });
+
+      return toc;
+    };
+
+    // 按照标题级别分组
+    const groupedHeadings: { [key: number]: { level: number; text: string; id: string }[] } = {};
+    headings.forEach((heading) => {
+      if (!groupedHeadings[heading.level]) {
+        groupedHeadings[heading.level] = [];
+      }
+      groupedHeadings[heading.level].push(heading);
+    });
+
+    // 创建树状结构
+    const createTree = (items: { level: number; text: string; id: string }[]): TocItem[] => {
+      const result: TocItem[] = [];
+      const stack: TocItem[] = [];
+
+      items.forEach((item) => {
+        const node: TocItem = { id: item.id, text: item.text, depth: item.level, children: [] };
+
+        // 移除栈中级别大于或等于当前节点的项
+        while (stack.length > 0 && stack[stack.length - 1].depth >= item.level) {
+          stack.pop();
+        }
+
+        if (stack.length === 0) {
+          // 如果栈为空，将节点添加到结果中
+          result.push(node);
+        } else {
+          // 否则将节点添加为栈顶节点的子节点
+          stack[stack.length - 1].children.push(node);
+        }
+
+        // 将当前节点添加到栈中
+        stack.push(node);
+      });
+
+      return result;
+    };
+
+    return createTree(headings);
+  }, [content]);
+}
