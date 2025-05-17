@@ -58,6 +58,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
   const [top, setTop] = React.useState<number>(0);
   const config = React.useContext(ClientConfigContext);
   const counterEnabled = config.get<boolean>('counter.enabled');
+  const [contentReady, setContentReady] = React.useState<boolean>(false);
   function deleteFeed() {
     // Confirm
     showConfirm(
@@ -129,6 +130,8 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
             if (img_match) {
               setHeadImage(img_match[1]);
             }
+            // 标记内容已加载完成
+            setContentReady(true);
           }, 0);
         }
       });
@@ -187,7 +190,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
+      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5 pt-2">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -206,9 +209,9 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl mt-2">
+            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl">
               <article
-                className="rounded-2xl bg-w px-4 sm:px-6 md:px-7 py-5 sm:py-6 shadow-sm hover:shadow-md transition-all duration-300"
+                className="rounded-2xl bg-w px-4 sm:px-6 md:px-7 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
                 <div className="flex justify-between">
@@ -278,8 +281,14 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                     )}
                   </div>
                 </div>
-                <div className="mt-6 prose prose-lg dark:prose-invert max-w-none">
-                <Markdown content={feed.content} />
+                <div className="mt-6 prose prose-lg dark:prose-invert max-w-none toc-content">
+                <Markdown 
+                  content={feed.content} 
+                  onReady={() => {
+                    // Markdown内容渲染完成后设置标记
+                    setTimeout(() => setContentReady(true), 100);
+                  }}
+                />
                 </div>
                 <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/30 flex flex-col gap-3">
                   {feed.hashtags.length > 0 && (
@@ -316,7 +325,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
             </main>
-            <aside className="w-full lg:w-60 xl:w-64 hidden lg:block mt-2">
+            <aside className="w-full lg:w-60 xl:w-64 hidden lg:block">
               <div className="sticky top-[5.5rem]">
                 <div className="bg-w rounded-2xl p-3 mb-5 shadow-sm">
                   <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">

@@ -156,12 +156,13 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
   return false;
 };
 
-export function Markdown({ content }: { content: string }) {
+export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
   const colorMode = useColorMode();
   const [index, setIndex] = React.useState(-1);
   const slides = useRef<SlideImage[]>();
   const { t } = useTranslation();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     slides.current = undefined;
@@ -177,6 +178,21 @@ export function Markdown({ content }: { content: string }) {
     }
     setImageUrls(urls);
   }, [content]);
+
+  // 当内容渲染完成后触发onReady回调
+  useEffect(() => {
+    if (!isReady && content) {
+      // 给一点延迟确保DOM已经渲染
+      const timer = setTimeout(() => {
+        setIsReady(true);
+        if (onReady) {
+          onReady();
+        }
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [content, isReady, onReady]);
 
   // 生成图片查看器的幻灯片
   const generateSlides = () => {

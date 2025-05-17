@@ -1,6 +1,7 @@
 /* eslint-disable */
-import React, { useEffect, useRef, useState, useCallback } from 'react'
+import * as React from 'react'
 import { useTranslation } from 'react-i18next'
+const { useEffect, useRef, useState, useCallback } = React;
 
 export interface TableOfContent {
     index: number
@@ -209,10 +210,34 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
         contentElementRef.current = null;
         attemptCountRef.current = 0; // 重置尝试计数
 
+        // 检查是否已经有内容加载
+        const checkContentExistence = () => {
+            const contentElement = document.querySelector(selector);
+            if (contentElement) {
+                console.log(`[TOC] 首次检查已找到 '${selector}' 的内容元素`);
+                // 如果内容元素存在，但没有标题，设置一个更长的延迟
+                const headers = contentElement.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                if (headers.length === 0) {
+                    console.log(`[TOC] 内容元素存在但没有标题，等待Markdown渲染完成...`);
+                    setTimeout(() => {
+                        attemptGetHeadersAndContent(0, 30); // 增加最大尝试次数
+                    }, 500);
+                } else {
+                    // 内容和标题都已存在，立即处理
+                    setTimeout(() => {
+                        attemptGetHeadersAndContent(0, 30);
+                    }, 100);
+                }
+            } else {
+                // 内容元素不存在，延迟尝试
+                setTimeout(() => {
+                    attemptGetHeadersAndContent(0, 30); // 增加最大尝试次数
+                }, 300);
+            }
+        };
+
         // 延迟一点启动，确保页面有时间加载内容
-        setTimeout(() => {
-            attemptGetHeadersAndContent(0, 20); // 开始尝试，增加最大尝试次数
-        }, 100);
+        setTimeout(checkContentExistence, 200);
 
         return () => {
             console.log(`[TOC] 清理选择器: '${selector}' 的资源`);

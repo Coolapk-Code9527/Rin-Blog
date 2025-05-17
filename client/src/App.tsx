@@ -252,6 +252,7 @@ function RouteWithIndex({ path, children }:
     paramsRef.current = params;
   }
   
+  // 使用路径参数作为内容就绪信号
   const { TOC } = useTableOfContents(".toc-content", paramsRef.current?.id);
   
   return (<RouteMe path={path} headerComponent={TOCHeader({ TOC: TOC })} paddingClassName='mx-4'>
