@@ -1,8 +1,5 @@
 import * as React from "react";
-import { GetServerSideProps } from "next";
-import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import { Helmet } from "react-helmet";
-import React, { useContext, useState, useEffect, useRef } from "react";
+import {Helmet} from "react-helmet";
 import {useTranslation} from "react-i18next";
 import ReactModal from "react-modal";
 import Popup from "reactjs-popup";
@@ -25,9 +22,6 @@ import {AdjacentSection} from "../components/adjacent_feed.tsx";
 import {formatDistance} from "date-fns";
 import { Pagination } from "../components/pagination";
 import { RecentPosts } from "../components/recent_posts";
-import Link from "next/link";
-import dayjs from "dayjs";
-import { useParams } from "next/router";
 
 type Feed = {
   id: number;
@@ -49,11 +43,13 @@ type Feed = {
   uv: number;
 };
 
+
+
 export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
   const { t } = useTranslation();
   const profile = React.useContext(ProfileContext);
-  const [feed, setFeed] = React.useState<Feed | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [feed, setFeed] = React.useState<Feed>();
+  const [error, setError] = React.useState<string>();
   const [headImage, setHeadImage] = React.useState<string>();
   const ref = React.useRef("");
   const [, setLocation] = useLocation();
@@ -63,22 +59,6 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
   const config = React.useContext(ClientConfigContext);
   const counterEnabled = config.get<boolean>('counter.enabled');
   const [contentReady, setContentReady] = React.useState<boolean>(false);
-  const [scrollProgress, setScrollProgress] = React.useState(0);
-
-  // 监听滚动位置，更新阅读进度
-  React.useEffect(() => {
-    const handleScroll = () => {
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight - windowHeight;
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const progress = (scrollTop / documentHeight) * 100;
-      setScrollProgress(progress);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   function deleteFeed() {
     // Confirm
     showConfirm(
@@ -210,7 +190,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full mx-auto max-w-7xl flex flex-col lg:flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
+      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -229,7 +209,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl mt-5 order-2 lg:order-1">
+            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl mt-5">
               <article
                 className="rounded-2xl bg-w px-4 sm:px-6 md:px-7 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
@@ -301,7 +281,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                     )}
                   </div>
                 </div>
-                <div className="mt-6 prose prose-lg dark:prose-invert mx-auto max-w-[65ch] toc-content">
+                <div className="mt-6 prose prose-lg dark:prose-invert max-w-none toc-content">
                 <Markdown 
                   content={feed.content} 
                   onReady={() => {
@@ -345,17 +325,8 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
             </main>
-            <aside className="w-full lg:w-64 xl:w-72 lg:sticky lg:top-[5.5rem] order-1 lg:order-2 mt-5">
-              <div className="bg-w rounded-2xl pt-5 px-3 pb-4 mb-5 shadow-sm hover:shadow-md transition-all duration-300 lg:hidden">
-                <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-                  <i className="ri-list-unordered text-theme"></i>
-                  {t("toc.title", { defaultValue: "目录" })}
-                </h3>
-                <div className="max-h-[calc(40vh)] overflow-auto custom-scrollbar pr-1 pt-1">
-                  <TOC />
-                </div>
-              </div>
-              <div className="hidden lg:block sticky top-[5.5rem]">
+            <aside className="w-full lg:w-60 xl:w-64 hidden lg:block mt-5">
+              <div className="sticky top-[5.5rem]">
                 <div className="bg-w rounded-2xl pt-5 px-3 pb-4 mb-5 shadow-sm hover:shadow-md transition-all duration-300">
                   <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
                     <i className="ri-list-unordered text-theme"></i>
@@ -364,14 +335,8 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                   <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1 pt-1">
                     <TOC />
                   </div>
-                  <div className="mt-4 relative h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div className="absolute top-0 left-0 h-full bg-theme" style={{
-                      width: `${Math.min(100, Math.max(0, scrollProgress))}%`,
-                      transition: 'width 0.2s ease-out'
-                    }} />
-                  </div>
                 </div>
-                <div className="bg-w rounded-2xl shadow-sm mt-5">
+                <div className="bg-w rounded-2xl shadow-sm">
                   <RecentPosts />
                 </div>
               </div>
