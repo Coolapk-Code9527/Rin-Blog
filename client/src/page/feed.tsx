@@ -206,7 +206,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
         )}
         {feed && !error && (
           <>
-            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl pt-2">
+            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl pt-2">
               <article
                 className="rounded-2xl bg-w m-2 px-4 sm:px-6 md:px-7 py-5 sm:py-6 shadow-sm hover:shadow transition-shadow duration-300"
                 aria-label={feed.title ?? "Unnamed"}
@@ -317,7 +317,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
               <div className="h-16" />
             </main>
             <aside
-              className="w-full lg:w-64 xl:w-72 lg:pt-2 hidden lg:block"
+              className="w-full lg:w-60 xl:w-64 lg:pt-2 hidden lg:block"
             >
               <div className="sticky top-[5.5rem]">
                 <div className="bg-w rounded-2xl p-4 mb-5 shadow-sm">
@@ -395,7 +395,9 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
               <i className="ri-close-line text-lg"></i>
             </button>
           </div>
-          <TOC />
+          <div className="custom-scrollbar overflow-y-auto max-h-[50vh]">
+            <TOC />
+          </div>
         </div>
       </ReactModal>
     </div>
@@ -479,15 +481,15 @@ function CommentInput({
   }
   
   return (
-    <div className="w-full bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
-      <div className="bg-gray-50 px-5 py-3.5 border-b border-gray-100 flex justify-between items-center">
+    <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+      <div className="bg-gray-50 dark:bg-gray-750 px-5 py-3.5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
         <h3 className="text-base font-medium flex items-center gap-2">
           <i className="ri-chat-new-line text-theme"></i>
           {isAnonymous ? t("comment.anonymous.title") : t("comment.title")}
         </h3>
         
         <div className="flex items-center">
-          <span className="text-xs text-gray-500 mr-2">{t("comment.anonymous.switch")}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">{t("comment.anonymous.switch")}</span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -498,7 +500,7 @@ function CommentInput({
                 setError("");
               }}
             />
-            <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-theme-light peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
+            <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-focus:ring-2 peer-focus:ring-theme-light peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
           </label>
         </div>
       </div>

@@ -3,6 +3,7 @@ description:
 globs: 
 alwaysApply: false
 ---
+# 规则
 First, thoroughly and systematically analyze the current requirements and potential issues, and carefully consider whether there is a better way to implement the project or any areas that could be further optimized. Then, proceed with step-by-step optimization.
 (Most linter errors are primarily caused by issues with project dependencies and may not affect the actual execution of the code, so they can be temporarily ignored while continuing optimization.)
 
