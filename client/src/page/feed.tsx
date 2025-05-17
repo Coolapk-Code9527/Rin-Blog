@@ -291,21 +291,21 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                       ))}
                     </div>
                   )}
-                  <div className="flex flex-row items-center mt-2">
-                    <div className="relative flex-shrink-0">
+                  <div className="mt-4 flex flex-col items-center justify-center">
+                    <div className="relative flex-shrink-0 mb-2">
                       <img
                         src={feed.user.avatar || "/avatar.png"}
-                        className="w-10 h-10 rounded-full border border-gray-100 dark:border-gray-700"
+                        className="w-16 h-16 rounded-full border-2 border-gray-100 dark:border-gray-700 shadow-sm"
                         alt={feed.user.username}
                       />
                       {profile?.permission && (
-                        <div className="absolute -top-0.5 -right-0.5 bg-theme text-white rounded-full w-4 h-4 flex items-center justify-center">
-                          <i className="ri-verified-badge-fill text-[10px]"></i>
+                        <div className="absolute -top-1 -right-1 bg-theme text-white rounded-full w-6 h-6 flex items-center justify-center">
+                          <i className="ri-verified-badge-fill text-[12px]"></i>
                         </div>
                       )}
                     </div>
-                    <div className="ml-2.5">
-                      <span className="text-gray-700 dark:text-gray-300 text-sm font-medium cursor-default hover:text-gray-900 dark:hover:text-white transition-colors">
+                    <div className="text-center">
+                      <span className="text-gray-800 dark:text-gray-200 font-medium text-base cursor-default hover:text-gray-900 dark:hover:text-white transition-colors">
                         {feed.user.username}
                       </span>
                     </div>
@@ -319,11 +319,11 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
             <aside className="w-full lg:w-60 xl:w-64 pt-2 hidden lg:block">
               <div className="sticky top-[5.5rem]">
                 <div className="bg-w rounded-2xl p-4 mb-5 shadow-sm">
-                  <div className="max-h-[50vh] overflow-auto custom-scrollbar pr-1">
-                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
-                      <i className="ri-list-unordered text-theme"></i>
-                      <h3 className="text-base font-medium">{t("toc.title", { defaultValue: "目录" })}</h3>
-                    </div>
+                  <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
+                    <i className="ri-list-unordered text-theme"></i>
+                    {t("toc.title", { defaultValue: "目录" })}
+                  </h3>
+                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1">
                     <TOC />
                   </div>
                 </div>
@@ -675,21 +675,6 @@ function Comments({ id }: { id: string }) {
     <>
       {config.get<boolean>('comment.enabled') && (
         <div id="comments-section" className="m-2 flex flex-col justify-center items-center space-y-5">
-          <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-            <div className="bg-gray-50 dark:bg-gray-750 px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h2 className="text-lg font-medium flex items-center justify-between">
-                <div className="flex items-center">
-                  <i className="ri-chat-3-line mr-2 text-theme"></i>
-                  {t("comment.title")}
-                </div>
-                {comments.length > 0 && (
-                  <span className="bg-theme text-white px-2.5 py-0.5 text-xs rounded-full">
-                    {comments.length}
-                  </span>
-                )}
-              </h2>
-            </div>
-          </div>
           
           <CommentInput id={id} onRefresh={loadComments} />
           
