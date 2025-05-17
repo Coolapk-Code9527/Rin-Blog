@@ -38,29 +38,14 @@
   "clear": "クリア",
   "close": "閉じる",
   "comment": {
-    "empty": "コメント内容を入力してください",
-    "no_comments": "まだコメントはありません。最初のコメントを書いてみませんか？",
+    "empty": "コメント内容は空にできません",
     "placeholder": {
       "title": "何か言ってください..."
     },
     "submit": "コメントを投稿",
     "success": "コメントに成功しました",
     "title": "コメント",
-    "anonymous": {
-      "title": "匿名コメント",
-      "nickname": "ニックネーム",
-      "nickname_empty": "ニックネームを入力してください",
-      "nickname_placeholder": "ニックネームを入力してください",
-      "switch": "匿名でコメント",
-      "tag": "匿名ユーザー",
-      "email_invalid": "有効なメールアドレスを入力してください",
-      "email": "メール",
-      "email_placeholder": "your@email.com (任意)",
-      "email_help": "メールは返信通知に使用され、公開表示されません"
-    },
-    "list": {
-      "title": "すべてのコメント ({{count}}件)"
-    },
+    "empty_list": "コメントはまだありません。最初のコメントを投稿してください！",
     "pagination": {
       "previous": "前のページ",
       "next": "次のページ",

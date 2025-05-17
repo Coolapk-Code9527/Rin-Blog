@@ -51,7 +51,7 @@ export function CommentService() {
                         return [];
                     }
                 })
-                .post('/:feed', async ({ uid, set, params: { feed }, body: { content, nickname, isAnonymous } }) => {
+                .post('/:feed', async ({ uid, set, params: { feed }, body: { content, nickname, email, isAnonymous } }) => {
                     if (!content) {
                         set.status = 400;
                         return 'Content is required';
@@ -78,6 +78,7 @@ export function CommentService() {
                                     feedId,
                                     userId: ANONYMOUS_USER_ID, // 使用系统用户ID
                                     nickname,
+                                    email: email || null, // 保存 email，如果不存在则为 null
                                     content
                                 });
                             } catch (e) {
@@ -124,6 +125,7 @@ export function CommentService() {
                     body: t.Object({
                         content: t.String(),
                         nickname: t.Optional(t.String()),
+                        email: t.Optional(t.String()),
                         isAnonymous: t.Optional(t.Boolean())
                     })
                 })

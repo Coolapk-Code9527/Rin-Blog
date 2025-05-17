@@ -423,18 +423,10 @@ function CommentInput({
   const profile = React.useContext(ProfileContext);
   const { LoginModal, setIsOpened } = useLoginModal()
   
-  // 邮箱格式验证函数
-  const isValidEmail = (email: string): boolean => {
-    if (!email.trim()) return true; // 允许为空
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
-  };
-  
   function errorHumanize(error: string) {
     if (error === "Unauthorized") return t("login.required");
     else if (error === "Content is required") return t("comment.empty");
     else if (error === "Nickname is required for anonymous comments") return t("comment.anonymous.nickname_empty");
-    else if (error === "Invalid email format") return t("comment.anonymous.email_invalid");
     return error;
   }
   
@@ -451,12 +443,6 @@ function CommentInput({
     
     if (!content.trim()) {
       setError(t("comment.empty"));
-      return;
-    }
-    
-    // 验证邮箱格式
-    if (isAnonymous && email.trim() && !isValidEmail(email)) {
-      setError(t("comment.anonymous.email_invalid"));
       return;
     }
     
@@ -502,7 +488,7 @@ function CommentInput({
     <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
       <div className="bg-gray-50 dark:bg-gray-750 px-5 py-3.5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
         <h3 className="text-base font-medium flex items-center gap-2">
-          <i className={`${isAnonymous ? "ri-user-unfollow-line" : "ri-chat-new-line"} text-theme`}></i>
+          <i className="ri-chat-new-line text-theme"></i>
           {isAnonymous ? t("comment.anonymous.title") : t("comment.title")}
         </h3>
         
@@ -524,7 +510,7 @@ function CommentInput({
       </div>
       
       {isAnonymous && (
-        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-3 animate-fadeIn overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-3">
           <div className="w-full sm:w-[48%]">
             <label htmlFor="nickname" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">昵称 *</label>
           <div className="relative">
@@ -546,9 +532,7 @@ function CommentInput({
           </div>
           
           <div className="w-full sm:w-[48%]">
-            <label htmlFor="email" className="flex items-center text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              {t("comment.anonymous.email")} <span className="text-xs text-gray-400 ml-1">({t("optional")})</span>
-            </label>
+            <label htmlFor="email" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">邮箱 (选填)</label>
             <div className="relative">
               <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <i className="ri-mail-line text-gray-400"></i>
@@ -556,24 +540,14 @@ function CommentInput({
               <input
                 id="email"
                 type="email"
-                className={`bg-gray-50 dark:bg-gray-700 border ${error && error === t("comment.anonymous.email_invalid") ? "border-red-300 dark:border-red-500" : "border-gray-200 dark:border-gray-600"} text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none`}
-                placeholder={t("comment.anonymous.email_placeholder")}
+                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
+                placeholder="your@email.com (选填)"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  if (error === t("comment.anonymous.email_invalid")) {
-                    setError("");
-                  }
                 }}
               />
-              {error && error === t("comment.anonymous.email_invalid") && (
-                <p className="mt-1 text-xs text-red-500">
-                  <i className="ri-error-warning-line mr-1"></i>
-                  {error}
-                </p>
-              )}
             </div>
-            <p className="mt-1 text-xs text-gray-400">{t("comment.anonymous.email_help")}</p>
           </div>
         </div>
       )}
@@ -689,7 +663,6 @@ function Comments({ id }: { id: string }) {
           if (currentPage > totalPages && totalPages > 0) {
             setCurrentPage(1);
           }
-          setError(undefined);
         }
       })
       .catch((err) => {
@@ -803,7 +776,7 @@ function Comments({ id }: { id: string }) {
                     <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
                       <i className="ri-chat-1-line text-xl text-gray-400 dark:text-gray-500"></i>
                     </div>
-                    <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{t("comment.no_comments")}</h3>
+                    <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{t("comment.empty_list")}</h3>
                   </div>
                 </div>
               )}

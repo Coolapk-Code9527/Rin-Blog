@@ -40,7 +40,7 @@
   "close": "關閉",
   "comment": {
     "empty": "留言內容不能為空",
-    "no_comments": "暫無留言，來說點什麼吧",
+    "empty_list": "暫無留言，來說點什麼吧",
     "placeholder": {
       "title": "說點什麼吧"
     },
@@ -53,11 +53,7 @@
       "nickname_empty": "暱稱不能為空",
       "nickname_placeholder": "請輸入暱稱",
       "switch": "匿名留言",
-      "tag": "匿名用戶",
-      "email_invalid": "請輸入有效的電子郵箱地址",
-      "email": "郵箱",
-      "email_placeholder": "your@email.com (選填)",
-      "email_help": "郵箱將用於接收回復通知，不會公開顯示"
+      "tag": "匿名用戶"
     },
     "list": {
       "title": "全部留言 ({{count}}條)"
@@ -270,6 +266,5 @@
   "published_at": "發布於",
   "date_format": {
     "month_day": "MM/DD"
-  },
-  "optional": "選填"
+  }
 }
