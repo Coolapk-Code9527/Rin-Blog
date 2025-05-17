@@ -132,12 +132,12 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     }, [id, setError]);
     
     return (
-        <section className="w-full mt-5 mb-6">
-            <h2 className="text-lg font-medium t-primary mb-4 flex items-center gap-2">
-                <i className="ri-article-line text-theme"></i>
-                {t('adjacent_posts', { defaultValue: '相邻文章' })}
-            </h2>
-            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700">
+        <div className="w-full mt-5 sm:mt-6 mb-3 sm:mb-4">
+            <h3 className="text-base sm:text-lg font-medium t-primary mb-3 flex items-center">
+                <i className="ri-navigation-fill text-theme mr-2"></i>
+                {t("article.navigation")}
+            </h3>
+            <div className="rounded-xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700">
                 <AdjacentCard 
                     data={adjacentFeeds?.previousFeed}
                     type="previous"
@@ -151,7 +151,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                     loading={loading}
                 />
             </div>
-        </section>
+        </div>
     )
 }
 
@@ -168,42 +168,51 @@ export function AdjacentCard({
 }) {
     const direction = type === "previous" ? "text-start" : "text-end";
     const {t} = useTranslation();
-    const [imageLoaded, setImageLoaded] = React.useState(false);
-    const [imageError, setImageError] = React.useState(false);
     
     if (!data) {
         return (
-            <div className="w-full p-3 sm:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center min-h-[120px]">
-                <span className="text-sm text-gray-400">{t('no_more')}</span>
+            <div className="w-full p-4 sm:p-5 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center min-h-24">
+                <span className="text-sm text-gray-400 flex items-center">
+                    {type === "previous" ? <i className="ri-arrow-left-line mr-1.5"></i> : null}
+                    {t('no_more')}
+                    {type === "next" ? <i className="ri-arrow-right-line ml-1.5"></i> : null}
+                </span>
             </div>
         );
     }
     
     return (
         <Link href={`/feed/${data.id}`} 
-              className={`w-full p-3.5 xs:p-4 sm:p-5 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group focus:outline-none focus:ring-2 focus:ring-theme/30 focus:ring-inset`}>
+              className={`w-full p-3 xs:p-4 sm:p-5 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group`}>
             <div className={`flex items-center gap-3 sm:gap-4 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden">
+                <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden">
                     {loading ? (
                         <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center animate-pulse">
                             <i className="ri-image-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
                         </div>
-                    ) : thumbnail && !imageError ? (
+                    ) : thumbnail ? (
                         <div className="w-full h-full relative overflow-hidden">
-                            <div className={`absolute inset-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center ${!imageLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
-                                <i className="ri-loader-4-line animate-spin text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
-                            </div>
                             <img 
                                 src={thumbnail} 
                                 alt={data.title || ""} 
-                                className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-110 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                                className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
                                 loading="lazy"
-                                onLoad={() => setImageLoaded(true)}
-                                onError={() => setImageError(true)}
+                                onError={(e) => {
+                                    const target = e.currentTarget as HTMLImageElement;
+                                    const container = target.parentElement?.parentElement;
+                                    if (container) {
+                                        container.innerHTML = `
+                                            <div class="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                                <i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
+                                            </div>
+                                        `;
+                                    }
+                                }}
                             />
+                            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300"></div>
                         </div>
                     ) : (
-                        <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors duration-300">
+                        <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                             <i className="ri-file-text-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
                         </div>
                     )}
@@ -220,12 +229,9 @@ export function AdjacentCard({
                             </span>
                         )}
                     </div>
-                    <h3 className={`text-sm sm:text-base font-medium text-gray-700 dark:text-white line-clamp-2 group-hover:text-theme transition-colors`}>
-                        {data.title || t('unnamed')}
-                    </h3>
-                    <div className={`hidden xs:block text-xs text-gray-400 mt-1.5 line-clamp-1`}>
-                        {timeago(data.createdAt)}
-                    </div>
+                    <h2 className={`text-sm sm:text-base font-medium text-gray-700 dark:text-white line-clamp-2 group-hover:text-theme transition-colors`}>
+                        {data.title}
+                    </h2>
                 </div>
             </div>
         </Link>

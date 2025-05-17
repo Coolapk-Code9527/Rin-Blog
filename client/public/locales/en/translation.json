@@ -10,6 +10,7 @@
       "confirm": "Are you sure you want to delete this article?",
       "title": "Delete Article"
     },
+    "reading_time": "{{time}} min read",
     "search": {
       "placeholder": "Please enter keywords",
       "title": "Search",

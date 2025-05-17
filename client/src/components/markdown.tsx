@@ -94,7 +94,7 @@ const OptimizedImage = React.memo(({
     : '';
   
   return (
-    <div className="relative flex justify-center items-center my-6 rounded-lg overflow-hidden">
+    <div className="relative flex justify-center items-center">
       {!imageState.loaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
           <Loading type="spin" height={24} width={24} color="#FC466B" />
@@ -114,7 +114,7 @@ const OptimizedImage = React.memo(({
         data-src={src}
         alt={alt}
         onClick={onClick}
-        className={`${className} transition-all duration-300 ${imageState.loaded ? 'opacity-100 hover:shadow-xl' : 'opacity-0'} max-h-[80vh] rounded-lg`}
+        className={`${className} transition-opacity duration-300 ${imageState.loaded ? 'opacity-100' : 'opacity-0'}`}
         style={style}
         onLoad={handleLoad}
         onError={handleError}
@@ -244,8 +244,8 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
               src={src}
               alt={props.alt}
               onClick={() => show(src)}
-              className={`mx-auto ${rounded ? "rounded-xl" : "rounded-md"} hover:cursor-zoom-in shadow-md`}
-              style={{ maxWidth: scale === "1" ? "100%" : scale + "%" }}
+              className={`mx-auto ${rounded ? "rounded-xl" : ""}`}
+              style={{ zoom: scale }}
             />
           );
           
@@ -268,86 +268,122 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           }
         },
         code(props) {
+          const [copied, setCopied] = React.useState(false);
           const { children, className, node, ...rest } = props;
           const match = /language-(\w+)/.exec(className || "");
-          
-          // 检查是否为行内代码
-          const isInlineCode = !className;
-          if (isInlineCode) {
+
+          const curContent = content.slice(node?.position?.start.offset || 0);
+          const isCodeBlock = curContent.trimStart().startsWith("```");
+
+          const codeBlockStyle = {
+            fontFamily: 'var(--font-mono)',
+            fontSize: "14px",
+            fontVariantLigatures: "normal",
+            WebkitFontFeatureSettings: '"liga" 1',
+            fontFeatureSettings: '"liga" 1',
+          };
+
+          const inlineCodeStyle = {
+            ...codeBlockStyle,
+            fontSize: "13px",
+          };
+
+          const language = match ? match[1] : "";
+
+          if (isCodeBlock) {
+            return (
+              <div className="relative group my-6">
+                <SyntaxHighlighter
+                  PreTag="div"
+                  className="rounded-lg"
+                  language={language}
+                  style={
+                    colorMode === "dark"
+                      ? oneDarkStyle
+                      : oneLightStyle
+                  }
+                  wrapLongLines={true}
+                  showLineNumbers={true}
+                  lineNumberStyle={{ 
+                    minWidth: '2.5em', 
+                    paddingRight: '1em', 
+                    color: colorMode === 'dark' ? '#606366' : '#a5a5a5',
+                    textAlign: 'right',
+                    userSelect: 'none'
+                  }}
+                  customStyle={{
+                    margin: '0', 
+                    padding: '1.25em',
+                    borderRadius: '0',
+                    borderBottomLeftRadius: '0.75rem',
+                    borderBottomRightRadius: '0.75rem',
+                    fontSize: '14px',
+                    lineHeight: '1.6',
+                    boxShadow: 'none',
+                    borderTop: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                    borderLeft: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                    borderRight: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                    borderBottom: 'none',
+                    background: colorMode === 'dark' 
+                      ? '#1e1e2e' 
+                      : '#f8f9fc',
+                    overflow: 'auto', 
+                    maxHeight: '600px'
+                  }}
+                  codeTagProps={{ 
+                    style: {
+                      ...codeBlockStyle,
+                      fontWeight: 500
+                    } 
+                  }}
+                >
+                  {String(children).replace(/\n$/, "")}
+                </SyntaxHighlighter>
+                <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {language && (
+                    <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs text-gray-600 dark:text-gray-300 select-none shadow-sm">
+                      {language}
+                    </span>
+                  )}
+                  <button 
+                    className="px-2 py-1 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-md text-xs flex items-center gap-1 shadow-sm hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(children));
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                  >
+                    {copied ? (
+                      <>
+                        <i className="ri-check-line" />
+                        <span>{t('code.copied')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="ri-file-copy-line" />
+                        <span>{t('code.copy')}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          } else {
             return (
               <code
-                className="rounded px-1.5 py-0.5 mx-0.5 bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 text-sm font-mono"
                 {...rest}
+                className={`font-mono text-sm px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700 ${className || ""}`}
+                style={inlineCodeStyle}
               >
                 {children}
               </code>
             );
           }
-          
-          const baseTheme = colorMode === "dark" ? oneDarkStyle : oneLightStyle;
-          
-          // 自定义代码块样式
-          const customStyle = {
-            ...baseTheme,
-            'code[class*="language-"]': {
-              ...baseTheme['code[class*="language-"]'],
-              fontFamily: "'Fira Code', 'Consolas', Monaco, monospace",
-              fontSize: '0.95em',
-              textShadow: 'none',
-            },
-            'pre[class*="language-"]': {
-              ...baseTheme['pre[class*="language-"]'],
-              margin: '1.5em 0',
-              padding: '1.2em 1.4em',
-              borderRadius: '0.5rem',
-              boxShadow: colorMode === 'dark' 
-                ? '0 4px 6px -1px rgba(0, 0, 0, 0.2)' 
-                : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              overflow: 'auto',
-            }
-          };
-          
-          return (
-            <div className="code-block-container relative group">
-              {match && (
-                <div className="absolute right-2 top-2 flex space-x-2">
-                  <button
-                    onClick={() => {
-                      if (typeof children === 'string') {
-                        navigator.clipboard.writeText(children);
-                      } else if (Array.isArray(children)) {
-                        navigator.clipboard.writeText(children.join(''));
-                      }
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-gray-700/50 hover:bg-gray-700/70 text-white rounded p-1.5 text-xs"
-                    aria-label="复制代码"
-                  >
-                    <i className="ri-file-copy-line"></i>
-                  </button>
-                </div>
-              )}
-              <SyntaxHighlighter
-                style={customStyle as any}
-                language={match ? match[1] : "text"}
-                PreTag="pre"
-                className="!bg-gray-50 dark:!bg-gray-800/70"
-                wrapLongLines={false}
-                showLineNumbers={match && match[1] !== "bash" && match[1] !== "shell"}
-              >
-                {String(children).replace(/\n$/, "")}
-              </SyntaxHighlighter>
-              {match && (
-                <div className="absolute left-2 top-2 text-xs font-mono uppercase text-gray-500 dark:text-gray-400 px-2 py-1 rounded bg-gray-100/50 dark:bg-gray-800/50">
-                  {match[1]}
-                </div>
-              )}
-            </div>
-          );
         },
         blockquote({ children, ...props }) {
           return (
             <blockquote
-              className="border-l-4 border-theme-light pl-4 py-0.5 my-5 italic text-gray-700 dark:text-gray-300 bg-gray-50/50 dark:bg-gray-800/30 rounded-r-lg pr-4"
+              className="border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 pl-4 py-1 rounded-r-md italic text-gray-700 dark:text-gray-300"
               {...props}
             >
               {children}
@@ -356,38 +392,39 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         },
         em({ children, ...props }) {
           return (
-            <em className="text-theme-light italic" {...props}>
+            <em className="italic text-gray-800 dark:text-gray-200" {...props}>
               {children}
             </em>
           );
         },
         strong({ children, ...props }) {
           return (
-            <strong className="font-bold text-theme dark:text-theme-light" {...props}>
+            <strong className="font-bold text-gray-900 dark:text-white" {...props}>
               {children}
             </strong>
           );
         },
+
         ul({ children, className, ...props }) {
+          const listClass = className?.includes("contains-task-list")
+            ? "list-none pl-2 my-4 space-y-1"
+            : "list-disc pl-6 my-4 space-y-1";
           return (
-            <ul
-              className={`list-disc list-outside pl-5 sm:pl-6 my-4 space-y-2 ${className || ""}`}
-              {...props}
-            >
+            <ul className={listClass} {...props}>
               {children}
             </ul>
           );
         },
         ol({ children, ...props }) {
           return (
-            <ol className="list-decimal list-outside pl-5 sm:pl-6 my-4 space-y-2" {...props}>
+            <ol className="list-decimal pl-6 my-4 space-y-1" {...props}>
               {children}
             </ol>
           );
         },
         li({ children, ...props }) {
           return (
-            <li className="ml-2 pl-1 py-0.5" {...props}>
+            <li className="mb-1" {...props}>
               {children}
             </li>
           );
@@ -395,9 +432,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         a({ children, ...props }) {
           return (
             <a
-              className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline decoration-1 underline-offset-2 hover:underline-offset-4 transition-all"
-              target="_blank"
-              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 font-medium relative hover:text-blue-800 dark:hover:text-blue-300"
               {...props}
             >
               {children}
@@ -407,7 +442,8 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         h1({ children, ...props }) {
           return (
             <h1
-              className="text-3xl sm:text-4xl font-bold mt-10 mb-5 pb-1 border-b border-gray-200 dark:border-gray-700/60 text-gray-900 dark:text-white"
+              id={children?.toString()}
+              className="text-3xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
@@ -417,7 +453,8 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         h2({ children, ...props }) {
           return (
             <h2
-              className="text-2xl sm:text-3xl font-bold mt-8 mb-4 pb-1 border-b border-gray-200 dark:border-gray-700/60 text-gray-900 dark:text-white"
+              id={children?.toString()}
+              className="text-2xl font-bold mt-6 mb-4 pb-1 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
@@ -427,7 +464,8 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         h3({ children, ...props }) {
           return (
             <h3
-              className="text-xl sm:text-2xl font-semibold mt-7 mb-3 text-gray-900 dark:text-white"
+              id={children?.toString()}
+              className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
@@ -437,7 +475,8 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         h4({ children, ...props }) {
           return (
             <h4
-              className="text-lg sm:text-xl font-semibold mt-6 mb-3 text-gray-900 dark:text-white"
+              id={children?.toString()}
+              className="text-lg font-bold mt-4 mb-3 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
@@ -447,7 +486,8 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         h5({ children, ...props }) {
           return (
             <h5
-              className="text-base sm:text-lg font-semibold mt-5 mb-2 text-gray-900 dark:text-white"
+              id={children?.toString()}
+              className="text-base font-bold mt-4 mb-2 text-gray-900 dark:text-white"
               {...props}
             >
               {children}
@@ -457,7 +497,8 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         h6({ children, ...props }) {
           return (
             <h6
-              className="text-sm sm:text-base font-semibold mt-5 mb-2 text-gray-900 dark:text-white"
+              id={children?.toString()}
+              className="text-sm font-bold mt-4 mb-2 text-gray-700 dark:text-gray-300"
               {...props}
             >
               {children}
@@ -465,19 +506,20 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           );
         },
         p({ children, node, ...props }) {
+          // 检查是否为图片后的描述文本
+          const isImageCaption = 
+            node?.children?.length === 1 && 
+            node?.children[0]?.type === "emphasis" && 
+            node?.prev?.children?.some(child => child.type === "image");
+          
           return (
-            <p className="my-4 leading-7 text-gray-800 dark:text-gray-200" {...props}>
+            <p className={`${isImageCaption ? "text-center text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-4" : "mt-2 py-1"}`} {...props}>
               {children}
             </p>
           );
         },
         hr({ children, ...props }) {
-          return (
-            <hr
-              className="my-8 h-0.5 border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent"
-              {...props}
-            />
-          );
+          return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" {...props} />;
         },
         table: ({ node, ...props }) => {
           // 检测是否为URL表格
