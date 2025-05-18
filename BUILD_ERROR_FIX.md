@@ -22,7 +22,15 @@ import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
 import ReactMarkdown from 'react-markdown';
 ```
 
-### 错误二：锁文件冻结错误
+### 错误二：缺少依赖或依赖版本不兼容
+
+项目中使用了`react-router-dom`、`react-redux`等依赖，但这些依赖可能没有正确安装，或者版本不兼容。构建时出现类似错误：
+
+```
+[vite]: Rollup failed to resolve import "react-router-dom" from "/opt/buildhome/repo/client/src/page/feed.tsx".
+```
+
+### 错误三：锁文件冻结错误
 
 如果在安装依赖时遇到以下错误：
 
@@ -63,12 +71,44 @@ rm -rf node_modules/.vite
 bun run build
 ```
 
+### 解决缺少依赖问题
+
+1. 在客户端目录下安装缺少的依赖
+
+```bash
+cd client
+bun add react-router-dom react-redux redux
+```
+
+2. 修改代码，使用适当的API（如果必要）：
+
+- 如果使用了`react-router-dom`而实际上使用的是`wouter`，替换相关导入：
+  
+  ```typescript
+  // 替换这个:
+  import { useParams } from 'react-router-dom';
+  
+  // 使用这个:
+  import { useParams } from 'wouter';
+  ```
+
+- 如果某些模块不存在，可以考虑注释掉相关功能或创建模拟实现
+
+3. Web Vitals 相关问题解决
+
+如果出现 `web-vitals` 相关错误，可以安装该依赖：
+
+```bash
+cd client
+bun add web-vitals
+```
+
 ### 解决锁文件冻结错误
 
 1. 不使用`--frozen-lockfile`选项运行安装
 
 ```bash
-bun install
+bun install --no-frozen-lockfile
 ```
 
 2. 提交更新后的锁文件
@@ -89,8 +129,12 @@ git commit -m "更新锁文件以支持新的依赖"
 可以运行提供的修复脚本来自动执行上述步骤：
 
 ```bash
+# 在Linux/Mac上
 chmod +x fix-dependencies.sh
 ./fix-dependencies.sh
+
+# 在Windows上
+# 需要使用PowerShell或Git Bash执行
 ```
 
 ## 问题原因深入解释
@@ -101,9 +145,27 @@ chmod +x fix-dependencies.sh
 
 这种变化是包作者为了更好地支持树摇（tree-shaking）和确保更一致的模块导入方式而做的修改，符合现代JavaScript模块规范。
 
+### 依赖不兼容问题
+
+前端生态系统发展迅速，依赖之间的兼容性问题很常见。尤其是在React生态系统中，React Router、Redux等库的版本需要彼此兼容。不同包之间的版本兼容性问题可能导致构建失败或运行时错误。
+
 ### 锁文件冻结错误
 
 Bun的`--frozen-lockfile`选项（与npm的`ci`命令或yarn的`--frozen-lockfile`选项类似）旨在确保在不同环境中安装完全相同的依赖版本。当使用这个选项时，如果`package.json`和锁文件不匹配，Bun会报错而不是更新锁文件。
+
+## Windows环境特别说明
+
+如果在Windows环境下执行脚本，需要注意以下几点：
+
+1. bash脚本不能直接执行，可以使用Git Bash或WSL
+2. PowerShell中命令分隔符使用分号（`;`）而非Bash中的`&&`
+3. 删除命令使用`Remove-Item`而非`rm`：
+
+```powershell
+# Bash: rm -rf node_modules/.vite
+# PowerShell:
+Remove-Item -Recurse -Force -ErrorAction SilentlyContinue node_modules/.vite
+```
 
 ## 预防类似问题
 

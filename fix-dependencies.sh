@@ -1,11 +1,18 @@
 #!/bin/bash
+# Linux/Mac Bash版本
 
 echo "修复React Markdown依赖问题"
 echo "=========================="
 
 # 安装缺少的依赖（确保不使用--frozen-lockfile）
 echo "安装react-markdown和相关依赖..."
-bun add react-markdown@latest remark-gfm rehype-raw rehype-katex rehype-slug rehype-autolink-headings remark-math
+bun add react-markdown@latest remark-gfm rehype-raw rehype-katex rehype-slug rehype-autolink-headings remark-math --no-frozen-lockfile
+
+# 安装可能缺少的其他依赖
+echo "安装其他可能缺少的依赖..."
+cd client
+bun add react-router-dom react-redux redux web-vitals --no-frozen-lockfile
+cd ..
 
 # 修复导入
 echo "检查导入问题已修复..."
