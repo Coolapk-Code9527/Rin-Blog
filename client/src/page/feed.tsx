@@ -7,7 +7,7 @@ import {Link, useLocation} from "wouter";
 import {useAlert, useConfirm} from "../components/dialog";
 import {HashTag} from "../components/hashtag";
 import {Waiting} from "../components/loading";
-import Markdown from "../components/markdown";
+import {Markdown} from "../components/markdown";
 import {client} from "../main";
 import {ClientConfigContext} from "../state/config";
 import {ProfileContext} from "../state/profile";
@@ -22,26 +22,6 @@ import {AdjacentSection} from "../components/adjacent_feed.tsx";
 import {formatDistance} from "date-fns";
 import { Pagination } from "../components/pagination";
 import { RecentPosts } from "../components/recent_posts";
-import ReactMarkdown from 'react-markdown';
-import '../page/index.css';
-import useToc from '../hooks/useTableOfContents';
-import remarkGfm from 'remark-gfm';
-import { formatDate } from '../utils/date';
-import { formatLang } from '../utils/language';
-import './feed.css';
-
-// 模拟缺少的函数和变量
-// const TagsDisplay = ({ tags }: { tags: any[] }) => <div>{tags.map(t => <span key={t.id}>{t.name}</span>)}</div>;
-const i18n = { language: 'zh-CN' };
-
-// 替换之前使用的fetchFeed函数
-function fetchFeed(id: string) {
-  return async (dispatch: any) => {
-    // 这里只是一个模拟的函数，实际上我们不需要dispatch任何操作
-    // 因为我们使用React的状态管理而不是Redux
-    return { type: 'FETCH_FEED', payload: id };
-  };
-}
 
 type Feed = {
   id: number;
@@ -63,6 +43,8 @@ type Feed = {
   uv: number;
 };
 
+
+
 export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
   const { t } = useTranslation();
   const profile = React.useContext(ProfileContext);
@@ -77,16 +59,6 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
   const config = React.useContext(ClientConfigContext);
   const counterEnabled = config.get<boolean>('counter.enabled');
   const [contentReady, setContentReady] = React.useState<boolean>(false);
-  const { id: feedId } = useParams();
-  const location = useLocation();
-  const dispatch = { dispatch: (action: any) => {} }; // 简化替代Redux的dispatch
-  const [feedback, setFeedback] = useState(0);
-  const [prevFeedback, setPrevFeedback] = useState(0);
-  const [sendingFeedback, setSendingFeedback] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const articleRef = useRef<HTMLDivElement>(null);
-  const toc = useToc(feed ? feed.content : '');
-
   function deleteFeed() {
     // Confirm
     showConfirm(
@@ -185,39 +157,6 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
     })
   }, [feed]);
 
-  useEffect(() => {
-    if (feedId) {
-      // 转为数字，在url预览里获取id为NaN
-      if (isNaN(parseInt(feedId)) && !location.pathname.startsWith('/preview')) {
-        window.location.href = '/404';
-      }
-      // 使用现有的feed加载逻辑替代Redux派发
-      // dispatch(fetchFeed(feedId) as any);
-    }
-  }, [feedId, location]);
-
-  useEffect(() => {
-    // 监听滚动事件，更新阅读进度
-    const handleScroll = () => {
-      if (articleRef.current) {
-        const articleTop = articleRef.current.offsetTop;
-        const articleHeight = articleRef.current.offsetHeight;
-        const windowScrollTop = window.scrollY;
-        const windowHeight = window.innerHeight;
-        
-        // 计算阅读进度百分比
-        const totalScrollableDistance = articleHeight - windowHeight;
-        const scrolled = windowScrollTop - articleTop + 100; // 添加一点偏移量使进度更自然
-        const progress = Math.min(Math.max(scrolled / totalScrollableDistance, 0), 1) * 100;
-        
-        setScrollProgress(progress);
-      }
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
     <Waiting for={feed || error}>
       {feed && (
@@ -249,7 +188,6 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                 : feed.content
             }
           />
-          <html lang={formatLang(i18n.language)} />
         </Helmet>
       )}
       <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
@@ -344,17 +282,11 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                   </div>
                 </div>
                 <div className="mt-6 prose prose-lg dark:prose-invert max-w-none toc-content">
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm]}
-                  children={feed.content} 
+                <Markdown 
+                  content={feed.content} 
                   onReady={() => {
                     // Markdown内容渲染完成后设置标记
                     setTimeout(() => setContentReady(true), 100);
-                  }}
-                  transformImageUri={(uri) => {
-                    return uri.startsWith('http')
-                      ? uri
-                      : `${location.origin}/${uri}`;
                   }}
                 />
                 </div>
@@ -401,11 +333,11 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                     {t("toc.title", { defaultValue: "目录" })}
                   </h3>
                   <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1 pt-1">
-                    <TOC toc={toc} />
+                    <TOC />
                   </div>
                 </div>
                 <div className="bg-w rounded-2xl shadow-sm">
-                  <RecentPosts exclude={feedId ? parseInt(feedId) : 0} />
+                  <RecentPosts />
                 </div>
               </div>
             </aside>
@@ -414,8 +346,6 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
       </div>
       <AlertUI />
       <ConfirmUI />
-      {/* 阅读进度条 */}
-      <div className="reading-progress-bar" style={{ width: `${scrollProgress}%` }}></div>
     </Waiting>
   );
 }

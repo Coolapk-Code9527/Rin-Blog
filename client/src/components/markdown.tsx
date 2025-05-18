@@ -8,8 +8,6 @@ import {
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
-import rehypeSlug from "rehype-slug";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import gfm from "remark-gfm";
 import remarkMermaid from "../remark/remarkMermaid";
 import { remarkAlert } from "remark-github-blockquote-alert";
@@ -22,7 +20,6 @@ import "yet-another-react-lightbox/styles.css";
 import { useColorMode } from "../utils/darkModeUtils";
 import { useTranslation } from "react-i18next";
 import Loading from 'react-loading';
-import './markdown.css';
 
 // 图片加载状态接口
 interface ImageState {
@@ -159,12 +156,7 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
   return false;
 };
 
-interface MarkdownProps {
-  content: string;
-  onReady?: () => void;
-}
-
-const Markdown = ({ content, onReady }: MarkdownProps) => {
+export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
   const colorMode = useColorMode();
   const [index, setIndex] = React.useState(-1);
   const slides = useRef<SlideImage[]>();
@@ -227,14 +219,10 @@ const Markdown = ({ content, onReady }: MarkdownProps) => {
 
   const Content = useMemo(() => (
     <ReactMarkdown
-      className="prose prose-lg dark:prose-invert max-w-none"
+      className="toc-content dark:text-neutral-300"
       remarkPlugins={[gfm, remarkMermaid, remarkMath, remarkAlert]}
-      rehypePlugins={[
-        rehypeRaw,
-        rehypeSlug,
-        [rehypeAutolinkHeadings, { behavior: 'wrap' }],
-        rehypeKatex
-      ]}
+      children={content}
+      rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
         img({ node, src, ...props }) {
           const offset = node!.position!.start.offset!;
@@ -267,45 +255,135 @@ const Markdown = ({ content, onReady }: MarkdownProps) => {
             isMarkdownImageLinkAtEnd(previousContent)
           ) {
             return (
-              <div className="markdown-image-container">
+              <span className="block w-full text-center my-4">
                 <ImageComponent scale="0.75" rounded={true} />
-                {props.alt && <figcaption className="markdown-image-caption">{props.alt}</figcaption>}
+              </span>
+            );
+          } else {
+            return (
+              <span className="inline-block align-middle mx-1">
+                <ImageComponent scale="0.5" rounded={false} />
+              </span>
+            );
+          }
+        },
+        code(props) {
+          const [copied, setCopied] = React.useState(false);
+          const { children, className, node, ...rest } = props;
+          const match = /language-(\w+)/.exec(className || "");
+
+          const curContent = content.slice(node?.position?.start.offset || 0);
+          const isCodeBlock = curContent.trimStart().startsWith("```");
+
+          const codeBlockStyle = {
+            fontFamily: 'var(--font-mono)',
+            fontSize: "14px",
+            fontVariantLigatures: "normal",
+            WebkitFontFeatureSettings: '"liga" 1',
+            fontFeatureSettings: '"liga" 1',
+          };
+
+          const inlineCodeStyle = {
+            ...codeBlockStyle,
+            fontSize: "13px",
+          };
+
+          const language = match ? match[1] : "";
+
+          if (isCodeBlock) {
+            return (
+              <div className="relative group my-6">
+                <SyntaxHighlighter
+                  PreTag="div"
+                  className="rounded-lg"
+                  language={language}
+                  style={
+                    colorMode === "dark"
+                      ? oneDarkStyle
+                      : oneLightStyle
+                  }
+                  wrapLongLines={true}
+                  showLineNumbers={true}
+                  lineNumberStyle={{ 
+                    minWidth: '2.5em', 
+                    paddingRight: '1em', 
+                    color: colorMode === 'dark' ? '#606366' : '#a5a5a5',
+                    textAlign: 'right',
+                    userSelect: 'none'
+                  }}
+                  customStyle={{
+                    margin: '0', 
+                    padding: '1.25em',
+                    borderRadius: '0',
+                    borderBottomLeftRadius: '0.75rem',
+                    borderBottomRightRadius: '0.75rem',
+                    fontSize: '14px',
+                    lineHeight: '1.6',
+                    boxShadow: 'none',
+                    borderTop: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                    borderLeft: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                    borderRight: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
+                    borderBottom: 'none',
+                    background: colorMode === 'dark' 
+                      ? '#1e1e2e' 
+                      : '#f8f9fc',
+                    overflow: 'auto', 
+                    maxHeight: '600px'
+                  }}
+                  codeTagProps={{ 
+                    style: {
+                      ...codeBlockStyle,
+                      fontWeight: 500
+                    } 
+                  }}
+                >
+                  {String(children).replace(/\n$/, "")}
+                </SyntaxHighlighter>
+                <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {language && (
+                    <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs text-gray-600 dark:text-gray-300 select-none shadow-sm">
+                      {language}
+                    </span>
+                  )}
+                  <button 
+                    className="px-2 py-1 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-md text-xs flex items-center gap-1 shadow-sm hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(children));
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                  >
+                    {copied ? (
+                      <>
+                        <i className="ri-check-line" />
+                        <span>{t('code.copied')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="ri-file-copy-line" />
+                        <span>{t('code.copy')}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             );
           } else {
             return (
-              <div className="markdown-image-container">
-                <ImageComponent scale="0.5" rounded={false} />
-                {props.alt && <figcaption className="markdown-image-caption">{props.alt}</figcaption>}
-              </div>
+              <code
+                {...rest}
+                className={`font-mono text-sm px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700 ${className || ""}`}
+                style={inlineCodeStyle}
+              >
+                {children}
+              </code>
             );
           }
-        },
-        code({ node, inline, className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || '');
-          return !inline && match ? (
-            <SyntaxHighlighter
-              style={
-                colorMode === "dark"
-                  ? oneDarkStyle
-                  : oneLightStyle
-              }
-              language={match[1]}
-              PreTag="div"
-              {...props}
-            >
-              {String(children).replace(/\n$/, '')}
-            </SyntaxHighlighter>
-          ) : (
-            <code className={className} {...props}>
-              {children}
-            </code>
-          );
         },
         blockquote({ children, ...props }) {
           return (
             <blockquote
-              className="markdown-blockquote"
+              className="border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 pl-4 py-1 rounded-r-md italic text-gray-700 dark:text-gray-300"
               {...props}
             >
               {children}
@@ -326,6 +404,7 @@ const Markdown = ({ content, onReady }: MarkdownProps) => {
             </strong>
           );
         },
+
         ul({ children, className, ...props }) {
           const listClass = className?.includes("contains-task-list")
             ? "list-none pl-2 my-4 space-y-1"
@@ -350,50 +429,81 @@ const Markdown = ({ content, onReady }: MarkdownProps) => {
             </li>
           );
         },
-        a({ node, href, children, ...props }) {
-          const isExternal = href && (href.startsWith('http:') || href.startsWith('https:'));
+        a({ children, ...props }) {
           return (
             <a
-              href={href}
+              className="text-blue-600 dark:text-blue-400 font-medium relative hover:text-blue-800 dark:hover:text-blue-300"
               {...props}
-              {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-              className="markdown-link"
             >
               {children}
-              {isExternal && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="inline-block w-4 h-4 ml-1 -mt-1"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
             </a>
           );
         },
-        h1({ node, ...props }) {
-          return <h1 {...props} className="markdown-heading-h1" />;
+        h1({ children, ...props }) {
+          return (
+            <h1
+              id={children?.toString()}
+              className="text-3xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
+              {...props}
+            >
+              {children}
+            </h1>
+          );
         },
-        h2({ node, ...props }) {
-          return <h2 {...props} className="markdown-heading-h2" />;
+        h2({ children, ...props }) {
+          return (
+            <h2
+              id={children?.toString()}
+              className="text-2xl font-bold mt-6 mb-4 pb-1 text-gray-900 dark:text-white"
+              {...props}
+            >
+              {children}
+            </h2>
+          );
         },
-        h3({ node, ...props }) {
-          return <h3 {...props} className="markdown-heading-h3" />;
+        h3({ children, ...props }) {
+          return (
+            <h3
+              id={children?.toString()}
+              className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white"
+              {...props}
+            >
+              {children}
+            </h3>
+          );
         },
-        h4({ node, ...props }) {
-          return <h4 {...props} className="markdown-heading-h4" />;
+        h4({ children, ...props }) {
+          return (
+            <h4
+              id={children?.toString()}
+              className="text-lg font-bold mt-4 mb-3 text-gray-900 dark:text-white"
+              {...props}
+            >
+              {children}
+            </h4>
+          );
         },
-        h5({ node, ...props }) {
-          return <h5 {...props} className="markdown-heading-h5" />;
+        h5({ children, ...props }) {
+          return (
+            <h5
+              id={children?.toString()}
+              className="text-base font-bold mt-4 mb-2 text-gray-900 dark:text-white"
+              {...props}
+            >
+              {children}
+            </h5>
+          );
         },
-        h6({ node, ...props }) {
-          return <h6 {...props} className="markdown-heading-h6" />;
+        h6({ children, ...props }) {
+          return (
+            <h6
+              id={children?.toString()}
+              className="text-sm font-bold mt-4 mb-2 text-gray-700 dark:text-gray-300"
+              {...props}
+            >
+              {children}
+            </h6>
+          );
         },
         p({ children, node, ...props }) {
           // 检查是否为图片后的描述文本
@@ -411,10 +521,44 @@ const Markdown = ({ content, onReady }: MarkdownProps) => {
         hr({ children, ...props }) {
           return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" {...props} />;
         },
-        table({ node, ...props }) {
+        table: ({ node, ...props }) => {
+          // 检测是否为URL表格
+          let isUrlTable = false;
+          try {
+            // 检查表头是否包含URL列
+            const headerRow = node?.children?.[0]?.children?.[0];
+            const headerCells = headerRow?.children || [];
+            
+            // 判断表头是否包含URL或链接相关词汇
+            const hasUrlHeader = headerCells.some(cell => {
+              const cellText = cell?.children?.[0]?.value || '';
+              return /url|link|地址|链接/i.test(cellText);
+            });
+            
+            // 判断第二列是否包含多个URL格式内容
+            const bodyRows = (node?.children?.[1]?.children || []).slice(0, 3); // 获取前几行
+            let urlCount = 0;
+            
+            bodyRows.forEach(row => {
+              const cells = row?.children || [];
+              if (cells[1]) { // 第二列
+                const cellContent = cells[1]?.children?.[0]?.value || '';
+                if (/https?:\/\/[^\s]+/.test(cellContent)) {
+                  urlCount++;
+                }
+              }
+            });
+            
+            isUrlTable = hasUrlHeader || urlCount >= 2;
+          } catch (e) {
+            // 忽略错误
+          }
+          
+          const tableClass = isUrlTable ? 'table responsive url-table' : 'table responsive';
+          
           return (
-            <div className="markdown-table-container">
-              <table {...props} className="markdown-table" />
+            <div className="overflow-hidden my-6">
+              <table className={tableClass + " w-full"} {...props} />
             </div>
           );
         },
@@ -505,9 +649,7 @@ const Markdown = ({ content, onReady }: MarkdownProps) => {
       />
     </>
   );
-};
-
-export default Markdown;
+}
 
 // 添加一个简化版的Markdown组件，专门用于首页摘要显示
 export function SimplifiedMarkdown({ content }: { content: string }) {
