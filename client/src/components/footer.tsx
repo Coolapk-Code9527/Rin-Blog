@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import Popup from 'reactjs-popup';
 import { ClientConfigContext } from '../state/config';
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import { siteName } from '../utils/constants';
 import { useTranslation } from "react-i18next";
 import { useLoginModal } from '../hooks/useLoginModal';

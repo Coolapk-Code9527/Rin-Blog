@@ -4,7 +4,6 @@
 .env.development
 .env.production
 drizzle
-bun.lockb
 test.ts
 *.log
 build/

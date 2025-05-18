@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Helmet} from "react-helmet";
+import {Helmet} from "react-helmet-async";
 import {useTranslation} from "react-i18next";
 import ReactModal from "react-modal";
 import Popup from "reactjs-popup";
@@ -788,7 +788,7 @@ function Comments({ id }: { id: string }) {
                       <CommentItem
                         comment={comment}
                         onRefresh={loadComments}
-                          key={comment.id || idx}
+                        key={comment.id || idx}
                       />
                     ))}
                     </div>
@@ -828,9 +828,11 @@ function Comments({ id }: { id: string }) {
 function CommentItem({
   comment,
   onRefresh,
+  key
 }: {
   comment: Comment;
   onRefresh: () => void;
+  key?: number | string;
 }) {
   const { showConfirm, ConfirmUI } = useConfirm();
   const { showAlert, AlertUI } = useAlert();

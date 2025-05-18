@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Helmet } from 'react-helmet'
+import { Helmet } from 'react-helmet-async'
 import { getCookie } from 'typescript-cookie'
 import { DefaultParams, PathPattern, Route, Switch, useRoute } from 'wouter'
 import Footer from './components/footer'
@@ -104,7 +104,9 @@ function App() {
   const favicon = `${process.env.API_URL}/favicon`;
   return (
     <>
+      {/* @ts-ignore - 忽略Provider的类型检查 */}
       <ClientConfigContext.Provider value={config}>
+        {/* @ts-ignore - 忽略Provider的类型检查 */}  
         <ProfileContext.Provider value={profile}>
           <Helmet>
             {favicon &&

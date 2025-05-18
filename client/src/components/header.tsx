@@ -522,7 +522,7 @@ function MobileMenu() {
                                                                     <i className="ri-time-line mr-2 text-gray-400 group-hover:text-theme transition-colors duration-150"></i>
                                                                     <span className="truncate flex-1">{term}</span>
                                                                     <span className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded transition-opacity duration-150">
-                                                                        {t('search.use', '使用')}
+                                                                        {t('search.use') || '使用'}
                                                                     </span>
                                                                 </button>
                                                             ))}
@@ -961,7 +961,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                                             <i className="ri-time-line mr-2 text-gray-400 group-hover:text-theme transition-colors duration-150"></i>
                                             <span className="truncate flex-1">{term}</span>
                                             <span className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded transition-opacity duration-150">
-                                                {getTranslatedText('search.use', '使用')}
+                                                {t('search.use') || '使用'}
                                             </span>
                                         </button>
                                     ))}

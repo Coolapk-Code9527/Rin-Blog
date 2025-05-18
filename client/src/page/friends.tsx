@@ -1,6 +1,6 @@
 import i18next from "i18next";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 import { useTranslation } from "react-i18next";
 import Modal from 'react-modal';
 import Select from 'react-select';
@@ -148,7 +148,7 @@ function FriendList({ title, show, friends }: { title: string, show: boolean, fr
     </>)
 }
 
-function Friend({ friend }: { friend: FriendItem }) {
+function Friend({ friend, key }: { friend: FriendItem; key?: number | string }) {
     const { t } = useTranslation()
     const profile = useContext(ProfileContext)
     const [avatar, setAvatar] = useState(friend.avatar)

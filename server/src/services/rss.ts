@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/d1";
 import Elysia from "elysia";
 import { FAVICON_ALLOWED_TYPES, getFaviconKey } from "./favicon";
 import { Feed } from "feed";
-import path from 'path';
+import path from 'node:path';
 import rehypeStringify from "rehype-stringify";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";

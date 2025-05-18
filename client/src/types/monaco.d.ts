@@ -12,6 +12,13 @@ declare module 'monaco-editor' {
       deltaDecorations(oldDecorations: string[], newDecorations: any[]): string[];
       trigger(source: string, handlerId: string, payload: any): void;
       addCommand(keybinding: number, handler: () => void): string | null;
+      getLayoutInfo(): { width: number; height: number; glyphMarginLeft: number; glyphMarginWidth: number; lineNumbersWidth: number; decorationsWidth: number; contentLeft: number; contentWidth: number; };
+      getScrollHeight(): number;
+      getScrollInfo(): { scrollWidth: number; scrollHeight: number; scrollLeft: number; scrollTop: number; };
+      getScrollTop(): number;
+      onDidScrollChange(listener: (e: any) => void): { dispose: () => void };
+      setScrollTop(scrollTop: number): void;
+      setValue(value: string): void;
     }
 
     export interface Position {

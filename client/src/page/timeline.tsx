@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import {Helmet} from 'react-helmet'
+import {Helmet} from 'react-helmet-async'
 import {Link, useLocation} from "wouter"
 import {Waiting} from "../components/loading"
 import {client} from "../main"
@@ -129,7 +129,7 @@ export function TimelinePage() {
     )
 }
 
-export function FeedItem({ id, title, createdAt }: { id: string, title: string, createdAt: Date }) {
+export function FeedItem({ id, title, createdAt, key }: { id: string, title: string, createdAt: Date, key?: number | string }) {
     const { t } = useTranslation();
     const locale = t('date_format.month_day', { returnObjects: true });
     const formatter = new Intl.DateTimeFormat(undefined, { day: '2-digit', month: '2-digit', year: undefined });

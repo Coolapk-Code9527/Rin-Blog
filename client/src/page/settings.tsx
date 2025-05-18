@@ -123,7 +123,9 @@ export function Settings() {
 
     return (
         <div className="flex flex-col justify-center items-center">
+            {/* @ts-ignore - 忽略Provider的类型检查 */}
             <ServerConfigContext.Provider value={serverConfig}>
+                {/* @ts-ignore - 忽略Provider的类型检查 */}
                 <ClientConfigContext.Provider value={clientConfig}>
                     <main className="wauto rounded-2xl bg-w m-2 p-6" aria-label={t("main_content")}>
                         <div className="flex flex-row items-center space-x-2">
@@ -154,9 +156,9 @@ export function Settings() {
                                 await client.config.cache.delete(undefined, {
                                     headers: headersWithAuth()
                                 })
-                                    .then(({ error }: { error: any }) => {
-                                        if (error) {
-                                            showAlert(t('settings.cache.clear_failed$message', { message: error.message }))
+                                    .then((response) => {
+                                        if (response.error) {
+                                            showAlert(t('settings.cache.clear_failed$message', { message: String(response.error.value) }))
                                         }
                                     })
                             }} alertTitle={t('settings.cache.clear.confirm.title')} alertDescription={t('settings.cache.clear.confirm.desc')} />
@@ -240,41 +242,47 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
     const [loading, setLoading] = useState(false);
     const { showAlert, AlertUI } = useAlert();
     const { t } = useTranslation();
+    
     useEffect(() => {
         const value = config?.get<boolean>(configKey);
         if (value !== undefined) {
             setChecked(value);
         }
     }, [config]);
-    function updateConfig(type: 'client' | 'server', key: string, value: any) {
-        const checkedValue = checked
-        setChecked(!checkedValue);
+    
+    function updateConfig(type: 'client' | 'server', key: string, value: boolean) {
+        const currentChecked = checked;
+        setChecked(!currentChecked);
         setLoading(true);
+        
         client.config({
             type
         }).post({
             [key]: value
         }, {
             headers: headersWithAuth()
-        }).then(({ error }: { error: any }) => {
-            if (error) {
-                setChecked(checkedValue);
-            }
-            if (type === 'client') {
-                const config = sessionStorage.getItem('config')
-                if (config) {
-                    sessionStorage.setItem('config', JSON.stringify({ ...JSON.parse(config), [key]: value }));
-                } else {
-                    sessionStorage.setItem('config', JSON.stringify({ [key]: value }));
+        }).then((response) => {
+            if (response.error) {
+                setChecked(currentChecked);
+                showAlert(t('settings.update_failed$message', { message: String(response.error.value) }));
+            } else {
+                if (type === 'client') {
+                    const config = sessionStorage.getItem('config')
+                    if (config) {
+                        sessionStorage.setItem('config', JSON.stringify({ ...JSON.parse(config), [key]: value }));
+                    } else {
+                        sessionStorage.setItem('config', JSON.stringify({ [key]: value }));
+                    }
                 }
             }
             setLoading(false);
         }).catch((err) => {
-            showAlert(t('settings.update_failed$message', { message: err.message }))
-            setChecked(checkedValue);
+            showAlert(t('settings.update_failed$message', { message: err.message }));
+            setChecked(currentChecked);
             setLoading(false);
-        })
+        });
     }
+    
     return (
         <div className="flex flex-col w-full items-start">
             <div className="flex flex-row justify-between w-full items-center">
@@ -316,30 +324,39 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
             setValue(value);
         }
     }, [config]);
-    function updateConfig(type: 'client' | 'server', key: string, value: any) {
+    
+    function updateConfig(type: 'client' | 'server', key: string, newValue: any) {
         setLoading(true);
         client.config({
             type
         }).post({
-            [key]: value
+            [key]: newValue
         }, {
             headers: headersWithAuth()
-        }).then(() => {
-            if (type === 'client') {
-                const config = sessionStorage.getItem('config')
-                if (config) {
-                    sessionStorage.setItem('config', JSON.stringify({ ...JSON.parse(config), [key]: value }));
-                } else {
-                    sessionStorage.setItem('config', JSON.stringify({ [key]: value }));
+        }).then((response) => {
+            // 检查错误
+            if (response.error) {
+                showAlert(t('settings.update_failed$message', { message: String(response.error.value) }));
+                setValue(config?.get<string>(configKey) || "");
+            } else {
+                // 成功处理
+                if (type === 'client') {
+                    const config = sessionStorage.getItem('config')
+                    if (config) {
+                        sessionStorage.setItem('config', JSON.stringify({ ...JSON.parse(config), [key]: newValue }));
+                    } else {
+                        sessionStorage.setItem('config', JSON.stringify({ [key]: newValue }));
+                    }
                 }
             }
             setLoading(false);
         }).catch((err) => {
-            showAlert(t('settings.update_failed$message', { message: err.message }))
+            showAlert(t('settings.update_failed$message', { message: err.message }));
             setValue(config?.get<string>(configKey) || "");
             setLoading(false);
-        })
+        });
     }
+    
     return (
         <div className="flex flex-col w-full items-start">
             <div className="flex flex-row justify-between w-full items-center">

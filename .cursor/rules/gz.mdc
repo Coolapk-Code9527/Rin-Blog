@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 This project is built on Cloudflare Pages (for front-end deployment), Cloudflare Workers (for back-end logic), Cloudflare D1 (for the database), and Cloudflare R2 (for object storage). The front-end and back-end code are unified in a single repository, with automated deployment implemented via GitHub Actions.
 You must always reply to me in Chinese and must not use English.
@@ -11,7 +11,3 @@ Upon receiving a requirement, first initiate a comprehensive and systematic plan
 When making modifications, pay attention to syntax errors; after optimizing, remember to clean up redundant code and ensure that the modifications are successful before proceeding to the next step. Once the modifications are complete, review the relevant files and code to ensure that the logic is correct and that the existing functionalities remain unaffected.
 Subsequently, update or create a README.md document that includes the project structure, file functions, development environment, implementation logic, and error documentation; any newly added features should also be updated promptly.
 Strictly adhere to the above protocol.
-
-Most of the linter errors are caused by issues with project dependencies, TypeScript configuration, or React type definitions. Even though the linter shows errors, the code might actually be correct, so you can temporarily ignore these issues and continue with the optimization.
-
-- 由于项目使用Cloudflare Pages部署前后端，这些修改需要推送到仓库并通过GitHub Actions部署后才能在线上环境（blog.115694.xyz）看到效果
