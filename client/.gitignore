@@ -25,5 +25,9 @@ dist-ssr
 *.sw?
 
 public/locales/**/*_old.json
-
+.cursor/
+rin-blog.json
+FileScopeMCP
+FileScopeMCP*
+FileScopeMCP-tree.json
 Rin_Blog_bak/

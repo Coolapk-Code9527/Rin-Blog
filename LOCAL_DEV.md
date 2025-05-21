@@ -195,8 +195,9 @@ bun run d1 list
 ```
 
 如果有问题，确认：
-1. `.dev.vars` 文件中的配置是否正确
-2. `wrangler.toml` 中的数据库 ID 是否正确
+1. `.env.local` 文件中的API_URL=http://localhost:11498配置是否正确
+2. `.dev.vars` 文件中的配置是否正确
+3. `wrangler.toml` 中的数据库 ID 是否正确
 
 ### 5. R2 存储桶连接问题
 
@@ -206,9 +207,9 @@ bun run d1 list
 bun run r2 list
 ```
 
-如果有问题，确认：
-1. `.dev.vars` 文件中的 S3 相关配置是否正确
-2. `wrangler.toml` 中的 S3 相关变量是否正确设置
+1. `.env.local` 文件中的API_URL=http://localhost:11498 相关配置是否正确
+2. `.dev.vars` 文件中的 S3 相关配置是否正确
+3. `wrangler.toml` 中的 S3 相关变量是否正确设置
 
 ### 6. CORS 问题
 
