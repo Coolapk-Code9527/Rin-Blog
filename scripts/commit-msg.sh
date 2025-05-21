@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if ! bun check; then
-    echo "TypeScript compilation failed. Please fix the errors before committing."
+    echo "TypeScript编译失败。请在提交前修复这些错误。"
     exit 1
 fi
 
@@ -13,8 +13,8 @@ COMMIT_MSG_FILE="$1"
 COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
 # 检查提交信息格式
 if ! echo "$COMMIT_MSG" | grep -E '^(feat|chore|fix|docs|ci|style|test|pref): ' > /dev/null; then
-    echo "ERROR: Commit message does not start with one of the following: feat|chore|fix|docs|ci|style|test|pref"
-    echo "Please ensure your commit message starts with one of these prefixes followed by a colon and a space."
+    echo "错误：提交消息必须以下列前缀之一开头：feat|chore|fix|docs|ci|style|test|pref"
+    echo "请确保您的提交消息以这些前缀之一开头，后跟冒号和空格。"
     exit 1
 fi
 
