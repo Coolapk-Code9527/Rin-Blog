@@ -5,9 +5,8 @@ import path from "node:path";
 import type { Env } from "../db/db";
 import { files, feedFiles, feeds } from "../db/schema";
 import { setup } from "../setup";
-import { getEnv } from "../utils/di";
+import { getEnv, getDB } from "../utils/di";
 import { createS3Client } from "../utils/s3";
-import { db as defaultDrizzle } from "../db/db"; // 导入默认数据库连接
 
 // 定义引用接口
 interface FileReference {
@@ -73,8 +72,8 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用传入的drizzle或默认drizzle
-                    const db = drizzle || defaultDrizzle;
+                    // 使用正确的drizzle实例
+                    const db = drizzle || getDB();
                     
                     if (!db) {
                         set.status = 500;
@@ -174,8 +173,8 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用传入的drizzle或默认drizzle
-                    const db = drizzle || defaultDrizzle;
+                    // 使用正确的drizzle实例
+                    const db = drizzle || getDB();
                     
                     if (!db) {
                         set.status = 500;
@@ -262,8 +261,8 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用传入的drizzle或默认drizzle
-                    const db = drizzle || defaultDrizzle;
+                    // 使用正确的drizzle实例
+                    const db = drizzle || getDB();
                     
                     if (!db) {
                         set.status = 500;
@@ -394,8 +393,8 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用传入的drizzle或默认drizzle
-                    const db = drizzle || defaultDrizzle;
+                    // 使用正确的drizzle实例
+                    const db = drizzle || getDB();
                     
                     if (!db) {
                         set.status = 500;
@@ -465,8 +464,8 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用传入的drizzle或默认drizzle
-                    const db = drizzle || defaultDrizzle;
+                    // 使用正确的drizzle实例
+                    const db = drizzle || getDB();
                     
                     if (!db) {
                         set.status = 500;
@@ -560,8 +559,8 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用传入的drizzle或默认drizzle
-                    const db = drizzle || defaultDrizzle;
+                    // 使用正确的drizzle实例
+                    const db = drizzle || getDB();
                     
                     if (!db) {
                         set.status = 500;

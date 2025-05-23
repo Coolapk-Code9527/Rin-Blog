@@ -68,15 +68,26 @@ export function FileManager({
   // 添加错误状态，用于显示错误信息和控制关闭功能
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // 添加请求取消处理
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // 加载文件列表
   const loadFiles = async (reload = false) => {
-    if (reload) {
-      setFiles([]);
-    }
-    setIsLoading(true);
-    setErrorMessage(null);
-
     try {
+      // 如果有之前的请求，取消它
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      // 创建新的AbortController
+      abortControllerRef.current = new AbortController();
+      
+      if (reload) {
+        setFiles([]);
+      }
+      setIsLoading(true);
+      setErrorMessage(null);
+
       // 构建查询参数
       const params = new URLSearchParams();
       params.append('path', currentPath);
@@ -86,8 +97,14 @@ export function FileManager({
       params.append('page', String(currentPage));
       params.append('limit', String(itemsPerPage));
 
-      // 发起请求
-      const response = await fetch(`${endpoint}/files?${params.toString()}`);
+      // 获取授权头
+      const authHeaders = headersWithAuth();
+
+      // 发起请求并添加授权头和signal
+      const response = await fetch(`${endpoint}/files?${params.toString()}`, {
+        headers: authHeaders,
+        signal: abortControllerRef.current.signal
+      });
       
       // 检查响应状态码
       if (!response.ok) {
@@ -107,7 +124,13 @@ export function FileManager({
       setFiles(data.files || []);
       setTotalItems(data.total || 0);
       setIsLoading(false);
-    } catch (error) {
+    } catch (error: any) {
+      // 检查是否是AbortError，如果是则忽略
+      if (error.name === 'AbortError') {
+        // 这是正常的取消请求，不是错误，不需要处理
+        return;
+      }
+      
       console.error('文件加载错误:', error);
       setIsLoading(false);
       // 确保错误信息是字符串
@@ -130,8 +153,13 @@ export function FileManager({
 
   // 初始加载和依赖变更时重新加载
   useEffect(() => {
-    loadFiles();
-  }, [loadFiles]);
+    const fetchData = async () => {
+      await loadFiles();
+    };
+    fetchData();
+    // 明确列出依赖项
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPath, search, sortBy, sortOrder, currentPage, itemsPerPage]);
 
   // 更新面包屑
   useEffect(() => {
@@ -152,6 +180,8 @@ export function FileManager({
 
   // 处理文件选择
   const handleFileClick = (file: FileItem) => {
+    if (isLoading) return; // 如果正在加载，忽略点击事件
+
     if (file.isFolder) {
       // 导航到文件夹
       setCurrentPath(file.path);
@@ -496,6 +526,15 @@ export function FileManager({
     ) : null;
   };
 
+  // 在组件销毁时取消未完成的请求
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
       {/* 工具栏 */}
@@ -637,13 +676,28 @@ export function FileManager({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
             <h3 className="text-lg font-medium text-red-600 mb-4">{t('alert')}</h3>
-            <p className="mb-6">{errorMessage}</p>
-            <div className="flex justify-end">
+            <p className="mb-6">{t('files.load_error', { error: errorMessage })}</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => loadFiles(true)}
+                className="px-4 py-2 bg-theme hover:bg-theme-hover text-white rounded-md transition-colors"
+              >
+                {t('reload')}
+              </button>
               <button
                 onClick={closeErrorDialog}
                 className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
               >
-                {t('confirm')}
+                {t('close')}
+              </button>
+              <button
+                onClick={() => {
+                  closeErrorDialog();
+                  window.location.href = '/'; // 添加返回主页选项
+                }}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors"
+              >
+                {t('index.back')}
               </button>
             </div>
           </div>
