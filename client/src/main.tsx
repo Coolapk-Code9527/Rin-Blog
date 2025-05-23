@@ -20,8 +20,14 @@ type ServerType = any;
 
 // 根据环境动态选择API端点
 const isDev = import.meta.env.DEV;
-// 在开发环境使用本地服务器，在生产环境使用当前域名
-export const endpoint = isDev ? 'http://localhost:11498' : window.location.origin;
+// 从环境变量获取API_URL，如果没有则使用默认值
+// 开发环境：使用本地服务器
+// 生产环境：使用环境变量定义的API_URL或后端Worker地址
+export const endpoint = isDev 
+  ? 'http://localhost:11498' 
+  : (import.meta.env.API_URL || 'https://blogserver.115694.xyz');
+
+// OAuth URL同样从API端点派生
 export const oauth_url = endpoint + '/user/github';
 export const client = treaty<ServerType>(endpoint) as unknown as ApiClient;
 

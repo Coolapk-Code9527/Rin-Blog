@@ -1,17 +1,6 @@
 {
   "version": 1,
   "include": [
-    "/api/*", 
-    "/user/*",
-    "/config/*",
-    "/feed/*",
-    "/comment/*",
-    "/tag/*",
-    "/files/*",
-    "/friend/*",
-    "/search/*",
-    "/storage/*",
-    "/favicon/*",
     "/*"
   ],
   "exclude": [
