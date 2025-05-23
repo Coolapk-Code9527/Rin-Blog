@@ -7,6 +7,7 @@ import { files, feedFiles, feeds } from "../db/schema";
 import { setup } from "../setup";
 import { getEnv } from "../utils/di";
 import { createS3Client } from "../utils/s3";
+import { db as defaultDrizzle } from "../db/db"; // 导入默认数据库连接
 
 // 定义引用接口
 interface FileReference {
@@ -72,12 +73,20 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
+                    // 使用传入的drizzle或默认drizzle
+                    const db = drizzle || defaultDrizzle;
+                    
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+
                     const { path = '/', type, search, sort = 'name', order = 'asc', page = 1, limit = 20 } = query;
                     const offset = (page - 1) * limit;
 
                     try {
                         // 构建查询条件
-                        let query = drizzle
+                        let query = db
                             .select({
                                 id: files.id,
                                 path: files.path,
@@ -116,7 +125,7 @@ export function FileService() {
                         const result = await query;
 
                         // 获取总数
-                        const countQuery = await drizzle
+                        const countQuery = await db
                             .select({ count: sql<number>`count(*)` })
                             .from(files)
                             .where(
@@ -165,12 +174,20 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
+                    // 使用传入的drizzle或默认drizzle
+                    const db = drizzle || defaultDrizzle;
+                    
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+
                     const { name, parentPath = '/' } = body;
 
                     try {
                         // 检查父文件夹是否存在
                         if (parentPath !== '/') {
-                            const parentFolder = await drizzle
+                            const parentFolder = await db
                                 .select({ id: files.id })
                                 .from(files)
                                 .where(
@@ -191,7 +208,7 @@ export function FileService() {
                         const folderPath = parentPath === '/' ? `/${name}` : `${parentPath}/${name}`;
 
                         // 检查文件夹是否已存在
-                        const existingFolder = await drizzle
+                        const existingFolder = await db
                             .select({ id: files.id })
                             .from(files)
                             .where(
@@ -207,7 +224,7 @@ export function FileService() {
                         }
 
                         // 创建文件夹记录
-                        const result = await drizzle.insert(files).values({
+                        const result = await db.insert(files).values({
                             path: folderPath,
                             name,
                             size: 0,
@@ -245,6 +262,14 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
+                    // 使用传入的drizzle或默认drizzle
+                    const db = drizzle || defaultDrizzle;
+                    
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+
                     if (!endpoint || !accessKeyId || !secretAccessKey || !bucket) {
                         set.status = 500;
                         return { error: 'S3 configuration not found' };
@@ -255,7 +280,7 @@ export function FileService() {
                     try {
                         // 检查父文件夹是否存在
                         if (parentPath !== '/') {
-                            const parentFolder = await drizzle
+                            const parentFolder = await db
                                 .select({ id: files.id })
                                 .from(files)
                                 .where(
@@ -280,7 +305,7 @@ export function FileService() {
                         const hash = buf2hex(hashArray);
                         
                         // 检查是否已有相同哈希的文件
-                        const existingFile = await drizzle
+                        const existingFile = await db
                             .select({ id: files.id, path: files.path })
                             .from(files)
                             .where(eq(files.hash, hash));
@@ -291,7 +316,7 @@ export function FileService() {
                             const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
                             
                             // 创建新的文件记录，但引用相同的哈希
-                            const result = await drizzle.insert(files).values({
+                            const result = await db.insert(files).values({
                                 path: filePath,
                                 name: fileName,
                                 size: file.size,
@@ -329,7 +354,7 @@ export function FileService() {
                         const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
                         
                         // 保存文件记录
-                        const result = await drizzle.insert(files).values({
+                        const result = await db.insert(files).values({
                             path: s3Key,
                             name: fileName,
                             size: file.size,
@@ -369,9 +394,17 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
+                    // 使用传入的drizzle或默认drizzle
+                    const db = drizzle || defaultDrizzle;
+                    
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+
                     try {
                         const fileId = Number(params.id);
-                        const result = await drizzle
+                        const result = await db
                             .select()
                             .from(files)
                             .where(
@@ -398,7 +431,7 @@ export function FileService() {
                         }
 
                         // 获取引用此文件的文章
-                        const references = await drizzle
+                        const references = await db
                             .select({
                                 id: feeds.id,
                                 title: feeds.title,
@@ -432,11 +465,19 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
+                    // 使用传入的drizzle或默认drizzle
+                    const db = drizzle || defaultDrizzle;
+                    
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+
                     try {
                         const fileId = Number(params.id);
                         
                         // 获取文件信息
-                        const fileInfo = await drizzle
+                        const fileInfo = await db
                             .select()
                             .from(files)
                             .where(
@@ -455,7 +496,7 @@ export function FileService() {
 
                         // 如果是文件夹，检查是否为空
                         if (file.isFolder) {
-                            const childFiles = await drizzle
+                            const childFiles = await db
                                 .select({ count: sql<number>`count(*)` })
                                 .from(files)
                                 .where(eq(files.parentPath, file.path));
@@ -466,7 +507,7 @@ export function FileService() {
                             }
                         } else {
                             // 检查文件引用
-                            const references = await drizzle
+                            const references = await db
                                 .select({ count: sql<number>`count(*)` })
                                 .from(feedFiles)
                                 .where(eq(feedFiles.fileId, fileId));
@@ -477,7 +518,7 @@ export function FileService() {
                             }
 
                             // 检查是否有其他文件记录引用相同的存储路径
-                            const samePathFiles = await drizzle
+                            const samePathFiles = await db
                                 .select({ count: sql<number>`count(*)` })
                                 .from(files)
                                 .where(
@@ -502,7 +543,7 @@ export function FileService() {
                         }
 
                         // 删除文件记录
-                        await drizzle.delete(files).where(eq(files.id, fileId));
+                        await db.delete(files).where(eq(files.id, fileId));
 
                         return { success: true };
                     } catch (error: any) {
@@ -519,6 +560,14 @@ export function FileService() {
                         return { error: 'Unauthorized' };
                     }
 
+                    // 使用传入的drizzle或默认drizzle
+                    const db = drizzle || defaultDrizzle;
+                    
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+
                     const { name, accessLevel } = body;
                     if (!name && !accessLevel) {
                         set.status = 400;
@@ -529,7 +578,7 @@ export function FileService() {
                         const fileId = Number(params.id);
                         
                         // 获取文件信息
-                        const fileInfo = await drizzle
+                        const fileInfo = await db
                             .select()
                             .from(files)
                             .where(
@@ -557,7 +606,7 @@ export function FileService() {
                         if (accessLevel) updateData.accessLevel = accessLevel;
 
                         // 更新文件记录
-                        const result = await drizzle
+                        const result = await db
                             .update(files)
                             .set(updateData)
                             .where(eq(files.id, fileId))

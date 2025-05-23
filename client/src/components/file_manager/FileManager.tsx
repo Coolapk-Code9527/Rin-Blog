@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { client } from '../../main';
+import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
 import { formatFileSize, getFileTypeIcon } from './utils';
 import ReactLoading from "react-loading";
@@ -69,46 +69,59 @@ export function FileManager({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 加载文件列表
-  const loadFiles = useCallback(async () => {
+  const loadFiles = async (reload = false) => {
+    if (reload) {
+      setFiles([]);
+    }
     setIsLoading(true);
     setErrorMessage(null);
-    try {
-      const response = await client.files.index.get({
-        query: {
-          path: currentPath,
-          search,
-          sort: sortBy,
-          order: sortOrder,
-          page: currentPage,
-          limit: itemsPerPage,
-          ...(allowedTypes && allowedTypes.length > 0 ? { type: allowedTypes.join(',') } : {})
-        },
-        headers: headersWithAuth()
-      });
 
-      if (response.error) {
-        console.error('文件加载错误:', response.error);
-        const errorMsg = typeof response.error === 'object' ? 
-          (response.error.value || JSON.stringify(response.error)) : 
-          String(response.error);
-        setErrorMessage(t('files.load_error', { error: errorMsg }));
-        setFiles([]);
-      } else if (response.data) {
-        setFiles(response.data.files || []);
-        setTotalItems(response.data.total || 0);
-      } else {
-        console.error('文件加载响应格式错误:', response);
-        setErrorMessage(t('files.load_error', { error: '服务器返回格式错误' }));
-        setFiles([]);
+    try {
+      // 构建查询参数
+      const params = new URLSearchParams();
+      params.append('path', currentPath);
+      if (search) params.append('search', search);
+      params.append('sort', sortBy);
+      params.append('order', sortOrder);
+      params.append('page', String(currentPage));
+      params.append('limit', String(itemsPerPage));
+
+      // 发起请求
+      const response = await fetch(`${endpoint}/files?${params.toString()}`);
+      
+      // 检查响应状态码
+      if (!response.ok) {
+        let errorText = `HTTP error ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.error) {
+            errorText = errorData.error;
+          }
+        } catch (e) {
+          console.error('Error parsing error response:', e);
+        }
+        throw new Error(errorText);
       }
-    } catch (error: any) {
-      console.error('文件加载异常:', error);
-      setErrorMessage(t('files.load_error', { error: error.message || '网络请求失败' }));
-      setFiles([]);
-    } finally {
+
+      const data = await response.json();
+      setFiles(data.files || []);
+      setTotalItems(data.total || 0);
       setIsLoading(false);
+    } catch (error) {
+      console.error('文件加载错误:', error);
+      setIsLoading(false);
+      // 确保错误信息是字符串
+      let errorMessage = '';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else {
+        errorMessage = String(error);
+      }
+      setErrorMessage(errorMessage || t('files.load_error', { error: 'Unknown error' }));
     }
-  }, [currentPath, search, sortBy, sortOrder, currentPage, itemsPerPage, allowedTypes, t]);
+  };
 
   // 关闭错误消息对话框
   const closeErrorDialog = () => {
