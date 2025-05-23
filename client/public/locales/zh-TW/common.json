@@ -1,0 +1,42 @@
+{
+  "files": {
+    "page_title": "檔案管理",
+    "page_description": "管理你上傳的檔案和資料夾",
+    "root": "根目錄",
+    "empty": "暫無檔案",
+    "load_error": "載入檔案失敗: {{error}}",
+    "no_selection": "請選擇一個檔案",
+    "folder_name_required": "資料夾名稱不能為空",
+    "folder_create_error": "建立資料夾失敗: {{error}}",
+    "confirm_delete": "確定要刪除 {{name}} 嗎?",
+    "delete_error": "刪除失敗: {{error}}",
+    "columns": {
+      "name": "名稱",
+      "size": "大小",
+      "date": "日期"
+    },
+    "search_placeholder": "搜尋檔案...",
+    "grid_view": "網格視圖",
+    "list_view": "列表視圖",
+    "new_folder": "新建資料夾",
+    "upload": "上傳",
+    "selected": "已選擇 {{count}} 個檔案",
+    "confirm_selection": "確認選擇",
+    "create_folder": "建立資料夾",
+    "folder_name": "資料夾名稱"
+  },
+  "upload": {
+    "failed": "上傳失敗: {{error}}",
+    "failed$size": "檔案太大 (最大 {{size}}MB)",
+    "success": "上傳成功",
+    "image_only": "只能上傳圖片",
+    "title": "上傳",
+    "uploading": "上傳中..."
+  },
+  "delete": "刪除",
+  "cancel": "取消",
+  "confirm": "確認",
+  "create": "建立",
+  "loading": "載入中...",
+  "alert": "提示"
+} 

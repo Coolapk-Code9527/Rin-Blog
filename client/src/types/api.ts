@@ -164,6 +164,20 @@ export interface ApiClient {
       post: (data: any, options?: any) => Promise<TreatyResponse<{url: string}>>;
     };
   };
+  files: {
+    index: {
+      get: (options?: any) => Promise<TreatyResponse<{files: FileItem[], total: number, page: number, limit: number}>>;
+      post: (data: any, options?: any) => Promise<TreatyResponse<FileItem>>;
+    };
+    folder: {
+      post: (data: any, options?: any) => Promise<TreatyResponse<FileItem>>;
+    };
+    (params: {id: number}): {
+      get: (options?: any) => Promise<TreatyResponse<FileItem>>;
+      patch: (data: any, options?: any) => Promise<TreatyResponse<FileItem>>;
+      delete: (options?: any) => Promise<TreatyResponse<{success: boolean}>>;
+    };
+  };
   favicon: {
     post: (data: any, options?: any) => Promise<TreatyResponse<any>>;
   };

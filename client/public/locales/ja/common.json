@@ -1,0 +1,42 @@
+{
+  "files": {
+    "page_title": "ファイル管理",
+    "page_description": "アップロードしたファイルとフォルダの管理",
+    "root": "ルート",
+    "empty": "ファイルはありません",
+    "load_error": "ファイル読み込み失敗: {{error}}",
+    "no_selection": "ファイルを選択してください",
+    "folder_name_required": "フォルダ名は必須です",
+    "folder_create_error": "フォルダ作成失敗: {{error}}",
+    "confirm_delete": "{{name}} を削除してもよろしいですか？",
+    "delete_error": "削除失敗: {{error}}",
+    "columns": {
+      "name": "名前",
+      "size": "サイズ",
+      "date": "日付"
+    },
+    "search_placeholder": "ファイルを検索...",
+    "grid_view": "グリッド表示",
+    "list_view": "リスト表示",
+    "new_folder": "新規フォルダ",
+    "upload": "アップロード",
+    "selected": "{{count}} 個のファイルが選択されました",
+    "confirm_selection": "選択を確定する",
+    "create_folder": "フォルダを作成",
+    "folder_name": "フォルダ名"
+  },
+  "upload": {
+    "failed": "アップロード失敗: {{error}}",
+    "failed$size": "ファイルサイズが大きすぎます (最大 {{size}}MB)",
+    "success": "アップロード成功",
+    "image_only": "画像のみアップロード可能です",
+    "title": "アップロード",
+    "uploading": "アップロード中..."
+  },
+  "delete": "削除",
+  "cancel": "キャンセル",
+  "confirm": "確認",
+  "create": "作成",
+  "loading": "読み込み中...",
+  "alert": "通知"
+} 

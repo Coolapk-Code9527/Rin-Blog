@@ -1,0 +1,40 @@
+{
+  "files": {
+    "root": "Root",
+    "empty": "No files yet",
+    "load_error": "Failed to load files: {{error}}",
+    "no_selection": "Please select a file",
+    "folder_name_required": "Folder name is required",
+    "folder_create_error": "Failed to create folder: {{error}}",
+    "confirm_delete": "Are you sure you want to delete {{name}}?",
+    "delete_error": "Failed to delete: {{error}}",
+    "columns": {
+      "name": "Name",
+      "size": "Size",
+      "date": "Date"
+    },
+    "search_placeholder": "Search files...",
+    "grid_view": "Grid View",
+    "list_view": "List View",
+    "new_folder": "New Folder",
+    "upload": "Upload",
+    "selected": "{{count}} files selected",
+    "confirm_selection": "Confirm Selection",
+    "create_folder": "Create Folder",
+    "folder_name": "Folder Name"
+  },
+  "upload": {
+    "failed": "Upload failed: {{error}}",
+    "failed$size": "File is too large (max {{size}}MB)",
+    "success": "Upload successful",
+    "image_only": "Only images can be uploaded",
+    "title": "Upload",
+    "uploading": "Uploading..."
+  },
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "create": "Create",
+  "loading": "Loading...",
+  "alert": "Alert"
+} 
