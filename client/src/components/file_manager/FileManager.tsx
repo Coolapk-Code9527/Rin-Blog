@@ -301,17 +301,30 @@ export function FileManager({
     }
 
     try {
-      const response = await client.files({ id: file.id }).delete({
+      // 使用fetch直接调用API代替客户端API
+      const response = await fetch(`${endpoint}/files/${file.id}`, {
+        method: 'DELETE',
         headers: headersWithAuth()
       });
 
-      if (response.error) {
-        showAlert(t('files.delete_error', { error: response.error.value }));
-      } else {
-        setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
-        loadFiles();
+      if (!response.ok) {
+        // 尝试解析错误信息
+        let errorMsg = 'Error deleting file';
+        try {
+          const data = await response.json();
+          errorMsg = data.error || errorMsg;
+        } catch (e) {
+          console.error('Error parsing error response:', e);
+        }
+        showAlert(t('files.delete_error', { error: errorMsg }));
+        return;
       }
+
+      // 删除成功
+      setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
+      loadFiles();
     } catch (error: any) {
+      console.error('删除文件失败:', error);
       showAlert(t('files.delete_error', { error: error.message }));
     }
   };
