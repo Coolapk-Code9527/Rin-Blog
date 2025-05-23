@@ -64,10 +64,14 @@ export function FileManager({
   const [showNewFolderDialog, setShowNewFolderDialog] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  
+  // 添加错误状态，用于显示错误信息和控制关闭功能
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 加载文件列表
   const loadFiles = useCallback(async () => {
     setIsLoading(true);
+    setErrorMessage(null);
     try {
       const response = await client.files.index.get({
         query: {
@@ -84,24 +88,32 @@ export function FileManager({
 
       if (response.error) {
         console.error('文件加载错误:', response.error);
-        showAlert(`${t('files.load_error', { error: response.error.value || '未知错误' })}`, () => {});
+        const errorMsg = typeof response.error === 'object' ? 
+          (response.error.value || JSON.stringify(response.error)) : 
+          String(response.error);
+        setErrorMessage(t('files.load_error', { error: errorMsg }));
         setFiles([]);
       } else if (response.data) {
         setFiles(response.data.files || []);
         setTotalItems(response.data.total || 0);
       } else {
         console.error('文件加载响应格式错误:', response);
-        showAlert(`${t('files.load_error', { error: '服务器返回格式错误' })}`, () => {});
+        setErrorMessage(t('files.load_error', { error: '服务器返回格式错误' }));
         setFiles([]);
       }
     } catch (error: any) {
       console.error('文件加载异常:', error);
-      showAlert(`${t('files.load_error', { error: error.message || '网络请求失败' })}`, () => {});
+      setErrorMessage(t('files.load_error', { error: error.message || '网络请求失败' }));
       setFiles([]);
     } finally {
       setIsLoading(false);
     }
-  }, [currentPath, search, sortBy, sortOrder, currentPage, itemsPerPage, allowedTypes, t, showAlert]);
+  }, [currentPath, search, sortBy, sortOrder, currentPage, itemsPerPage, allowedTypes, t]);
+
+  // 关闭错误消息对话框
+  const closeErrorDialog = () => {
+    setErrorMessage(null);
+  };
 
   // 初始加载和依赖变更时重新加载
   useEffect(() => {
@@ -602,6 +614,24 @@ export function FileManager({
                 {t('cancel')}
               </button>
               <Button onClick={handleCreateFolder} title={t('create')} />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 错误信息对话框 */}
+      {errorMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-lg font-medium text-red-600 mb-4">{t('alert')}</h3>
+            <p className="mb-6">{errorMessage}</p>
+            <div className="flex justify-end">
+              <button
+                onClick={closeErrorDialog}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+              >
+                {t('confirm')}
+              </button>
             </div>
           </div>
         </div>

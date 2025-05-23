@@ -58,8 +58,8 @@ const i18n = i18next;
     },
     fallbackLng: "en",
     debug: isDev, // 开发环境下开启调试模式
-    defaultNS: 'common', 
-    ns: ['common'],
+    defaultNS: 'translation', 
+    ns: ['translation'],
     keySeparator: '.', // 使用.作为嵌套键的分隔符
     interpolation: {
       escapeValue: false // react already safes from xss => https://www.i18next.com/translation-function/interpolation#unescape

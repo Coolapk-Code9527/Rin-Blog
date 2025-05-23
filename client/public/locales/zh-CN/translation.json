@@ -110,6 +110,33 @@
     "published$time": "发布于 {{time}}",
     "updated$time": "更新于 {{time}}"
   },
+  "files": {
+    "title": "文件管理",
+    "page_title": "文件管理",
+    "page_description": "管理你上传的文件和文件夹",
+    "root": "根目录",
+    "empty": "暂无文件",
+    "load_error": "加载文件失败: {{error}}",
+    "no_selection": "请选择一个文件",
+    "folder_name_required": "文件夹名称不能为空",
+    "folder_create_error": "创建文件夹失败: {{error}}",
+    "confirm_delete": "确定要删除 {{name}} 吗?",
+    "delete_error": "删除失败: {{error}}",
+    "columns": {
+      "name": "名称",
+      "size": "大小",
+      "date": "日期"
+    },
+    "search_placeholder": "搜索文件...",
+    "grid_view": "网格视图",
+    "list_view": "列表视图",
+    "new_folder": "新建文件夹",
+    "upload": "上传",
+    "selected": "已选择 {{count}} 个文件",
+    "confirm_selection": "确认选择",
+    "create_folder": "创建文件夹",
+    "folder_name": "文件夹名称"
+  },
   "footer": {
     "rss": "RSS 订阅链接"
   },
@@ -270,11 +297,12 @@
   },
   "update$sth": "更新 {{sth}}",
   "upload": {
-    "failed": "上传失败",
-    "failed$size": "上传失败，文件大小不能超过 {{size}} MB",
+    "failed": "上传失败: {{error}}",
+    "failed$size": "文件太大 (最大 {{size}}MB)",
+    "success": "上传成功",
+    "image_only": "只能上传图片",
     "title": "上传",
-    "image_only": "只能上传图片文件",
-    "max_size": "最大 {{size}}MB"
+    "uploading": "上传中..."
   },
   "uploading": "上传中...",
   "url": "站点 URL",

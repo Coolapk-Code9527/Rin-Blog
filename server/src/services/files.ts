@@ -107,7 +107,7 @@ export function FileService() {
                         } else if (sort === 'size') {
                             query = order === 'asc' ? query.orderBy(asc(files.size)) : query.orderBy(desc(files.size));
                         } else if (sort === 'date') {
-                            query = order === 'asc' ? query.orderBy(asc(files.createdAt)) : query.orderBy(desc(files.createdAt));
+                            query = order === 'asc' ? query.orderBy(asc(files.modifiedAt)) : query.orderBy(desc(files.modifiedAt));
                         }
 
                         // 添加分页
@@ -129,15 +129,22 @@ export function FileService() {
                             );
 
                         return {
-                            files: result,
+                            files: result.map((file: any) => ({
+                                ...file,
+                                modifiedAt: file.modifiedAt ? 
+                                    (typeof file.modifiedAt === 'object' ? 
+                                       Math.floor(file.modifiedAt.getTime() / 1000) : 
+                                       file.modifiedAt) : 
+                                    Math.floor(Date.now() / 1000)
+                            })),
                             total: countQuery[0].count,
                             page,
                             limit
                         };
                     } catch (error: any) {
-                        console.error(error);
+                        console.error('Error loading files:', error);
                         set.status = 500;
-                        return { error: error.message };
+                        return { error: error.message || 'Internal server error' };
                     }
                 }, {
                     query: t.Object({
