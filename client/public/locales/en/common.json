@@ -1,5 +1,8 @@
 {
   "files": {
+    "title": "Files",
+    "page_title": "File Manager",
+    "page_description": "Manage your files and folders",
     "root": "Root",
     "empty": "No files yet",
     "load_error": "Failed to load files: {{error}}",

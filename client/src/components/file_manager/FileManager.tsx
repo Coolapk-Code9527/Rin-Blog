@@ -6,6 +6,9 @@ import { formatFileSize, getFileTypeIcon } from './utils';
 import ReactLoading from "react-loading";
 import { ShowAlertType } from '../../hooks/useAlert';
 
+// 导入FileItem类型
+import type { FileItem } from '../../types/api';
+
 // 使用ReactLoading作为Loading组件
 const Loading = ({ type, height, width, color = "#FC466B" }: { type: any, height: number, width: number, color?: string }) => (
   <ReactLoading type={type} height={height} width={height} color={color} />

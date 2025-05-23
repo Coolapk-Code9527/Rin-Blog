@@ -22,6 +22,23 @@ export type Config = {
   [key: string]: any;
 };
 
+// 文件项类型
+export type FileItem = {
+  id: number;
+  path: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  isFolder: boolean;
+  accessLevel: "public" | "private" | "restricted";
+  thumbnailHash?: string;
+  parentPath: string;
+  createdAt: number;
+  modifiedAt: number;
+  url?: string;
+  references?: Array<{id: number, title: string, type: string}>;
+};
+
 // 文章类型
 export type Feed = {
   id: number;

@@ -4,8 +4,6 @@
     "/*"
   ],
   "exclude": [
-    "/build/*",
-    "/static/*", 
     "/assets/*",
     "/*.js",
     "/*.css",

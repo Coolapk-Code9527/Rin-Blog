@@ -20,12 +20,17 @@ type ServerType = any;
 
 // 根据环境动态选择API端点
 const isDev = import.meta.env.DEV;
-// 从环境变量获取API_URL，如果没有则使用默认值
+// 从环境变量获取API_URL
 // 开发环境：使用本地服务器
-// 生产环境：使用环境变量定义的API_URL或后端Worker地址
+// 生产环境：必须通过环境变量配置API_URL
 export const endpoint = isDev 
   ? 'http://localhost:11498' 
-  : (import.meta.env.API_URL || 'https://blogserver.115694.xyz');
+  : (import.meta.env.API_URL || '');
+
+// 如果在生产环境中没有设置API_URL，在控制台发出警告
+if (!isDev && !import.meta.env.API_URL) {
+  console.error('警告: 生产环境中未设置API_URL环境变量，API请求可能无法正常工作');
+}
 
 // OAuth URL同样从API端点派生
 export const oauth_url = endpoint + '/user/github';
