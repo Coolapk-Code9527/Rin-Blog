@@ -83,14 +83,20 @@ export function FileManager({
       });
 
       if (response.error) {
-        showAlert(t('files.load_error', { error: response.error.value }));
+        console.error('文件加载错误:', response.error);
+        showAlert(`${t('files.load_error', { error: response.error.value || '未知错误' })}`, () => {});
         setFiles([]);
       } else if (response.data) {
-        setFiles(response.data.files);
-        setTotalItems(response.data.total);
+        setFiles(response.data.files || []);
+        setTotalItems(response.data.total || 0);
+      } else {
+        console.error('文件加载响应格式错误:', response);
+        showAlert(`${t('files.load_error', { error: '服务器返回格式错误' })}`, () => {});
+        setFiles([]);
       }
     } catch (error: any) {
-      showAlert(t('files.load_error', { error: error.message }));
+      console.error('文件加载异常:', error);
+      showAlert(`${t('files.load_error', { error: error.message || '网络请求失败' })}`, () => {});
       setFiles([]);
     } finally {
       setIsLoading(false);

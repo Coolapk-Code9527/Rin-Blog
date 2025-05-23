@@ -57,9 +57,19 @@ const i18n = i18next;
       loadPath: '/locales/{{lng}}/{{ns}}.json',
     },
     fallbackLng: "en",
+    debug: isDev, // 开发环境下开启调试模式
+    defaultNS: 'common', 
+    ns: ['common'],
+    keySeparator: '.', // 使用.作为嵌套键的分隔符
     interpolation: {
       escapeValue: false // react already safes from xss => https://www.i18next.com/translation-function/interpolation#unescape
     }
+  })
+  .then(() => {
+    console.log('i18n 初始化完成，当前语言:', (i18n as any).language);
+  })
+  .catch((err) => {
+    console.error('i18n 初始化失败:', err);
   });
 
 const helmetContext = {};
