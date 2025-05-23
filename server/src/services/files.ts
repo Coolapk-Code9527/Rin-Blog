@@ -11,7 +11,7 @@ import { createS3Client } from "../utils/s3";
 // 定义引用接口
 interface FileReference {
     id: number;
-    title: string;
+    title: string | null;
     relationType: string;
 }
 
@@ -66,14 +66,13 @@ export function FileService() {
         .group('/files', (group) =>
             group
                 // 获取文件列表
-                .get('/', async ({ query, uid, set, drizzle }) => {
+                .get('/', async ({ query, uid, set }) => {
                     if (!uid) {
                         set.status = 401;
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用正确的drizzle实例
-                    const db = drizzle || getDB();
+                    const db = getDB();
                     
                     if (!db) {
                         set.status = 500;
@@ -167,14 +166,13 @@ export function FileService() {
                 })
                 
                 // 创建文件夹
-                .post('/folder', async ({ body, uid, set, drizzle }) => {
+                .post('/folder', async ({ body, uid, set }) => {
                     if (!uid) {
                         set.status = 401;
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用正确的drizzle实例
-                    const db = drizzle || getDB();
+                    const db = getDB();
                     
                     if (!db) {
                         set.status = 500;
@@ -255,14 +253,13 @@ export function FileService() {
                 })
                 
                 // 上传文件
-                .post('/', async ({ body, uid, set, drizzle }) => {
+                .post('/', async ({ body, uid, set }) => {
                     if (!uid) {
                         set.status = 401;
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用正确的drizzle实例
-                    const db = drizzle || getDB();
+                    const db = getDB();
                     
                     if (!db) {
                         set.status = 500;
@@ -387,14 +384,13 @@ export function FileService() {
                 })
 
                 // 获取单个文件信息
-                .get('/:id', async ({ params, uid, set, drizzle }) => {
+                .get('/:id', async ({ params, uid, set }) => {
                     if (!uid) {
                         set.status = 401;
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用正确的drizzle实例
-                    const db = drizzle || getDB();
+                    const db = getDB();
                     
                     if (!db) {
                         set.status = 500;
@@ -458,14 +454,13 @@ export function FileService() {
                 })
 
                 // 删除文件
-                .delete('/:id', async ({ params, uid, set, drizzle }) => {
+                .delete('/:id', async ({ params, uid, set }) => {
                     if (!uid) {
                         set.status = 401;
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用正确的drizzle实例
-                    const db = drizzle || getDB();
+                    const db = getDB();
                     
                     if (!db) {
                         set.status = 500;
@@ -553,14 +548,13 @@ export function FileService() {
                 })
 
                 // 更新文件信息
-                .patch('/:id', async ({ params, body, uid, set, drizzle }) => {
+                .patch('/:id', async ({ params, body, uid, set }) => {
                     if (!uid) {
                         set.status = 401;
                         return { error: 'Unauthorized' };
                     }
 
-                    // 使用正确的drizzle实例
-                    const db = drizzle || getDB();
+                    const db = getDB();
                     
                     if (!db) {
                         set.status = 500;

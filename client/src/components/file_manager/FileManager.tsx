@@ -157,8 +157,14 @@ export function FileManager({
       await loadFiles();
     };
     fetchData();
+    
+    // 在组件卸载时取消未完成的请求
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
     // 明确列出依赖项
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPath, search, sortBy, sortOrder, currentPage, itemsPerPage]);
 
   // 更新面包屑
@@ -525,15 +531,6 @@ export function FileManager({
       </div>
     ) : null;
   };
-
-  // 在组件销毁时取消未完成的请求
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
