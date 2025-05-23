@@ -1,5 +1,5 @@
 # 确保API请求总是转发到后端API，而不是被重定向到静态文件
-/api/* /api/:splat 200
+/api/*  /api/:splat  200
 /user/* /user/:splat 200
 /config/* /config/:splat 200
 /feed/* /feed/:splat 200
@@ -11,5 +11,5 @@
 /storage/* /storage/:splat 200
 /favicon/* /favicon/:splat 200
 
-# 保持SPA单页应用功能，把404请求重定向到首页
+# SPA回退路由，只在没有匹配到其他路由时触发
 /* /index.html 200 

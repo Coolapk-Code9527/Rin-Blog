@@ -20,14 +20,14 @@ type ServerType = any;
 
 // 根据环境动态选择API端点
 const isDev = import.meta.env.DEV;
-// 在开发环境使用本地服务器，在生产环境使用同源API（相对路径）
-export const endpoint = isDev ? 'http://localhost:11498' : '';
-export const oauth_url = (isDev ? endpoint : window.location.origin) + '/user/github';
+// 在开发环境使用本地服务器，在生产环境使用当前域名
+export const endpoint = isDev ? 'http://localhost:11498' : window.location.origin;
+export const oauth_url = endpoint + '/user/github';
 export const client = treaty<ServerType>(endpoint) as unknown as ApiClient;
 
 // 调试信息
 console.log('当前环境:', isDev ? '开发环境' : '生产环境');
-console.log('API端点:', endpoint || '(同源)');
+console.log('API端点:', endpoint);
 
 listenSystemMode()
 

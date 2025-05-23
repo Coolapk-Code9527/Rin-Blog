@@ -1,6 +1,19 @@
 {
   "version": 1,
-  "include": ["/*"],
+  "include": [
+    "/api/*", 
+    "/user/*",
+    "/config/*",
+    "/feed/*",
+    "/comment/*",
+    "/tag/*",
+    "/files/*",
+    "/friend/*",
+    "/search/*",
+    "/storage/*",
+    "/favicon/*",
+    "/*"
+  ],
   "exclude": [
     "/build/*",
     "/static/*", 
@@ -16,6 +29,7 @@
     "/*.gif",
     "/robots.txt",
     "/sitemap.xml",
-    "/manifest.json"
+    "/manifest.json",
+    "/locales/*"
   ]
 } 
