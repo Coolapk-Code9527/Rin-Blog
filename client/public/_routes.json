@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/build/*",
+    "/static/*", 
+    "/assets/*",
+    "/*.js",
+    "/*.css",
+    "/*.ico",
+    "/*.png",
+    "/*.svg",
+    "/*.jpg",
+    "/*.jpeg",
+    "/*.webp",
+    "/*.gif",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/manifest.json"
+  ]
+} 

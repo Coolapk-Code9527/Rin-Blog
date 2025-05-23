@@ -18,10 +18,16 @@ import { ApiClient } from './types/api';
 // 在实际使用中，应该导入正确的服务器类型
 type ServerType = any;
 
-// 确保API端点始终指向本地服务器
-export const endpoint = 'http://localhost:11498'
-export const oauth_url = endpoint + '/user/github'
+// 根据环境动态选择API端点
+const isDev = import.meta.env.DEV;
+// 在开发环境使用本地服务器，在生产环境使用同源API（相对路径）
+export const endpoint = isDev ? 'http://localhost:11498' : '';
+export const oauth_url = (isDev ? endpoint : window.location.origin) + '/user/github';
 export const client = treaty<ServerType>(endpoint) as unknown as ApiClient;
+
+// 调试信息
+console.log('当前环境:', isDev ? '开发环境' : '生产环境');
+console.log('API端点:', endpoint || '(同源)');
 
 listenSystemMode()
 
