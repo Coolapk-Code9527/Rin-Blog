@@ -49,7 +49,7 @@ export function getFileTypeIcon(mimeType: string): string {
 }
 
 // 同步文件数据
-export async function syncFiles(feedId?: number): Promise<{
+export async function syncFiles(feedId?: number, includeExternal: boolean = true): Promise<{
   success: boolean;
   message: string;
   stats?: {
@@ -59,6 +59,7 @@ export async function syncFiles(feedId?: number): Promise<{
     skipped: number;
     errors: number;
   };
+  debugInfo?: any;
 }> {
   try {
     // 构建URL
@@ -67,8 +68,13 @@ export async function syncFiles(feedId?: number): Promise<{
       url.searchParams.append('feedId', String(feedId));
     }
     
+    // 添加是否包含外部URL的参数
+    url.searchParams.append('includeExternal', String(includeExternal));
+    
     // 添加调试参数
     url.searchParams.append('debug', 'true');
+    
+    console.log('[syncFiles] 请求URL:', url.toString());
 
     // 发起同步请求
     const response = await fetch(url.toString(), {
@@ -76,20 +82,27 @@ export async function syncFiles(feedId?: number): Promise<{
       headers: headersWithAuth(),
     });
 
+    console.log('[syncFiles] 响应状态:', response.status, response.statusText);
+    
     if (!response.ok) {
       let errorText = `同步失败: HTTP ${response.status}`;
       try {
         const errorData = await response.json();
+        console.error('[syncFiles] 错误详情:', errorData);
         if (errorData && errorData.error) {
           errorText = `同步失败: ${errorData.error}`;
         }
       } catch (e) {
         // 忽略解析错误
+        console.error('[syncFiles] 解析错误响应失败:', e);
       }
       return { success: false, message: errorText };
     }
 
     const data = await response.json();
+    // 记录完整响应数据
+    console.log('[syncFiles] 响应数据:', JSON.stringify(data, null, 2));
+    
     if (!data.success) {
       return {
         success: false,
@@ -106,25 +119,173 @@ export async function syncFiles(feedId?: number): Promise<{
       
       // 添加调试信息
       if (data.debugInfo && data.debugInfo.length > 0) {
-        console.log('同步调试信息:', data.debugInfo);
+        console.log('[syncFiles] 同步调试信息:', data.debugInfo);
+        
+        // 输出每篇文章找到的媒体引用
+        data.debugInfo.forEach((info: any) => {
+          console.log(`文章ID ${info.feedId}:`);
+          console.log('- 原始引用:', info.mediaRefs);
+          console.log('- 标准化引用:', info.normalizedRefs);
+        });
       }
     }
     
     // 如果有错误，在消息中说明
     if (data.stats.errors > 0) {
       resultMessage += `，但有${data.stats.errors}个错误`;
+      if (data.errors) {
+        console.error('[syncFiles] 同步错误:', data.errors);
+      }
     }
 
     return {
       success: true,
       message: resultMessage,
       stats: data.stats,
+      debugInfo: data.debugInfo
     };
   } catch (error) {
-    console.error('文件同步错误:', error);
+    console.error('[syncFiles] 文件同步错误:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : '同步时发生未知错误',
+    };
+  }
+}
+
+// 从Cloudflare Pages导入媒体文件
+export async function importFromRemoteArticles(remoteDomain: string): Promise<{
+  success: boolean;
+  message: string;
+  results?: {
+    processed: number;
+    found: number;
+    imported: number;
+    skipped: number;
+    errors: number;
+  };
+}> {
+  try {
+    // 构建URL
+    const url = new URL(`${endpoint}/files/import-from-articles`);
+    url.searchParams.append('remoteDomain', remoteDomain);
+    
+    console.log('[importFromRemoteArticles] 请求URL:', url.toString());
+
+    // 发起导入请求
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: headersWithAuth(),
+    });
+
+    console.log('[importFromRemoteArticles] 响应状态:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      let errorText = `导入失败: HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        console.error('[importFromRemoteArticles] 错误详情:', errorData);
+        if (errorData && errorData.error) {
+          errorText = `导入失败: ${errorData.error}`;
+        }
+      } catch (e) {
+        // 忽略解析错误
+        console.error('[importFromRemoteArticles] 解析错误响应失败:', e);
+      }
+      return { success: false, message: errorText };
+    }
+
+    const data = await response.json();
+    // 记录完整响应数据
+    console.log('[importFromRemoteArticles] 响应数据:', JSON.stringify(data, null, 2));
+    
+    if (!data.success) {
+      return {
+        success: false,
+        message: data.error || '导入失败，未知错误',
+      };
+    }
+
+    // 格式化导入结果消息
+    const { results } = data;
+    let resultMessage = `导入成功: 处理了${results.processed}篇文章，找到${results.found}个媒体链接，导入了${results.imported}个文件`;
+    
+    // 如果有跳过或错误，在消息中说明
+    if (results.skipped > 0) {
+      resultMessage += `，跳过了${results.skipped}个已存在的文件`;
+    }
+    
+    if (results.errors > 0) {
+      resultMessage += `，但有${results.errors}个错误`;
+    }
+
+    return {
+      success: true,
+      message: resultMessage,
+      results: data.results,
+    };
+  } catch (error) {
+    console.error('[importFromRemoteArticles] 远程导入错误:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '导入时发生未知错误',
+    };
+  }
+}
+
+// 从远程URL导入单个文件
+export async function importRemoteFile(remoteUrl: string, localPath: string = '/'): Promise<{
+  success: boolean;
+  message: string;
+  id?: number;
+}> {
+  try {
+    // 构建请求
+    const response = await fetch(`${endpoint}/files/import-remote`, {
+      method: 'POST',
+      headers: {
+        ...headersWithAuth(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        remoteUrl,
+        localPath
+      })
+    });
+    
+    if (!response.ok) {
+      let errorText = `导入失败: HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData && errorData.error) {
+          errorText = `导入失败: ${errorData.error}`;
+        }
+      } catch (e) {
+        // 忽略解析错误
+      }
+      return { success: false, message: errorText };
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      return {
+        success: false, 
+        message: data.error || '导入失败，未知错误'
+      };
+    }
+    
+    return {
+      success: true,
+      message: data.message || '文件导入成功',
+      id: data.id
+    };
+    
+  } catch (error) {
+    console.error('[importRemoteFile] 导入远程文件错误:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '导入时发生未知错误',
     };
   }
 } 

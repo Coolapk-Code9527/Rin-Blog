@@ -1,5 +1,5 @@
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { eq, sql, and, like, desc, asc, or, isNull } from "drizzle-orm";
+import { eq, sql, and, like, desc, asc, or, isNull, inArray } from "drizzle-orm";
 import Elysia, { t } from "elysia";
 import path from "node:path";
 import type { Env } from "../db/db";
@@ -732,6 +732,7 @@ export function FileService() {
                     try {
                         // 获取指定的文章ID（可选）
                         const feedId = query.feedId ? Number(query.feedId) : undefined;
+                        const includeExternal = query.includeExternal === 'true';
                         
                         // 查询文章
                         let feedsQuery = db.select({
@@ -763,6 +764,7 @@ export function FileService() {
                             feedId: number;
                             mediaRefs: string[];
                             normalizedRefs: {original: string, normalized: string}[];
+                            externalRefs: string[];
                         }[] = [];
                         
                         console.log(`开始同步，找到 ${feedsData.length} 篇文章`);
@@ -777,15 +779,25 @@ export function FileService() {
                                     original: ref,
                                     normalized: normalizeUrl(ref)
                                 }));
+
+                                // 分离外部URL和本地URL
+                                const externalRefs = mediaRefs.filter(url => 
+                                    url.startsWith('http://') || url.startsWith('https://')
+                                );
+                                
+                                const localRefs = mediaRefs.filter(url => 
+                                    !url.startsWith('http://') && !url.startsWith('https://')
+                                );
                                 
                                 // 添加调试信息
                                 debugInfo.push({
                                     feedId: feed.id,
                                     mediaRefs,
-                                    normalizedRefs
+                                    normalizedRefs,
+                                    externalRefs
                                 });
                                 
-                                console.log(`文章ID ${feed.id} 找到 ${mediaRefs.length} 个媒体引用`);
+                                console.log(`文章ID ${feed.id} 找到 ${mediaRefs.length} 个媒体引用，其中外部引用 ${externalRefs.length} 个`);
                                 
                                 // 跳过没有媒体的文章
                                 if (mediaRefs.length === 0) {
@@ -794,8 +806,11 @@ export function FileService() {
                                 
                                 processedCount++;
                                 
+                                // 需要处理的引用列表
+                                const refsToProcess = includeExternal ? mediaRefs : localRefs;
+                                
                                 // 处理每个媒体引用
-                                for (const mediaUrl of mediaRefs) {
+                                for (const mediaUrl of refsToProcess) {
                                     try {
                                         // 规范化URL
                                         const normalizedUrl = normalizeUrl(mediaUrl);
@@ -809,15 +824,19 @@ export function FileService() {
                                         
                                         console.log(`处理媒体URL: ${mediaUrl} → 规范化: ${normalizedUrl}`);
                                         
+                                        // 确定是否为外部URL
+                                        const isExternalUrl = mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://');
+                                        
                                         // 灵活查找文件 - 使用多个条件
+                                        // 优先匹配原始路径，然后匹配规范化路径，最后匹配文件名
                                         const existingFile = await db
                                             .select()
                                             .from(files)
                                             .where(
                                                 or(
-                                                    eq(files.path, normalizedUrl),
-                                                    eq(files.path, mediaUrl),
-                                                    like(files.path, `%${getFileNameFromUrl(normalizedUrl)}`)
+                                                    eq(files.path, mediaUrl),  // 原始路径精确匹配
+                                                    eq(files.path, normalizedUrl),  // 规范化路径匹配
+                                                    like(files.name, `%${getFileNameFromUrl(normalizedUrl)}`)  // 文件名模糊匹配
                                                 )
                                             );
                                         
@@ -840,7 +859,7 @@ export function FileService() {
                                             const result = await db
                                                 .insert(files)
                                                 .values({
-                                                    path: normalizedUrl,
+                                                    path: isExternalUrl ? mediaUrl : normalizedUrl, // 外部URL保留完整URL，本地URL使用规范化路径
                                                     name: fileName,
                                                     size: 0, // 无法确定实际大小，后续可优化
                                                     mimeType: mimeType,
@@ -917,6 +936,406 @@ export function FileService() {
                     query: t.Object({
                         feedId: t.Optional(t.String()), // 可选，指定同步特定文章
                         debug: t.Optional(t.String()), // 可选，是否返回调试信息
+                        includeExternal: t.Optional(t.String()), // 可选，是否包括外部URL
+                    }),
+                })
+
+                // 从远程URL导入图片
+                .post('/import-remote', async ({ body, uid, set }) => {
+                    if (!uid) {
+                        set.status = 401;
+                        return { error: 'Unauthorized' };
+                    }
+
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+
+                    try {
+                        const { remoteUrl, localPath = '/', validate = false } = body;
+                        
+                        // 验证URL格式
+                        if (!remoteUrl || typeof remoteUrl !== 'string') {
+                            set.status = 400;
+                            return { error: 'Invalid remote URL' };
+                        }
+                        
+                        // 构造文件名
+                        let fileName = '';
+                        try {
+                            const urlObj = new URL(remoteUrl);
+                            const pathSegments = urlObj.pathname.split('/');
+                            fileName = pathSegments[pathSegments.length - 1];
+                        } catch (e) {
+                            // 如果解析失败，直接使用URL作为文件名
+                            const segments = remoteUrl.split('/');
+                            fileName = segments[segments.length - 1];
+                        }
+                        
+                        if (!fileName) {
+                            set.status = 400;
+                            return { error: 'Could not determine file name from URL' };
+                        }
+                        
+                        // 如果只是验证，则返回文件名
+                        if (validate) {
+                            return {
+                                success: true,
+                                fileName,
+                                remoteUrl
+                            };
+                        }
+
+                        // 检查是否已存在相同URL的文件
+                        const existingFile = await db
+                            .select()
+                            .from(files)
+                            .where(
+                                and(
+                                    eq(files.userId, uid),
+                                    or(
+                                        eq(files.path, remoteUrl),
+                                        eq(files.path, normalizeUrl(remoteUrl))
+                                    )
+                                )
+                            ) as any;
+                            
+                        if (existingFile.length > 0) {
+                            return {
+                                success: true,
+                                id: existingFile[0].id,
+                                fileName,
+                                remoteUrl,
+                                message: 'File already exists'
+                            };
+                        }
+                        
+                        // 确定MIME类型
+                        const mimeType = getMimeTypeFromFileName(fileName);
+                        
+                        // 生成临时哈希
+                        const tempHash = Buffer.from(remoteUrl).toString('hex').substring(0, 16);
+                        
+                        // 创建文件记录
+                        const result = await db
+                            .insert(files)
+                            .values({
+                                path: remoteUrl,
+                                name: fileName,
+                                size: 0, // 无法确定实际大小
+                                mimeType: mimeType,
+                                userId: uid,
+                                accessLevel: 'public',
+                                isFolder: 0,
+                                parentPath: localPath,
+                                hash: tempHash,
+                            })
+                            .returning({ id: files.id });
+                        
+                        return {
+                            success: true,
+                            id: result[0].id,
+                            fileName,
+                            remoteUrl,
+                            message: 'File imported successfully'
+                        };
+                    } catch (error: any) {
+                        console.error('Error importing remote file:', error);
+                        set.status = 500;
+                        return { error: error.message || 'Internal server error' };
+                    }
+                }, {
+                    body: t.Object({
+                        remoteUrl: t.String(),
+                        localPath: t.Optional(t.String()),
+                        validate: t.Optional(t.Boolean())
+                    }),
+                })
+
+                // 导入批量远程URL
+                .post('/import-remote-batch', async ({ body, uid, set }) => {
+                    if (!uid) {
+                        set.status = 401;
+                        return { error: 'Unauthorized' };
+                    }
+
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+
+                    try {
+                        const { urls, domain, localPath = '/' } = body;
+                        
+                        if (!Array.isArray(urls) || urls.length === 0) {
+                            set.status = 400;
+                            return { error: 'No URLs provided' };
+                        }
+                        
+                        const results = {
+                            total: urls.length,
+                            successful: 0,
+                            failed: 0,
+                            skipped: 0,
+                            fileIds: [] as number[],
+                            errors: [] as string[]
+                        };
+                        
+                        // 处理每个URL
+                        for (const url of urls) {
+                            try {
+                                // 如果提供了域名，添加到相对URL
+                                const fullUrl = url.startsWith('http') 
+                                    ? url 
+                                    : (domain ? `${domain}${url.startsWith('/') ? url : `/${url}`}` : url);
+                                
+                                // 构造文件名
+                                let fileName = '';
+                                try {
+                                    const urlObj = new URL(fullUrl);
+                                    const pathSegments = urlObj.pathname.split('/');
+                                    fileName = pathSegments[pathSegments.length - 1];
+                                } catch (e) {
+                                    // 如果解析失败，直接使用URL作为文件名
+                                    const segments = fullUrl.split('/');
+                                    fileName = segments[segments.length - 1];
+                                }
+                                
+                                if (!fileName) {
+                                    results.failed++;
+                                    results.errors.push(`Failed to determine file name for URL: ${fullUrl}`);
+                                    continue;
+                                }
+                                
+                                // 检查是否已存在相同URL的文件
+                                const existingFile = await db
+                                    .select()
+                                    .from(files)
+                                    .where(
+                                        and(
+                                            eq(files.userId, uid),
+                                            or(
+                                                eq(files.path, fullUrl),
+                                                eq(files.path, normalizeUrl(fullUrl))
+                                            )
+                                        )
+                                    ) as any;
+                                    
+                                if (existingFile.length > 0) {
+                                    results.skipped++;
+                                    results.fileIds.push(existingFile[0].id);
+                                    continue;
+                                }
+                                
+                                // 确定MIME类型
+                                const mimeType = getMimeTypeFromFileName(fileName);
+                                
+                                // 生成临时哈希
+                                const tempHash = Buffer.from(fullUrl).toString('hex').substring(0, 16);
+                                
+                                // 创建文件记录
+                                const result = await db
+                                    .insert(files)
+                                    .values({
+                                        path: fullUrl,
+                                        name: fileName,
+                                        size: 0, // 无法确定实际大小
+                                        mimeType: mimeType,
+                                        userId: uid,
+                                        accessLevel: 'public',
+                                        isFolder: 0,
+                                        parentPath: localPath,
+                                        hash: tempHash,
+                                    })
+                                    .returning({ id: files.id });
+                                
+                                results.successful++;
+                                results.fileIds.push(result[0].id);
+                                
+                            } catch (urlError: any) {
+                                results.failed++;
+                                results.errors.push(`Error processing URL ${url}: ${urlError.message}`);
+                            }
+                        }
+                        
+                        return {
+                            success: true,
+                            results
+                        };
+                    } catch (error: any) {
+                        console.error('Error in batch import:', error);
+                        set.status = 500;
+                        return { error: error.message || 'Internal server error' };
+                    }
+                }, {
+                    body: t.Object({
+                        urls: t.Array(t.String()),
+                        domain: t.Optional(t.String()),
+                        localPath: t.Optional(t.String())
+                    }),
+                })
+                
+                // 扫描文章并导入远程图片
+                .post('/import-from-articles', async ({ uid, query, set }) => {
+                    if (!uid) {
+                        set.status = 401;
+                        return { error: 'Unauthorized' };
+                    }
+
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+
+                    try {
+                        // 准备域名映射表，用于转换相对URL到绝对URL
+                        const { remoteDomain } = query;
+                        
+                        // 查询所有文章
+                        const feedsData = await db.select({
+                            id: feeds.id,
+                            content: feeds.content,
+                            uid: feeds.uid
+                        }).from(feeds) as any;
+                        
+                        // 统计信息
+                        const results = {
+                            processed: 0,
+                            found: 0,
+                            imported: 0,
+                            skipped: 0,
+                            errors: 0,
+                            errorDetails: [] as string[]
+                        };
+                        
+                        // 存储所有找到的远程URL
+                        const allRemoteUrls: Set<string> = new Set();
+                        
+                        // 从每篇文章中提取远程URL
+                        for (const feed of feedsData) {
+                            try {
+                                results.processed++;
+                                
+                                // 提取媒体引用
+                                const mediaRefs = extractMediaReferences(feed.content);
+                                
+                                // 筛选出远程URL (包含http或https的完整URL)
+                                const remoteUrls = mediaRefs.filter(url => 
+                                    url.startsWith('http://') || url.startsWith('https://'));
+                                    
+                                // 转换相对URL为远程域名下的URL
+                                if (remoteDomain) {
+                                    const relativeUrls = mediaRefs.filter(url => 
+                                        !url.startsWith('http://') && !url.startsWith('https://') && 
+                                        url.startsWith('/'));
+                                        
+                                    relativeUrls.forEach(relUrl => {
+                                        const fullUrl = `${remoteDomain}${relUrl}`;
+                                        remoteUrls.push(fullUrl);
+                                    });
+                                }
+                                
+                                results.found += remoteUrls.length;
+                                
+                                // 添加到集合
+                                remoteUrls.forEach(url => allRemoteUrls.add(url));
+                                
+                            } catch (feedError: any) {
+                                results.errors++;
+                                results.errorDetails.push(`Error processing article ${feed.id}: ${feedError.message}`);
+                            }
+                        }
+                        
+                        // 将集合转换为数组
+                        const uniqueRemoteUrls = Array.from(allRemoteUrls);
+                        
+                        // 导入找到的远程URL
+                        if (uniqueRemoteUrls.length > 0) {
+                            // 检查哪些URL已经存在
+                            const existingUrls = await db
+                                .select({ path: files.path })
+                                .from(files)
+                                .where(
+                                    and(
+                                        eq(files.userId, uid),
+                                        inArray(files.path, uniqueRemoteUrls)
+                                    )
+                                ) as any;
+                            
+                            // 创建已存在URL的集合
+                            const existingUrlSet = new Set(existingUrls.map((item: any) => item.path));
+                            
+                            // 筛选出不存在的URL
+                            const newUrls = uniqueRemoteUrls.filter(url => !existingUrlSet.has(url));
+                            
+                            results.skipped = uniqueRemoteUrls.length - newUrls.length;
+                            
+                            // 批量导入新的URL
+                            for (const url of newUrls) {
+                                try {
+                                    // 构造文件名
+                                    let fileName = '';
+                                    try {
+                                        const urlObj = new URL(url);
+                                        const pathSegments = urlObj.pathname.split('/');
+                                        fileName = pathSegments[pathSegments.length - 1];
+                                    } catch (e) {
+                                        const segments = url.split('/');
+                                        fileName = segments[segments.length - 1];
+                                    }
+                                    
+                                    if (!fileName) {
+                                        results.errors++;
+                                        results.errorDetails.push(`Failed to determine file name for URL: ${url}`);
+                                        continue;
+                                    }
+                                    
+                                    // 确定MIME类型
+                                    const mimeType = getMimeTypeFromFileName(fileName);
+                                    
+                                    // 生成临时哈希
+                                    const tempHash = Buffer.from(url).toString('hex').substring(0, 16);
+                                    
+                                    // 创建文件记录
+                                    await db
+                                        .insert(files)
+                                        .values({
+                                            path: url,
+                                            name: fileName,
+                                            size: 0,
+                                            mimeType: mimeType,
+                                            userId: uid,
+                                            accessLevel: 'public',
+                                            isFolder: 0,
+                                            parentPath: '/',
+                                            hash: tempHash,
+                                        });
+                                    
+                                    results.imported++;
+                                    
+                                } catch (urlError: any) {
+                                    results.errors++;
+                                    results.errorDetails.push(`Error importing URL ${url}: ${urlError.message}`);
+                                }
+                            }
+                        }
+                        
+                        return {
+                            success: true,
+                            results
+                        };
+                    } catch (error: any) {
+                        console.error('Error importing from articles:', error);
+                        set.status = 500;
+                        return { error: error.message || 'Internal server error' };
+                    }
+                }, {
+                    query: t.Object({
+                        remoteDomain: t.Optional(t.String())
                     }),
                 })
         );

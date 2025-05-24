@@ -135,12 +135,20 @@
     "confirm_selection": "Confirm Selection",
     "create_folder": "Create Folder",
     "folder_name": "Folder Name",
-    "sync": "Sync Data",
+    "sync": "Sync",
     "syncing": "Syncing...",
-    "sync_success": "Data synced successfully",
-    "sync_error": "Failed to sync data",
-    "sync_result": "Sync result: Processed {{processed}} articles, created {{created}} files",
-    "sync_no_files": "No files found for synchronization, please check article content or format"
+    "sync_start": "Start Sync",
+    "sync_result": "Sync complete: Processed {{processed}} articles, created {{created}} file records",
+    "sync_no_files": "No files found for synchronization, please check article content or format",
+    "sync_include_external": "Include External Images",
+    "sync_include_external_desc": "Sync external website images from articles (e.g. http://example.com/image.jpg)",
+    "sync_options": "Sync Options",
+    "import": "Import Remote",
+    "import_title": "Import Media from Remote Environment",
+    "import_start": "Start Import",
+    "importing": "Importing...",
+    "remote_domain": "Remote Domain",
+    "remote_domain_desc": "Enter the remote environment domain, e.g.: https://example.com. The system will scan article content and import media files from this domain."
   },
   "footer": {
     "rss": "RSS Subscription Link"
@@ -391,5 +399,11 @@
     "insert": "Insert",
     "advanced": "Advanced",
     "tools": "Tools"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close"
   }
 }

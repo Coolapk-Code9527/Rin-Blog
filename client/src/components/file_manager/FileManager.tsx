@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
-import { formatFileSize, getFileTypeIcon, syncFiles } from './utils';
+import { formatFileSize, getFileTypeIcon, syncFiles, importFromRemoteArticles } from './utils';
 import ReactLoading from "react-loading";
 import { ShowAlertType } from '../../hooks/useAlert';
+import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
@@ -60,6 +60,8 @@ export function FileManager({
   
   // 同步状态
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [includeExternal, setIncludeExternal] = useState<boolean>(true);
+  const [showSyncOptions, setShowSyncOptions] = useState<boolean>(false);
   
   // 引用
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -74,6 +76,11 @@ export function FileManager({
 
   // 添加请求取消处理
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // 添加远程导入状态
+  const [isImporting, setIsImporting] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [remoteDomain, setRemoteDomain] = useState('');
 
   // 加载文件列表
   const loadFiles = async (reload = false) => {
@@ -350,9 +357,10 @@ export function FileManager({
     setIsSyncing(true);
     setSuccessMessage(null);
     setErrorMessage(null);
+    setShowSyncOptions(false);
     
     try {
-      const result = await syncFiles();
+      const result = await syncFiles(undefined, includeExternal);
       if (result.success) {
         if (result.stats && result.stats.created > 0) {
           setSuccessMessage(t('files.sync_result', { 
@@ -374,6 +382,31 @@ export function FileManager({
       setErrorMessage(error instanceof Error ? error.message : '同步过程中发生错误');
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  // 处理远程导入
+  const handleImport = async () => {
+    if (isImporting || !remoteDomain) return;
+    
+    setIsImporting(true);
+    setSuccessMessage(null);
+    setErrorMessage(null);
+    
+    try {
+      const result = await importFromRemoteArticles(remoteDomain);
+      if (result.success) {
+        setSuccessMessage(result.message);
+        // 导入成功后重新加载文件列表
+        await loadFiles(true);
+      } else {
+        setErrorMessage(result.message);
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '远程导入失败');
+    } finally {
+      setIsImporting(false);
+      setShowImportModal(false);
     }
   };
 
@@ -622,29 +655,6 @@ export function FileManager({
                 <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
               </svg>
             </div>
-            
-            {/* 同步按钮 */}
-            <button
-              onClick={handleSync}
-              disabled={isSyncing}
-              className={`p-2 rounded-lg ${isSyncing ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-              title={t('files.sync')}
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className={`h-5 w-5 ${isSyncing ? 'animate-spin' : ''}`} 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                />
-              </svg>
-            </button>
           </div>
         </div>
         
@@ -711,8 +721,80 @@ export function FileManager({
 
   // 修改主体渲染，添加消息组件
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      {renderBreadcrumbs()}
+    <div className="w-full">
+      {/* 标题和操作区域 */}
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          {/* 面包屑导航 */}
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+            {renderBreadcrumbs()}
+          </div>
+        </div>
+        <div className="flex space-x-2">
+          {/* 添加导入按钮 */}
+          <button
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+            onClick={() => setShowImportModal(true)}
+            title={t('files.import')}
+          >
+            <i className="ri-cloud-download-line mr-1"></i>
+            {t('files.import')}
+          </button>
+          
+          {/* 同步按钮及下拉菜单 */}
+          <div className="relative">
+            <button
+              className={`px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 ${
+                isSyncing ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={() => setShowSyncOptions(!showSyncOptions)}
+              disabled={isSyncing}
+              title={t('files.sync')}
+            >
+              <i className={`ri-refresh-line mr-1 ${isSyncing ? 'animate-spin' : ''}`}></i>
+              {t('files.sync')}
+              <i className="ri-arrow-down-s-line ml-1"></i>
+            </button>
+            
+            {/* 同步选项下拉菜单 */}
+            {showSyncOptions && (
+              <div className="absolute right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10 w-56">
+                <div className="p-3">
+                  <label className="flex items-center mb-2">
+                    <input
+                      type="checkbox"
+                      checked={includeExternal}
+                      onChange={(e) => setIncludeExternal(e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">{t('files.sync_include_external')}</span>
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    {t('files.sync_include_external_desc')}
+                  </p>
+                  <div className="flex justify-end">
+                    <button
+                      className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                      onClick={handleSync}
+                      disabled={isSyncing}
+                    >
+                      {isSyncing ? (
+                        <>
+                          <i className="ri-loader-line animate-spin mr-1"></i>
+                          {t('files.syncing')}
+                        </>
+                      ) : (
+                        t('files.sync_start')
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
       {renderOperations()}
       {renderMessages()}
       
@@ -787,6 +869,56 @@ export function FileManager({
                 className="px-4 py-2 rounded-lg bg-theme text-white"
               >
                 {t('common.create')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 导入远程数据模态框 */}
+      {showImportModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md dark:bg-gray-800 dark:text-white">
+            <h3 className="text-lg font-semibold mb-4">{t('files.import_title')}</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                {t('files.remote_domain')}
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+                value={remoteDomain}
+                onChange={(e) => setRemoteDomain(e.target.value)}
+                placeholder="https://example.com"
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {t('files.remote_domain_desc')}
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <button
+                className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                onClick={() => setShowImportModal(false)}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                className={`px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 ${
+                  isImporting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                onClick={handleImport}
+                disabled={isImporting || !remoteDomain}
+              >
+                {isImporting ? (
+                  <>
+                    <i className="ri-loader-line animate-spin mr-1"></i>
+                    {t('files.importing')}
+                  </>
+                ) : (
+                  t('files.import_start')
+                )}
               </button>
             </div>
           </div>

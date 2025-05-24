@@ -140,12 +140,20 @@
     "confirm_selection": "确认选择",
     "create_folder": "创建文件夹",
     "folder_name": "文件夹名称",
-    "sync": "同步数据",
+    "sync": "同步",
     "syncing": "同步中...",
-    "sync_success": "数据同步成功",
-    "sync_error": "数据同步失败",
-    "sync_result": "同步结果: 处理{{processed}}篇文章，创建{{created}}个文件",
-    "sync_no_files": "未找到需要同步的文件，请检查文章内容或格式"
+    "sync_start": "开始同步",
+    "sync_result": "同步成功: 处理了{{processed}}篇文章，创建了{{created}}个文件记录",
+    "sync_no_files": "未找到需要同步的文件，请检查文章内容或格式",
+    "sync_include_external": "包含外部图片",
+    "sync_include_external_desc": "同步文章中的外部网站图片（如 http://example.com/image.jpg）",
+    "sync_options": "同步选项",
+    "import": "从远程导入",
+    "import_title": "从远程环境导入媒体",
+    "import_start": "开始导入",
+    "importing": "导入中...",
+    "remote_domain": "远程域名",
+    "remote_domain_desc": "输入远程环境的域名，例如：https://example.com。系统将扫描文章内容，并从该域名导入媒体文件"
   },
   "footer": {
     "rss": "RSS 订阅链接"
@@ -441,5 +449,11 @@
   "no_articles_description": "这里还没有任何文章，之后会添加的~",
   "image_load_error": "图片加载失败",
   "unlisted_description": "未列出的文章，有链接才能访问",
-  "draft_description": "文章草稿区，仅自己可见"
+  "draft_description": "文章草稿区，仅自己可见",
+  "common": {
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "close": "关闭"
+  }
 }
