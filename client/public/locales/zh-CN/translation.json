@@ -116,7 +116,6 @@
     "page_description": "管理你上传的文件和文件夹",
     "root": "根目录",
     "empty": "暂无文件",
-    "empty_desc": "上传文件或点击同步按钮同步现有文章中的图片",
     "load_error": "加载文件失败: {{error}}",
     "no_selection": "请选择一个文件",
     "folder_name_required": "文件夹名称不能为空",
@@ -128,32 +127,22 @@
       "size": "大小",
       "date": "日期"
     },
-    "search": "搜索文件",
     "search_placeholder": "搜索文件...",
     "grid_view": "网格视图",
     "list_view": "列表视图",
     "new_folder": "新建文件夹",
-    "upload": "上传文件",
+    "upload": "上传",
     "selected": "已选择 {{count}} 个文件",
-    "confirm": "确认",
-    "clear": "清除",
     "confirm_selection": "确认选择",
     "create_folder": "创建文件夹",
     "folder_name": "文件夹名称",
-    "sync": "同步",
+    "sync_files": "同步文件",
     "syncing": "同步中...",
-    "sync_start": "开始同步",
-    "sync_result": "同步成功: 处理了{{processed}}篇文章，创建了{{created}}个文件记录",
-    "sync_no_files": "未找到需要同步的文件，请检查文章内容或格式",
-    "sync_include_external": "包含外部图片",
-    "sync_include_external_desc": "同步文章中的外部网站图片（如 http://example.com/image.jpg）",
-    "sync_options": "同步选项",
-    "import": "从远程导入",
-    "import_title": "从远程环境导入媒体",
-    "import_start": "开始导入",
-    "importing": "导入中...",
-    "remote_domain": "远程域名",
-    "remote_domain_desc": "输入远程环境的域名，例如：https://example.com。系统将扫描文章内容，并从该域名导入媒体文件"
+    "syncing_message": "正在同步文章中的图片文件，请稍候...",
+    "sync_success": "同步成功",
+    "sync_error": "同步失败",
+    "synced_files": "已同步 {{count}} 个文件",
+    "created_relations": "创建了 {{count}} 个关联"
   },
   "footer": {
     "rss": "RSS 订阅链接"
@@ -449,11 +438,5 @@
   "no_articles_description": "这里还没有任何文章，之后会添加的~",
   "image_load_error": "图片加载失败",
   "unlisted_description": "未列出的文章，有链接才能访问",
-  "draft_description": "文章草稿区，仅自己可见",
-  "common": {
-    "loading": "加载中...",
-    "save": "保存",
-    "cancel": "取消",
-    "close": "关闭"
-  }
+  "draft_description": "文章草稿区，仅自己可见"
 }

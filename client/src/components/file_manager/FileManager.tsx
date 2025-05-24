@@ -1,10 +1,10 @@
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
-import { formatFileSize, getFileTypeIcon, syncFiles, importFromRemoteArticles } from './utils';
+import { formatFileSize, getFileTypeIcon } from './utils';
 import ReactLoading from "react-loading";
 import { ShowAlertType } from '../../hooks/useAlert';
-import { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
@@ -58,11 +58,14 @@ export function FileManager({
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
   const [breadcrumbs, setBreadcrumbs] = useState<{name: string, path: string}[]>([{ name: t('files.root'), path: '/' }]);
   
-  // 同步状态
+  // 添加同步状态
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
-  const [includeExternal, setIncludeExternal] = useState<boolean>(true);
-  const [showSyncOptions, setShowSyncOptions] = useState<boolean>(false);
-  const [forceRescan, setForceRescan] = useState<boolean>(false);
+  const [syncResult, setSyncResult] = useState<{
+    success?: boolean;
+    message?: string;
+    syncedFiles?: number;
+    totalRelations?: number;
+  } | null>(null);
   
   // 引用
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -73,15 +76,9 @@ export function FileManager({
   
   // 添加错误状态，用于显示错误信息和控制关闭功能
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // 添加请求取消处理
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  // 添加远程导入状态
-  const [isImporting, setIsImporting] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [remoteDomain, setRemoteDomain] = useState('');
 
   // 加载文件列表
   const loadFiles = async (reload = false) => {
@@ -313,30 +310,17 @@ export function FileManager({
     }
 
     try {
-      // 使用fetch直接调用API代替客户端API
-      const response = await fetch(`${endpoint}/files/${file.id}`, {
-        method: 'DELETE',
+      const response = await client.files({ id: file.id }).delete({
         headers: headersWithAuth()
       });
 
-      if (!response.ok) {
-        // 尝试解析错误信息
-        let errorMsg = 'Error deleting file';
-        try {
-          const data = await response.json();
-          errorMsg = data.error || errorMsg;
-        } catch (e) {
-          console.error('Error parsing error response:', e);
-        }
-        showAlert(t('files.delete_error', { error: errorMsg }));
-        return;
-      }
-
-      // 删除成功
+      if (response.error) {
+        showAlert(t('files.delete_error', { error: response.error.value }));
+      } else {
         setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
         loadFiles();
+      }
     } catch (error: any) {
-      console.error('删除文件失败:', error);
       showAlert(t('files.delete_error', { error: error.message }));
     }
   };
@@ -351,54 +335,52 @@ export function FileManager({
     }
   };
 
-  // 处理同步
-  const handleSync = async () => {
-    if (isSyncing) return;
-    
-    setIsSyncing(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    
+  // 添加同步功能
+  const handleSyncFiles = async () => {
     try {
-      const result = await syncFiles(undefined, includeExternal, forceRescan);
+      setIsSyncing(true);
+      setSyncResult(null);
       
-      if (result.success) {
-        setSuccessMessage(result.message);
-        await loadFiles(true); // 刷新文件列表
-      } else {
-        setErrorMessage(result.message || t('files.sync_error'));
+      const response = await fetch(`${endpoint}/files/sync`, {
+        method: 'POST',
+        headers: {
+          ...headersWithAuth(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
+      
+      if (!response.ok) {
+        let errorText = `HTTP error ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.error) {
+            errorText = errorData.error;
+          }
+        } catch (e) {
+          console.error('Error parsing error response:', e);
+        }
+        throw new Error(errorText);
       }
-    } catch (error) {
-      console.error('同步错误:', error);
-      setErrorMessage(t('files.sync_error'));
+      
+      const result = await response.json();
+      setSyncResult(result);
+      
+      // 同步完成后重新加载文件列表
+      await loadFiles(true);
+      
+      // 显示成功消息
+      showAlert(result.message || '同步完成');
+      
+    } catch (error: any) {
+      console.error('同步文件时出错:', error);
+      setSyncResult({
+        success: false,
+        message: error.message || '同步过程中出错'
+      });
+      showAlert(error.message || '同步过程中出错');
     } finally {
       setIsSyncing(false);
-      setShowSyncOptions(false); // 关闭选项面板
-    }
-  };
-
-  // 处理远程导入
-  const handleImport = async () => {
-    if (isImporting || !remoteDomain) return;
-    
-    setIsImporting(true);
-    setSuccessMessage(null);
-    setErrorMessage(null);
-    
-    try {
-      const result = await importFromRemoteArticles(remoteDomain);
-      if (result.success) {
-        setSuccessMessage(result.message);
-        // 导入成功后重新加载文件列表
-        await loadFiles(true);
-      } else {
-        setErrorMessage(result.message);
-      }
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '远程导入失败');
-    } finally {
-      setIsImporting(false);
-      setShowImportModal(false);
     }
   };
 
@@ -608,329 +590,207 @@ export function FileManager({
     ) : null;
   };
 
-  // 渲染操作工具栏
-  const renderOperations = () => {
-    return (
-      <div className="flex flex-wrap justify-between items-center gap-2 p-2 bg-card rounded-md mb-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center">
-            <input 
-              type="text" 
-              placeholder={t('files.search')} 
-              className="border rounded-full px-3 py-1 mr-2 bg-input t-primary placeholder:text-muted" 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button 
-              onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-              className="bg-button rounded-full p-2 hover:bg-button-hover"
-              title={viewMode === 'list' ? t('files.grid_view') : t('files.list_view')}
-            >
-              <span>{viewMode === 'list' ? '⊞' : '≡'}</span>
-            </button>
-          </div>
-          
-          <div className="relative inline-block">
-            <Button onClick={() => setShowSyncOptions(!showSyncOptions)} title={t('files.sync')} />
-            
-            {showSyncOptions && (
-              <div className="absolute z-10 mt-1 bg-card rounded-md shadow-lg p-3 t-primary">
-                <div className="flex flex-col gap-2">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={includeExternal}
-                      onChange={() => setIncludeExternal(!includeExternal)}
-                      className="mr-2"
-                    />
-                    {t('files.include_external')}
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={forceRescan}
-                      onChange={() => setForceRescan(!forceRescan)}
-                      className="mr-2"
-                    />
-                    {t('files.force_rescan')}
-                  </label>
-                  <div className="flex justify-end mt-2">
-                    <Button onClick={handleSync} title={t('files.start_sync')} />
-                  </div>
-                  {isSyncing && (
-                    <div className="flex justify-center mt-2">
-                      <Loading type="spin" height={20} width={20} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <Button 
-            onClick={() => setShowImportModal(true)} 
-            title={t('files.import_remote')} 
-          />
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-2">
-          <Button 
-            onClick={() => setShowNewFolderDialog(true)} 
-            title={t('files.new_folder')} 
-          />
-          <Button 
-            onClick={() => uploadInputRef.current?.click()} 
-            title={t('files.upload')} 
-          />
-          
-          {showSelector && selectedFiles.length > 0 && (
-            <Button 
-              onClick={handleConfirmSelection} 
-              title={multiple ? `${t('files.select')} (${selectedFiles.length})` : t('files.select')}
-            />
-          )}
-        </div>
-      </div>
-    );
-  };
-  
-  // 添加消息提示组件
-  const renderMessages = () => {
-    return (
-      <>
-        {errorMessage && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 relative">
-            <button 
-              onClick={() => setErrorMessage(null)}
-              className="absolute top-1 right-1 text-red-500 hover:text-red-700"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-            <p>{errorMessage}</p>
-          </div>
-        )}
-        
-        {successMessage && (
-          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 relative">
-            <button 
-              onClick={() => setSuccessMessage(null)}
-              className="absolute top-1 right-1 text-green-500 hover:text-green-700"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-            <p>{successMessage}</p>
-          </div>
-        )}
-      </>
-    );
-  };
-
-  // 渲染导入模态框
-  const renderImportModal = () => {
-    if (!showImportModal) return null;
-    
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-        <div className="bg-card rounded-md p-4 w-96 max-w-full">
-          <h3 className="text-lg font-bold mb-4 t-primary">{t('files.import_remote')}</h3>
-          <div className="mb-4">
-            <label className="block t-primary mb-2">{t('files.remote_domain')}</label>
-            <input 
-              type="text" 
-              value={remoteDomain}
-              onChange={(e) => setRemoteDomain(e.target.value)}
-              placeholder="example.com"
-              className="w-full p-2 border rounded-md bg-input t-primary placeholder:text-muted"
-            />
-            <p className="text-sm mt-1 t-hint">{t('files.remote_domain_hint')}</p>
-          </div>
-          
-          <div className="flex justify-end gap-2">
-            <button 
-              onClick={() => setShowImportModal(false)}
-              className="px-4 py-2 border rounded-md hover:bg-button-hover"
-            >
-              {t('cancel')}
-            </button>
-            <button 
-              onClick={handleImport}
-              disabled={isImporting || !remoteDomain}
-              className={`px-4 py-2 rounded-md text-white ${isImporting || !remoteDomain ? 'bg-theme-disabled' : 'bg-theme hover:bg-theme-hover'}`}
-            >
-              {isImporting ? (
-                <div className="flex items-center">
-                  <Loading type="spin" height={16} width={16} /> 
-                  <span className="ml-2">{t('importing')}</span>
-                </div>
-              ) : t('import')}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // 修改主体渲染，添加消息组件
   return (
-    <div className="w-full">
-      {/* 标题和操作区域 */}
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          {/* 面包屑导航 */}
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-            {renderBreadcrumbs()}
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
+      {/* 工具栏 */}
+      <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex flex-col space-y-4">
+        {/* 面包屑导航 */}
+        {renderBreadcrumbs()}
+        
+        {/* 搜索和操作按钮 */}
+        <div className="flex flex-wrap gap-2 justify-between">
+          <div className="flex flex-1 max-w-md">
+            <div className="relative w-full">
+              <i className="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t('files.search_placeholder')}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent"
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex space-x-2">
-          {/* 添加导入按钮 */}
-          <button
-            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-            onClick={() => setShowImportModal(true)}
-            title={t('files.import')}
-          >
-            <i className="ri-cloud-download-line mr-1"></i>
-            {t('files.import')}
-          </button>
-          
-          {/* 同步按钮及下拉菜单 */}
-          <div className="relative">
+
+          <div className="flex space-x-2">
+            {/* 视图切换按钮 */}
+            <div className="flex rounded-md border border-gray-300 dark:border-gray-700">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                title={t('files.grid_view')}
+              >
+                <i className="ri-grid-line"></i>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-2 ${viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                title={t('files.list_view')}
+              >
+                <i className="ri-list-check"></i>
+              </button>
+            </div>
+
+            {/* 新建文件夹按钮 */}
             <button
-              className={`px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 ${
-                isSyncing ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-              onClick={() => setShowSyncOptions(!showSyncOptions)}
-              disabled={isSyncing}
-              title={t('files.sync')}
+              onClick={() => setShowNewFolderDialog(true)}
+              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              title={t('files.new_folder')}
             >
-              <i className={`ri-refresh-line mr-1 ${isSyncing ? 'animate-spin' : ''}`}></i>
-              {t('files.sync')}
-              <i className="ri-arrow-down-s-line ml-1"></i>
+              <i className="ri-folder-add-line"></i>
             </button>
-            
-            {/* 同步选项下拉菜单 */}
-            {showSyncOptions && (
-              <div className="absolute right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10 w-56">
-                <div className="p-3">
-                  <label className="flex items-center mb-2">
-                    <input
-                      type="checkbox"
-                      checked={includeExternal}
-                      onChange={(e) => setIncludeExternal(e.target.checked)}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">{t('files.sync_include_external')}</span>
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    {t('files.sync_include_external_desc')}
-                  </p>
-                  <div className="flex justify-end">
-                    <button
-                      className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                      onClick={handleSync}
-                      disabled={isSyncing}
-                    >
-                      {isSyncing ? (
-                        <>
-                          <i className="ri-loader-line animate-spin mr-1"></i>
-                          {t('files.syncing')}
-                        </>
-                      ) : (
-                        t('files.sync_start')
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+
+            {/* 上传文件按钮 */}
+            <button
+              onClick={() => uploadInputRef.current?.click()}
+              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              title={t('files.upload')}
+              disabled={isUploading}
+            >
+              {isUploading ? <Loading type="spin" height={16} width={16} /> : <i className="ri-upload-2-line"></i>}
+              <input
+                ref={uploadInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileUpload}
+                accept={allowedTypes ? allowedTypes.map(type => type + '/*').join(',') : undefined}
+              />
+            </button>
+
+            {/* 添加同步按钮 */}
+            <Button 
+              onClick={handleSyncFiles} 
+              title={isSyncing ? t('files.syncing') : t('files.sync_files')}
+              secondary
+            />
           </div>
         </div>
+        
+        {/* 上传进度条 */}
+        {isUploading && (
+          <div className="w-full mt-2">
+            <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-theme rounded-full transition-all duration-300 ease-in-out" 
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 同步状态显示 */}
+      {isSyncing && (
+        <div className="sync-status bg-blue-100 text-blue-800 p-3 rounded-lg mb-4 flex items-center">
+          <Loading type="spin" height={20} width={20} color="#2563eb" />
+          <span className="ml-2">{t('files.syncing_message')}</span>
+        </div>
+      )}
+      
+      {syncResult && syncResult.success && (
+        <div className="sync-result bg-green-100 text-green-800 p-3 rounded-lg mb-4">
+          <div className="font-medium">{t('files.sync_success')}</div>
+          <div>{syncResult.message}</div>
+          <div className="text-sm mt-1">
+            {t('files.synced_files', { count: syncResult.syncedFiles || 0 })}
+            {t('files.created_relations', { count: syncResult.totalRelations || 0 })}
+          </div>
+        </div>
+      )}
+      
+      {syncResult && syncResult.success === false && (
+        <div className="sync-result bg-red-100 text-red-800 p-3 rounded-lg mb-4">
+          <div className="font-medium">{t('files.sync_error')}</div>
+          <div>{syncResult.message}</div>
+        </div>
+      )}
+
+      {/* 文件列表主体 */}
+      <div className="min-h-[300px]">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loading type="spin" height={32} width={32} />
+          </div>
+        ) : (
+          <div>
+            {viewMode === 'grid' ? renderGridView() : renderListView()}
+          </div>
+        )}
       </div>
       
-      {renderOperations()}
-      {renderMessages()}
+      {/* 分页 */}
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+        {renderPagination()}
+      </div>
       
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loading type="spin" height={50} width={50} />
+      {/* 选择操作栏 - 多选模式 */}
+      {showSelector && multiple && selectedFiles.length > 0 && (
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+          <div className="text-sm">
+            {t('files.selected', { count: selectedFiles.length })}
+          </div>
+          <Button onClick={handleConfirmSelection} title={t('files.confirm_selection')} />
         </div>
-      ) : (
-        <>
-          {files.length === 0 ? (
-            <div className="text-center py-20 text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
-              <p className="text-lg font-medium">{t('files.empty')}</p>
-              <p>{t('files.empty_desc')}</p>
-            </div>
-          ) : viewMode === 'grid' ? renderGridView() : renderListView()}
-          
-          {renderPagination()}
-          
-          {showSelector && selectedFiles.length > 0 && (
-            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white rounded-lg px-4 py-2 shadow-lg">
-              <div className="flex items-center gap-4">
-                <span>{t('files.selected', { count: selectedFiles.length })}</span>
-                <button
-                  onClick={() => setSelectedFiles([])}
-                  className="text-gray-300 hover:text-white"
-                >
-                  {t('files.clear')}
-                </button>
-                <button
-                  onClick={handleConfirmSelection}
-                  className="bg-theme px-3 py-1 rounded hover:bg-theme-hover"
-                >
-                  {t('files.confirm')}
-                </button>
-              </div>
-            </div>
-          )}
-        </>
       )}
       
       {/* 新建文件夹对话框 */}
       {showNewFolderDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 relative">
-            <button
-              onClick={() => setShowNewFolderDialog(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
             <h3 className="text-lg font-medium mb-4">{t('files.create_folder')}</h3>
             <input
               ref={folderNameInputRef}
               type="text"
-              className="w-full border rounded-lg p-2 mb-4"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent mb-4"
               placeholder={t('files.folder_name')}
+              autoFocus
             />
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setShowNewFolderDialog(false)}
-                className="px-4 py-2 rounded-lg border"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               >
-                {t('common.cancel')}
+                {t('cancel')}
               </button>
-              <button
-                onClick={handleCreateFolder}
-                className="px-4 py-2 rounded-lg bg-theme text-white"
-              >
-                {t('common.create')}
-              </button>
+              <Button onClick={handleCreateFolder} title={t('create')} />
             </div>
           </div>
         </div>
       )}
       
-      {renderImportModal()}
+      {/* 错误信息对话框 */}
+      {errorMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-lg font-medium text-red-600 mb-4">{t('alert')}</h3>
+            <p className="mb-6">{t('files.load_error', { error: errorMessage })}</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => loadFiles(true)}
+                className="px-4 py-2 bg-theme hover:bg-theme-hover text-white rounded-md transition-colors"
+              >
+                {t('reload')}
+              </button>
+              <button
+                onClick={closeErrorDialog}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+              >
+                {t('close')}
+              </button>
+              <button
+                onClick={() => {
+                  closeErrorDialog();
+                  window.location.href = '/'; // 添加返回主页选项
+                }}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors"
+              >
+                {t('index.back')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
