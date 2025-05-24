@@ -1,105 +1,98 @@
-# Rin
+# 智能助手增强系统 (Integrated Assistant Enhancement System)
 
-English | [简体中文](./README_zh_CN.md)
+## 项目概述
 
-![Cover](https://repository-images.githubusercontent.com/803866357/958bc2c1-1703-4127-920c-853291495bdc)
+本项目整合了Review-Gate和cursor-workflow-rules两个项目的核心功能，创建了一个既能保持上下文连续性又有结构化工作流的增强型助手系统。通过结合Review-Gate的多轮交互机制与cursor-workflow-rules的工作流程管理，实现了更高效、更可靠的AI辅助开发体验。
 
-![GitHub commit activity](https://img.shields.io/github/commit-activity/w/openRin/Rin?style=for-the-badge)
-![GitHub branch check runs](https://img.shields.io/github/check-runs/openRin/Rin/main?style=for-the-badge)
-![GitHub top language](https://img.shields.io/github/languages/top/openRin/Rin?style=for-the-badge)
-![GitHub License](https://img.shields.io/github/license/openRin/Rin?style=for-the-badge)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/openRin/Rin/deploy.yaml?style=for-the-badge)
+## 核心功能
 
-[![Discord](https://img.shields.io/badge/Discord-openRin-red?style=for-the-badge&color=%236e7acc)](https://discord.gg/JWbSTHvAPN)
-[![Telegram](https://img.shields.io/badge/Telegram-openRin-red?style=for-the-badge&color=%233390EC)](https://t.me/openRin)
+### 1. 多轮交互机制 (来自Review-Gate)
 
-# Introduction
+- **单请求多轮交互**：在单次请求中进行多轮对话，节省API请求次数
+- **工具调用最大化**：充分利用单次请求中的工具调用配额
+- **Python脚本驱动**：通过Python脚本实现交互控制
+- **终端输入响应**：支持在终端中输入后续指令
 
-Rin is a blog based on Cloudflare Pages + Workers + D1 + R2. It does not require a server to deploy. It can be deployed just with a domain name that resolves to Cloudflare.
+### 2. 结构化工作流 (来自cursor-workflow-rules)
 
-## Demo
+- **工作模式与规划模式**：支持任务规划和执行的分离
+- **持久化记忆**：通过工作文档和开发文档保持上下文
+- **规范化执行**：确保AI助手按照预定义的流程执行任务
+- **错误处理机制**：内置错误处理、备份和自检功能
 
-[xeu.life](https://xeu.life)
+## 系统架构
 
-## Features
-1. Support GitHub OAuth login. By default, the first logged-in user has management privileges, and other users are ordinary users
-2. Support article writing and editing
-3. Support local real-time saving of modifications/edits to any article without interfering between multiple articles
-4. Support setting it as visible only to yourself, which can serve as a draft box for cloud synchronization or record more private content
-5. Support dragging/pasting uploaded images to a bucket that supports the S3 protocol and generating links
-6. Support setting article aliases, and access articles through links such as https://xeu.life/about
-7. Support articles not being listed in the homepage list
-8. Support adding links of friends' blog, and the backend regularly checks and updates the accessible status of links every 20 minutes
-9. Support replying to comment articles/deleting comments
-10. Support sending comment notifications through Webhook
-11. Support automatic identification of the first picture in the article and display it as the header image in the article list
-12. Support inputting tag texts such as "#Blog #Cloudflare" and automatically parsing them into tags
-13. Fully responsive design with enhanced navigation experience across desktop, tablet, and mobile devices
-14. Smooth animations and micro-interactions for better user engagement
-15. Multi-language support with an intuitive language switching interface
-16. Seamless dark mode integration with automatic system preference detection
-17. Responsive dual-column article grid layout for desktop with optimized single-column view on mobile devices
-18. Enhanced article card design with consistent height, elegant visual style and improved accessibility
-19. Smart tag coloring system that automatically assigns visually distinct colors to different tags
-20. Rich content metadata with helpful indicators for article freshness, status, and importance
-21. Mobile-optimized UI with compact design and adaptive elements
-22. For more features, please refer to https://xeu.life
+### 核心文件
 
-# User Interface
-- **Responsive Navigation**: Adapts seamlessly to different screen sizes with optimized layouts for desktop, tablet, and mobile devices
-- **Interactive Elements**: Enhanced visual feedback for navigation items, language switcher, and user avatar
-- **Micro-animations**: Subtle animations for menu transitions, popups, and interactive elements
-- **Accessibility**: Improved keyboard navigation and screen reader support
-- **Article Cards**: Visually appealing cards with consistent height, standardized image display, improved typography, and enhanced hover effects
-- **Grid Layout**: Efficient use of screen space with dual-column grid on desktop and single column on mobile
-- **Unified Design Language**: Consistent spacing, border radius, shadows, and color scheme throughout the interface
-- **Flexible Content Display**: Cards intelligently handle varying content lengths (titles, summaries, tags) while maintaining visual consistency
-- **Improved Tag Design**: Color-coded tags with intuitive visual hierarchy and pleasing hover animations
-- **Empty State Handling**: Graceful display when no articles are available in the current view
-- **Enhanced Status Indicators**: Clear visual distinction for pinned, draft, and unlisted articles
-- **Semantic HTML Structure**: Properly structured HTML for better SEO and accessibility
-- **Visual Hierarchy**: Clear distinction between different sections of the interface
-- **Content Freshness Indicators**: Special visual cues for newly published content
-- **Interactive Tag System**: Advanced tag interaction with improved usability and visual feedback
-- **Optimized Dark Mode**: Carefully tuned dark theme with appropriate contrast and color balance
-- **Mobile-First Implementation**: Compact UI elements and simplified interactions for small screens
-- **Adaptive Content Presentation**: Dynamic element sizing and spacing based on viewport dimensions
-- **Progressive Enhancement**: Feature-rich experience on desktop with essential functionality preserved on mobile
+- **ReviewFlow.mdc**：整合后的规则文件，包含交互机制和工作流程
+- **review_flow.py**：增强版Python脚本，支持交互和状态管理
+- **working.md**：工作文档，记录当前任务状态和计划
+- **develop.md**：开发文档，保存项目全局信息和历史记录
 
-# Documentation
-[rin-docs.xeu.life](https://rin-docs.xeu.life)
+### 工作流程
 
-## Star History
+1. **初始化阶段**：
+   - 加载规则文件
+   - 检查并创建必要的Python脚本
+   - 初始化工作文档和开发文档
 
-<a href="https://star-history.com/#openRin/Rin&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=openRin/Rin&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=openRin/Rin&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=openRin/Rin&type=Date" />
- </picture>
-</a>
+2. **规划阶段**：
+   - 分析用户需求
+   - 制定工作计划
+   - 更新工作文档
 
-# License
-```
-MIT License
+3. **执行阶段**：
+   - 按照工作计划执行任务
+   - 通过Python脚本实现多轮交互
+   - 记录执行状态和结果
 
-Copyright (c) 2024 Xeu
+4. **审查阶段**：
+   - 用户通过终端提供反馈
+   - AI根据反馈调整和优化
+   - 完成任务后更新开发文档
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+## 使用方法
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+### 安装
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+1. 将项目文件复制到您的工作目录
+2. 确保Python环境可用
+3. 在Cursor IDE中加载规则文件
+
+### 基本使用
+
+1. **启动规划模式**：输入"规划模式"指令，并提供您的需求
+2. **审查工作计划**：检查生成的工作文档(working.md)中的计划
+3. **执行工作模式**：引用工作文档启动工作模式
+4. **交互反馈**：在执行过程中通过终端提供反馈和调整
+5. **完成任务**：输入"TASK_COMPLETE"结束当前任务
+
+## 高级功能
+
+### 自定义工作流
+
+您可以通过修改ReviewFlow.mdc文件自定义工作流程，添加特定领域的规则和约束。
+
+### 扩展脚本功能
+
+review_flow.py脚本可以根据需要扩展，添加更多功能如：
+- 自动保存会话记录
+- 集成外部工具和API
+- 添加更复杂的状态管理
+
+## 注意事项
+
+- 本系统需要Python环境支持
+- 规则文件可能需要根据Cursor IDE的更新进行调整
+- 建议在使用前备份重要文件
+
+## 未来计划
+
+- 添加更多预定义工作流模板
+- 增强错误处理和恢复机制
+- 提供更丰富的用户界面选项
+- 支持团队协作功能
+
+## 贡献
+
+欢迎提交问题和改进建议，共同完善这个项目！
