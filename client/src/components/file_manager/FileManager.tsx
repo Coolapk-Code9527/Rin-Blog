@@ -354,7 +354,17 @@ export function FileManager({
     try {
       const result = await syncFiles();
       if (result.success) {
-        setSuccessMessage(result.message);
+        if (result.stats && result.stats.created > 0) {
+          setSuccessMessage(t('files.sync_result', { 
+            processed: result.stats.processed,
+            created: result.stats.created 
+          }));
+        } else if (result.stats && result.stats.processed > 0 && result.stats.created === 0) {
+          setSuccessMessage(t('files.sync_no_files'));
+        } else {
+          setSuccessMessage(result.message);
+        }
+        
         // 同步成功后重新加载文件列表
         await loadFiles(true);
       } else {

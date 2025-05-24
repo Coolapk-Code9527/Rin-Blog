@@ -1,5 +1,6 @@
 import { endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
+import { useTranslation } from 'react-i18next';
 
 /**
  * 格式化文件大小
@@ -65,6 +66,9 @@ export async function syncFiles(feedId?: number): Promise<{
     if (feedId) {
       url.searchParams.append('feedId', String(feedId));
     }
+    
+    // 添加调试参数
+    url.searchParams.append('debug', 'true');
 
     // 发起同步请求
     const response = await fetch(url.toString(), {
@@ -93,9 +97,27 @@ export async function syncFiles(feedId?: number): Promise<{
       };
     }
 
+    // 格式化同步结果消息
+    let resultMessage = `同步成功: 处理了${data.stats.processed}篇文章，创建了${data.stats.created}个文件记录`;
+    
+    // 无创建情况的特殊处理
+    if (data.stats.created === 0 && data.stats.processed > 0) {
+      resultMessage = `同步完成: 处理了${data.stats.processed}篇文章，但未找到新的媒体文件。可能原因：1) 文件已存在 2) 文章中媒体引用格式不匹配`;
+      
+      // 添加调试信息
+      if (data.debugInfo && data.debugInfo.length > 0) {
+        console.log('同步调试信息:', data.debugInfo);
+      }
+    }
+    
+    // 如果有错误，在消息中说明
+    if (data.stats.errors > 0) {
+      resultMessage += `，但有${data.stats.errors}个错误`;
+    }
+
     return {
       success: true,
-      message: `同步成功: 处理了${data.stats.processed}篇文章，创建了${data.stats.created}个文件记录`,
+      message: resultMessage,
       stats: data.stats,
     };
   } catch (error) {

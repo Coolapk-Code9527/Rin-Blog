@@ -60,6 +60,38 @@ function getFileNameFromUrl(url: string): string {
     return fileName;
 }
 
+// 规范化URL路径
+function normalizeUrl(url: string): string {
+    // 如果是完整URL，提取路径部分
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        try {
+            const urlObj = new URL(url);
+            return urlObj.pathname;
+        } catch (e) {
+            return url;
+        }
+    }
+    
+    // 删除查询参数
+    const queryIndex = url.indexOf('?');
+    if (queryIndex > 0) {
+        url = url.substring(0, queryIndex);
+    }
+    
+    // 删除锚点
+    const anchorIndex = url.indexOf('#');
+    if (anchorIndex > 0) {
+        url = url.substring(0, anchorIndex);
+    }
+    
+    // 确保相对路径以/开头
+    if (!url.startsWith('/') && !url.startsWith('./') && !url.startsWith('../')) {
+        url = '/' + url;
+    }
+    
+    return url;
+}
+
 // 从内容中提取媒体引用
 function extractMediaReferences(content: string): string[] {
     const references: string[] = [];
@@ -94,6 +126,23 @@ function extractMediaReferences(content: string): string[] {
     while ((match = audioTagRegex.exec(content)) !== null) {
         if (match[1] && !references.includes(match[1])) {
             references.push(match[1]);
+        }
+    }
+    
+    // 额外：提取background-image样式中的URL
+    const bgImageRegex = /background(-image)?:\s*url\(['"]?(.*?)['"]?\)/g;
+    while ((match = bgImageRegex.exec(content)) !== null) {
+        if (match[2] && !references.includes(match[2])) {
+            references.push(match[2]);
+        }
+    }
+    
+    // 提取所有类似 /api/file/ 开头的URL
+    const apiFileRegex = /["']\/api\/file\/([^"']*?)["']/g;
+    while ((match = apiFileRegex.exec(content)) !== null) {
+        const fullUrl = `/api/file/${match[1]}`;
+        if (!references.includes(fullUrl)) {
+            references.push(fullUrl);
         }
     }
     
@@ -159,15 +208,15 @@ export function FileService() {
 
                         // 应用排序
                         if (sort === 'name') {
-                            query = order === 'asc' ? query.orderBy(asc(files.name)) : query.orderBy(desc(files.name));
+                            query = order === 'asc' ? query.orderBy(asc(files.name)) : query.orderBy(desc(files.name)) as any;
                         } else if (sort === 'size') {
-                            query = order === 'asc' ? query.orderBy(asc(files.size)) : query.orderBy(desc(files.size));
+                            query = order === 'asc' ? query.orderBy(asc(files.size)) : query.orderBy(desc(files.size)) as any;
                         } else if (sort === 'date') {
-                            query = order === 'asc' ? query.orderBy(asc(files.modifiedAt)) : query.orderBy(desc(files.modifiedAt));
+                            query = order === 'asc' ? query.orderBy(asc(files.modifiedAt)) : query.orderBy(desc(files.modifiedAt)) as any;
                         }
 
                         // 添加分页
-                        query = query.limit(limit).offset(offset);
+                        query = query.limit(limit).offset(offset) as any;
 
                         const result = await query;
 
@@ -693,7 +742,7 @@ export function FileService() {
                         
                         // 如果指定了文章ID，只同步该文章
                         if (feedId) {
-                            feedsQuery = feedsQuery.where(eq(feeds.id, feedId));
+                            feedsQuery = feedsQuery.where(eq(feeds.id, feedId)) as any;
                         }
                         
                         const feedsData = await feedsQuery;
@@ -709,11 +758,34 @@ export function FileService() {
                         // 用于记录已处理的文件路径，避免重复处理
                         const processedPaths = new Set<string>();
                         
+                        // 调试信息收集
+                        const debugInfo: {
+                            feedId: number;
+                            mediaRefs: string[];
+                            normalizedRefs: {original: string, normalized: string}[];
+                        }[] = [];
+                        
+                        console.log(`开始同步，找到 ${feedsData.length} 篇文章`);
+                        
                         // 处理每篇文章
                         for (const feed of feedsData) {
                             try {
                                 // 提取媒体引用
                                 const mediaRefs = extractMediaReferences(feed.content);
+                                
+                                const normalizedRefs = mediaRefs.map(ref => ({
+                                    original: ref,
+                                    normalized: normalizeUrl(ref)
+                                }));
+                                
+                                // 添加调试信息
+                                debugInfo.push({
+                                    feedId: feed.id,
+                                    mediaRefs,
+                                    normalizedRefs
+                                });
+                                
+                                console.log(`文章ID ${feed.id} 找到 ${mediaRefs.length} 个媒体引用`);
                                 
                                 // 跳过没有媒体的文章
                                 if (mediaRefs.length === 0) {
@@ -725,17 +797,29 @@ export function FileService() {
                                 // 处理每个媒体引用
                                 for (const mediaUrl of mediaRefs) {
                                     try {
+                                        // 规范化URL
+                                        const normalizedUrl = normalizeUrl(mediaUrl);
+                                        
                                         // 跳过已处理的路径
-                                        if (processedPaths.has(mediaUrl)) {
+                                        if (processedPaths.has(normalizedUrl)) {
+                                            skippedCount++;
                                             continue;
                                         }
-                                        processedPaths.add(mediaUrl);
+                                        processedPaths.add(normalizedUrl);
                                         
-                                        // 检查文件是否已存在
+                                        console.log(`处理媒体URL: ${mediaUrl} → 规范化: ${normalizedUrl}`);
+                                        
+                                        // 灵活查找文件 - 使用多个条件
                                         const existingFile = await db
                                             .select()
                                             .from(files)
-                                            .where(eq(files.path, mediaUrl));
+                                            .where(
+                                                or(
+                                                    eq(files.path, normalizedUrl),
+                                                    eq(files.path, mediaUrl),
+                                                    like(files.path, `%${getFileNameFromUrl(normalizedUrl)}`)
+                                                )
+                                            );
                                         
                                         let fileId: number;
                                         
@@ -743,6 +827,7 @@ export function FileService() {
                                             // 文件已存在，使用现有ID
                                             fileId = existingFile[0].id;
                                             updatedCount++;
+                                            console.log(`文件已存在，ID: ${fileId}, 路径: ${existingFile[0].path}`);
                                         } else {
                                             // 创建新文件记录
                                             const fileName = getFileNameFromUrl(mediaUrl);
@@ -755,7 +840,7 @@ export function FileService() {
                                             const result = await db
                                                 .insert(files)
                                                 .values({
-                                                    path: mediaUrl,
+                                                    path: normalizedUrl,
                                                     name: fileName,
                                                     size: 0, // 无法确定实际大小，后续可优化
                                                     mimeType: mimeType,
@@ -769,6 +854,7 @@ export function FileService() {
                                             
                                             fileId = result[0].id;
                                             createdCount++;
+                                            console.log(`创建新文件记录，ID: ${fileId}, 文件名: ${fileName}`);
                                         }
                                         
                                         // 检查文章-文件关联是否已存在
@@ -792,17 +878,22 @@ export function FileService() {
                                                     relationType: 'embed',
                                                     displayOrder: 0,
                                                 });
+                                            console.log(`创建文章-文件关联，文章ID: ${feed.id}, 文件ID: ${fileId}`);
                                         }
                                     } catch (mediaError: any) {
                                         errorCount++;
                                         errors.push(`处理媒体链接 ${mediaUrl} 失败: ${mediaError.message}`);
+                                        console.error(`处理媒体链接 ${mediaUrl} 失败:`, mediaError);
                                     }
                                 }
                             } catch (feedError: any) {
                                 errorCount++;
                                 errors.push(`处理文章ID ${feed.id} 失败: ${feedError.message}`);
+                                console.error(`处理文章ID ${feed.id} 失败:`, feedError);
                             }
                         }
+                        
+                        console.log(`同步完成: 处理 ${processedCount} 篇文章, 创建 ${createdCount} 个文件, 更新 ${updatedCount} 个文件, 跳过 ${skippedCount} 个文件, 错误 ${errorCount} 个`);
                         
                         // 返回同步结果
                         return {
@@ -814,6 +905,7 @@ export function FileService() {
                                 skipped: skippedCount,
                                 errors: errorCount,
                             },
+                            debugInfo: query.debug === 'true' ? debugInfo : undefined,
                             errors: errors.length > 0 ? errors.slice(0, 10) : undefined, // 只返回前10个错误
                         };
                     } catch (error: any) {
@@ -824,6 +916,7 @@ export function FileService() {
                 }, {
                     query: t.Object({
                         feedId: t.Optional(t.String()), // 可选，指定同步特定文章
+                        debug: t.Optional(t.String()), // 可选，是否返回调试信息
                     }),
                 })
         );

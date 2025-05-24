@@ -138,7 +138,9 @@
     "sync": "Sync Data",
     "syncing": "Syncing...",
     "sync_success": "Data synced successfully",
-    "sync_error": "Failed to sync data"
+    "sync_error": "Failed to sync data",
+    "sync_result": "Sync result: Processed {{processed}} articles, created {{created}} files",
+    "sync_no_files": "No files found for synchronization, please check article content or format"
   },
   "footer": {
     "rss": "RSS Subscription Link"

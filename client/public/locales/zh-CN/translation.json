@@ -143,7 +143,9 @@
     "sync": "同步数据",
     "syncing": "同步中...",
     "sync_success": "数据同步成功",
-    "sync_error": "数据同步失败"
+    "sync_error": "数据同步失败",
+    "sync_result": "同步结果: 处理{{processed}}篇文章，创建{{created}}个文件",
+    "sync_no_files": "未找到需要同步的文件，请检查文章内容或格式"
   },
   "footer": {
     "rss": "RSS 订阅链接"
