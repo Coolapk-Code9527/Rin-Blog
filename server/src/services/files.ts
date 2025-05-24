@@ -51,6 +51,79 @@ function getMimeTypeFromFileName(fileName: string): string {
     return mimeTypes[extension] || 'application/octet-stream';
 }
 
+// 改进图片URL提取正则表达式，增加对更多格式的支持
+const mdImagePattern = /!\[.*?\]\((.*?)(?:\s+["'].*?["'])?\)/g;
+const htmlImagePattern = /<img[^>]*src=["'](.*?)["'][^>]*>/g;
+// 添加对figure标签中的img和其他常见图片嵌入格式的支持
+const figureImagePattern = /<figure[^>]*>[\s\S]*?<img[^>]*src=["'](.*?)["'][^>]*>[\s\S]*?<\/figure>/g;
+// 匹配其他可能的图片引用格式
+const customImagePattern = /(?:background|background-image)\s*:\s*url\(['"]?(.*?)['"]?\)/g;
+
+// 添加URL规范化处理函数
+function normalizeUrl(url: string, baseHost: string, folder: string): string[] {
+    // 移除URL中的查询参数和哈希部分
+    const cleanUrl = url.split(/[?#]/)[0];
+    const result = [cleanUrl];
+
+    // 处理相对路径
+    if (cleanUrl.startsWith('/')) {
+        // 添加基础域名版本
+        result.push(`${baseHost}${cleanUrl}`);
+
+        // 检查是否包含文件夹前缀
+        if (folder && !cleanUrl.startsWith(`/${folder}/`) && !cleanUrl.startsWith(`/${folder}`)) {
+            // 添加带文件夹前缀的版本
+            result.push(`${baseHost}/${folder}${cleanUrl}`);
+            result.push(`/${folder}${cleanUrl}`);
+        }
+        
+        // 如果路径以多个斜杠开始，也添加正常化的版本
+        if (cleanUrl.startsWith('//')) {
+            const normalizedPath = '/' + cleanUrl.replace(/^\/+/, '');
+            result.push(normalizedPath);
+            result.push(`${baseHost}${normalizedPath}`);
+        }
+    } 
+    // 处理完整URL
+    else if (cleanUrl.startsWith('http')) {
+        try {
+            const urlObj = new URL(cleanUrl);
+            
+            // 添加路径版本
+            result.push(urlObj.pathname);
+            
+            // 考虑带文件夹前缀和不带前缀的版本
+            if (folder && urlObj.pathname.startsWith(`/${folder}/`)) {
+                const pathWithoutFolder = urlObj.pathname.substring(folder.length + 1);
+                result.push(`/${pathWithoutFolder}`);
+            }
+            
+            // 检查URL是否被URI编码，如果是，也添加解码后的版本
+            if (cleanUrl !== decodeURIComponent(cleanUrl)) {
+                result.push(decodeURIComponent(cleanUrl));
+            }
+        } catch (e) {
+            // 无效URL，忽略
+            console.error("无效URL:", cleanUrl, e);
+        }
+    }
+    
+    // 如果URL包含转义字符，添加转义和非转义版本
+    if (cleanUrl.includes('%')) {
+        try {
+            const decodedUrl = decodeURIComponent(cleanUrl);
+            if (!result.includes(decodedUrl)) {
+                result.push(decodedUrl);
+            }
+        } catch (e) {
+            // 解码失败，忽略
+        }
+    }
+    
+    // 移除重复项并返回
+    return [...new Set(result)];
+}
+
 export function FileService() {
     const env = getEnv();
     const endpoint = env.S3_ENDPOINT;
@@ -654,10 +727,6 @@ export function FileService() {
                         console.log(`找到 ${allFeeds.length} 篇文章`);
                         
                         // 2. 提取所有图片URL
-                        // 匹配Markdown图片语法: ![alt](url) 和 HTML图片语法: <img src="url">
-                        const mdImagePattern = /!\[.*?\]\((.*?)(?:\s+["'].*?["'])?\)/g;
-                        const htmlImagePattern = /<img[^>]*src=["'](.*?)["'][^>]*>/g;
-                        
                         const extractedImages: Array<{
                             url: string; 
                             feedId: number;
@@ -675,32 +744,39 @@ export function FileService() {
                             const content = feed.content;
                             let match;
                             
+                            // 提取各种图片引用格式
+                            const extractUrlsWithPattern = (pattern: RegExp) => {
+                                let patternMatch;
+                                while ((patternMatch = pattern.exec(content)) !== null) {
+                                    extractedImages.push({
+                                        url: patternMatch[1],
+                                        feedId: feed.id,
+                                        userId: feed.uid,
+                                        feedTitle: feed.title || '未命名文章'
+                                    });
+                                }
+                            };
+                            
                             // 提取Markdown图片
-                            while ((match = mdImagePattern.exec(content)) !== null) {
-                                extractedImages.push({
-                                    url: match[1],
-                                    feedId: feed.id,
-                                    userId: feed.uid,
-                                    feedTitle: feed.title || '未命名文章'
-                                });
-                            }
+                            extractUrlsWithPattern(mdImagePattern);
                             
                             // 提取HTML图片
-                            while ((match = htmlImagePattern.exec(content)) !== null) {
-                                extractedImages.push({
-                                    url: match[1],
-                                    feedId: feed.id,
-                                    userId: feed.uid,
-                                    feedTitle: feed.title || '未命名文章'
-                                });
-                            }
+                            extractUrlsWithPattern(htmlImagePattern);
+                            
+                            // 提取Figure标签中的图片
+                            extractUrlsWithPattern(figureImagePattern);
+                            
+                            // 提取自定义图片引用
+                            extractUrlsWithPattern(customImagePattern);
                         }
                         
                         console.log(`从文章中提取了 ${extractedImages.length} 个图片URL`);
                         
                         // 打印提取的URL以便调试
                         extractedImages.forEach((img, idx) => {
-                            console.log(`[${idx}] 从文章"${img.feedTitle}"提取的图片URL: ${img.url}`);
+                            if (idx < 20) { // 只打印前20个避免日志过多
+                                console.log(`[${idx}] 从文章"${img.feedTitle}"提取的图片URL: ${img.url}`);
+                            }
                         });
                         
                         // 3. 过滤有效的图片URL
@@ -743,184 +819,156 @@ export function FileService() {
                             }
                         });
                         
-                        // 构建路径映射，考虑不同的URL格式
+                        // 构建路径映射，使用增强的URL规范化处理
                         const existingPaths = new Map();
                         const existingHashes = new Map();
                         
                         existingFiles.forEach(file => {
-                            existingPaths.set(file.path, file.id);
+                            // 对每个现有文件路径进行规范化处理，获取所有可能的变体
+                            const possiblePaths = normalizeUrl(file.path, accessHost, folder);
                             
-                            // 如果是完整URL，也添加相对路径版本
-                            if (file.path.startsWith('http')) {
-                                try {
-                                    const url = new URL(file.path);
-                                    const pathOnly = url.pathname;
-                                    existingPaths.set(pathOnly, file.id);
-                                    
-                                    // 如果路径包含文件夹前缀，也添加不带前缀的版本
-                                    if (folder && pathOnly.startsWith(`/${folder}`)) {
-                                        const pathWithoutPrefix = pathOnly.substring(folder.length + 1);
-                                        existingPaths.set(`/${pathWithoutPrefix}`, file.id);
-                                    }
-                                } catch (e) {
-                                    // 无效URL，忽略
-                                }
-                            }
+                            // 将所有变体都映射到相同的文件ID
+                            possiblePaths.forEach(path => {
+                                existingPaths.set(path, file.id);
+                            });
                             
                             // 保存哈希映射
-                            existingHashes.set(file.hash, file.id);
+                            if (file.hash) {
+                                existingHashes.set(file.hash, file.id);
+                            }
                         });
                         
                         // 6. 为新URL创建文件记录
                         const newFiles = [];
                         const newRelations = [];
+                        const existingRelations = new Set(); // 用于跟踪已有关联
                         
-                        for (const img of uniqueUrls.values()) {
-                            console.log(`处理URL: ${img.url}`);
+                        // 先获取所有现有文章-文件关联
+                        const allRelations = await db
+                            .select({
+                                feedId: feedFiles.feedId,
+                                fileId: feedFiles.fileId
+                            })
+                            .from(feedFiles);
                             
-                            // 创建可能的URL变体来检查
-                            const possiblePaths = [img.url];
-                            
-                            // 如果URL是相对路径，也检查带有访问主机的完整URL
-                            if (img.url.startsWith('/')) {
-                                possiblePaths.push(`${accessHost}${img.url}`);
+                        // 构建关联查询集合
+                        allRelations.forEach(rel => {
+                            existingRelations.add(`${rel.feedId}-${rel.fileId}`);
+                        });
+                        
+                        // 批量处理器，创建文件和关联
+                        const batchSize = 50;
+                        let processedCount = 0;
+                        let filesCreated = 0;
+                        let relationsCreated = 0;
+                        
+                        const processBatch = async (batch: Array<{ img: any, fileId: number | null }>) => {
+                            // 处理需要创建新文件记录的项目
+                            const newFileBatch = batch.filter(item => !item.fileId);
+                            if (newFileBatch.length > 0) {
+                                // 准备批量插入数据
+                                const fileValues = newFileBatch.map(item => {
+                                    const urlParts = item.img.url.split('/');
+                                    const fileName = urlParts[urlParts.length - 1];
+                                    const nameWithoutQuery = fileName.split('?')[0];
+                                    
+                                    // 生成唯一哈希
+                                    return {
+                                        path: item.img.url,
+                                        name: nameWithoutQuery || '未命名图片',
+                                        size: 0, // 无法确定远程图片大小
+                                        mimeType: getMimeTypeFromFileName(nameWithoutQuery || 'image.jpg'),
+                                        userId: item.img.userId,
+                                        hash: item.img.url, // 临时使用URL作为哈希
+                                        parentPath: '/', // 显示在根目录
+                                        accessLevel: 'public'
+                                    };
+                                });
                                 
-                                // 如果没有文件夹前缀，尝试添加
-                                if (folder && !img.url.startsWith(`/${folder}`)) {
-                                    possiblePaths.push(`${accessHost}/${folder}${img.url.substring(1)}`);
-                                }
-                            }
-                            
-                            // 如果是完整URL，也检查相对路径版本
-                            if (img.url.startsWith('http')) {
+                                // 批量插入文件记录
                                 try {
-                                    const url = new URL(img.url);
-                                    possiblePaths.push(url.pathname);
-                                } catch (e) {
-                                    // 无效URL，忽略
+                                    const insertResult = await db.insert(files).values(fileValues).returning({ id: files.id });
+                                    filesCreated += insertResult.length;
+                                    
+                                    // 更新批处理中的fileId
+                                    insertResult.forEach((result, idx) => {
+                                        if (newFileBatch[idx]) {
+                                            newFileBatch[idx].fileId = result.id;
+                                        }
+                                    });
+                                } catch (error) {
+                                    console.error('批量插入文件记录时出错:', error);
                                 }
                             }
                             
-                            console.log(`检查可能的路径变体: ${possiblePaths.join(', ')}`);
+                            // 处理关联创建
+                            const relationValues = batch
+                                .filter(item => item.fileId && !existingRelations.has(`${item.img.feedId}-${item.fileId}`))
+                                .map(item => ({
+                                    feedId: item.img.feedId,
+                                    fileId: item.fileId,
+                                    relationType: 'embed',
+                                    displayOrder: 0
+                                }));
                             
-                            // 检查是否已存在记录
+                            if (relationValues.length > 0) {
+                                try {
+                                    await db.insert(feedFiles).values(relationValues).onConflictDoNothing();
+                                    relationsCreated += relationValues.length;
+                                    
+                                    // 更新已存在关联集合，避免重复处理
+                                    relationValues.forEach(rel => {
+                                        existingRelations.add(`${rel.feedId}-${rel.fileId}`);
+                                    });
+                                } catch (error) {
+                                    console.error('批量创建关联时出错:', error);
+                                }
+                            }
+                        };
+                        
+                        // 分批处理所有URL
+                        const urlBatches = [];
+                        const imagesToProcess = Array.from(uniqueUrls.values());
+                        
+                        for (const img of imagesToProcess) {
+                            processedCount++;
+                            
+                            // 规范化URL并检查是否已存在文件记录
+                            const normalizedPaths = normalizeUrl(img.url, accessHost, folder);
                             let existingFileId = null;
-                            for (const path of possiblePaths) {
+                            
+                            // 检查是否有匹配的现有文件
+                            for (const path of normalizedPaths) {
                                 if (existingPaths.has(path)) {
                                     existingFileId = existingPaths.get(path);
-                                    console.log(`找到匹配的文件记录，ID: ${existingFileId}, 匹配路径: ${path}`);
                                     break;
                                 }
                             }
                             
-                            if (!existingFileId) {
-                                console.log(`URL ${img.url} 在数据库中不存在，创建新记录`);
+                            // 准备批处理数据
+                            urlBatches.push({
+                                img,
+                                fileId: existingFileId
+                            });
+                            
+                            // 当达到批处理大小或是最后一个项目时处理批次
+                            if (urlBatches.length >= batchSize || processedCount === imagesToProcess.length) {
+                                await processBatch(urlBatches);
+                                urlBatches.length = 0; // 清空批处理数组
                                 
-                                // 提取文件名
-                                const urlParts = img.url.split('/');
-                                const fileName = urlParts[urlParts.length - 1];
-                                const nameWithoutQuery = fileName.split('?')[0];
-                                
-                                // 生成唯一哈希 - 使用URL作为哈希基础以确保一致性
-                                const urlHash = await crypto.subtle.digest(
-                                    { name: 'SHA-1' },
-                                    new TextEncoder().encode(img.url)
-                                );
-                                const hash = buf2hex(urlHash);
-                                
-                                console.log(`生成文件哈希: ${hash} (基于URL生成)`);
-                                
-                                // 创建文件记录
-                                const fileResult = await db
-                                    .insert(files)
-                                    .values({
-                                        path: img.url,
-                                        name: nameWithoutQuery || '未命名图片',
-                                        size: 0, // 无法确定远程图片大小，设为0
-                                        mimeType: getMimeTypeFromFileName(nameWithoutQuery || 'image.jpg'),
-                                        userId: img.userId,
-                                        hash: hash,
-                                        parentPath: '/', // 确保文件显示在根目录
-                                        accessLevel: 'public'
-                                    })
-                                    .returning({ id: files.id });
-                                
-                                if (fileResult && fileResult[0]) {
-                                    const fileId = fileResult[0].id;
-                                    newFiles.push({
-                                        id: fileId,
-                                        path: img.url
-                                    });
-                                    console.log(`创建了新文件记录，ID: ${fileId}`);
-                                    
-                                    // 创建文章-文件关联
-                                    newRelations.push({
-                                        feedId: img.feedId,
-                                        fileId: fileId
-                                    });
-                                } else {
-                                    console.log(`文件记录创建失败`);
-                                }
-                            } else {
-                                // 文件已存在，创建关联
-                                console.log(`文件已存在，ID: ${existingFileId}`);
-                                
-                                // 检查是否已存在关联
-                                const existingRelation = await db
-                                    .select({ id: feedFiles.feedId })
-                                    .from(feedFiles)
-                                    .where(
-                                        and(
-                                            eq(feedFiles.feedId, img.feedId),
-                                            eq(feedFiles.fileId, existingFileId || 0)
-                                        )
-                                    );
-                                
-                                if (existingRelation.length === 0 && existingFileId) {
-                                    // 创建文章-文件关联
-                                    newRelations.push({
-                                        feedId: img.feedId,
-                                        fileId: existingFileId
-                                    });
-                                    console.log(`为已有文件创建关联`);
-                                } else {
-                                    console.log(`关联已存在，不创建新关联`);
-                                }
+                                // 记录进度
+                                const progressPercent = Math.round((processedCount / imagesToProcess.length) * 100);
+                                console.log(`同步进度: ${progressPercent}%, 已处理: ${processedCount}/${imagesToProcess.length}`);
                             }
                         }
                         
-                        console.log(`创建了 ${newFiles.length} 个新文件记录`);
-                        console.log(`准备创建 ${newRelations.length} 个关联`);
-                        
-                        // 7. 批量创建文章-文件关联
-                        let relationsCreated = 0;
-                        for (const relation of newRelations) {
-                            if (relation.feedId && relation.fileId) {
-                                try {
-                                    await db
-                                        .insert(feedFiles)
-                                        .values({
-                                            feedId: relation.feedId,
-                                            fileId: relation.fileId,
-                                            relationType: 'embed',
-                                            displayOrder: 0
-                                        })
-                                        .onConflictDoNothing();
-                                    
-                                    relationsCreated++;
-                                } catch (insertError) {
-                                    console.error(`创建关联失败:`, insertError);
-                                }
-                            }
-                        }
-                        
-                        console.log(`完成同步，创建了 ${newFiles.length} 个文件，${relationsCreated} 个关联`);
+                        console.log(`同步完成，创建了 ${filesCreated} 个文件记录和 ${relationsCreated} 个文章-文件关联`);
                         
                         return {
                             success: true,
-                            syncedFiles: newFiles.length,
+                            syncedFiles: filesCreated,
                             totalRelations: relationsCreated,
-                            message: `成功同步 ${newFiles.length} 个文件，创建 ${relationsCreated} 个关联`
+                            message: `同步成功！创建了 ${filesCreated} 个新文件记录和 ${relationsCreated} 个文章-文件关联。`
                         };
                     } catch (error: any) {
                         console.error('同步数据时出错:', error);

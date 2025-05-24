@@ -122,22 +122,29 @@
       "size": "Size",
       "date": "Date"
     },
+    "search": "Search files...",
     "search_placeholder": "Search files...",
     "grid_view": "Grid View",
     "list_view": "List View",
     "new_folder": "New Folder",
     "upload": "Upload",
     "selected": "{{count}} files selected",
+    "select_confirm": "Confirm Selection",
     "confirm_selection": "Confirm Selection",
     "create_folder": "Create Folder",
     "folder_name": "Folder Name",
+    "sync": "Sync",
     "sync_files": "Sync Files",
     "syncing": "Syncing...",
     "syncing_message": "Syncing images from articles, please wait...",
-    "sync_success": "Sync Successful",
-    "sync_error": "Sync Failed",
-    "synced_files": "Synced {{count}} files",
-    "created_relations": "Created {{count}} relations"
+    "sync_success": "Sync completed successfully",
+    "sync_error": "Sync failed",
+    "synced_files": "Synced files",
+    "total_relations": "Total relations",
+    "created_relations": "Created {{count}} relations",
+    "error": "Error",
+    "ok": "OK",
+    "uploading": "Uploading..."
   },
   "footer": {
     "rss": "RSS Subscription Link"

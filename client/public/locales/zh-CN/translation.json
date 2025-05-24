@@ -127,22 +127,29 @@
       "size": "大小",
       "date": "日期"
     },
+    "search": "搜索文件",
     "search_placeholder": "搜索文件...",
     "grid_view": "网格视图",
     "list_view": "列表视图",
     "new_folder": "新建文件夹",
     "upload": "上传",
     "selected": "已选择 {{count}} 个文件",
+    "select_confirm": "确认选择",
     "confirm_selection": "确认选择",
     "create_folder": "创建文件夹",
     "folder_name": "文件夹名称",
+    "sync": "同步",
     "sync_files": "同步文件",
     "syncing": "同步中...",
     "syncing_message": "正在同步文章中的图片文件，请稍候...",
     "sync_success": "同步成功",
     "sync_error": "同步失败",
-    "synced_files": "已同步 {{count}} 个文件",
-    "created_relations": "创建了 {{count}} 个关联"
+    "synced_files": "已同步文件",
+    "total_relations": "关联总数",
+    "created_relations": "创建了 {{count}} 个关联",
+    "error": "错误",
+    "ok": "确定",
+    "uploading": "上传中..."
   },
   "footer": {
     "rss": "RSS 订阅链接"

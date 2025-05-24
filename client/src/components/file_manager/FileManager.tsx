@@ -340,6 +340,10 @@ export function FileManager({
     try {
       setIsSyncing(true);
       setSyncResult(null);
+      setErrorMessage(null);
+      
+      // 显示同步状态弹窗
+      showAlert(t('files.syncing'), null);
       
       const response = await fetch(`${endpoint}/files/sync`, {
         method: 'POST',
@@ -372,15 +376,15 @@ export function FileManager({
       await loadFiles(true);
       
       // 显示成功消息
-      showAlert(result.message || '同步完成');
+      showAlert(result.message || t('files.sync_success'), null);
       
     } catch (error: any) {
       console.error('同步文件时出错:', error);
       setSyncResult({
         success: false,
-        message: error.message || '同步过程中出错'
+        message: error.message || t('files.sync_error')
       });
-      showAlert(error.message || '同步过程中出错');
+      showAlert(error.message || t('files.sync_error'), null);
     } finally {
       setIsSyncing(false);
     }
@@ -592,207 +596,194 @@ export function FileManager({
     ) : null;
   };
 
-  return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
-      {/* 工具栏 */}
-      <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex flex-col space-y-4">
-        {/* 面包屑导航 */}
-        {renderBreadcrumbs()}
-        
-        {/* 搜索和操作按钮 */}
-        <div className="flex flex-wrap gap-2 justify-between">
-          <div className="flex flex-1 max-w-md">
-            <div className="relative w-full">
-              <i className="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+  // 控制面板区域渲染函数
+  const renderControlPanel = () => {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-800 p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex flex-wrap gap-2 items-center justify-between">
+          {/* 左侧操作区域 */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* 面包屑导航 */}
+            {renderBreadcrumbs()}
+            
+            {/* 新建文件夹按钮 */}
+            <Button 
+              onClick={() => setShowNewFolderDialog(true)}
+              title={t('files.new_folder')}
+            />
+            
+            {/* 上传按钮 */}
+            <Button 
+              onClick={() => uploadInputRef.current?.click()}
+              title={t('files.upload')}
+            />
+            
+            {/* 同步按钮，带有状态指示器 */}
+            <Button 
+              onClick={handleSyncFiles}
+              title={isSyncing ? t('files.syncing') : t('files.sync')}
+              secondary={!isSyncing}
+            />
+            {isSyncing && <Loading type="spin" height={20} width={20} />}
+            
+            {/* 隐藏的文件上传输入框 */}
+            <input
+              type="file"
+              ref={uploadInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
+              multiple
+            />
+          </div>
+          
+          {/* 右侧搜索和视图控制区域 */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* 搜索框 */}
+            <div className="relative">
               <input
                 type="text"
+                placeholder={t('files.search')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('files.search_placeholder')}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent"
+                className="px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
+              <button 
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                onClick={() => search && setSearch('')}
+              >
+                {search ? <i className="ri-close-line"></i> : <i className="ri-search-line"></i>}
+              </button>
             </div>
-          </div>
-
-          <div className="flex space-x-2">
+            
             {/* 视图切换按钮 */}
-            <div className="flex rounded-md border border-gray-300 dark:border-gray-700">
-              <button
+            <div className="flex border rounded-md overflow-hidden">
+              <button 
+                className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-600' : 'bg-white dark:bg-gray-700'}`}
                 onClick={() => setViewMode('grid')}
-                className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
-                title={t('files.grid_view')}
               >
                 <i className="ri-grid-line"></i>
               </button>
-              <button
+              <button 
+                className={`px-3 py-2 ${viewMode === 'list' ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-600' : 'bg-white dark:bg-gray-700'}`}
                 onClick={() => setViewMode('list')}
-                className={`px-3 py-2 ${viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
-                title={t('files.list_view')}
               >
                 <i className="ri-list-check"></i>
               </button>
             </div>
-
-            {/* 新建文件夹按钮 */}
-            <button
-              onClick={() => setShowNewFolderDialog(true)}
-              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              title={t('files.new_folder')}
-            >
-              <i className="ri-folder-add-line"></i>
-            </button>
-
-            {/* 上传文件按钮 */}
-            <button
-              onClick={() => uploadInputRef.current?.click()}
-              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              title={t('files.upload')}
-              disabled={isUploading}
-            >
-              {isUploading ? <Loading type="spin" height={16} width={16} /> : <i className="ri-upload-2-line"></i>}
-              <input
-                ref={uploadInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={handleFileUpload}
-                accept={allowedTypes ? allowedTypes.map(type => type + '/*').join(',') : undefined}
+            
+            {/* 选择确认按钮（当处于选择模式时） */}
+            {showSelector && (
+              <Button 
+                onClick={handleConfirmSelection}
+                title={t('files.select_confirm')}
               />
-            </button>
-
-            {/* 添加同步按钮 */}
-            <Button 
-              onClick={handleSyncFiles} 
-              title={isSyncing ? t('files.syncing') : t('files.sync_files')}
-              secondary
-            />
+            )}
           </div>
         </div>
         
-        {/* 上传进度条 */}
-        {isUploading && (
-          <div className="w-full mt-2">
-            <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-theme rounded-full transition-all duration-300 ease-in-out" 
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
+        {/* 同步结果显示 */}
+        {syncResult && (
+          <div className={`mt-4 p-3 rounded-md ${syncResult.success ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300'}`}>
+            <div className="flex items-center">
+              <i className={`mr-2 ${syncResult.success ? 'ri-check-line' : 'ri-error-warning-line'}`}></i>
+              <span>{syncResult.message}</span>
             </div>
+            {syncResult.success && (
+              <div className="text-sm mt-1 opacity-80">
+                <span>{t('files.synced_files')}: {syncResult.syncedFiles}</span>
+                <span className="mx-2">|</span>
+                <span>{t('files.total_relations')}: {syncResult.totalRelations}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
+    );
+  };
 
-      {/* 同步状态显示 */}
-      {isSyncing && (
-        <div className="sync-status bg-blue-100 text-blue-800 p-3 rounded-lg mb-4 flex items-center">
-          <Loading type="spin" height={20} width={20} color="#2563eb" />
-          <span className="ml-2">{t('files.syncing_message')}</span>
-        </div>
-      )}
-      
-      {syncResult && syncResult.success && (
-        <div className="sync-result bg-green-100 text-green-800 p-3 rounded-lg mb-4">
-          <div className="font-medium">{t('files.sync_success')}</div>
-          <div>{syncResult.message}</div>
-          <div className="text-sm mt-1">
-            {t('files.synced_files', { count: syncResult.syncedFiles || 0 })}
-            {t('files.created_relations', { count: syncResult.totalRelations || 0 })}
-          </div>
-        </div>
-      )}
-      
-      {syncResult && syncResult.success === false && (
-        <div className="sync-result bg-red-100 text-red-800 p-3 rounded-lg mb-4">
-          <div className="font-medium">{t('files.sync_error')}</div>
-          <div>{syncResult.message}</div>
-        </div>
-      )}
-
-      {/* 文件列表主体 */}
-      <div className="min-h-[300px]">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loading type="spin" height={32} width={32} />
-          </div>
-        ) : (
-          <div>
-            {viewMode === 'grid' ? renderGridView() : renderListView()}
-          </div>
-        )}
-      </div>
-      
-      {/* 分页 */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-        {renderPagination()}
-      </div>
-      
-      {/* 选择操作栏 - 多选模式 */}
-      {showSelector && multiple && selectedFiles.length > 0 && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
-          <div className="text-sm">
-            {t('files.selected', { count: selectedFiles.length })}
-          </div>
-          <Button onClick={handleConfirmSelection} title={t('files.confirm_selection')} />
-        </div>
-      )}
+  return (
+    <div className="flex flex-col h-full w-full">
+      {/* 控制面板区域 */}
+      {renderControlPanel()}
       
       {/* 新建文件夹对话框 */}
       {showNewFolderDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-lg font-medium mb-4">{t('files.create_folder')}</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">{t('files.new_folder')}</h3>
             <input
-              ref={folderNameInputRef}
               type="text"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent mb-4"
+              ref={folderNameInputRef}
               placeholder={t('files.folder_name')}
+              className="w-full px-3 py-2 border rounded-md mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
               autoFocus
             />
             <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowNewFolderDialog(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              <button 
+                onClick={() => setShowNewFolderDialog(false)} 
+                className="px-4 py-2 border rounded-md"
               >
                 {t('cancel')}
               </button>
-              <Button onClick={handleCreateFolder} title={t('create')} />
+              <button 
+                onClick={handleCreateFolder} 
+                className="px-4 py-2 bg-theme text-white rounded-md"
+              >
+                {t('create')}
+              </button>
             </div>
           </div>
         </div>
       )}
       
-      {/* 错误信息对话框 */}
+      {/* 错误消息对话框 */}
       {errorMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-lg font-medium text-red-600 mb-4">{t('alert')}</h3>
-            <p className="mb-6">{t('files.load_error', { error: errorMessage })}</p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => loadFiles(true)}
-                className="px-4 py-2 bg-theme hover:bg-theme-hover text-white rounded-md transition-colors"
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-red-600 dark:text-red-400">{t('files.error')}</h3>
+            <p className="mb-4">{errorMessage}</p>
+            <div className="flex justify-end">
+              <button 
+                onClick={closeErrorDialog} 
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-md"
               >
-                {t('reload')}
-              </button>
-              <button
-                onClick={closeErrorDialog}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
-              >
-                {t('close')}
-              </button>
-              <button
-                onClick={() => {
-                  closeErrorDialog();
-                  window.location.href = '/'; // 添加返回主页选项
-                }}
-                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors"
-              >
-                {t('index.back')}
+                {t('ok')}
               </button>
             </div>
           </div>
         </div>
       )}
+      
+      {/* 上传进度对话框 */}
+      {isUploading && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">{t('files.uploading')}</h3>
+            <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-theme" 
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+            <p className="mt-2 text-right">{uploadProgress}%</p>
+          </div>
+        </div>
+      )}
+      
+      {/* 文件列表区域 */}
+      <div className="flex-grow overflow-auto">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <Loading type="spin" height={40} width={40} />
+          </div>
+        ) : (
+          <>
+            {viewMode === 'grid' ? renderGridView() : renderListView()}
+            {renderPagination()}
+          </>
+        )}
+      </div>
     </div>
   );
 } 
