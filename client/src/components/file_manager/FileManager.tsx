@@ -62,6 +62,7 @@ export function FileManager({
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [includeExternal, setIncludeExternal] = useState<boolean>(true);
   const [showSyncOptions, setShowSyncOptions] = useState<boolean>(false);
+  const [forceRescan, setForceRescan] = useState<boolean>(false);
   
   // 引用
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -352,36 +353,27 @@ export function FileManager({
 
   // 处理同步
   const handleSync = async () => {
-    if (isSyncing) return; // 防止重复点击
+    if (isSyncing) return;
     
     setIsSyncing(true);
-    setSuccessMessage(null);
     setErrorMessage(null);
-    setShowSyncOptions(false);
+    setSuccessMessage(null);
     
     try {
-      const result = await syncFiles(undefined, includeExternal);
+      const result = await syncFiles(undefined, includeExternal, forceRescan);
+      
       if (result.success) {
-        if (result.stats && result.stats.created > 0) {
-          setSuccessMessage(t('files.sync_result', { 
-            processed: result.stats.processed,
-            created: result.stats.created 
-          }));
-        } else if (result.stats && result.stats.processed > 0 && result.stats.created === 0) {
-          setSuccessMessage(t('files.sync_no_files'));
-        } else {
-          setSuccessMessage(result.message);
-        }
-        
-        // 同步成功后重新加载文件列表
-        await loadFiles(true);
+        setSuccessMessage(result.message);
+        await loadFiles(true); // 刷新文件列表
       } else {
-        setErrorMessage(result.message);
+        setErrorMessage(result.message || t('files.sync_error'));
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '同步过程中发生错误');
+      console.error('同步错误:', error);
+      setErrorMessage(t('files.sync_error'));
     } finally {
       setIsSyncing(false);
+      setShowSyncOptions(false); // 关闭选项面板
     }
   };
 
@@ -616,68 +608,86 @@ export function FileManager({
     ) : null;
   };
 
-  // 修改操作工具栏，添加同步按钮
+  // 渲染操作工具栏
   const renderOperations = () => {
     return (
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <div className="mr-auto">
-          <div className="flex items-center gap-2">
-            {/* 视图切换按钮 */}
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-theme text-white' : 'bg-gray-100 text-gray-600'}`}
-              title={t('files.grid_view')}
+      <div className="flex flex-wrap justify-between items-center gap-2 p-2 bg-card rounded-md mb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center">
+            <input 
+              type="text" 
+              placeholder={t('files.search')} 
+              className="border rounded-full px-3 py-1 mr-2 bg-input t-primary placeholder:text-muted" 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button 
+              onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+              className="bg-button rounded-full p-2 hover:bg-button-hover"
+              title={viewMode === 'list' ? t('files.grid_view') : t('files.list_view')}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
+              <span>{viewMode === 'list' ? '⊞' : '≡'}</span>
             </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-theme text-white' : 'bg-gray-100 text-gray-600'}`}
-              title={t('files.list_view')}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-              </svg>
-            </button>
-
-            {/* 搜索框 */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder={t('files.search')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="bg-gray-100 rounded-full py-2 pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-theme"
-              />
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-2 top-2.5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-              </svg>
-            </div>
           </div>
+          
+          <div className="relative inline-block">
+            <Button onClick={() => setShowSyncOptions(!showSyncOptions)} title={t('files.sync')} />
+            
+            {showSyncOptions && (
+              <div className="absolute z-10 mt-1 bg-card rounded-md shadow-lg p-3 t-primary">
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={includeExternal}
+                      onChange={() => setIncludeExternal(!includeExternal)}
+                      className="mr-2"
+                    />
+                    {t('files.include_external')}
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={forceRescan}
+                      onChange={() => setForceRescan(!forceRescan)}
+                      className="mr-2"
+                    />
+                    {t('files.force_rescan')}
+                  </label>
+                  <div className="flex justify-end mt-2">
+                    <Button onClick={handleSync} title={t('files.start_sync')} />
+                  </div>
+                  {isSyncing && (
+                    <div className="flex justify-center mt-2">
+                      <Loading type="spin" height={20} width={20} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Button 
+            onClick={() => setShowImportModal(true)} 
+            title={t('files.import_remote')} 
+          />
         </div>
         
-        <div className="flex gap-2">
-          {!showSelector && (
-            <>
-              <Button 
-                onClick={() => setShowNewFolderDialog(true)} 
-                title={t('files.new_folder')} 
-                secondary
-              />
-              <Button 
-                onClick={() => uploadInputRef.current?.click()} 
-                title={t('files.upload')} 
-              />
-              <input
-                type="file"
-                ref={uploadInputRef}
-                onChange={handleFileUpload}
-                className="hidden"
-                multiple
-              />
-            </>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button 
+            onClick={() => setShowNewFolderDialog(true)} 
+            title={t('files.new_folder')} 
+          />
+          <Button 
+            onClick={() => uploadInputRef.current?.click()} 
+            title={t('files.upload')} 
+          />
+          
+          {showSelector && selectedFiles.length > 0 && (
+            <Button 
+              onClick={handleConfirmSelection} 
+              title={multiple ? `${t('files.select')} (${selectedFiles.length})` : t('files.select')}
+            />
           )}
         </div>
       </div>
@@ -716,6 +726,51 @@ export function FileManager({
           </div>
         )}
       </>
+    );
+  };
+
+  // 渲染导入模态框
+  const renderImportModal = () => {
+    if (!showImportModal) return null;
+    
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <div className="bg-card rounded-md p-4 w-96 max-w-full">
+          <h3 className="text-lg font-bold mb-4 t-primary">{t('files.import_remote')}</h3>
+          <div className="mb-4">
+            <label className="block t-primary mb-2">{t('files.remote_domain')}</label>
+            <input 
+              type="text" 
+              value={remoteDomain}
+              onChange={(e) => setRemoteDomain(e.target.value)}
+              placeholder="example.com"
+              className="w-full p-2 border rounded-md bg-input t-primary placeholder:text-muted"
+            />
+            <p className="text-sm mt-1 t-hint">{t('files.remote_domain_hint')}</p>
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <button 
+              onClick={() => setShowImportModal(false)}
+              className="px-4 py-2 border rounded-md hover:bg-button-hover"
+            >
+              {t('cancel')}
+            </button>
+            <button 
+              onClick={handleImport}
+              disabled={isImporting || !remoteDomain}
+              className={`px-4 py-2 rounded-md text-white ${isImporting || !remoteDomain ? 'bg-theme-disabled' : 'bg-theme hover:bg-theme-hover'}`}
+            >
+              {isImporting ? (
+                <div className="flex items-center">
+                  <Loading type="spin" height={16} width={16} /> 
+                  <span className="ml-2">{t('importing')}</span>
+                </div>
+              ) : t('import')}
+            </button>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -875,55 +930,7 @@ export function FileManager({
         </div>
       )}
       
-      {/* 导入远程数据模态框 */}
-      {showImportModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md dark:bg-gray-800 dark:text-white">
-            <h3 className="text-lg font-semibold mb-4">{t('files.import_title')}</h3>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                {t('files.remote_domain')}
-              </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
-                value={remoteDomain}
-                onChange={(e) => setRemoteDomain(e.target.value)}
-                placeholder="https://example.com"
-              />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {t('files.remote_domain_desc')}
-              </p>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <button
-                className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                onClick={() => setShowImportModal(false)}
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                className={`px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 ${
-                  isImporting ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                onClick={handleImport}
-                disabled={isImporting || !remoteDomain}
-              >
-                {isImporting ? (
-                  <>
-                    <i className="ri-loader-line animate-spin mr-1"></i>
-                    {t('files.importing')}
-                  </>
-                ) : (
-                  t('files.import_start')
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {renderImportModal()}
     </div>
   );
 } 

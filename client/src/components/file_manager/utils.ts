@@ -49,7 +49,7 @@ export function getFileTypeIcon(mimeType: string): string {
 }
 
 // 同步文件数据
-export async function syncFiles(feedId?: number, includeExternal: boolean = true): Promise<{
+export async function syncFiles(feedId?: number, includeExternal: boolean = true, forceRescan: boolean = false): Promise<{
   success: boolean;
   message: string;
   stats?: {
@@ -70,6 +70,9 @@ export async function syncFiles(feedId?: number, includeExternal: boolean = true
     
     // 添加是否包含外部URL的参数
     url.searchParams.append('includeExternal', String(includeExternal));
+    
+    // 添加是否强制重新扫描参数
+    url.searchParams.append('forceRescan', String(forceRescan));
     
     // 添加调试参数
     url.searchParams.append('debug', 'true');

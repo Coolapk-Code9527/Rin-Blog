@@ -62,6 +62,22 @@ function getFileNameFromUrl(url: string): string {
 
 // 规范化URL路径
 function normalizeUrl(url: string): string {
+    // 如果是完整URL，提取路径部分
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        try {
+            const urlObj = new URL(url);
+            // 对于Cloudflare R2和其他常见CDN，保留完整URL
+            if (urlObj.hostname.includes('r2.dev') || 
+                urlObj.hostname.includes('cloudflare') || 
+                urlObj.hostname.includes('imagedelivery.net')) {
+                return url; // 保留完整URL
+            }
+            return urlObj.pathname;
+        } catch (e) {
+            return url;
+        }
+    }
+    
     // 删除查询参数
     const queryIndex = url.indexOf('?');
     if (queryIndex > 0) {
@@ -74,18 +90,19 @@ function normalizeUrl(url: string): string {
         url = url.substring(0, anchorIndex);
     }
     
-    // 对于完整URL，我们有两种策略：
-    // 1. 保留完整URL，这有助于正确匹配外部资源
-    // 2. 提取路径部分，这有助于本地资源的管理
-    // 我们将同时存储这两种形式
-    
-    // 不再自动转换完整URL为路径部分，保留原始URL
-    // 这样有助于在数据库中精确匹配
-    
     // 确保相对路径以/开头
-    if (!url.startsWith('http://') && !url.startsWith('https://') && 
-        !url.startsWith('/') && !url.startsWith('./') && !url.startsWith('../')) {
+    if (!url.startsWith('/') && !url.startsWith('./') && !url.startsWith('../')) {
         url = '/' + url;
+    }
+    
+    // 处理常见的CDN路径格式
+    if (url.includes('/cdn-cgi/') || url.includes('/_next/image')) {
+        // 尝试从URL中提取原始文件名
+        const segments = url.split('/');
+        const fileName = segments[segments.length - 1];
+        if (fileName && fileName.includes('.')) {
+            return '/images/' + fileName; // 统一规范到images目录
+        }
     }
     
     return url;
@@ -100,31 +117,23 @@ function extractMediaReferences(content: string): string[] {
     let match;
     while ((match = imageRegex.exec(content)) !== null) {
         if (match[1]) {
-            references.add(match[1].trim());
+            references.add(match[1]);
         }
     }
     
-    // 提取Markdown链接语法中的图片扩展名: [text](url.jpg|png|etc)
-    const markdownLinkRegex = /\[.*?\]\((.*?\.(?:jpg|jpeg|png|gif|webp|avif|svg|mp4|mov|webm|mp3|wav|ogg).*?)\)/gi;
-    while ((match = markdownLinkRegex.exec(content)) !== null) {
-        if (match[1]) {
-            references.add(match[1].trim());
-        }
-    }
-    
-    // 提取HTML图片标签: <img src="url"> 和 <img src='url'>
+    // 提取HTML图片标签: <img src="url">
     const imgTagRegex = /<img[^>]*src=["'](.*?)["'][^>]*>/g;
     while ((match = imgTagRegex.exec(content)) !== null) {
         if (match[1]) {
-            references.add(match[1].trim());
+            references.add(match[1]);
         }
     }
     
-    // 提取HTML视频标签: <video src="url"> 和 <source src="url">
-    const videoTagRegex = /<(?:video[^>]*src=|source[^>]*src=)["'](.*?)["'][^>]*>/g;
+    // 提取HTML视频标签: <video src="url">
+    const videoTagRegex = /<video[^>]*src=["'](.*?)["'][^>]*>/g;
     while ((match = videoTagRegex.exec(content)) !== null) {
         if (match[1]) {
-            references.add(match[1].trim());
+            references.add(match[1]);
         }
     }
     
@@ -132,39 +141,49 @@ function extractMediaReferences(content: string): string[] {
     const audioTagRegex = /<audio[^>]*src=["'](.*?)["'][^>]*>/g;
     while ((match = audioTagRegex.exec(content)) !== null) {
         if (match[1]) {
-            references.add(match[1].trim());
+            references.add(match[1]);
         }
     }
     
-    // 提取background-image样式中的URL
+    // 额外：提取background-image样式中的URL
     const bgImageRegex = /background(-image)?:\s*url\(['"]?(.*?)['"]?\)/g;
     while ((match = bgImageRegex.exec(content)) !== null) {
         if (match[2]) {
-            references.add(match[2].trim());
+            references.add(match[2]);
         }
     }
     
     // 提取所有类似 /api/file/ 开头的URL
-    const apiFileRegex = /["']\/api\/file\/([^"']*?)["']/g;
+    const apiFileRegex = /["'](\/?api\/file\/[^"']*?)["']/g;
     while ((match = apiFileRegex.exec(content)) !== null) {
-        const fullUrl = `/api/file/${match[1]}`;
-        references.add(fullUrl.trim());
+        references.add(match[1]);
     }
     
-    // 提取所有CDN格式的URL
-    const cdnRegex = /["']((?:https?:)?\/\/[^"']*?\.(?:jpg|jpeg|png|gif|webp|avif|svg|mp4|mov|webm|mp3|wav|ogg)[^"']*?)["']/gi;
-    while ((match = cdnRegex.exec(content)) !== null) {
+    // 提取next.js图片路径格式
+    const nextImageRegex = /\/_next\/image\?url=(.*?)&/g;
+    while ((match = nextImageRegex.exec(content)) !== null) {
         if (match[1]) {
-            references.add(match[1].trim());
+            try {
+                // URL可能是编码的，需要解码
+                const decodedUrl = decodeURIComponent(match[1]);
+                references.add(decodedUrl);
+            } catch (e) {
+                // 解码失败，使用原始值
+                references.add(match[1]);
+            }
         }
     }
     
-    // 查找Cloudflare特定的URL格式
-    const cfImageRegex = /["']((?:https?:)?\/\/(?:.*?)\/cdn-cgi\/imagedelivery\/[^"']+)["']/g;
+    // 提取Cloudflare图片交付URL
+    const cfImageRegex = /https:\/\/imagedelivery\.net\/[^/]+\/([^/]+)\/[^"'\s]+/g;
     while ((match = cfImageRegex.exec(content)) !== null) {
-        if (match[1]) {
-            references.add(match[1].trim());
-        }
+        references.add(match[0]); // 保存完整URL
+    }
+    
+    // 提取任何.jpg, .png, .gif, .webp, .svg等常见图片扩展名的URL
+    const commonImageRegex = /["']((?:https?:\/\/|\/)[^"'\s]+\.(?:jpe?g|png|gif|webp|svg|avif|bmp|tiff?))["']/gi;
+    while ((match = commonImageRegex.exec(content)) !== null) {
+        references.add(match[1]);
     }
     
     return Array.from(references);
@@ -754,12 +773,14 @@ export function FileService() {
                         // 获取指定的文章ID（可选）
                         const feedId = query.feedId ? Number(query.feedId) : undefined;
                         const includeExternal = query.includeExternal === 'true';
+                        const forceRescan = query.forceRescan === 'true'; // 新增: 强制重新扫描所有文章
                         
                         // 查询文章
                         let feedsQuery = db.select({
                             id: feeds.id,
                             content: feeds.content,
-                            uid: feeds.uid
+                            uid: feeds.uid,
+                            title: feeds.title
                         }).from(feeds);
                         
                         // 如果指定了文章ID，只同步该文章
@@ -779,24 +800,30 @@ export function FileService() {
                         
                         // 用于记录已处理的文件路径，避免重复处理
                         const processedPaths = new Set<string>();
+                        const processedHashes = new Set<string>();
                         
                         // 调试信息收集
                         const debugInfo: {
                             feedId: number;
+                            feedTitle: string | null;
                             mediaRefs: string[];
                             normalizedRefs: {original: string, normalized: string}[];
                             externalRefs: string[];
-                            matchedFiles: {path: string, id: number}[];
+                            createdFiles: number;
                         }[] = [];
                         
-                        console.log(`======== 文件同步开始 ========`);
-                        console.log(`找到 ${feedsData.length} 篇文章, includeExternal=${includeExternal}`);
+                        console.log(`开始同步，找到 ${feedsData.length} 篇文章`);
                         
                         // 处理每篇文章
                         for (const feed of feedsData) {
                             try {
                                 // 提取媒体引用
                                 const mediaRefs = extractMediaReferences(feed.content);
+                                
+                                // 如果指定了强制重新扫描，则清空该文章的现有关联
+                                if (forceRescan && !query.feedId) {
+                                    await db.delete(feedFiles).where(eq(feedFiles.feedId, feed.id));
+                                }
                                 
                                 const normalizedRefs = mediaRefs.map(ref => ({
                                     original: ref,
@@ -812,27 +839,24 @@ export function FileService() {
                                     !url.startsWith('http://') && !url.startsWith('https://')
                                 );
                                 
-                                // 准备收集此文章的匹配文件
-                                const matchedFilesForArticle: {path: string, id: number}[] = [];
+                                // 记录该文章创建的文件数量
+                                let articleCreatedFiles = 0;
                                 
                                 // 添加调试信息
                                 const articleDebugInfo = {
                                     feedId: feed.id,
+                                    feedTitle: feed.title,
                                     mediaRefs,
                                     normalizedRefs,
                                     externalRefs,
-                                    matchedFiles: matchedFilesForArticle
+                                    createdFiles: 0
                                 };
                                 debugInfo.push(articleDebugInfo);
                                 
-                                console.log(`------------------------------`);
-                                console.log(`文章ID ${feed.id} 找到 ${mediaRefs.length} 个媒体引用：`);
-                                console.log(`- 外部引用: ${externalRefs.length} 个`);
-                                console.log(`- 本地引用: ${localRefs.length} 个`);
+                                console.log(`文章ID ${feed.id}${feed.title ? ` (${feed.title})` : ''} 找到 ${mediaRefs.length} 个媒体引用，其中外部引用 ${externalRefs.length} 个`);
                                 
-                                // 如果没有任何引用，跳过
+                                // 跳过没有媒体的文章
                                 if (mediaRefs.length === 0) {
-                                    console.log(`文章ID ${feed.id} 没有媒体引用，跳过`);
                                     continue;
                                 }
                                 
@@ -841,7 +865,38 @@ export function FileService() {
                                 // 需要处理的引用列表
                                 const refsToProcess = includeExternal ? mediaRefs : localRefs;
                                 
-                                console.log(`文章ID ${feed.id} 将处理 ${refsToProcess.length} 个引用`);
+                                // 在处理每个URL之前，提前查询该文章已有的文件关联
+                                const existingAssocs = await db
+                                    .select({
+                                        fileId: feedFiles.fileId
+                                    })
+                                    .from(feedFiles)
+                                    .where(eq(feedFiles.feedId, feed.id));
+                                
+                                const existingFileIds = new Set(existingAssocs.map(assoc => assoc.fileId));
+                                
+                                // 多阶段查找: 先批量查找已有文件以减少数据库查询次数
+                                const originalPaths = refsToProcess.map(ref => ref);
+                                const normalizedPaths = refsToProcess.map(ref => normalizeUrl(ref));
+                                const allPathsToCheck = [...new Set([...originalPaths, ...normalizedPaths])];
+                                
+                                // 批量查找所有可能的文件记录
+                                const possibleFiles = await db
+                                    .select()
+                                    .from(files)
+                                    .where(or(
+                                        inArray(files.path, allPathsToCheck),
+                                        inArray(files.name, refsToProcess.map(ref => getFileNameFromUrl(ref)))
+                                    ));
+                                
+                                // 建立查询映射以加快查找
+                                const fileByPath = new Map();
+                                const fileByName = new Map();
+                                
+                                possibleFiles.forEach(file => {
+                                    fileByPath.set(file.path, file);
+                                    fileByName.set(file.name, file);
+                                });
                                 
                                 // 处理每个媒体引用
                                 for (const mediaUrl of refsToProcess) {
@@ -850,73 +905,50 @@ export function FileService() {
                                         const normalizedUrl = normalizeUrl(mediaUrl);
                                         
                                         // 跳过已处理的路径
-                                        if (processedPaths.has(normalizedUrl)) {
+                                        if (processedPaths.has(mediaUrl) || processedPaths.has(normalizedUrl)) {
                                             skippedCount++;
-                                            console.log(`  已处理过的路径，跳过: ${normalizedUrl}`);
                                             continue;
                                         }
+                                        processedPaths.add(mediaUrl);
                                         processedPaths.add(normalizedUrl);
                                         
-                                        console.log(`  处理媒体URL: ${mediaUrl}`);
-                                        console.log(`  规范化后: ${normalizedUrl}`);
+                                        console.log(`处理媒体URL: ${mediaUrl} → 规范化: ${normalizedUrl}`);
                                         
                                         // 确定是否为外部URL
                                         const isExternalUrl = mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://');
                                         
-                                        // 获取文件名用于更灵活的匹配
-                                        const fileName = getFileNameFromUrl(mediaUrl);
+                                        // 多条件查询文件记录
+                                        let existingFile = fileByPath.get(mediaUrl) || 
+                                                          fileByPath.get(normalizedUrl) || 
+                                                          fileByName.get(getFileNameFromUrl(normalizedUrl));
                                         
-                                        // 灵活查找文件 - 使用更多条件提高匹配概率
-                                        // 1. 精确匹配原始URL
-                                        // 2. 匹配规范化URL
-                                        // 3. 检查文件名匹配
-                                        // 4. 对于完整URL，尝试匹配URL的路径部分
-                                        // 5. 对于相对URL，尝试匹配完整URL的一部分
-                                        let pathMatchCondition;
-                                        if (isExternalUrl) {
-                                            // 提取路径部分用于额外匹配
-                                            let pathOnly = '';
-                                            try {
-                                                const urlObj = new URL(mediaUrl);
-                                                pathOnly = urlObj.pathname;
-                                            } catch (e) {
-                                                // 忽略解析错误
-                                            }
+                                        // 如果多条件查询未找到结果，则直接查询数据库
+                                        if (!existingFile) {
+                                            // 查询数据库
+                                            const fileQuery = await db
+                                                .select()
+                                                .from(files)
+                                                .where(
+                                                    or(
+                                                        eq(files.path, mediaUrl),
+                                                        eq(files.path, normalizedUrl),
+                                                        like(files.path, `%${getFileNameFromUrl(normalizedUrl)}`),
+                                                        eq(files.name, getFileNameFromUrl(normalizedUrl))
+                                                    )
+                                                );
                                             
-                                            // 构建丰富的匹配条件
-                                            pathMatchCondition = or(
-                                                eq(files.path, mediaUrl),  // 原始URL精确匹配
-                                                eq(files.path, normalizedUrl),  // 规范化URL匹配
-                                                like(files.name, `%${fileName}%`),  // 文件名模糊匹配
-                                                eq(files.path, pathOnly),  // 尝试匹配路径部分
-                                                like(files.path, `%${pathOnly}%`)  // 路径模糊匹配
-                                            );
-                                        } else {
-                                            // 对于相对URL，尝试更多的匹配条件
-                                            pathMatchCondition = or(
-                                                eq(files.path, mediaUrl),  // 原始路径精确匹配
-                                                eq(files.path, normalizedUrl),  // 规范化路径匹配
-                                                like(files.name, `%${fileName}%`),  // 文件名模糊匹配
-                                                like(files.path, `%${fileName}%`)  // 路径中包含文件名
-                                            );
+                                            if (fileQuery.length > 0) {
+                                                existingFile = fileQuery[0];
+                                            }
                                         }
-                                        
-                                        const existingFile = await db
-                                            .select()
-                                            .from(files)
-                                            .where(pathMatchCondition);
                                         
                                         let fileId: number;
                                         
-                                        if (existingFile.length > 0) {
+                                        if (existingFile) {
                                             // 文件已存在，使用现有ID
-                                            fileId = existingFile[0].id;
+                                            fileId = existingFile.id;
                                             updatedCount++;
-                                            console.log(`  文件已存在，ID: ${fileId}, 路径: ${existingFile[0].path}`);
-                                            matchedFilesForArticle.push({
-                                                path: existingFile[0].path,
-                                                id: existingFile[0].id
-                                            });
+                                            console.log(`文件已存在，ID: ${fileId}, 路径: ${existingFile.path}`);
                                         } else {
                                             // 创建新文件记录
                                             const fileName = getFileNameFromUrl(mediaUrl);
@@ -925,13 +957,21 @@ export function FileService() {
                                             // 计算基本哈希作为临时标识
                                             const tempHash = Buffer.from(mediaUrl).toString('hex').substring(0, 16);
                                             
+                                            // 检查是否已处理相同哈希的文件
+                                            if (processedHashes.has(tempHash)) {
+                                                skippedCount++;
+                                                console.log(`跳过重复哈希: ${tempHash}, URL: ${mediaUrl}`);
+                                                continue;
+                                            }
+                                            processedHashes.add(tempHash);
+                                            
                                             // 插入新文件记录
                                             const result = await db
                                                 .insert(files)
                                                 .values({
                                                     path: isExternalUrl ? mediaUrl : normalizedUrl, // 外部URL保留完整URL，本地URL使用规范化路径
                                                     name: fileName,
-                                                    size: 0, // 无法确定实际大小，后续可优化
+                                                    size: 0, // 无法确定实际大小
                                                     mimeType: mimeType,
                                                     userId: feed.uid,
                                                     accessLevel: 'public',
@@ -943,26 +983,12 @@ export function FileService() {
                                             
                                             fileId = result[0].id;
                                             createdCount++;
-                                            console.log(`  创建新文件记录，ID: ${fileId}, 文件名: ${fileName}`);
-                                            matchedFilesForArticle.push({
-                                                path: isExternalUrl ? mediaUrl : normalizedUrl,
-                                                id: fileId
-                                            });
+                                            articleCreatedFiles++;
+                                            console.log(`创建新文件记录，ID: ${fileId}, 文件名: ${fileName}`);
                                         }
                                         
-                                        // 检查文章-文件关联是否已存在
-                                        const existingAssoc = await db
-                                            .select()
-                                            .from(feedFiles)
-                                            .where(
-                                                and(
-                                                    eq(feedFiles.feedId, feed.id),
-                                                    eq(feedFiles.fileId, fileId)
-                                                )
-                                            );
-                                        
-                                        // 如果关联不存在，创建关联
-                                        if (existingAssoc.length === 0) {
+                                        // 如果文件ID不在已有关联中，创建关联
+                                        if (!existingFileIds.has(fileId)) {
                                             await db
                                                 .insert(feedFiles)
                                                 .values({
@@ -971,7 +997,7 @@ export function FileService() {
                                                     relationType: 'embed',
                                                     displayOrder: 0,
                                                 });
-                                            console.log(`  创建文章-文件关联，文章ID: ${feed.id}, 文件ID: ${fileId}`);
+                                            console.log(`创建文章-文件关联，文章ID: ${feed.id}, 文件ID: ${fileId}`);
                                         }
                                     } catch (mediaError: any) {
                                         errorCount++;
@@ -979,6 +1005,10 @@ export function FileService() {
                                         console.error(`处理媒体链接 ${mediaUrl} 失败:`, mediaError);
                                     }
                                 }
+                                
+                                // 更新该文章创建的文件数量
+                                articleDebugInfo.createdFiles = articleCreatedFiles;
+                                
                             } catch (feedError: any) {
                                 errorCount++;
                                 errors.push(`处理文章ID ${feed.id} 失败: ${feedError.message}`);
@@ -1011,6 +1041,7 @@ export function FileService() {
                         feedId: t.Optional(t.String()), // 可选，指定同步特定文章
                         debug: t.Optional(t.String()), // 可选，是否返回调试信息
                         includeExternal: t.Optional(t.String()), // 可选，是否包括外部URL
+                        forceRescan: t.Optional(t.String()), // 可选，强制重新扫描
                     }),
                 })
 
@@ -1269,11 +1300,29 @@ export function FileService() {
                         // 准备域名映射表，用于转换相对URL到绝对URL
                         const { remoteDomain } = query;
                         
+                        if (!remoteDomain) {
+                            set.status = 400;
+                            return { error: 'Remote domain is required' };
+                        }
+                        
+                        // 规范化域名格式
+                        let normalizedDomain = remoteDomain;
+                        if (!normalizedDomain.startsWith('http')) {
+                            normalizedDomain = `https://${normalizedDomain}`;
+                        }
+                        // 移除尾部斜杠
+                        if (normalizedDomain.endsWith('/')) {
+                            normalizedDomain = normalizedDomain.slice(0, -1);
+                        }
+                        
+                        console.log(`开始从远程域名导入: ${normalizedDomain}`);
+                        
                         // 查询所有文章
                         const feedsData = await db.select({
                             id: feeds.id,
                             content: feeds.content,
-                            uid: feeds.uid
+                            uid: feeds.uid,
+                            title: feeds.title
                         }).from(feeds) as any;
                         
                         // 统计信息
@@ -1283,79 +1332,75 @@ export function FileService() {
                             imported: 0,
                             skipped: 0,
                             errors: 0,
-                            errorDetails: [] as string[]
+                            errorDetails: [] as string[],
+                            articleResults: [] as {
+                                id: number,
+                                title: string | null,
+                                found: number,
+                                imported: number
+                            }[]
                         };
                         
                         // 存储所有找到的远程URL
                         const allRemoteUrls: Set<string> = new Set();
+                        const allRelativeUrls: Set<string> = new Set();
+                        const allRelativeToRemoteMap: Map<string, string> = new Map();
                         
                         // 从每篇文章中提取远程URL
                         for (const feed of feedsData) {
                             try {
                                 results.processed++;
                                 
+                                const articleResult = {
+                                    id: feed.id,
+                                    title: feed.title,
+                                    found: 0,
+                                    imported: 0
+                                };
+                                
                                 // 提取媒体引用
                                 const mediaRefs = extractMediaReferences(feed.content);
-                                console.log(`文章ID ${feed.id} 找到媒体引用:`, mediaRefs);
                                 
                                 // 筛选出远程URL (包含http或https的完整URL)
                                 const remoteUrls = mediaRefs.filter(url => 
-                                    url.startsWith('http://') || url.startsWith('https://'));
+                                    (url.startsWith('http://') || url.startsWith('https://')) &&
+                                    url.includes(new URL(normalizedDomain).hostname));
                                     
                                 // 转换相对URL为远程域名下的URL
-                                if (remoteDomain) {
-                                    // 检查远程域名格式
-                                    const formattedRemoteDomain = remoteDomain.endsWith('/') 
-                                        ? remoteDomain.slice(0, -1) // 移除末尾的斜杠
-                                        : remoteDomain;
+                                const relativeUrls = mediaRefs.filter(url => 
+                                    !url.startsWith('http://') && !url.startsWith('https://') && 
+                                    url.startsWith('/'));
                                     
-                                    const relativeUrls = mediaRefs.filter(url => 
-                                        !url.startsWith('http://') && !url.startsWith('https://') && 
-                                        (url.startsWith('/') || !url.includes('/')));
-                                        
-                                    console.log(`发现相对URL:`, relativeUrls);
-                                        
-                                    relativeUrls.forEach(relUrl => {
-                                        // 确保以斜杠开头
-                                        const normalizedRelUrl = relUrl.startsWith('/') ? relUrl : `/${relUrl}`;
-                                        const fullUrl = `${formattedRemoteDomain}${normalizedRelUrl}`;
-                                        console.log(`转换相对URL: ${relUrl} -> ${fullUrl}`);
-                                        remoteUrls.push(fullUrl);
-                                    });
-                                }
+                                const remoteFromRelative = relativeUrls.map(relUrl => {
+                                    const fullUrl = `${normalizedDomain}${relUrl}`;
+                                    allRelativeToRemoteMap.set(relUrl, fullUrl);
+                                    return fullUrl;
+                                });
                                 
-                                // 尝试检测Cloudflare Workers/Pages 特有的路径模式
-                                const cfUrlPatterns = [
-                                    /\/cdn-cgi\/imagedelivery\/[^\/]+\/[^\/]+\//,  // Cloudflare Images
-                                    /\.pages\.dev\//,  // Pages 域名
-                                    /workers\.dev\//   // Workers 域名
-                                ];
+                                const allRemoteForArticle = [...remoteUrls, ...remoteFromRelative];
                                 
-                                const cfSpecificUrls = mediaRefs.filter(url => 
-                                    cfUrlPatterns.some(pattern => pattern.test(url)));
-                                    
-                                if (cfSpecificUrls.length > 0) {
-                                    console.log(`发现Cloudflare特定URL:`, cfSpecificUrls);
-                                    cfSpecificUrls.forEach(url => {
-                                        if (!remoteUrls.includes(url)) {
-                                            remoteUrls.push(url);
-                                        }
-                                    });
-                                }
-                                
-                                results.found += remoteUrls.length;
+                                articleResult.found = allRemoteForArticle.length;
+                                results.found += allRemoteForArticle.length;
                                 
                                 // 添加到集合
                                 remoteUrls.forEach(url => allRemoteUrls.add(url));
+                                remoteFromRelative.forEach(url => allRemoteUrls.add(url));
+                                relativeUrls.forEach(url => allRelativeUrls.add(url));
+                                
+                                results.articleResults.push(articleResult);
                                 
                             } catch (feedError: any) {
                                 results.errors++;
                                 results.errorDetails.push(`Error processing article ${feed.id}: ${feedError.message}`);
+                                console.error(`处理文章ID ${feed.id} 失败:`, feedError);
                             }
                         }
                         
                         // 将集合转换为数组
                         const uniqueRemoteUrls = Array.from(allRemoteUrls);
+                        const uniqueRelativeUrls = Array.from(allRelativeUrls);
+                        
+                        console.log(`找到 ${uniqueRemoteUrls.length} 个唯一远程URL和 ${uniqueRelativeUrls.length} 个相对路径URL`);
                         
                         // 导入找到的远程URL
                         if (uniqueRemoteUrls.length > 0) {
@@ -1366,7 +1411,10 @@ export function FileService() {
                                 .where(
                                     and(
                                         eq(files.userId, uid),
-                                        inArray(files.path, uniqueRemoteUrls)
+                                        or(
+                                            inArray(files.path, uniqueRemoteUrls),
+                                            inArray(files.path, uniqueRelativeUrls)
+                                        )
                                     )
                                 ) as any;
                             
@@ -1374,12 +1422,27 @@ export function FileService() {
                             const existingUrlSet = new Set(existingUrls.map((item: any) => item.path));
                             
                             // 筛选出不存在的URL
-                            const newUrls = uniqueRemoteUrls.filter(url => !existingUrlSet.has(url));
+                            const newRemoteUrls = uniqueRemoteUrls.filter(url => !existingUrlSet.has(url));
                             
-                            results.skipped = uniqueRemoteUrls.length - newUrls.length;
+                            // 检查是否有相对URL已经存在 (通过远程URL)
+                            for (const [relative, remote] of allRelativeToRemoteMap.entries()) {
+                                if (existingUrlSet.has(remote)) {
+                                    existingUrlSet.add(relative);
+                                }
+                            }
                             
-                            // 批量导入新的URL
-                            for (const url of newUrls) {
+                            // 筛选出不存在的相对URL
+                            const newRelativeUrls = uniqueRelativeUrls.filter(url => !existingUrlSet.has(url));
+                            
+                            results.skipped = uniqueRemoteUrls.length - newRemoteUrls.length;
+                            
+                            console.log(`开始导入 ${newRemoteUrls.length} 个新的远程URL和 ${newRelativeUrls.length} 个相对URL`);
+                            
+                            // 创建批量导入的文件记录
+                            const filesToInsert = [];
+                            
+                            // 处理远程URL
+                            for (const url of newRemoteUrls) {
                                 try {
                                     // 构造文件名
                                     let fileName = '';
@@ -1404,11 +1467,64 @@ export function FileService() {
                                     // 生成临时哈希
                                     const tempHash = Buffer.from(url).toString('hex').substring(0, 16);
                                     
-                                    // 创建文件记录
-                                    await db
-                                        .insert(files)
-                                        .values({
-                                            path: url,
+                                    // 准备文件记录
+                                    filesToInsert.push({
+                                        path: url,
+                                        name: fileName,
+                                        size: 0,
+                                        mimeType: mimeType,
+                                        userId: uid,
+                                        accessLevel: 'public',
+                                        isFolder: 0,
+                                        parentPath: '/',
+                                        hash: tempHash,
+                                    });
+                                    
+                                } catch (urlError: any) {
+                                    results.errors++;
+                                    results.errorDetails.push(`Error processing URL ${url}: ${urlError.message}`);
+                                }
+                            }
+                            
+                            // 处理相对URL
+                            for (const url of newRelativeUrls) {
+                                try {
+                                    // 构造文件名
+                                    const segments = url.split('/');
+                                    const fileName = segments[segments.length - 1];
+                                    
+                                    if (!fileName) {
+                                        results.errors++;
+                                        results.errorDetails.push(`Failed to determine file name for URL: ${url}`);
+                                        continue;
+                                    }
+                                    
+                                    // 确定MIME类型
+                                    const mimeType = getMimeTypeFromFileName(fileName);
+                                    
+                                    // 生成临时哈希
+                                    const tempHash = Buffer.from(url).toString('hex').substring(0, 16);
+                                    
+                                    // 获取对应的远程URL
+                                    const remoteUrl = allRelativeToRemoteMap.get(url);
+                                    
+                                    // 准备文件记录 - 同时存储相对路径和远程URL
+                                    filesToInsert.push({
+                                        path: url, // 相对路径作为主路径
+                                        name: fileName,
+                                        size: 0,
+                                        mimeType: mimeType,
+                                        userId: uid,
+                                        accessLevel: 'public',
+                                        isFolder: 0,
+                                        parentPath: '/',
+                                        hash: tempHash,
+                                    });
+                                    
+                                    // 如果有远程URL且不在插入列表中，也添加
+                                    if (remoteUrl && !newRemoteUrls.includes(remoteUrl)) {
+                                        filesToInsert.push({
+                                            path: remoteUrl, // 完整远程URL
                                             name: fileName,
                                             size: 0,
                                             mimeType: mimeType,
@@ -1418,13 +1534,35 @@ export function FileService() {
                                             parentPath: '/',
                                             hash: tempHash,
                                         });
-                                    
-                                    results.imported++;
+                                    }
                                     
                                 } catch (urlError: any) {
                                     results.errors++;
-                                    results.errorDetails.push(`Error importing URL ${url}: ${urlError.message}`);
+                                    results.errorDetails.push(`Error processing URL ${url}: ${urlError.message}`);
                                 }
+                            }
+                            
+                            // 批量插入文件记录
+                            if (filesToInsert.length > 0) {
+                                try {
+                                    await db.insert(files).values(filesToInsert);
+                                    results.imported = filesToInsert.length;
+                                    console.log(`成功导入 ${results.imported} 个文件记录`);
+                                } catch (insertError: any) {
+                                    results.errors++;
+                                    results.errorDetails.push(`Error inserting files: ${insertError.message}`);
+                                    console.error('批量插入文件记录失败:', insertError);
+                                }
+                            }
+                            
+                            // 更新每篇文章的导入数量
+                            for (const articleResult of results.articleResults) {
+                                // 计算该文章导入的文件数
+                                articleResult.imported = Math.min(
+                                    articleResult.found,
+                                    articleResult.found > 0 ? 
+                                        Math.floor(results.imported * (articleResult.found / results.found)) : 0
+                                );
                             }
                         }
                         
@@ -1439,7 +1577,7 @@ export function FileService() {
                     }
                 }, {
                     query: t.Object({
-                        remoteDomain: t.Optional(t.String())
+                        remoteDomain: t.String() // 必须提供远程域名
                     }),
                 })
         );
