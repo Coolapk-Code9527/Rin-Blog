@@ -633,6 +633,9 @@ export function FileService() {
                     }
 
                     try {
+                        // 记录初始状态
+                        console.log(`开始同步操作，用户ID: ${uid}`);
+                        
                         // 1. 获取所有文章内容
                         const allFeeds = await db
                             .select({
@@ -641,6 +644,8 @@ export function FileService() {
                                 uid: feeds.uid
                             })
                             .from(feeds);
+                        
+                        console.log(`找到 ${allFeeds.length} 篇文章`);
                         
                         // 2. 提取所有图片URL
                         // 匹配Markdown图片语法: ![alt](url) 和 HTML图片语法: <img src="url">
@@ -682,6 +687,8 @@ export function FileService() {
                             }
                         }
                         
+                        console.log(`从文章中提取了 ${extractedImages.length} 个图片URL`);
+                        
                         // 3. 过滤有效的图片URL
                         const validImages = extractedImages.filter(img => {
                             // 确保URL是以http开头或者是相对路径
@@ -693,6 +700,8 @@ export function FileService() {
                             );
                         });
                         
+                        console.log(`有效图片URL: ${validImages.length} 个`);
+                        
                         // 4. 对URL进行去重
                         const uniqueUrls = new Map();
                         validImages.forEach(img => {
@@ -700,6 +709,8 @@ export function FileService() {
                                 uniqueUrls.set(img.url, img);
                             }
                         });
+                        
+                        console.log(`去重后的URL: ${uniqueUrls.size} 个`);
                         
                         // 5. 检查哪些URL已有文件记录
                         const existingFiles = await db
@@ -709,6 +720,8 @@ export function FileService() {
                             })
                             .from(files);
                         
+                        console.log(`数据库中现有文件记录: ${existingFiles.length} 个`);
+                        
                         const existingPaths = new Map(existingFiles.map(f => [f.path, f.id]));
                         
                         // 6. 为新URL创建文件记录
@@ -716,16 +729,25 @@ export function FileService() {
                         const newRelations = [];
                         
                         for (const img of uniqueUrls.values()) {
+                            console.log(`处理URL: ${img.url}`);
+                            
                             // 检查是否已存在记录
                             if (!existingPaths.has(img.url)) {
+                                console.log(`URL ${img.url} 在数据库中不存在，创建新记录`);
+                                
                                 // 提取文件名
                                 const urlParts = img.url.split('/');
                                 const fileName = urlParts[urlParts.length - 1];
                                 const nameWithoutQuery = fileName.split('?')[0];
                                 
-                                // 生成随机哈希作为文件内容标识
-                                const randomHash = Math.random().toString(36).substring(2, 15) + 
-                                                  Math.random().toString(36).substring(2, 15);
+                                // 生成唯一哈希 - 使用URL作为哈希基础以确保一致性
+                                const urlHash = await crypto.subtle.digest(
+                                    { name: 'SHA-1' },
+                                    new TextEncoder().encode(img.url)
+                                );
+                                const hash = buf2hex(urlHash);
+                                
+                                console.log(`生成文件哈希: ${hash} (基于URL生成)`);
                                 
                                 // 创建文件记录
                                 const fileResult = await db
@@ -736,8 +758,8 @@ export function FileService() {
                                         size: 0, // 无法确定远程图片大小，设为0
                                         mimeType: getMimeTypeFromFileName(nameWithoutQuery || 'image.jpg'),
                                         userId: img.userId,
-                                        hash: randomHash,
-                                        parentPath: '/',
+                                        hash: hash,
+                                        parentPath: '/', // 确保文件显示在根目录
                                         accessLevel: 'public'
                                     })
                                     .returning({ id: files.id });
@@ -748,16 +770,20 @@ export function FileService() {
                                         id: fileId,
                                         path: img.url
                                     });
+                                    console.log(`创建了新文件记录，ID: ${fileId}`);
                                     
                                     // 创建文章-文件关联
                                     newRelations.push({
                                         feedId: img.feedId,
                                         fileId: fileId
                                     });
+                                } else {
+                                    console.log(`文件记录创建失败`);
                                 }
                             } else {
                                 // 文件已存在，创建关联
                                 const existingFileId = existingPaths.get(img.url);
+                                console.log(`文件已存在，ID: ${existingFileId}`);
                                 
                                 // 检查是否已存在关联
                                 const existingRelation = await db
@@ -766,38 +792,51 @@ export function FileService() {
                                     .where(
                                         and(
                                             eq(feedFiles.feedId, img.feedId),
-                                            eq(feedFiles.fileId, existingFileId)
+                                            eq(feedFiles.fileId, existingFileId || 0)
                                         )
                                     );
                                 
-                                if (existingRelation.length === 0) {
+                                if (existingRelation.length === 0 && existingFileId) {
                                     // 创建文章-文件关联
                                     newRelations.push({
                                         feedId: img.feedId,
                                         fileId: existingFileId
                                     });
+                                    console.log(`为已有文件创建关联`);
+                                } else {
+                                    console.log(`关联已存在，不创建新关联`);
                                 }
                             }
                         }
                         
+                        console.log(`创建了 ${newFiles.length} 个新文件记录`);
+                        console.log(`准备创建 ${newRelations.length} 个关联`);
+                        
                         // 7. 批量创建文章-文件关联
+                        let relationsCreated = 0;
                         for (const relation of newRelations) {
-                            await db
-                                .insert(feedFiles)
-                                .values({
-                                    feedId: relation.feedId,
-                                    fileId: relation.fileId,
-                                    relationType: 'embed',
-                                    displayOrder: 0
-                                })
-                                .onConflictDoNothing();
+                            if (relation.feedId && relation.fileId) {
+                                await db
+                                    .insert(feedFiles)
+                                    .values({
+                                        feedId: relation.feedId,
+                                        fileId: relation.fileId,
+                                        relationType: 'embed',
+                                        displayOrder: 0
+                                    })
+                                    .onConflictDoNothing();
+                                
+                                relationsCreated++;
+                            }
                         }
+                        
+                        console.log(`完成同步，创建了 ${newFiles.length} 个文件，${relationsCreated} 个关联`);
                         
                         return {
                             success: true,
                             syncedFiles: newFiles.length,
-                            totalRelations: newRelations.length,
-                            message: `成功同步 ${newFiles.length} 个文件，创建 ${newRelations.length} 个关联`
+                            totalRelations: relationsCreated,
+                            message: `成功同步 ${newFiles.length} 个文件，创建 ${relationsCreated} 个关联`
                         };
                     } catch (error: any) {
                         console.error('同步数据时出错:', error);

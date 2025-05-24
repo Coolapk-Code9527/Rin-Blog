@@ -366,7 +366,9 @@ export function FileManager({
       const result = await response.json();
       setSyncResult(result);
       
-      // 同步完成后重新加载文件列表
+      // 同步完成后重新加载文件列表，并确保在根目录
+      setCurrentPath('/');
+      setCurrentPage(1);
       await loadFiles(true);
       
       // 显示成功消息
