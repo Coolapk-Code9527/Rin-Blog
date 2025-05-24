@@ -106,14 +106,15 @@
     "updated$time": "Updated at {{time}}"
   },
   "files": {
-    "title": "Files",
-    "page_title": "File Manager",
-    "page_description": "Manage your files and folders",
-    "root": "Root",
-    "empty": "No files yet",
+    "title": "File Management",
+    "page_title": "File Management",
+    "page_description": "Manage your uploaded files and folders",
+    "root": "Root Directory",
+    "empty": "No files",
+    "empty_desc": "Upload files or click the sync button to synchronize images from existing articles",
     "load_error": "Failed to load files: {{error}}",
     "no_selection": "Please select a file",
-    "folder_name_required": "Folder name is required",
+    "folder_name_required": "Folder name cannot be empty",
     "folder_create_error": "Failed to create folder: {{error}}",
     "confirm_delete": "Are you sure you want to delete {{name}}?",
     "delete_error": "Failed to delete: {{error}}",
@@ -122,15 +123,22 @@
       "size": "Size",
       "date": "Date"
     },
+    "search": "Search files",
     "search_placeholder": "Search files...",
     "grid_view": "Grid View",
     "list_view": "List View",
     "new_folder": "New Folder",
     "upload": "Upload",
     "selected": "{{count}} files selected",
+    "confirm": "Confirm",
+    "clear": "Clear",
     "confirm_selection": "Confirm Selection",
     "create_folder": "Create Folder",
-    "folder_name": "Folder Name"
+    "folder_name": "Folder Name",
+    "sync": "Sync Data",
+    "syncing": "Syncing...",
+    "sync_success": "Data synced successfully",
+    "sync_error": "Failed to sync data"
   },
   "footer": {
     "rss": "RSS Subscription Link"

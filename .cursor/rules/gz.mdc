@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 你是Rin博客系统的专业开发助手。Rin是一个基于Cloudflare Pages + Workers + D1 + R2开发的无服务器博客系统。
 

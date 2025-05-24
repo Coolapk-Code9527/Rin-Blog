@@ -6,80 +6,94 @@ import * as dotenv from 'dotenv';
 import path from 'node:path';
 import { createS3Client } from '../server/src/utils/s3';
 import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { execSync } from 'child_process';
+import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 
 // 加载环境变量
 dotenv.config({ path: './.dev.vars' });
 
+// 获取wrangler.toml中的D1数据库名称
+const D1_NAME = 'rin'; // 默认名称，通常在wrangler.toml中定义
+
 // 打印环境诊断信息
 console.log('=== 环境诊断 ===');
 console.log('当前工作目录:', process.cwd());
-console.log('D1数据库ID:', process.env.D1_ID);
+console.log('默认D1数据库名:', D1_NAME);
 console.log('S3配置:', {
     endpoint: process.env.S3_ENDPOINT,
     accessHost: process.env.S3_ACCESS_HOST,
     bucket: process.env.S3_BUCKET
 });
 
-// 创建数据库连接 - 增强错误处理
-let client;
-try {
-    // 优先尝试使用远程D1数据库
-    if (process.env.DATABASE_URL) {
-        console.log('尝试连接远程数据库...');
-        client = createClient({
-            url: process.env.DATABASE_URL
+// 使用wrangler执行D1命令
+function executeD1Command(command) {
+    try {
+        console.log(`执行D1命令: ${command}`);
+        const output = execSync(`bun run d1 execute ${D1_NAME} --command "${command}"`, {
+            encoding: 'utf8',
+            maxBuffer: 10 * 1024 * 1024 // 增加缓冲区大小到10MB
         });
-    } else if (process.env.D1_ID) {
-        console.log('使用D1连接...');
-        // 这里假设本地开发使用了Wrangler连接到D1
-        client = createClient({
-            url: `file:${process.cwd()}/local.db`
-        });
-    } else {
-        console.log('尝试连接本地数据库...');
-        client = createClient({
-            url: process.env.LOCAL_DB_URL || 'file:local.db'
-        });
+        return output.trim();
+    } catch (error) {
+        console.error('D1命令执行失败:', error.message);
+        throw error;
     }
-} catch (error) {
-    console.error('数据库连接初始化失败:', error);
-    process.exit(1);
 }
 
-const db = drizzle(client);
+// 使用wrangler执行SQL文件
+function executeD1SqlFile(sqlContent, tempFileName = 'temp-migration.sql') {
+    try {
+        // 创建临时SQL文件
+        const tempDir = path.join(process.cwd(), 'temp');
+        if (!existsSync(tempDir)) {
+            mkdirSync(tempDir);
+        }
+        const tempFile = path.join(tempDir, tempFileName);
+        writeFileSync(tempFile, sqlContent);
+        
+        console.log(`执行SQL文件: ${tempFile}`);
+        const output = execSync(`bun run d1 execute ${D1_NAME} --file=${tempFile}`, {
+            encoding: 'utf8'
+        });
+        
+        return output.trim();
+    } catch (error) {
+        console.error('SQL文件执行失败:', error.message);
+        throw error;
+    }
+}
 
 // 测试数据库连接并验证表结构
 async function validateDatabase() {
     try {
-        console.log('测试数据库连接...');
-        // 检查数据库中的表
-        const tables = await client.execute(`SELECT name FROM sqlite_master WHERE type='table'`);
-        const tableNames = tables.rows.map((row: any) => row.name);
-        console.log('数据库中的表:', tableNames.join(', '));
+        console.log('测试D1数据库连接...');
+        
+        // 获取所有表名
+        const tablesOutput = executeD1Command("SELECT name FROM sqlite_master WHERE type='table'");
+        console.log('D1数据库输出:', tablesOutput);
+        
+        // 解析表名
+        const tables = tablesOutput.split('\n')
+            .filter(line => line.trim() && !line.includes('name') && !line.includes('---'))
+            .map(line => line.trim());
+            
+        console.log('数据库中的表:', tables.join(', '));
 
         // 验证必要的表是否存在
         const requiredTables = ['feeds', 'files', 'feed_files'];
-        const missingTables = requiredTables.filter(table => !tableNames.includes(table));
+        const missingTables = requiredTables.filter(table => !tables.includes(table));
 
         if (missingTables.length > 0) {
             console.error('缺少必要的表:', missingTables.join(', '));
             console.log('你可能需要先运行数据库迁移: bun run db:migrate');
-            console.log('或者确保你连接的是正确的数据库');
             return false;
         }
 
         // 检查feeds表中是否有数据
-        const feedCount = await client.execute(`SELECT COUNT(*) as count FROM feeds`);
-        console.log(`feeds表中有 ${feedCount.rows[0].count} 条记录`);
-
-        // 检查files表结构
-        try {
-            await client.execute(`SELECT id, path, name, size, mime_type FROM files LIMIT 1`);
-            console.log('files表结构正常');
-        } catch (e) {
-            console.error('files表结构可能有问题:', e);
-            return false;
-        }
+        const feedCountOutput = executeD1Command("SELECT COUNT(*) as count FROM feeds");
+        const feedCountMatch = feedCountOutput.match(/(\d+)/);
+        const feedCount = feedCountMatch ? parseInt(feedCountMatch[1]) : 0;
+        console.log(`feeds表中大约有 ${feedCount} 条记录`);
 
         return true;
     } catch (error) {
@@ -89,43 +103,57 @@ async function validateDatabase() {
 }
 
 // 提取文章中的图片链接
-async function extractImageUrls() {
+async function extractImageUrls(): Promise<Array<{feedId: number; imageUrl: string; userId: number}>> {
     console.log('开始提取图片链接...');
     try {
-        const allFeeds = await db.select({
-            id: feeds.id,
-            content: feeds.content,
-            uid: feeds.uid
-        }).from(feeds);
-
-        console.log(`检索到 ${allFeeds.length} 篇文章`);
-
-        const extractedLinks: {
-            feedId: number;
-            imageUrl: string;
-            userId: number;
-        }[] = [];
-
+        // 使用D1直接查询包含图片的文章
+        const query = "SELECT f.id as feed_id, f.content, f.uid as user_id FROM feeds f WHERE f.content LIKE '%![](%'";
+        const output = executeD1Command(query);
+        
+        // 解析查询结果
+        const lines = output.split('\n').filter(line => 
+            line.trim() && 
+            !line.includes('feed_id') && 
+            !line.includes('---'));
+        
+        // 临时存储所有文章内容，用于解析图片
+        const tempJson = path.join(process.cwd(), 'temp', 'feeds-content.json');
+        writeFileSync(tempJson, JSON.stringify(lines));
+        console.log(`文章数据已保存到: ${tempJson}`);
+        
+        // 解析每篇文章内容中的图片URL
+        const extractedLinks: Array<{feedId: number; imageUrl: string; userId: number}> = [];
         const imageRegex = /!\[.*?\]\((.*?)\)/g;
-
-        for (const feed of allFeeds) {
-            let match;
-            const content = feed.content || '';
-            while ((match = imageRegex.exec(content)) !== null) {
-                const imageUrl = match[1].trim();
-                // 跳过外部链接
-                if (imageUrl.startsWith('http') && 
-                    !imageUrl.includes(process.env.S3_ACCESS_HOST || '') && 
-                    !imageUrl.includes(process.env.S3_ENDPOINT || '')) {
-                    console.log(`跳过外部图片: ${imageUrl}`);
+        
+        for (const line of lines) {
+            // 尝试提取行中的feed_id、content和user_id
+            const parts = line.split('|').map(part => part.trim());
+            if (parts.length >= 3) {
+                const feedId = parseInt(parts[0]);
+                const content = parts[1];
+                const userId = parseInt(parts[2]);
+                
+                if (isNaN(feedId) || isNaN(userId) || !content) {
                     continue;
                 }
                 
-                extractedLinks.push({
-                    feedId: feed.id,
-                    imageUrl,
-                    userId: feed.uid
-                });
+                let match;
+                while ((match = imageRegex.exec(content)) !== null) {
+                    const imageUrl = match[1].trim();
+                    // 跳过外部链接
+                    if (imageUrl.startsWith('http') && 
+                        !imageUrl.includes(process.env.S3_ACCESS_HOST || '') && 
+                        !imageUrl.includes(process.env.S3_ENDPOINT || '')) {
+                        console.log(`跳过外部图片: ${imageUrl}`);
+                        continue;
+                    }
+                    
+                    extractedLinks.push({
+                        feedId,
+                        imageUrl,
+                        userId
+                    });
+                }
             }
         }
 
@@ -225,7 +253,7 @@ async function checkS3ObjectExists(key: string): Promise<boolean> {
         
         return true;
     } catch (error) {
-        console.warn(`S3对象不存在或无法访问: ${key}`, error);
+        console.warn(`S3对象不存在或无法访问: ${key}`);
         return false;
     }
 }
@@ -243,6 +271,98 @@ function getHashFromUrl(url: string): string {
     
     // 否则生成一个基于URL的简单哈希
     return Buffer.from(url).toString('base64').substring(0, 40);
+}
+
+// 检查文件是否已存在
+function checkFileExists(path: string): number | null {
+    try {
+        const query = `SELECT id FROM files WHERE path = '${path}' LIMIT 1`;
+        const result = executeD1Command(query);
+        
+        // 解析查询结果
+        const matches = result.match(/(\d+)/);
+        if (matches && matches[1]) {
+            return parseInt(matches[1]);
+        }
+        return null;
+    } catch (error) {
+        console.error(`检查文件存在失败: ${path}`, error);
+        return null;
+    }
+}
+
+// 检查feed-file关系是否存在
+function checkFeedFileRelation(feedId: number, fileId: number): boolean {
+    try {
+        const query = `SELECT feed_id FROM feed_files WHERE feed_id = ${feedId} AND file_id = ${fileId} LIMIT 1`;
+        const result = executeD1Command(query);
+        
+        // 有结果表示关系已存在
+        return result.includes(feedId.toString());
+    } catch (error) {
+        console.error(`检查feed-file关系失败: ${feedId}-${fileId}`, error);
+        return false;
+    }
+}
+
+// 创建文件记录
+function createFileRecord(file: {
+    path: string,
+    name: string,
+    mimeType: string,
+    userId: number,
+    hash: string
+}): number | null {
+    try {
+        // 构建INSERT语句
+        const insertSql = `
+            INSERT INTO files (path, name, size, mime_type, user_id, access_level, is_folder, parent_path, hash, created_at, modified_at)
+            VALUES ('${file.path}', '${file.name.replace(/'/g, "''")}', 0, '${file.mimeType}', ${file.userId}, 'public', 0, '/', '${file.hash}', unixepoch(), unixepoch())
+            RETURNING id
+        `;
+        
+        const result = executeD1Command(insertSql);
+        console.log('文件创建结果:', result);
+        
+        // 解析返回的ID
+        const matches = result.match(/(\d+)/);
+        if (matches && matches[1]) {
+            return parseInt(matches[1]);
+        }
+        return null;
+    } catch (error) {
+        console.error(`创建文件记录失败: ${file.path}`, error);
+        return null;
+    }
+}
+
+// 创建feed-file关联
+function createFeedFileRelation(feedId: number, fileId: number): boolean {
+    try {
+        const insertSql = `
+            INSERT INTO feed_files (feed_id, file_id, relation_type, created_at)
+            VALUES (${feedId}, ${fileId}, 'embed', unixepoch())
+        `;
+        
+        executeD1Command(insertSql);
+        return true;
+    } catch (error) {
+        console.error(`创建feed-file关联失败: ${feedId}-${fileId}`, error);
+        return false;
+    }
+}
+
+// 批量执行SQL语句
+function executeBatchSql(statements: string[]): boolean {
+    try {
+        // 将多条SQL语句合并为一个文件并执行
+        const sqlContent = statements.join(';\n') + ';';
+        executeD1SqlFile(sqlContent);
+        return true;
+    } catch (error) {
+        console.error('批量执行SQL失败:', error);
+        return false;
+    }
 }
 
 // 迁移图片到文件系统
@@ -281,37 +401,28 @@ async function migrateImagesToFileSystem() {
         for (const [userId, links] of Object.entries(userGroups)) {
             console.log(`处理用户 ${userId} 的 ${links.length} 张图片`);
             
+            // 准备批量SQL语句
+            const batchSize = 50;
+            let sqlStatements: string[] = [];
+            
             for (const link of links) {
                 try {
-                    // 检查文件是否已经存在于数据库中（基于URL）
+                    // 提取S3键并处理路径
                     const s3Key = getS3KeyFromUrl(link.imageUrl);
                     console.log(`处理图片: ${link.imageUrl} -> S3 Key: ${s3Key}`);
                     
-                    const existingFile = await db.select({ id: files.id })
-                        .from(files)
-                        .where(eq(files.path, s3Key))
-                        .limit(1);
+                    // 检查文件是否已存在
+                    const existingFileId = checkFileExists(s3Key);
                     
-                    if (existingFile.length > 0) {
-                        console.log(`文件已存在 (ID: ${existingFile[0].id}): ${s3Key}`);
+                    if (existingFileId) {
+                        console.log(`文件已存在 (ID: ${existingFileId}): ${s3Key}`);
                         
                         // 检查是否已有feed-file关联
-                        const existingRelation = await db.select({ id: feedFiles.feedId })
-                            .from(feedFiles)
-                            .where(
-                                eq(feedFiles.feedId, link.feedId) && 
-                                eq(feedFiles.fileId, existingFile[0].id)
-                            )
-                            .limit(1);
-                        
-                        // 如果没有关联，创建关联
-                        if (existingRelation.length === 0) {
-                            await db.insert(feedFiles).values({
-                                feedId: link.feedId,
-                                fileId: existingFile[0].id,
-                                relationType: 'embed'
-                            });
-                            console.log(`为已存在的文件创建关联: ${link.imageUrl}`);
+                        if (!checkFeedFileRelation(link.feedId, existingFileId)) {
+                            // 如果没有关联，创建关联
+                            if (createFeedFileRelation(link.feedId, existingFileId)) {
+                                console.log(`为已存在的文件创建关联: ${link.imageUrl}`);
+                            }
                         } else {
                             console.log(`文件关联已存在，跳过: ${link.imageUrl}`);
                         }
@@ -322,15 +433,13 @@ async function migrateImagesToFileSystem() {
                     
                     // 如果已处理过该URL，直接创建关联
                     if (processedUrls.has(link.imageUrl)) {
+                        const processedFileId = processedUrls.get(link.imageUrl)!;
                         console.log(`URL已处理过，创建关联: ${link.imageUrl}`);
-                        // 创建feed_files关联
-                        await db.insert(feedFiles).values({
-                            feedId: link.feedId,
-                            fileId: processedUrls.get(link.imageUrl)!,
-                            relationType: 'embed'
-                        });
                         
-                        results.success++;
+                        // 创建feed-files关联
+                        if (createFeedFileRelation(link.feedId, processedFileId)) {
+                            results.success++;
+                        }
                         continue;
                     }
                     
@@ -358,52 +467,32 @@ async function migrateImagesToFileSystem() {
                     
                     console.log(`创建文件记录: ${fileName}, mime: ${mimeType}, hash: ${hash}`);
                     
-                    // 使用事务确保数据一致性
-                    try {
-                        await client.transaction(async (tx) => {
-                            const drizzleTx = drizzle(tx);
-                            
-                            // 创建文件记录
-                            const insertResult = await tx.execute({
-                                sql: `INSERT INTO files (path, name, size, mime_type, user_id, access_level, is_folder, parent_path, hash, created_at, modified_at) 
-                                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch(), unixepoch())
-                                      RETURNING id`,
-                                args: [
-                                    correctedKey,
-                                    fileName,
-                                    0, // 无法获取确切大小，使用默认值
-                                    mimeType,
-                                    Number(userId),
-                                    'public',
-                                    0,
-                                    '/',
-                                    hash
-                                ]
-                            });
-                            
-                            if (insertResult.rows.length > 0) {
-                                const fileId = insertResult.rows[0].id;
-                                processedUrls.set(link.imageUrl, fileId);
-                                
-                                // 创建feed_files关联
-                                await tx.execute({
-                                    sql: `INSERT INTO feed_files (feed_id, file_id, relation_type, created_at) 
-                                          VALUES (?, ?, ?, unixepoch())`,
-                                    args: [
-                                        link.feedId,
-                                        fileId,
-                                        'embed'
-                                    ]
-                                });
-                            }
-                        });
+                    // 创建文件记录
+                    const fileRecord = {
+                        path: correctedKey,
+                        name: fileName,
+                        mimeType,
+                        userId: Number(userId),
+                        hash
+                    };
+                    
+                    const newFileId = createFileRecord(fileRecord);
+                    
+                    if (newFileId) {
+                        processedUrls.set(link.imageUrl, newFileId);
                         
-                        results.success++;
-                        console.log(`成功处理: ${link.imageUrl}`);
-                    } catch (txError) {
-                        console.error(`事务失败: ${link.imageUrl}`, txError);
+                        // 创建feed-file关联
+                        if (createFeedFileRelation(link.feedId, newFileId)) {
+                            results.success++;
+                            console.log(`成功处理: ${link.imageUrl}`);
+                        } else {
+                            results.failed++;
+                        }
+                    } else {
+                        console.error(`创建文件记录失败: ${link.imageUrl}`);
                         results.failed++;
                     }
+                    
                 } catch (error) {
                     console.error(`处理图片 ${link.imageUrl} 失败:`, error);
                     results.failed++;
@@ -429,10 +518,23 @@ async function migrateImagesToFileSystem() {
 
 // 安全执行迁移过程
 async function runMigration() {
+    // 创建临时目录
+    const tempDir = path.join(process.cwd(), 'temp');
+    if (!existsSync(tempDir)) {
+        mkdirSync(tempDir);
+    }
+
     // 先验证数据库
     const isValid = await validateDatabase();
     if (!isValid) {
         console.error('数据库验证失败，中止迁移过程');
+        
+        // 提示如何创建缺失的表
+        console.log('\n如果需要创建必要的表，请运行:');
+        console.log('bun run db:migrate');
+        console.log('或者:');
+        console.log(`bun run d1 execute ${D1_NAME} --file=server/sql/0003.sql`);
+        
         process.exit(1);
     }
     

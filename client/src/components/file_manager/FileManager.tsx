@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
-import { formatFileSize, getFileTypeIcon } from './utils';
+import { formatFileSize, getFileTypeIcon, syncFiles } from './utils';
 import ReactLoading from "react-loading";
 import { ShowAlertType } from '../../hooks/useAlert';
 
@@ -58,6 +58,9 @@ export function FileManager({
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
   const [breadcrumbs, setBreadcrumbs] = useState<{name: string, path: string}[]>([{ name: t('files.root'), path: '/' }]);
   
+  // 同步状态
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  
   // 引用
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const folderNameInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +70,7 @@ export function FileManager({
   
   // 添加错误状态，用于显示错误信息和控制关闭功能
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // 添加请求取消处理
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -321,8 +325,8 @@ export function FileManager({
       }
 
       // 删除成功
-      setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
-      loadFiles();
+        setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
+        loadFiles();
     } catch (error: any) {
       console.error('删除文件失败:', error);
       showAlert(t('files.delete_error', { error: error.message }));
@@ -336,6 +340,30 @@ export function FileManager({
     } else {
       setSortBy(newSortBy);
       setSortOrder('asc');
+    }
+  };
+
+  // 处理同步
+  const handleSync = async () => {
+    if (isSyncing) return; // 防止重复点击
+    
+    setIsSyncing(true);
+    setSuccessMessage(null);
+    setErrorMessage(null);
+    
+    try {
+      const result = await syncFiles();
+      if (result.success) {
+        setSuccessMessage(result.message);
+        // 同步成功后重新加载文件列表
+        await loadFiles(true);
+      } else {
+        setErrorMessage(result.message);
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '同步过程中发生错误');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -545,169 +573,210 @@ export function FileManager({
     ) : null;
   };
 
-  return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
-      {/* 工具栏 */}
-      <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex flex-col space-y-4">
-        {/* 面包屑导航 */}
-        {renderBreadcrumbs()}
-        
-        {/* 搜索和操作按钮 */}
-        <div className="flex flex-wrap gap-2 justify-between">
-          <div className="flex flex-1 max-w-md">
-            <div className="relative w-full">
-              <i className="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+  // 修改操作工具栏，添加同步按钮
+  const renderOperations = () => {
+    return (
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="mr-auto">
+          <div className="flex items-center gap-2">
+            {/* 视图切换按钮 */}
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-theme text-white' : 'bg-gray-100 text-gray-600'}`}
+              title={t('files.grid_view')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-theme text-white' : 'bg-gray-100 text-gray-600'}`}
+              title={t('files.list_view')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+            </button>
+
+            {/* 搜索框 */}
+            <div className="relative">
               <input
                 type="text"
+                placeholder={t('files.search')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('files.search_placeholder')}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent"
+                className="bg-gray-100 rounded-full py-2 pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-theme"
               />
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-2 top-2.5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              </svg>
             </div>
-          </div>
-
-          <div className="flex space-x-2">
-            {/* 视图切换按钮 */}
-            <div className="flex rounded-md border border-gray-300 dark:border-gray-700">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
-                title={t('files.grid_view')}
-              >
-                <i className="ri-grid-line"></i>
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-3 py-2 ${viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
-                title={t('files.list_view')}
-              >
-                <i className="ri-list-check"></i>
-              </button>
-            </div>
-
-            {/* 新建文件夹按钮 */}
+            
+            {/* 同步按钮 */}
             <button
-              onClick={() => setShowNewFolderDialog(true)}
-              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              title={t('files.new_folder')}
+              onClick={handleSync}
+              disabled={isSyncing}
+              className={`p-2 rounded-lg ${isSyncing ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+              title={t('files.sync')}
             >
-              <i className="ri-folder-add-line"></i>
-            </button>
-
-            {/* 上传文件按钮 */}
-            <button
-              onClick={() => uploadInputRef.current?.click()}
-              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              title={t('files.upload')}
-              disabled={isUploading}
-            >
-              {isUploading ? <Loading type="spin" height={16} width={16} /> : <i className="ri-upload-2-line"></i>}
-              <input
-                ref={uploadInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={handleFileUpload}
-                accept={allowedTypes ? allowedTypes.map(type => type + '/*').join(',') : undefined}
-              />
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className={`h-5 w-5 ${isSyncing ? 'animate-spin' : ''}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                />
+              </svg>
             </button>
           </div>
         </div>
         
-        {/* 上传进度条 */}
-        {isUploading && (
-          <div className="w-full mt-2">
-            <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-theme rounded-full transition-all duration-300 ease-in-out" 
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 文件列表主体 */}
-      <div className="min-h-[300px]">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loading type="spin" height={32} width={32} />
-          </div>
-        ) : (
-          <div>
-            {viewMode === 'grid' ? renderGridView() : renderListView()}
-          </div>
-        )}
-      </div>
-      
-      {/* 分页 */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-        {renderPagination()}
-      </div>
-      
-      {/* 选择操作栏 - 多选模式 */}
-      {showSelector && multiple && selectedFiles.length > 0 && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
-          <div className="text-sm">
-            {t('files.selected', { count: selectedFiles.length })}
-          </div>
-          <Button onClick={handleConfirmSelection} title={t('files.confirm_selection')} />
+        <div className="flex gap-2">
+          {!showSelector && (
+            <>
+              <Button 
+                onClick={() => setShowNewFolderDialog(true)} 
+                title={t('files.new_folder')} 
+                secondary
+              />
+              <Button 
+                onClick={() => uploadInputRef.current?.click()} 
+                title={t('files.upload')} 
+              />
+              <input
+                type="file"
+                ref={uploadInputRef}
+                onChange={handleFileUpload}
+                className="hidden"
+                multiple
+              />
+            </>
+          )}
         </div>
+      </div>
+    );
+  };
+  
+  // 添加消息提示组件
+  const renderMessages = () => {
+    return (
+      <>
+        {errorMessage && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 relative">
+            <button 
+              onClick={() => setErrorMessage(null)}
+              className="absolute top-1 right-1 text-red-500 hover:text-red-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <p>{errorMessage}</p>
+          </div>
+        )}
+        
+        {successMessage && (
+          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 relative">
+            <button 
+              onClick={() => setSuccessMessage(null)}
+              className="absolute top-1 right-1 text-green-500 hover:text-green-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <p>{successMessage}</p>
+          </div>
+        )}
+      </>
+    );
+  };
+
+  // 修改主体渲染，添加消息组件
+  return (
+    <div className="bg-white rounded-lg shadow p-4">
+      {renderBreadcrumbs()}
+      {renderOperations()}
+      {renderMessages()}
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loading type="spin" height={50} width={50} />
+        </div>
+      ) : (
+        <>
+          {files.length === 0 ? (
+            <div className="text-center py-20 text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+              <p className="text-lg font-medium">{t('files.empty')}</p>
+              <p>{t('files.empty_desc')}</p>
+            </div>
+          ) : viewMode === 'grid' ? renderGridView() : renderListView()}
+          
+          {renderPagination()}
+          
+          {showSelector && selectedFiles.length > 0 && (
+            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white rounded-lg px-4 py-2 shadow-lg">
+              <div className="flex items-center gap-4">
+                <span>{t('files.selected', { count: selectedFiles.length })}</span>
+                <button
+                  onClick={() => setSelectedFiles([])}
+                  className="text-gray-300 hover:text-white"
+                >
+                  {t('files.clear')}
+                </button>
+                <button
+                  onClick={handleConfirmSelection}
+                  className="bg-theme px-3 py-1 rounded hover:bg-theme-hover"
+                >
+                  {t('files.confirm')}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
       
       {/* 新建文件夹对话框 */}
       {showNewFolderDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+          <div className="bg-white rounded-lg p-6 w-96 relative">
+            <button
+              onClick={() => setShowNewFolderDialog(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
             <h3 className="text-lg font-medium mb-4">{t('files.create_folder')}</h3>
             <input
               ref={folderNameInputRef}
               type="text"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent mb-4"
+              className="w-full border rounded-lg p-2 mb-4"
               placeholder={t('files.folder_name')}
-              autoFocus
             />
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowNewFolderDialog(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                {t('cancel')}
-              </button>
-              <Button onClick={handleCreateFolder} title={t('create')} />
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* 错误信息对话框 */}
-      {errorMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-lg font-medium text-red-600 mb-4">{t('alert')}</h3>
-            <p className="mb-6">{t('files.load_error', { error: errorMessage })}</p>
             <div className="flex justify-end gap-2">
               <button
-                onClick={() => loadFiles(true)}
-                className="px-4 py-2 bg-theme hover:bg-theme-hover text-white rounded-md transition-colors"
+                onClick={() => setShowNewFolderDialog(false)}
+                className="px-4 py-2 rounded-lg border"
               >
-                {t('reload')}
+                {t('common.cancel')}
               </button>
               <button
-                onClick={closeErrorDialog}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+                onClick={handleCreateFolder}
+                className="px-4 py-2 rounded-lg bg-theme text-white"
               >
-                {t('close')}
-              </button>
-              <button
-                onClick={() => {
-                  closeErrorDialog();
-                  window.location.href = '/'; // 添加返回主页选项
-                }}
-                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors"
-              >
-                {t('index.back')}
+                {t('common.create')}
               </button>
             </div>
           </div>

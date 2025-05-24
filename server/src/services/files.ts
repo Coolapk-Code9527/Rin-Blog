@@ -51,6 +51,55 @@ function getMimeTypeFromFileName(fileName: string): string {
     return mimeTypes[extension] || 'application/octet-stream';
 }
 
+// 从URL中提取文件名
+function getFileNameFromUrl(url: string): string {
+    const urlObj = new URL(url, 'http://example.com'); // 添加基础URL以支持相对路径
+    const pathname = urlObj.pathname;
+    const segments = pathname.split('/');
+    const fileName = segments[segments.length - 1];
+    return fileName;
+}
+
+// 从内容中提取媒体引用
+function extractMediaReferences(content: string): string[] {
+    const references: string[] = [];
+    
+    // 提取Markdown图片语法: ![alt](url)
+    const imageRegex = /!\[.*?\]\((.*?)\)/g;
+    let match;
+    while ((match = imageRegex.exec(content)) !== null) {
+        if (match[1] && !references.includes(match[1])) {
+            references.push(match[1]);
+        }
+    }
+    
+    // 提取HTML图片标签: <img src="url">
+    const imgTagRegex = /<img[^>]*src=["'](.*?)["'][^>]*>/g;
+    while ((match = imgTagRegex.exec(content)) !== null) {
+        if (match[1] && !references.includes(match[1])) {
+            references.push(match[1]);
+        }
+    }
+    
+    // 提取HTML视频标签: <video src="url">
+    const videoTagRegex = /<video[^>]*src=["'](.*?)["'][^>]*>/g;
+    while ((match = videoTagRegex.exec(content)) !== null) {
+        if (match[1] && !references.includes(match[1])) {
+            references.push(match[1]);
+        }
+    }
+    
+    // 提取HTML音频标签: <audio src="url">
+    const audioTagRegex = /<audio[^>]*src=["'](.*?)["'][^>]*>/g;
+    while ((match = audioTagRegex.exec(content)) !== null) {
+        if (match[1] && !references.includes(match[1])) {
+            references.push(match[1]);
+        }
+    }
+    
+    return references;
+}
+
 export function FileService() {
     const env = getEnv();
     const endpoint = env.S3_ENDPOINT;
@@ -615,6 +664,166 @@ export function FileService() {
                     body: t.Object({
                         name: t.Optional(t.String()),
                         accessLevel: t.Optional(t.String()),
+                    }),
+                })
+
+                // 同步文章中的媒体文件
+                .post('/sync', async ({ uid, query, set }) => {
+                    if (!uid) {
+                        set.status = 401;
+                        return { error: 'Unauthorized' };
+                    }
+
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+
+                    try {
+                        // 获取指定的文章ID（可选）
+                        const feedId = query.feedId ? Number(query.feedId) : undefined;
+                        
+                        // 查询文章
+                        let feedsQuery = db.select({
+                            id: feeds.id,
+                            content: feeds.content,
+                            uid: feeds.uid
+                        }).from(feeds);
+                        
+                        // 如果指定了文章ID，只同步该文章
+                        if (feedId) {
+                            feedsQuery = feedsQuery.where(eq(feeds.id, feedId));
+                        }
+                        
+                        const feedsData = await feedsQuery;
+                        
+                        // 统计信息
+                        let processedCount = 0;
+                        let createdCount = 0;
+                        let updatedCount = 0;
+                        let skippedCount = 0;
+                        let errorCount = 0;
+                        const errors: string[] = [];
+                        
+                        // 用于记录已处理的文件路径，避免重复处理
+                        const processedPaths = new Set<string>();
+                        
+                        // 处理每篇文章
+                        for (const feed of feedsData) {
+                            try {
+                                // 提取媒体引用
+                                const mediaRefs = extractMediaReferences(feed.content);
+                                
+                                // 跳过没有媒体的文章
+                                if (mediaRefs.length === 0) {
+                                    continue;
+                                }
+                                
+                                processedCount++;
+                                
+                                // 处理每个媒体引用
+                                for (const mediaUrl of mediaRefs) {
+                                    try {
+                                        // 跳过已处理的路径
+                                        if (processedPaths.has(mediaUrl)) {
+                                            continue;
+                                        }
+                                        processedPaths.add(mediaUrl);
+                                        
+                                        // 检查文件是否已存在
+                                        const existingFile = await db
+                                            .select()
+                                            .from(files)
+                                            .where(eq(files.path, mediaUrl));
+                                        
+                                        let fileId: number;
+                                        
+                                        if (existingFile.length > 0) {
+                                            // 文件已存在，使用现有ID
+                                            fileId = existingFile[0].id;
+                                            updatedCount++;
+                                        } else {
+                                            // 创建新文件记录
+                                            const fileName = getFileNameFromUrl(mediaUrl);
+                                            const mimeType = getMimeTypeFromFileName(fileName);
+                                            
+                                            // 计算基本哈希作为临时标识
+                                            const tempHash = Buffer.from(mediaUrl).toString('hex').substring(0, 16);
+                                            
+                                            // 插入新文件记录
+                                            const result = await db
+                                                .insert(files)
+                                                .values({
+                                                    path: mediaUrl,
+                                                    name: fileName,
+                                                    size: 0, // 无法确定实际大小，后续可优化
+                                                    mimeType: mimeType,
+                                                    userId: feed.uid,
+                                                    accessLevel: 'public',
+                                                    isFolder: 0,
+                                                    parentPath: '/',
+                                                    hash: tempHash,
+                                                })
+                                                .returning({ id: files.id });
+                                            
+                                            fileId = result[0].id;
+                                            createdCount++;
+                                        }
+                                        
+                                        // 检查文章-文件关联是否已存在
+                                        const existingAssoc = await db
+                                            .select()
+                                            .from(feedFiles)
+                                            .where(
+                                                and(
+                                                    eq(feedFiles.feedId, feed.id),
+                                                    eq(feedFiles.fileId, fileId)
+                                                )
+                                            );
+                                        
+                                        // 如果关联不存在，创建关联
+                                        if (existingAssoc.length === 0) {
+                                            await db
+                                                .insert(feedFiles)
+                                                .values({
+                                                    feedId: feed.id,
+                                                    fileId: fileId,
+                                                    relationType: 'embed',
+                                                    displayOrder: 0,
+                                                });
+                                        }
+                                    } catch (mediaError: any) {
+                                        errorCount++;
+                                        errors.push(`处理媒体链接 ${mediaUrl} 失败: ${mediaError.message}`);
+                                    }
+                                }
+                            } catch (feedError: any) {
+                                errorCount++;
+                                errors.push(`处理文章ID ${feed.id} 失败: ${feedError.message}`);
+                            }
+                        }
+                        
+                        // 返回同步结果
+                        return {
+                            success: true,
+                            stats: {
+                                processed: processedCount,
+                                created: createdCount,
+                                updated: updatedCount,
+                                skipped: skippedCount,
+                                errors: errorCount,
+                            },
+                            errors: errors.length > 0 ? errors.slice(0, 10) : undefined, // 只返回前10个错误
+                        };
+                    } catch (error: any) {
+                        console.error('Sync error:', error);
+                        set.status = 500;
+                        return { error: error.message || 'Internal server error' };
+                    }
+                }, {
+                    query: t.Object({
+                        feedId: t.Optional(t.String()), // 可选，指定同步特定文章
                     }),
                 })
         );

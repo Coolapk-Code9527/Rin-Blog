@@ -116,6 +116,7 @@
     "page_description": "管理你上传的文件和文件夹",
     "root": "根目录",
     "empty": "暂无文件",
+    "empty_desc": "上传文件或点击同步按钮同步现有文章中的图片",
     "load_error": "加载文件失败: {{error}}",
     "no_selection": "请选择一个文件",
     "folder_name_required": "文件夹名称不能为空",
@@ -127,15 +128,22 @@
       "size": "大小",
       "date": "日期"
     },
+    "search": "搜索文件",
     "search_placeholder": "搜索文件...",
     "grid_view": "网格视图",
     "list_view": "列表视图",
     "new_folder": "新建文件夹",
-    "upload": "上传",
+    "upload": "上传文件",
     "selected": "已选择 {{count}} 个文件",
+    "confirm": "确认",
+    "clear": "清除",
     "confirm_selection": "确认选择",
     "create_folder": "创建文件夹",
-    "folder_name": "文件夹名称"
+    "folder_name": "文件夹名称",
+    "sync": "同步数据",
+    "syncing": "同步中...",
+    "sync_success": "数据同步成功",
+    "sync_error": "数据同步失败"
   },
   "footer": {
     "rss": "RSS 订阅链接"
