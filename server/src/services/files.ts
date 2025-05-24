@@ -633,15 +633,21 @@ export function FileService() {
                     }
 
                     try {
-                        // 记录初始状态
+                        // 获取S3配置
+                        const env = getEnv();
+                        const accessHost = env.S3_ACCESS_HOST || env.S3_ENDPOINT;
+                        const folder = env.S3_FOLDER || '';
+                        
                         console.log(`开始同步操作，用户ID: ${uid}`);
+                        console.log(`存储配置: 访问主机=${accessHost}，文件夹前缀=${folder}`);
                         
                         // 1. 获取所有文章内容
                         const allFeeds = await db
                             .select({
                                 id: feeds.id,
                                 content: feeds.content,
-                                uid: feeds.uid
+                                uid: feeds.uid,
+                                title: feeds.title,  // 添加标题用于调试
                             })
                             .from(feeds);
                         
@@ -656,6 +662,7 @@ export function FileService() {
                             url: string; 
                             feedId: number;
                             userId: number;
+                            feedTitle: string; // 添加标题用于调试
                         }> = [];
                         
                         for (const feed of allFeeds) {
@@ -673,7 +680,8 @@ export function FileService() {
                                 extractedImages.push({
                                     url: match[1],
                                     feedId: feed.id,
-                                    userId: feed.uid
+                                    userId: feed.uid,
+                                    feedTitle: feed.title || '未命名文章'
                                 });
                             }
                             
@@ -682,12 +690,18 @@ export function FileService() {
                                 extractedImages.push({
                                     url: match[1],
                                     feedId: feed.id,
-                                    userId: feed.uid
+                                    userId: feed.uid,
+                                    feedTitle: feed.title || '未命名文章'
                                 });
                             }
                         }
                         
                         console.log(`从文章中提取了 ${extractedImages.length} 个图片URL`);
+                        
+                        // 打印提取的URL以便调试
+                        extractedImages.forEach((img, idx) => {
+                            console.log(`[${idx}] 从文章"${img.feedTitle}"提取的图片URL: ${img.url}`);
+                        });
                         
                         // 3. 过滤有效的图片URL
                         const validImages = extractedImages.filter(img => {
@@ -712,17 +726,50 @@ export function FileService() {
                         
                         console.log(`去重后的URL: ${uniqueUrls.size} 个`);
                         
-                        // 5. 检查哪些URL已有文件记录
+                        // 5. 获取现有文件记录
                         const existingFiles = await db
                             .select({
                                 path: files.path,
-                                id: files.id
+                                id: files.id,
+                                hash: files.hash,
+                                name: files.name
                             })
                             .from(files);
                         
                         console.log(`数据库中现有文件记录: ${existingFiles.length} 个`);
+                        existingFiles.forEach((file, idx) => {
+                            if (idx < 10) { // 只打印前10个避免日志过多
+                                console.log(`现有文件 ${idx}: path=${file.path}, name=${file.name}, hash=${file.hash}`);
+                            }
+                        });
                         
-                        const existingPaths = new Map(existingFiles.map(f => [f.path, f.id]));
+                        // 构建路径映射，考虑不同的URL格式
+                        const existingPaths = new Map();
+                        const existingHashes = new Map();
+                        
+                        existingFiles.forEach(file => {
+                            existingPaths.set(file.path, file.id);
+                            
+                            // 如果是完整URL，也添加相对路径版本
+                            if (file.path.startsWith('http')) {
+                                try {
+                                    const url = new URL(file.path);
+                                    const pathOnly = url.pathname;
+                                    existingPaths.set(pathOnly, file.id);
+                                    
+                                    // 如果路径包含文件夹前缀，也添加不带前缀的版本
+                                    if (folder && pathOnly.startsWith(`/${folder}`)) {
+                                        const pathWithoutPrefix = pathOnly.substring(folder.length + 1);
+                                        existingPaths.set(`/${pathWithoutPrefix}`, file.id);
+                                    }
+                                } catch (e) {
+                                    // 无效URL，忽略
+                                }
+                            }
+                            
+                            // 保存哈希映射
+                            existingHashes.set(file.hash, file.id);
+                        });
                         
                         // 6. 为新URL创建文件记录
                         const newFiles = [];
@@ -731,8 +778,42 @@ export function FileService() {
                         for (const img of uniqueUrls.values()) {
                             console.log(`处理URL: ${img.url}`);
                             
+                            // 创建可能的URL变体来检查
+                            const possiblePaths = [img.url];
+                            
+                            // 如果URL是相对路径，也检查带有访问主机的完整URL
+                            if (img.url.startsWith('/')) {
+                                possiblePaths.push(`${accessHost}${img.url}`);
+                                
+                                // 如果没有文件夹前缀，尝试添加
+                                if (folder && !img.url.startsWith(`/${folder}`)) {
+                                    possiblePaths.push(`${accessHost}/${folder}${img.url.substring(1)}`);
+                                }
+                            }
+                            
+                            // 如果是完整URL，也检查相对路径版本
+                            if (img.url.startsWith('http')) {
+                                try {
+                                    const url = new URL(img.url);
+                                    possiblePaths.push(url.pathname);
+                                } catch (e) {
+                                    // 无效URL，忽略
+                                }
+                            }
+                            
+                            console.log(`检查可能的路径变体: ${possiblePaths.join(', ')}`);
+                            
                             // 检查是否已存在记录
-                            if (!existingPaths.has(img.url)) {
+                            let existingFileId = null;
+                            for (const path of possiblePaths) {
+                                if (existingPaths.has(path)) {
+                                    existingFileId = existingPaths.get(path);
+                                    console.log(`找到匹配的文件记录，ID: ${existingFileId}, 匹配路径: ${path}`);
+                                    break;
+                                }
+                            }
+                            
+                            if (!existingFileId) {
                                 console.log(`URL ${img.url} 在数据库中不存在，创建新记录`);
                                 
                                 // 提取文件名
@@ -782,7 +863,6 @@ export function FileService() {
                                 }
                             } else {
                                 // 文件已存在，创建关联
-                                const existingFileId = existingPaths.get(img.url);
                                 console.log(`文件已存在，ID: ${existingFileId}`);
                                 
                                 // 检查是否已存在关联
@@ -816,17 +896,21 @@ export function FileService() {
                         let relationsCreated = 0;
                         for (const relation of newRelations) {
                             if (relation.feedId && relation.fileId) {
-                                await db
-                                    .insert(feedFiles)
-                                    .values({
-                                        feedId: relation.feedId,
-                                        fileId: relation.fileId,
-                                        relationType: 'embed',
-                                        displayOrder: 0
-                                    })
-                                    .onConflictDoNothing();
-                                
-                                relationsCreated++;
+                                try {
+                                    await db
+                                        .insert(feedFiles)
+                                        .values({
+                                            feedId: relation.feedId,
+                                            fileId: relation.fileId,
+                                            relationType: 'embed',
+                                            displayOrder: 0
+                                        })
+                                        .onConflictDoNothing();
+                                    
+                                    relationsCreated++;
+                                } catch (insertError) {
+                                    console.error(`创建关联失败:`, insertError);
+                                }
                             }
                         }
                         
