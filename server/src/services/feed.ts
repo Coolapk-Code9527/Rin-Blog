@@ -11,6 +11,7 @@ import {extractImage} from "../utils/image";
 import {markdownToPlainText} from "../utils/markdown";
 import {bindTagToPost} from "./tag";
 import { getR2FileMeta } from '../utils/s3';
+import { getEnv } from '../utils/di';
 
 export function FeedService() {
     return new Elysia({ aot: false })
@@ -736,6 +737,8 @@ function extractFileReferences(content: string): string[] {
 
 // 辅助函数：同步文件引用到files/feed_files
 async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
+  const env = getEnv();
+  const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+|\/+$/g, '') + '/';
   let refs = extractFileReferences(content).filter(Boolean);
   let filteredRefs = refs.filter(
     x => typeof x === 'string' && x.length > 1 && x.startsWith('/') && !x.startsWith('http://') && !x.startsWith('https://')
@@ -743,33 +746,39 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
   if (filteredRefs.length === 0) return;
   const filesTable = db.schema?.files || db.files;
   const feedFilesTable = db.schema?.feedFiles || db.feedFiles;
-  // 查询已存在的files
-  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(filteredRefs));
+  // 查询已存在的files（原始路径和加S3_FOLDER前缀的路径都查）
+  const allPaths = [
+    ...filteredRefs,
+    ...filteredRefs.map(p => '/' + S3_FOLDER + p.replace(/^\//, ''))
+  ];
+  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(allPaths));
   const pathToId = new Map<string, number>(Array.isArray(filesInDb) ? filesInDb.filter(f => typeof f.id === 'number' && typeof f.path === 'string').map((f: {path: string, id: number}) => [f.path, f.id]) : []);
   // 自动补录缺失文件
   for (const path of filteredRefs) {
-    if (!pathToId.has(path)) {
+    let r2Path = S3_FOLDER + path.replace(/^\//, '');
+    if (!pathToId.has(r2Path)) {
       try {
         // 从R2获取元信息
-        const meta = await getR2FileMeta(path);
+        const meta = await getR2FileMeta('/' + r2Path);
         if (!meta) continue;
         const name = path.split('/').pop() || path;
         const mimeType = meta.mimeType || 'application/octet-stream';
         const size = meta.size || 0;
         const hash = meta.hash || '';
         const insertRes = await db.insert(filesTable).values({
-          path,
+          path: r2Path,
           name,
           size,
           mimeType,
           userId: userId || 1,
+          parentPath: '/',
           hash
         }).returning({id: filesTable.id});
         if (insertRes && insertRes[0] && typeof insertRes[0].id === 'number') {
-          pathToId.set(path, insertRes[0].id);
+          pathToId.set(r2Path, insertRes[0].id);
         }
       } catch (e) {
-        console.warn('自动补录文件失败:', path, e);
+        console.warn('自动补录文件失败:', r2Path, e);
         continue;
       }
     }
@@ -779,9 +788,10 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
   // 插入新关联
   let order = 0;
   for (const path of filteredRefs) {
-    const fileId = pathToId.get(path);
+    let r2Path = S3_FOLDER + path.replace(/^\//, '');
+    const fileId = pathToId.get(r2Path);
     if (typeof fileId !== 'number') {
-      console.warn('同步失败：本地图片未上传且R2无此文件，files表无此记录，跳过', path);
+      console.warn('同步失败：本地图片未上传且R2无此文件，files表无此记录，跳过', r2Path);
       continue;
     }
     try {
@@ -792,7 +802,7 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
         displayOrder: order++
       });
     } catch (e) {
-      console.error('插入feedFiles异常:', e, { feedId, fileId, path });
+      console.error('插入feedFiles异常:', e, { feedId, fileId, r2Path });
       continue;
     }
   }

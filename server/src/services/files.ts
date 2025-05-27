@@ -659,10 +659,13 @@ export function FileService() {
                         return { error: 'Permission denied' };
                     }
                     const db = getDB();
+                    const env = getEnv();
+                    const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+|\/+$/g, '') + '/';
                     const r2Files = await listAllR2Files();
                     let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
                     for (const path of r2Files) {
                         try {
+                            // path本身已带images/前缀
                             const exist = await db.select({id: files.id}).from(files).where(eq(files.path, path));
                             if (exist && exist.length > 0) { skipped++; continue; }
                             const meta = await getR2FileMeta(path);
@@ -672,11 +675,12 @@ export function FileService() {
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
                             await db.insert(files).values({
-                                path,
+                                path: path.replace(/^\//, ''),
                                 name,
                                 size,
                                 mimeType,
                                 userId: uid || 1,
+                                parentPath: '/',
                                 hash
                             });
                             inserted++;
