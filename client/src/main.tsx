@@ -13,6 +13,7 @@ import { siteName } from './utils/constants'
 import { listenSystemMode } from './utils/darkModeUtils'
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { ApiClient } from './types/api';
+import { StagewiseToolbar } from '@stagewise/toolbar-react';
 
 // 模拟API服务器类型，临时替代 'rin-server/src/server' 模块
 // 在实际使用中，应该导入正确的服务器类型
@@ -84,3 +85,17 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 )
 Modal.setAppElement('#root');
+
+// 开发环境下挂载stagewise工具栏
+if (isDev) {
+  const toolbarConfig = { plugins: [] };
+  let toolbarRoot = document.getElementById('stagewise-toolbar-root');
+  if (!toolbarRoot) {
+    toolbarRoot = document.createElement('div');
+    toolbarRoot.id = 'stagewise-toolbar-root';
+    document.body.appendChild(toolbarRoot);
+  }
+  ReactDOM.createRoot(toolbarRoot).render(
+    <StagewiseToolbar config={toolbarConfig} />
+  );
+}

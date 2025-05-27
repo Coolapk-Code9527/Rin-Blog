@@ -108,14 +108,14 @@ export function FileService() {
                                     ...(search ? [like(files.name, `%${search}%`)] : [])
                                 )
                             )
-                            // 应用排序
+                        // 应用排序
                             .orderBy(
                                 sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
                                 sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
                                 sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
                                 asc(files.name)
                             )
-                            // 添加分页
+                        // 添加分页
                             .limit(limit)
                             .offset(offset);
 
@@ -631,16 +631,18 @@ export function FileService() {
                     // 扫描所有文章内容
                     const allFeeds = await db.select({ id: feeds.id, content: feeds.content, uid: feeds.uid }).from(feeds);
                     let total = 0, success = 0, failed = 0;
+                    const failedDetails: any[] = [];
                     for (const feed of allFeeds) {
                         try {
                             await syncFeedFileReferences(db, feed.id, feed.content, feed.uid);
                             success++;
-                        } catch (e) {
+                        } catch (e: any) {
                             failed++;
+                            failedDetails.push({ feedId: feed.id, error: e?.message || String(e) });
                         }
                         total++;
                     }
-                    return { total, success, failed };
+                    return { total, success, failed, failedDetails };
                 })
         );
 } 

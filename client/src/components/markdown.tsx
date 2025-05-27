@@ -240,14 +240,15 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             rounded: boolean;
             scale: string;
           }) => (
-            // @ts-ignore - 忽略OptimizedImage的类型错误
-            <OptimizedImage
-              src={src}
-              alt={props.alt}
-              onClick={() => show(src)}
-              className={`mx-auto ${rounded ? "rounded-xl" : ""}`}
-              style={{ zoom: scale }}
-            />
+            <span className={`mx-auto ${rounded ? "rounded-xl" : ""}`} style={{ zoom: scale }}>
+              <img
+                src={src}
+                alt={props.alt}
+                onClick={() => show(src)}
+                className={rounded ? "rounded-xl" : ""}
+                style={{ cursor: 'pointer' }}
+              />
+            </span>
           );
           
           if (

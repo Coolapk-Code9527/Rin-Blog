@@ -128,6 +128,11 @@ export function FileManager({
         } catch (e) {
           console.error('Error parsing error response:', e);
         }
+        if (response.status === 401 || response.status === 403) {
+          alert(t('login.required'));
+          window.location.href = '/login';
+          return;
+        }
         throw new Error(errorText);
       }
 
@@ -350,6 +355,9 @@ export function FileManager({
       const data = await res.json();
       if (res.ok) {
         setSyncResult(t('files.sync_success', { total: data.total, success: data.success, failed: data.failed }));
+        if (data.failedDetails && data.failedDetails.length > 0) {
+          alert('同步失败详情：\n' + data.failedDetails.map((d: any) => `文章ID:${d.feedId} 错误:${d.error}`).join('\n'));
+        }
         loadFiles(true);
       } else {
         setSyncResult(t('files.sync_failed', { error: data.error || res.status }));

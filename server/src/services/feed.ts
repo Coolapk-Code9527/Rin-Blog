@@ -168,6 +168,10 @@ export function FeedService() {
                         set.status = 403;
                         return 'Permission denied';
                     }
+                    if (!uid) {
+                        set.status = 401;
+                        return 'Unauthorized';
+                    }
                     if (!title) {
                         set.status = 400;
                         return 'Title is required';
@@ -691,31 +695,49 @@ async function clearFeedCache(id: number, alias: string | null, newAlias: string
 // 辅助函数：提取内容中的文件引用
 function extractFileReferences(content: string): string[] {
   const references: string[] = [];
-  // 图片 ![]()
-  const imageRegex = /!\[.*?\]\((.*?)\)/g;
-  let match;
-  while ((match = imageRegex.exec(content)) !== null) {
-    references.push(match[1]);
-  }
-  // 链接 []()
-  const linkRegex = /(?<!!)\[.*?\]\((.*?)\)/g;
-  while ((match = linkRegex.exec(content)) !== null) {
-    references.push(match[1]);
-  }
-  // 媒体 <audio|video src="...">
-  const mediaRegex = /<(audio|video)[^>]*src=['"](.*?)['"][^>]*>/g;
-  while ((match = mediaRegex.exec(content)) !== null) {
-    references.push(match[2]);
+  if (!content || typeof content !== 'string') return references;
+  try {
+    // 图片 ![]()
+    const imageRegex = /!\[.*?\]\((.*?)\)/g;
+    let match;
+    while ((match = imageRegex.exec(content)) !== null) {
+      references.push(match[1]);
+    }
+    // 链接 []()
+    const linkRegex = /(?<!!)\[.*?\]\((.*?)\)/g;
+    while ((match = linkRegex.exec(content)) !== null) {
+      references.push(match[1]);
+    }
+    // 媒体 <audio|video src="...">
+    const mediaRegex = /<(audio|video)[^>]*src=['"](.*?)['"][^>]*>/g;
+    while ((match = mediaRegex.exec(content)) !== null) {
+      references.push(match[2]);
+    }
+  } catch (e) {
+    // 兼容历史异常内容，直接跳过
   }
   return references;
 }
 
 // 辅助函数：同步文件引用到files/feed_files
 async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
+  // 调试日志
+  console.log('syncFeedFileReferences 调试:', {
+    dbKeys: Object.keys(db),
+    dbSchemaKeys: db.schema ? Object.keys(db.schema) : undefined,
+    dbFiles: db.files,
+    dbFeedFiles: db.feedFiles,
+    userId,
+    feedId,
+    content,
+  });
+  const filesTable = db.schema?.files || db.files;
+  const feedFilesTable = db.schema?.feedFiles || db.feedFiles;
   const refs = extractFileReferences(content).filter(Boolean);
+  console.log('syncFeedFileReferences refs:', refs, 'filesTable:', filesTable, 'feedFilesTable:', feedFilesTable);
   if (refs.length === 0) return;
   // 先查已有files
-  const filesInDb = await db.select({id: db.schema.files.id, path: db.schema.files.path}).from(db.schema.files).where(db.schema.files.path.in(refs));
+  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(refs));
   const pathToId = new Map<string, number>(filesInDb.map((f: {path: string, id: number}) => [f.path, f.id]));
   // 批量补全files表
   for (const path of refs) {
@@ -723,25 +745,25 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
       // 简单推断类型
       const name = path.split('/').pop() || path;
       const mimeType = name.includes('.') ? name.split('.').pop() : 'application/octet-stream';
-      const inserted = await db.insert(db.schema.files).values({
+      const inserted = await db.insert(filesTable).values({
         path,
         name,
         size: 0,
         mimeType,
         userId,
         hash: name,
-      }).returning({id: db.schema.files.id});
+      }).returning({id: filesTable.id});
       pathToId.set(path, inserted[0].id);
     }
   }
   // 清空旧关联
-  await db.delete(db.schema.feedFiles).where(db.schema.feedFiles.feedId.eq(feedId));
+  await db.delete(feedFilesTable).where(feedFilesTable.feedId.eq(feedId));
   // 插入新关联
   let order = 0;
   for (const path of refs) {
     const fileId = pathToId.get(path);
     if (fileId) {
-      await db.insert(db.schema.feedFiles).values({
+      await db.insert(feedFilesTable).values({
         feedId,
         fileId,
         relationType: 'embed',

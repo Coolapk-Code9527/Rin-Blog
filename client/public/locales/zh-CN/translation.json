@@ -135,7 +135,18 @@
     "selected": "已选择 {{count}} 个文件",
     "confirm_selection": "确认选择",
     "create_folder": "创建文件夹",
-    "folder_name": "文件夹名称"
+    "folder_name": "文件夹名称",
+    "references": "引用详情",
+    "ref_count": "被引用",
+    "ref_detail": "文件引用详情",
+    "ref_none": "该文件未被任何文章引用",
+    "ref_no_title": "无标题文章",
+    "ref_load_error": "引用详情加载失败",
+    "sync": "数据同步",
+    "syncing": "同步中...",
+    "sync_confirm": "确定要同步所有文章文件引用吗？",
+    "sync_success": "同步完成：共{{total}}篇，成功{{success}}，失败{{failed}}",
+    "sync_failed": "同步失败：{{error}}"
   },
   "footer": {
     "rss": "RSS 订阅链接"
@@ -302,7 +313,8 @@
     "success": "上传成功",
     "image_only": "只能上传图片",
     "title": "上传",
-    "uploading": "上传中..."
+    "uploading": "上传中...",
+    "max_size": "最大 {{size}}MB"
   },
   "uploading": "上传中...",
   "url": "站点 URL",

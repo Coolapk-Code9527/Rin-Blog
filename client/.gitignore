@@ -31,3 +31,7 @@ FileScopeMCP
 FileScopeMCP*
 FileScopeMCP-tree.json
 Rin_Blog_bak/
+
+# Stagewise dev-tool
+.stagewise/
+stagewise.config.*
