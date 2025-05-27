@@ -12,12 +12,12 @@ import {markdownToPlainText} from "../utils/markdown";
 import {bindTagToPost} from "./tag";
 
 export function FeedService() {
+    const db: DB = getDB();
     return new Elysia({ aot: false })
         .use(setup())
         .group('/feed', (group) =>
             group
                 .get('/', async ({ admin, set, query: { page, limit, type, cursor } }) => {
-                    const db: DB = getDB();
                     if ((type === 'draft' || type === 'unlisted') && !admin) {
                         set.status = 403;
                         return 'Permission denied';
@@ -152,7 +152,6 @@ export function FeedService() {
                     })
                 })
                 .get('/timeline', async () => {
-                    const db: DB = getDB();
                     const where = and(eq(feeds.draft, 0), eq(feeds.listed, 1));
                     return (await db.query.feeds.findMany({
                         where: where,
@@ -165,14 +164,9 @@ export function FeedService() {
                     }))
                 })
                 .post('/', async ({ admin, set, uid, body: { title, alias, listed, content, summary, draft, tags, createdAt } }) => {
-                    const db: DB = getDB();
                     if (!admin) {
                         set.status = 403;
                         return 'Permission denied';
-                    }
-                    if (!uid) {
-                        set.status = 401;
-                        return 'Unauthorized';
                     }
                     if (!title) {
                         set.status = 400;
@@ -217,19 +211,12 @@ export function FeedService() {
                         set.status = 500;
                         return 'Failed to insert';
                     } else {
-                        // 自动同步文件引用，失败只记录日志不影响主流程
-                        try {
-                            await syncFeedFileReferences(db, result[0].insertedId, content, uid);
-                        } catch (e: any) {
-                            console.error('syncFeedFileReferences自动同步失败:', e);
-                        }
                         return result[0];
-                    }
+                        }
                     } catch (error) {
                         console.error("Error creating feed:", error);
                         set.status = 500;
-                        const err = error as any;
-                        return err?.message ? `${err.message}\n${err.stack || ''}` : String(err);
+                        return "Internal Server Error";
                     }
                 }, {
                     body: t.Object({
@@ -244,7 +231,6 @@ export function FeedService() {
                     })
                 })
                 .get('/:id', async ({ uid, admin, set, headers, params: { id } }) => {
-                    const db: DB = getDB();
                     const id_num = parseInt(id);
                     const cache = PublicCache();
                     const cacheKey = `feed_${id}`;
@@ -301,7 +287,6 @@ export function FeedService() {
                     return data;
                 })
                 .get("/adjacent/:id", async ({ set, params: { id } }) => {
-                    const db: DB = getDB();
                     let id_num: number;
                     if (isNaN(parseInt(id))) {
                         const aliasRecord = await db
@@ -429,7 +414,6 @@ export function FeedService() {
                     params: { id },
                     body: { title, listed, content, summary, alias, draft, top, tags, createdAt }
                 }) => {
-                    const db: DB = getDB();
                     const id_num = parseInt(id);
                     const feed = await db.query.feeds.findFirst({
                         where: eq(feeds.id, id_num)
@@ -457,10 +441,6 @@ export function FeedService() {
                         await bindTagToPost(db, id_num, tags);
                     }
                     await clearFeedCache(id_num, feed.alias, alias || null);
-                    // 自动同步文件引用
-                    if (content) {
-                        await syncFeedFileReferences(db, id_num, content, uid);
-                    }
                     return 'Updated';
                 }, {
                     body: t.Object({
@@ -482,7 +462,6 @@ export function FeedService() {
                     params: { id },
                     body: { top }
                 }) => {
-                    const db: DB = getDB();
                     const id_num = parseInt(id);
                     const feed = await db.query.feeds.findFirst({
                         where: eq(feeds.id, id_num)
@@ -506,7 +485,6 @@ export function FeedService() {
                     })
                 })
                 .delete('/:id', async ({ admin, set, uid, params: { id } }) => {
-                    const db: DB = getDB();
                     const id_num = parseInt(id);
                     const feed = await db.query.feeds.findFirst({
                         where: eq(feeds.id, id_num)
@@ -525,7 +503,6 @@ export function FeedService() {
                 })
         )
         .get('/search/:keyword', async ({ admin, params: { keyword }, query: { page, limit } }) => {
-            const db: DB = getDB();
             keyword = decodeURI(keyword);
             const cache = PublicCache();
             const page_num = (page ? page > 0 ? page : 1 : 1) - 1;
@@ -595,7 +572,6 @@ export function FeedService() {
             })
         })
         .post('wp', async ({ set, admin, body: { data } }) => {
-            const db: DB = getDB();
             if (!admin) {
                 set.status = 403;
                 return 'Permission denied';
@@ -680,7 +656,6 @@ export function FeedService() {
         })
 }
 
-export { syncFeedFileReferences };
 
 type FeedItem = {
     title: string;
@@ -704,110 +679,4 @@ async function clearFeedCache(id: number, alias: string | null, newAlias: string
         await cache.delete(`feed_${alias}`, false);
     if (newAlias)
         await cache.delete(`feed_${newAlias}`, false);
-}
-
-// 辅助函数：提取内容中的文件引用
-function extractFileReferences(content: string): string[] {
-  const references: string[] = [];
-  if (!content || typeof content !== 'string') return references;
-  try {
-    // 图片 ![]()
-    const imageRegex = /!\[.*?\]\((.*?)\)/g;
-    let match;
-    while ((match = imageRegex.exec(content)) !== null) {
-      references.push(match[1]);
-    }
-    // 链接 []()
-    const linkRegex = /(?<!!)\[.*?\]\((.*?)\)/g;
-    while ((match = linkRegex.exec(content)) !== null) {
-      references.push(match[1]);
-    }
-    // 媒体 <audio|video src="...">
-    const mediaRegex = /<(audio|video)[^>]*src=['"](.*?)['"][^>]*>/g;
-    while ((match = mediaRegex.exec(content)) !== null) {
-      references.push(match[2]);
-    }
-  } catch (e) {
-    // 兼容历史异常内容，直接跳过
-  }
-  return references;
-}
-
-// 辅助函数：同步文件引用到files/feed_files
-async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
-  // 调试日志
-  console.log('syncFeedFileReferences 调试:', {
-    dbKeys: Object.keys(db),
-    dbSchemaKeys: db.schema ? Object.keys(db.schema) : undefined,
-    dbFiles: db.files,
-    dbFeedFiles: db.feedFiles,
-    userId,
-    feedId,
-    content,
-  });
-  const filesTable = db.schema?.files || db.files;
-  const feedFilesTable = db.schema?.feedFiles || db.feedFiles;
-  const refs = extractFileReferences(content).filter(Boolean);
-  console.log('syncFeedFileReferences refs:', refs, 'filesTable:', filesTable, 'feedFilesTable:', feedFilesTable);
-  if (refs.length === 0) return;
-  // 先查已有files
-  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(refs));
-  const pathToId = new Map<string, number>(filesInDb.map((f: {path: string, id: number}) => [f.path, f.id]));
-  // 批量补全files表
-  for (const path of refs) {
-    // 跳过外链和无效路径
-    if (!path || !path.startsWith('/') || path.startsWith('http://') || path.startsWith('https://')) {
-      continue;
-    }
-    if (!pathToId.has(path)) {
-      // 简单推断类型
-      const name = path.split('/').pop() || path;
-      const mimeType = name.includes('.') ? name.split('.').pop() : 'application/octet-stream';
-      let safeUserId = userId;
-      if (!safeUserId) {
-        console.error('syncFeedFileReferences: userId为空，自动回退为1，path:', path);
-        safeUserId = 1;
-      }
-      try {
-        // 插入前先查是否已存在该path
-        const exist = await db.select({id: filesTable.id}).from(filesTable).where(filesTable.path.eq(path));
-        if (exist && exist.length > 0) {
-          pathToId.set(path, exist[0].id);
-          continue;
-        }
-        const inserted = await db.insert(filesTable).values({
-          path,
-          name,
-          size: 0,
-          mimeType,
-          userId: safeUserId,
-          hash: name,
-        }).returning({id: filesTable.id});
-        if (Array.isArray(inserted) && inserted.length > 0 && inserted[0] && inserted[0].id) {
-          pathToId.set(path, inserted[0].id);
-        } else {
-          console.error('syncFeedFileReferences插入files表未返回id:', { path, name, mimeType, userId: safeUserId, inserted });
-          continue;
-        }
-      } catch (e: any) {
-        console.error('syncFeedFileReferences插入files表异常:', e, { path, name, mimeType, userId: safeUserId });
-        continue;
-      }
-    }
-  }
-  // 清空旧关联
-  await db.delete(feedFilesTable).where(feedFilesTable.feedId.eq(feedId));
-  // 插入新关联
-  let order = 0;
-  for (const path of refs) {
-    const fileId = pathToId.get(path);
-    if (fileId) {
-      await db.insert(feedFilesTable).values({
-        feedId,
-        fileId,
-        relationType: 'embed',
-        displayOrder: order++
-      });
-    }
-  }
 }

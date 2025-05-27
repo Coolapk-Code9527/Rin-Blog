@@ -1,0 +1,435 @@
+{
+  "about": {
+    "notfound": "将文章别名设置为 about 可以创建关于页面",
+    "title": "关于"
+  },
+  "alert": "提示",
+  "alias": "别名",
+  "article": {
+    "delete": {
+      "confirm": "确定删除这篇文章吗？",
+      "title": "删除文章"
+    },
+    "search": {
+      "placeholder": "请输入关键字",
+      "title": "搜索",
+      "title$keyword": "搜索：{{keyword}}",
+      "history": "搜索历史",
+      "clear_history": "清除历史"
+    },
+    "title": "文章",
+    "top": {
+      "confirm": "确定置顶这篇文章吗？",
+      "success": "置顶成功",
+      "title": "置顶"
+    },
+    "total_short$count_one": "{{count}} 篇",
+    "total_short$count_other": "{{count}} 篇",
+    "total$count_one": "共有 {{count}} 篇文章",
+    "total$count_other": "共有 {{count}} 篇文章",
+    "untop": {
+      "confirm": "确定取消置顶这篇文章吗？",
+      "success": "取消置顶成功",
+      "title": "取消置顶"
+    },
+    "public_description": "公开发布的文章，所有人可见",
+    "navigation": "相关文章"
+  },
+  "avatar": {
+    "url": "头像 URL"
+  },
+  "cancel": "取消",
+  "clear": "清除",
+  "close": "关闭",
+  "comment": {
+    "empty_content": "评论内容不能为空",
+    "empty_list": "暂无评论，来说点什么吧",
+    "placeholder": {
+      "title": "说点什么吧"
+    },
+    "submit": "发表评论",
+    "success": "评论成功",
+    "title": "评论",
+    "anonymous": {
+      "title": "匿名评论",
+      "nickname": "昵称",
+      "nickname_empty": "昵称不能为空",
+      "nickname_placeholder": "请输入昵称",
+      "switch": "匿名评论",
+      "tag": "匿名用户"
+    },
+    "list": {
+      "title": "全部评论 ({{count}}条)"
+    },
+    "pagination": {
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第 {{page}} 页",
+      "title": "评论分页"
+    }
+  },
+  "comparison": "对比",
+  "confirm": "确认",
+  "content": {
+    "empty": "内容不能为空",
+    "placeholder": "还没有内容。在左侧编辑区域开始写作。"
+  },
+  "count": {
+    "pv": "浏览数",
+    "uv": "访客数"
+  },
+  "create": {
+    "success": "创建成功",
+    "title": "创建"
+  },
+  "created_at": "发布时间",
+  "delete": {
+    "comment": {
+      "confirm": "确定要删除这条评论吗？",
+      "title": "删除评论"
+    },
+    "confirm": "确定要删除吗？",
+    "success": "删除成功",
+    "title": "删除"
+  },
+  "description": "描述",
+  "draft": "草稿",
+  "draft_bin": "草稿箱",
+  "edit": "编辑",
+  "error": {
+    "api_url": "你目前使用的是开发环境的API地址，这不会在生产环境中工作",
+    "api_url_slash": "你的API地址不应该以 / 结尾",
+    "github_callback": "GitHub回调URL格式错误，请检查 API_URL 环境变量是否正确",
+    "not_found": "页面未找到",
+    "page_not_exist": "你访问的页面不存在或已被移除",
+    "back_home": "返回首页",
+    "go_back": "返回上页"
+  },
+  "feed": "动态",
+  "feed_card": {
+    "published$time": "发布于 {{time}}",
+    "updated$time": "更新于 {{time}}"
+  },
+  "files": {
+    "title": "文件管理",
+    "page_title": "文件管理",
+    "page_description": "管理你上传的文件和文件夹",
+    "root": "根目录",
+    "empty": "暂无文件",
+    "load_error": "加载文件失败: {{error}}",
+    "no_selection": "请选择一个文件",
+    "folder_name_required": "文件夹名称不能为空",
+    "folder_create_error": "创建文件夹失败: {{error}}",
+    "confirm_delete": "确定要删除 {{name}} 吗?",
+    "delete_error": "删除失败: {{error}}",
+    "columns": {
+      "name": "名称",
+      "size": "大小",
+      "date": "日期"
+    },
+    "search_placeholder": "搜索文件...",
+    "grid_view": "网格视图",
+    "list_view": "列表视图",
+    "new_folder": "新建文件夹",
+    "upload": "上传",
+    "selected": "已选择 {{count}} 个文件",
+    "confirm_selection": "确认选择",
+    "create_folder": "创建文件夹",
+    "folder_name": "文件夹名称"
+  },
+  "footer": {
+    "rss": "RSS 订阅链接"
+  },
+  "friend": {
+    "add": "添加友链",
+    "apply": {
+      "desc": "填写下面的表单申请成为本站的友链",
+      "disable": "站长已关闭申请入口",
+      "email": "邮箱地址（非必填）",
+      "name": "网站名称",
+      "place": "站点分组（非必填）",
+      "success": "申请成功，请等待站长审核",
+      "title": "申请友链",
+      "url": "网站地址"
+    },
+    "edit": "编辑友链",
+    "empty": "还没有添加任何友链",
+    "icon": "头像",
+    "import": "批量导入",
+    "link_count": "链接数量",
+    "linked": "已添加",
+    "name": "名称",
+    "order": "排序",
+    "place": "分组",
+    "search": "搜索",
+    "success": "添加成功",
+    "title": "友链",
+    "url": "网址"
+    },
+  "input": {
+    "required": "此项必填"
+  },
+  "last_updated": "最近更新",
+  "listed": "展示在文章列表",
+  "load_failed": "加载失败，请稍后重试",
+  "loading": "加载中",
+  "login": {
+    "oauth_only": "请登录后继续",
+    "password": {
+      "placeholder": "请输入密码"
+    },
+    "required": "请登录后继续",
+    "title": "登录",
+    "username": {
+      "placeholder": "请输入用户名"
+    }
+  },
+  "logout": "退出登录",
+  "main_content": "正文",
+  "next": "下一篇",
+  "no_more": "没有更多了",
+  "preview": "预览",
+  "preview.image": "图片",
+  "previous": "上一篇",
+  "publish": {
+    "success": "发布成功",
+    "title": "发布"
+  },
+  "publishing": "发布中...",
+  "reload": "重试",
+  "save": "已保存",
+  "scroll_sync": "滚动同步",
+  "more_options": "更多选项",
+  "settings": {
+    "cache": {
+      "clear": {
+        "confirm": {
+          "desc": "缓存用于减少访问数据库频率，请仅在缓存错误时尝试清空缓存。",
+          "title": "确认清空缓存吗？"
+        },
+        "desc": "清除所有缓存文件",
+        "title": "清除缓存"
+      },
+      "clear_failed$message": "清除缓存失败: {{message}}"
+    },
+    "comment": {
+      "enable": {
+        "desc": "开启/关闭文章底部评论入口与评论区",
+        "title": "启用评论"
+      }
+    },
+    "counter": {
+      "enable": {
+        "desc": "启用统计文章 PV 与 UV 功能",
+        "title": "启用访问量统计"
+      }
+    },
+    "favicon": {
+      "desc": "设置显示于浏览器地址栏的图标（Favicon）",
+      "title": "网站图标",
+      "update": {
+        "success": "网站图标更新成功",
+        "failed$message": "网站图标更新失败，{{message}}"
+      }
+    },
+    "footer": {
+      "desc": "设置显示于网站底部的内容（HTML）",
+      "title": "网站底部内容"
+    },
+    "friend": {
+      "apply": {
+        "desc": "允许其他用户申请友情链接（需审核）",
+        "title": "友情链接申请"
+      },
+      "health": {
+        "desc": "启用友链可访问性检查",
+        "title": "友链健康监测",
+        "ua": {
+          "desc": "设置友链可访问性检查时使用的 User-Agent, 默认 'Rin-Check/1.0'",
+          "title": "友链健康监测 User-Agent"
+        }
+      },
+      "title": "友链设置"
+    },
+    "get_config_failed$message": "获取配置失败，{{message}}",
+    "import_failed$message": "导入失败，{{message}}",
+    "import_result": "导入结果",
+    "import_skipped": "跳过导入",
+    "import_skipped_item$title$reason": "《{{title}}》- {{reason}}",
+    "import_success$success$skipped": "导入成功，{{success}} 篇文章导入成功，{{skipped}} 篇文章跳过",
+    "login": {
+      "enable": {
+        "desc": "开启/关闭右上角登录按钮，关闭后可通过「双击」底部文字 \"© 2024 Powered by\" 「三次」触发登录入口",
+        "title": "启用右上角登录按钮"
+      }
+    },
+    "other": {
+      "title": "其他设置"
+    },
+    "rss": {
+      "desc": "启用站点底部 RSS 订阅链接",
+      "title": "RSS 订阅链接"
+    },
+    "title": "设置",
+    "update_failed$message": "更新失败: {{message}}",
+    "wordpress": {
+      "desc": "上传 WordPress 导出的 XML 文件",
+      "title": "从 WordPress 导入"
+    }
+  },
+  "sitename": "站点名称",
+  "status": "状态",
+  "summary": "简介",
+  "tags": "标签",
+  "timeline": "时间轴",
+  "title": "标题",
+  "title_empty": "标题不能为空",
+  "top": {
+    "title": "置顶"
+  },
+  "unlisted": "未列出",
+  "untop": {
+    "title": "取消置顶"
+  },
+  "update": {
+    "success": "更新成功",
+    "title": "更新"
+  },
+  "update$sth": "更新 {{sth}}",
+  "upload": {
+    "failed": "上传失败: {{error}}",
+    "failed$size": "文件太大 (最大 {{size}}MB)",
+    "success": "上传成功",
+    "image_only": "只能上传图片",
+    "title": "上传",
+    "uploading": "上传中..."
+  },
+  "uploading": "上传中...",
+  "url": "站点 URL",
+  "visible": {
+    "self_only": "仅自己可见"
+  },
+  "writing": "写作",
+  "year$year": "{{year}} 年",
+  "templates": {
+    "templates": "模板",
+    "insert": "插入模板",
+    "save": "保存",
+    "cancel": "取消",
+    "save_selection": "保存所选内容",
+    "template_name": "模板名称",
+    "default": "默认模板",
+    "custom": "自定义模板",
+    "delete": "删除模板",
+    "table": "表格",
+    "header": "表头",
+    "content": "内容",
+    "code_block": "代码块",
+    "quote": "引用",
+    "todo_list": "待办列表",
+    "image_gallery": "图片库",
+    "callout": "提示框",
+    "mermaid": "Mermaid 图表"
+  },
+  "drop_or_click_to_upload": "拖放图片至此或点击上传",
+  "editing": "编辑中...",
+  "languages": "语言",
+  "logged_in": "已登录",
+  "unnamed": "未命名",
+  "published_at": "发布于",
+  "date_format": {
+    "month_day": "MM/DD"
+  },
+  "github_login": "GitHub 登录",
+  "home": "首页",
+  "index": {
+    "back": "返回首页",
+    "empty": {
+      "title": "目录为空"
+    },
+    "title": "目录"
+  },
+  "hashtags": "标签",
+  "friends": {
+    "apply": "申请友情链接",
+    "create": "创建友情链接",
+    "left": "暂时离开",
+    "my_apply": "我的申请",
+    "review": {
+      "accepted": "已接受",
+      "rejected": "已拒绝",
+      "waiting": "待审核"
+    },
+    "title": "朋友"
+  },
+  "markdown": {
+    "heading": "标题",
+    "bold": "粗体",
+    "italic": "斜体",
+    "link": "链接",
+    "quote": "引用",
+    "unordered_list": "无序列表",
+    "ordered_list": "有序列表",
+    "code": "代码",
+    "image": "图片",
+    "strikethrough": "删除线",
+    "highlight": "文本高亮",
+    "divider": "分割线",
+    "task_list": "待办列表",
+    "table": "表格",
+    "superscript": "上标",
+    "subscript": "下标",
+    "date": "插入日期",
+    "format": "格式",
+    "lists": "列表",
+    "insert": "插入",
+    "advanced": "高级",
+    "tools": "工具"
+  },
+  "history": {
+    "title": "编辑历史",
+    "empty": "暂无历史记录",
+    "restore": "恢复此版本",
+    "delete": "删除记录",
+    "clear_all": "清空全部历史",
+    "confirm_clear": "确定要清空所有历史记录吗？这个操作无法撤销。",
+    "confirm": "确认清空",
+    "description": "描述",
+    "untitled": "无标题文章",
+    "auto_save": "自动保存",
+    "manual_save": "手动保存",
+    "save_snapshot": "保存快照",
+    "save_success": "历史快照已保存",
+    "restored": "已恢复",
+    "restore_success": "已成功恢复历史版本"
+  },
+  "drafts": {
+    "title": "草稿管理",
+    "count": "个草稿",
+    "empty": "暂无草稿",
+    "no_results": "没有找到匹配的草稿",
+    "search": "搜索草稿",
+    "load": "加载草稿",
+    "delete": "删除草稿",
+    "save_current": "保存当前文章",
+    "clear_all": "清空所有草稿",
+    "confirm_clear": "确定要清空所有草稿吗？此操作无法撤销。",
+    "confirm": "确认清空",
+    "untitled": "无标题草稿",
+    "save_success": "草稿已保存",
+    "load_success": "草稿已加载"
+  },
+  "code": {
+    "copy": "复制",
+    "copied": "已复制!"
+  },
+  "user": "用户",
+  "menu": "菜单",
+  "loading_more": "加载更多...",
+  "new_article": "新建文章",
+  "no_articles": "暂无文章",
+  "no_articles_description": "这里还没有任何文章，之后会添加的~",
+  "image_load_error": "图片加载失败",
+  "unlisted_description": "未列出的文章，有链接才能访问",
+  "draft_description": "文章草稿区，仅自己可见"
+}

@@ -71,21 +71,6 @@ export function FileManager({
   // 添加请求取消处理
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 新增同步状态
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<string | null>(null);
-
-  // 新增同步详情弹窗状态
-  const [syncDetailOpen, setSyncDetailOpen] = useState(false);
-  const [syncDetailList, setSyncDetailList] = useState<any[]>([]);
-
-  // 新增引用详情弹窗状态
-  const [refDialogOpen, setRefDialogOpen] = useState(false);
-  const [refDialogFile, setRefDialogFile] = useState<FileItem | null>(null);
-  const [refDialogLoading, setRefDialogLoading] = useState(false);
-  const [refDialogRefs, setRefDialogRefs] = useState<{id:number,title:string,type:string}[]>([]);
-  const [refDialogError, setRefDialogError] = useState<string|null>(null);
-
   // 加载文件列表
   const loadFiles = async (reload = false) => {
     try {
@@ -131,11 +116,6 @@ export function FileManager({
           }
         } catch (e) {
           console.error('Error parsing error response:', e);
-        }
-        if (response.status === 401 || response.status === 403) {
-          alert(t('login.required'));
-          window.location.href = '/login';
-          return;
         }
         throw new Error(errorText);
       }
@@ -346,55 +326,6 @@ export function FileManager({
     }
   };
 
-  // 同步处理函数
-  const handleSyncFiles = async () => {
-    if (!window.confirm(t('files.sync_confirm'))) return;
-    setIsSyncing(true);
-    setSyncResult(null);
-    setSyncDetailList([]);
-    try {
-      const res = await fetch(`${endpoint}/files/sync`, {
-        method: 'POST',
-        headers: headersWithAuth(),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSyncResult(t('files.sync_success', { total: data.total, success: data.success, failed: data.failed }));
-        if (data.failedDetails && data.failedDetails.length > 0) {
-          setSyncDetailList(data.failedDetails);
-          setSyncDetailOpen(true);
-        }
-        loadFiles(true);
-      } else {
-        setSyncResult(t('files.sync_failed', { error: data.error || res.status }));
-      }
-    } catch (e: any) {
-      setSyncResult(t('files.sync_failed', { error: e.message }));
-    }
-    setIsSyncing(false);
-  };
-
-  // 打开引用详情弹窗
-  const handleShowReferences = async (file: FileItem) => {
-    setRefDialogFile(file);
-    setRefDialogOpen(true);
-    setRefDialogLoading(true);
-    setRefDialogError(null);
-    setRefDialogRefs([]);
-    try {
-      const res = await fetch(`${endpoint}/files/${file.id}`, { headers: headersWithAuth() });
-      const data = await res.json();
-      if (res.ok && data.references) {
-        setRefDialogRefs(data.references);
-      } else {
-        setRefDialogError(data.error || t('files.ref_load_error'));
-      }
-    } catch (e: any) {
-      setRefDialogError(e.message);
-    }
-    setRefDialogLoading(false);
-  };
-
   // 渲染网格视图
   const renderGridView = () => {
     return (
@@ -418,17 +349,6 @@ export function FileManager({
             <p className="text-xs text-gray-500 mt-1">
               {file.isFolder ? '' : formatFileSize(file.size)}
             </p>
-            
-            {/* 引用计数按钮 */}
-            {!file.isFolder && (
-              <button
-                className="absolute bottom-1 right-1 text-xs text-blue-500 hover:underline bg-white/80 dark:bg-gray-900/80 rounded px-2 py-0.5"
-                onClick={e => { e.stopPropagation(); handleShowReferences(file); }}
-                title={t('files.references')}
-              >
-                {file.references ? file.references.length : '-'} {t('files.ref_count')}
-              </button>
-            )}
             
             {/* 删除按钮 */}
             <button 
@@ -531,13 +451,6 @@ export function FileManager({
                   {new Date(file.modifiedAt * 1000).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-3 text-sm text-right">
-                  <button 
-                    className="text-blue-500 hover:underline text-xs mr-2"
-                    onClick={e => { e.stopPropagation(); handleShowReferences(file); }}
-                    title={t('files.references')}
-                  >
-                    {file.references ? file.references.length : '-'} {t('files.ref_count')}
-                  </button>
                   <button 
                     className="text-red-500 hover:text-red-700 transition-colors p-1"
                     onClick={(e) => { e.stopPropagation(); handleDeleteFile(file); }}
@@ -686,10 +599,6 @@ export function FileManager({
                 accept={allowedTypes ? allowedTypes.map(type => type + '/*').join(',') : undefined}
               />
             </button>
-
-            {/* 数据同步按钮 */}
-            <Button onClick={handleSyncFiles} title={isSyncing ? t('files.syncing') : t('files.sync')} secondary={true} />
-            {syncResult && <span className="ml-2 text-xs text-green-600 dark:text-green-400">{syncResult}</span>}
           </div>
         </div>
         
@@ -787,64 +696,6 @@ export function FileManager({
               >
                 {t('index.back')}
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 引用详情弹窗 */}
-      {refDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-lg font-medium mb-4">{t('files.ref_detail')}</h3>
-            {refDialogLoading ? (
-              <div className="text-center text-gray-500">{t('loading')}</div>
-            ) : refDialogError ? (
-              <div className="text-red-500">{refDialogError}</div>
-            ) : refDialogRefs.length === 0 ? (
-              <div className="text-gray-500">{t('files.ref_none')}</div>
-            ) : (
-              <ul className="space-y-2">
-                {refDialogRefs.map(ref => (
-                  <li key={ref.id}>
-                    <a href={`/feed/${ref.id}`} target="_blank" rel="noopener" className="text-blue-600 hover:underline">
-                      {ref.title || t('files.ref_no_title')}
-                    </a>
-                    <span className="ml-2 text-xs text-gray-400">[{ref.type}]</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="flex justify-end mt-6">
-              <button onClick={() => setRefDialogOpen(false)} className="px-4 py-2 bg-theme text-white rounded-md">{t('close')}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 同步详情弹窗 */}
-      {syncDetailOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full shadow-2xl">
-            <h3 className="text-lg font-medium mb-4">{t('files.sync_failed')}</h3>
-            <div className="max-h-80 overflow-y-auto text-xs">
-              {syncDetailList.map((d, i) => (
-                <details key={i} className="mb-2">
-                  <summary className="cursor-pointer text-theme">文章ID: {d.feedId} UID: {d.uid}</summary>
-                  <div className="mt-1 whitespace-pre-wrap break-all">
-                    <b>内容片段:</b> {d.contentSnippet}
-                    <br /><b>错误:</b> {d.error}
-                    {d.stack && <><br /><b>堆栈:</b> {d.stack}</>}
-                  </div>
-                </details>
-              ))}
-            </div>
-            <div className="flex justify-end mt-6 gap-2">
-              <button onClick={() => {
-                const text = syncDetailList.map(d => `文章ID:${d.feedId} UID:${d.uid}\n内容:${d.contentSnippet}\n错误:${d.error}\n${d.stack ? '堆栈:' + d.stack : ''}`).join('\n---\n');
-                navigator.clipboard.writeText(text);
-              }} className="px-4 py-2 bg-theme text-white rounded-md">{t('copy')}</button>
-              <button onClick={() => setSyncDetailOpen(false)} className="px-4 py-2 bg-gray-500 text-white rounded-md">{t('close')}</button>
             </div>
           </div>
         </div>

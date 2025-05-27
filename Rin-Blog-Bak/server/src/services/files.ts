@@ -7,7 +7,6 @@ import { files, feedFiles, feeds } from "../db/schema";
 import { setup } from "../setup";
 import { getEnv, getDB } from "../utils/di";
 import { createS3Client } from "../utils/s3";
-import { syncFeedFileReferences } from './feed';
 
 // 定义引用接口
 interface FileReference {
@@ -84,8 +83,8 @@ export function FileService() {
                     const offset = (page - 1) * limit;
 
                     try {
-                        // 构建查询条件并链式调用
-                        const result = await db
+                        // 构建查询条件
+                        let query = db
                             .select({
                                 id: files.id,
                                 path: files.path,
@@ -107,19 +106,21 @@ export function FileService() {
                                     ...(type ? [like(files.mimeType, `${type}/%`)] : []),
                                     ...(search ? [like(files.name, `%${search}%`)] : [])
                                 )
-                            )
-                        // 应用排序
-                            .orderBy(
-                                sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
-                                sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
-                                sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
-                                asc(files.name)
-                            )
-                        // 添加分页
-                            .limit(limit)
-                            .offset(offset);
+                            );
 
-                        const resultData = await result;
+                        // 应用排序
+                        if (sort === 'name') {
+                            query = order === 'asc' ? query.orderBy(asc(files.name)) : query.orderBy(desc(files.name));
+                        } else if (sort === 'size') {
+                            query = order === 'asc' ? query.orderBy(asc(files.size)) : query.orderBy(desc(files.size));
+                        } else if (sort === 'date') {
+                            query = order === 'asc' ? query.orderBy(asc(files.modifiedAt)) : query.orderBy(desc(files.modifiedAt));
+                        }
+
+                        // 添加分页
+                        query = query.limit(limit).offset(offset);
+
+                        const result = await query;
 
                         // 获取总数
                         const countQuery = await db
@@ -135,7 +136,7 @@ export function FileService() {
                             );
 
                         return {
-                            files: resultData.map((file: any) => ({
+                            files: result.map((file: any) => ({
                                 ...file,
                                 modifiedAt: file.modifiedAt ? 
                                     (typeof file.modifiedAt === 'object' ? 
@@ -615,40 +616,6 @@ export function FileService() {
                         name: t.Optional(t.String()),
                         accessLevel: t.Optional(t.String()),
                     }),
-                })
-
-                // 同步文件
-                .post('/sync', async ({ uid, admin, set }) => {
-                    if (!admin) {
-                        set.status = 403;
-                        return { error: 'Permission denied' };
-                    }
-                    const db = getDB();
-                    if (!db) {
-                        set.status = 500;
-                        return { error: 'Database connection not available' };
-                    }
-                    // 扫描所有文章内容
-                    const allFeeds = await db.select({ id: feeds.id, content: feeds.content, uid: feeds.uid }).from(feeds);
-                    let total = 0, success = 0, failed = 0;
-                    const failedDetails: any[] = [];
-                    for (const feed of allFeeds) {
-                        try {
-                            await syncFeedFileReferences(db, feed.id, feed.content, feed.uid);
-                            success++;
-                        } catch (e: any) {
-                            failed++;
-                            failedDetails.push({
-                                feedId: feed.id,
-                                uid: feed.uid,
-                                contentSnippet: (feed.content || '').slice(0, 100),
-                                error: e?.message || String(e),
-                                stack: e?.stack || ''
-                            });
-                        }
-                        total++;
-                    }
-                    return { total, success, failed, failedDetails };
                 })
         );
 } 
