@@ -750,50 +750,28 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
   const refs = extractFileReferences(content).filter(Boolean);
   console.log('syncFeedFileReferences refs:', refs, 'filesTable:', filesTable, 'feedFilesTable:', feedFilesTable);
   if (refs.length === 0) return;
-  // 先查已有files
-  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(refs));
+  let filteredRefs = refs.filter(x => typeof x === 'string' && x.length > 1);
+  // 只查一次已有files
+  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(filteredRefs));
   const pathToId = new Map<string, number>(filesInDb.map((f: {path: string, id: number}) => [f.path, f.id]));
-  // 批量补全files表
-  for (const path of refs) {
-    // 跳过外链和无效路径
-    if (!path || !path.startsWith('/') || path.startsWith('http://') || path.startsWith('https://')) {
+  for (const path of filteredRefs) {
+    if (!path.startsWith('/') || path.startsWith('http://') || path.startsWith('https://')) {
+      console.warn('无效文件引用path:', path);
       continue;
     }
-    if (!pathToId.has(path)) {
-      // 简单推断类型
-      const name = path.split('/').pop() || path;
-      const mimeType = name.includes('.') ? name.split('.').pop() : 'application/octet-stream';
-      let safeUserId = userId;
-      if (!safeUserId) {
-        console.error('syncFeedFileReferences: userId为空，自动回退为1，path:', path);
-        safeUserId = 1;
-      }
-      try {
-        // 插入前先查是否已存在该path
-        const exist = await db.select({id: filesTable.id}).from(filesTable).where(filesTable.path.eq(path));
-        if (exist && exist.length > 0) {
-          pathToId.set(path, exist[0].id);
-          continue;
-        }
-        const inserted = await db.insert(filesTable).values({
-          path,
-          name,
-          size: 0,
-          mimeType,
-          userId: safeUserId,
-          hash: name,
-        }).returning({id: filesTable.id});
-        if (Array.isArray(inserted) && inserted.length > 0 && inserted[0] && inserted[0].id) {
-          pathToId.set(path, inserted[0].id);
-        } else {
-          console.error('syncFeedFileReferences插入files表未返回id:', { path, name, mimeType, userId: safeUserId, inserted });
-          continue;
-        }
-      } catch (e: any) {
-        console.error('syncFeedFileReferences插入files表异常:', e, { path, name, mimeType, userId: safeUserId });
-        continue;
-      }
+    const fileId = pathToId.get(path);
+    if (typeof fileId !== 'number') {
+      console.warn('files表不存在该path或fileId无效，跳过:', path, fileId);
+      continue;
     }
+    // debug日志
+    console.log('插入feedFiles:', { feedId, fileId, path });
+    await db.insert(feedFilesTable).values({
+      feedId,
+      fileId,
+      relationType: 'embed',
+      displayOrder: 0
+    });
   }
   // 清空旧关联
   await db.delete(feedFilesTable).where(feedFilesTable.feedId.eq(feedId));
