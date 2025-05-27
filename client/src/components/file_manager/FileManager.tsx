@@ -71,6 +71,10 @@ export function FileManager({
   // 添加请求取消处理
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // 新增同步状态
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+
   // 加载文件列表
   const loadFiles = async (reload = false) => {
     try {
@@ -324,6 +328,29 @@ export function FileManager({
       setSortBy(newSortBy);
       setSortOrder('asc');
     }
+  };
+
+  // 同步处理函数
+  const handleSyncFiles = async () => {
+    if (!window.confirm(t('files.sync_confirm'))) return;
+    setIsSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch(`${endpoint}/files/sync`, {
+        method: 'POST',
+        headers: headersWithAuth(),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSyncResult(t('files.sync_success', { total: data.total, success: data.success, failed: data.failed }));
+        loadFiles(true);
+      } else {
+        setSyncResult(t('files.sync_failed', { error: data.error || res.status }));
+      }
+    } catch (e: any) {
+      setSyncResult(t('files.sync_failed', { error: e.message }));
+    }
+    setIsSyncing(false);
   };
 
   // 渲染网格视图
@@ -599,6 +626,10 @@ export function FileManager({
                 accept={allowedTypes ? allowedTypes.map(type => type + '/*').join(',') : undefined}
               />
             </button>
+
+            {/* 数据同步按钮 */}
+            <Button onClick={handleSyncFiles} title={isSyncing ? t('files.syncing') : t('files.sync')} secondary={true} />
+            {syncResult && <span className="ml-2 text-xs text-green-600 dark:text-green-400">{syncResult}</span>}
           </div>
         </div>
         

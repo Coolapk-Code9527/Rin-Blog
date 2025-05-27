@@ -662,6 +662,7 @@ export function FeedService() {
         })
 }
 
+export { syncFeedFileReferences };
 
 type FeedItem = {
     title: string;
@@ -710,7 +711,7 @@ function extractFileReferences(content: string): string[] {
 }
 
 // 辅助函数：同步文件引用到files/feed_files
-export async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
+async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
   const refs = extractFileReferences(content).filter(Boolean);
   if (refs.length === 0) return;
   // 先查已有files

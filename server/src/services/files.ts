@@ -84,8 +84,8 @@ export function FileService() {
                     const offset = (page - 1) * limit;
 
                     try {
-                        // 构建查询条件
-                        let baseQuery = db
+                        // 构建查询条件并链式调用
+                        const result = await db
                             .select({
                                 id: files.id,
                                 path: files.path,
@@ -107,15 +107,19 @@ export function FileService() {
                                     ...(type ? [like(files.mimeType, `${type}/%`)] : []),
                                     ...(search ? [like(files.name, `%${search}%`)] : [])
                                 )
-                            );
+                            )
+                            // 应用排序
+                            .orderBy(
+                                sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
+                                sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
+                                sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
+                                asc(files.name)
+                            )
+                            // 添加分页
+                            .limit(limit)
+                            .offset(offset);
 
-                        // 应用排序和分页
-                        const result = await (
-                            sort === 'name' ? (order === 'asc' ? baseQuery.orderBy(asc(files.name)) : baseQuery.orderBy(desc(files.name))) :
-                            sort === 'size' ? (order === 'asc' ? baseQuery.orderBy(asc(files.size)) : baseQuery.orderBy(desc(files.size))) :
-                            sort === 'date' ? (order === 'asc' ? baseQuery.orderBy(asc(files.modifiedAt)) : baseQuery.orderBy(desc(files.modifiedAt))) :
-                            baseQuery
-                        ).limit(limit).offset(offset);
+                        const resultData = await result;
 
                         // 获取总数
                         const countQuery = await db
@@ -131,7 +135,7 @@ export function FileService() {
                             );
 
                         return {
-                            files: result.map((file: any) => ({
+                            files: resultData.map((file: any) => ({
                                 ...file,
                                 modifiedAt: file.modifiedAt ? 
                                     (typeof file.modifiedAt === 'object' ? 
@@ -625,11 +629,11 @@ export function FileService() {
                         return { error: 'Database connection not available' };
                     }
                     // 扫描所有文章内容
-                    const allFeeds = await db.select({ id: feeds.id, content: feeds.content, userId: feeds.uid }).from(feeds);
+                    const allFeeds = await db.select({ id: feeds.id, content: feeds.content, uid: feeds.uid }).from(feeds);
                     let total = 0, success = 0, failed = 0;
                     for (const feed of allFeeds) {
                         try {
-                            await syncFeedFileReferences(db, feed.id, feed.content, feed.userId);
+                            await syncFeedFileReferences(db, feed.id, feed.content, feed.uid);
                             success++;
                         } catch (e) {
                             failed++;
