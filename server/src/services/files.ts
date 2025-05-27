@@ -7,6 +7,7 @@ import { files, feedFiles, feeds } from "../db/schema";
 import { setup } from "../setup";
 import { getEnv, getDB } from "../utils/di";
 import { createS3Client } from "../utils/s3";
+import { syncFeedFileReferences } from './feed';
 
 // 定义引用接口
 interface FileReference {
@@ -84,7 +85,7 @@ export function FileService() {
 
                     try {
                         // 构建查询条件
-                        let query = db
+                        let baseQuery = db
                             .select({
                                 id: files.id,
                                 path: files.path,
@@ -108,19 +109,13 @@ export function FileService() {
                                 )
                             );
 
-                        // 应用排序
-                        if (sort === 'name') {
-                            query = order === 'asc' ? query.orderBy(asc(files.name)) : query.orderBy(desc(files.name));
-                        } else if (sort === 'size') {
-                            query = order === 'asc' ? query.orderBy(asc(files.size)) : query.orderBy(desc(files.size));
-                        } else if (sort === 'date') {
-                            query = order === 'asc' ? query.orderBy(asc(files.modifiedAt)) : query.orderBy(desc(files.modifiedAt));
-                        }
-
-                        // 添加分页
-                        query = query.limit(limit).offset(offset);
-
-                        const result = await query;
+                        // 应用排序和分页
+                        const result = await (
+                            sort === 'name' ? (order === 'asc' ? baseQuery.orderBy(asc(files.name)) : baseQuery.orderBy(desc(files.name))) :
+                            sort === 'size' ? (order === 'asc' ? baseQuery.orderBy(asc(files.size)) : baseQuery.orderBy(desc(files.size))) :
+                            sort === 'date' ? (order === 'asc' ? baseQuery.orderBy(asc(files.modifiedAt)) : baseQuery.orderBy(desc(files.modifiedAt))) :
+                            baseQuery
+                        ).limit(limit).offset(offset);
 
                         // 获取总数
                         const countQuery = await db
@@ -616,6 +611,32 @@ export function FileService() {
                         name: t.Optional(t.String()),
                         accessLevel: t.Optional(t.String()),
                     }),
+                })
+
+                // 同步文件
+                .post('/sync', async ({ uid, admin, set }) => {
+                    if (!admin) {
+                        set.status = 403;
+                        return { error: 'Permission denied' };
+                    }
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+                    // 扫描所有文章内容
+                    const allFeeds = await db.select({ id: feeds.id, content: feeds.content, userId: feeds.uid }).from(feeds);
+                    let total = 0, success = 0, failed = 0;
+                    for (const feed of allFeeds) {
+                        try {
+                            await syncFeedFileReferences(db, feed.id, feed.content, feed.userId);
+                            success++;
+                        } catch (e) {
+                            failed++;
+                        }
+                        total++;
+                    }
+                    return { total, success, failed };
                 })
         );
 } 

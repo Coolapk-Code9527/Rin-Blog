@@ -211,6 +211,8 @@ export function FeedService() {
                         set.status = 500;
                         return 'Failed to insert';
                     } else {
+                        // 自动同步文件引用
+                        await syncFeedFileReferences(db, result[0].insertedId, content, uid);
                         return result[0];
                         }
                     } catch (error) {
@@ -441,6 +443,10 @@ export function FeedService() {
                         await bindTagToPost(db, id_num, tags);
                     }
                     await clearFeedCache(id_num, feed.alias, alias || null);
+                    // 自动同步文件引用
+                    if (content) {
+                        await syncFeedFileReferences(db, id_num, content, uid);
+                    }
                     return 'Updated';
                 }, {
                     body: t.Object({
@@ -679,4 +685,67 @@ async function clearFeedCache(id: number, alias: string | null, newAlias: string
         await cache.delete(`feed_${alias}`, false);
     if (newAlias)
         await cache.delete(`feed_${newAlias}`, false);
+}
+
+// 辅助函数：提取内容中的文件引用
+function extractFileReferences(content: string): string[] {
+  const references: string[] = [];
+  // 图片 ![]()
+  const imageRegex = /!\[.*?\]\((.*?)\)/g;
+  let match;
+  while ((match = imageRegex.exec(content)) !== null) {
+    references.push(match[1]);
+  }
+  // 链接 []()
+  const linkRegex = /(?<!!)\[.*?\]\((.*?)\)/g;
+  while ((match = linkRegex.exec(content)) !== null) {
+    references.push(match[1]);
+  }
+  // 媒体 <audio|video src="...">
+  const mediaRegex = /<(audio|video)[^>]*src=['"](.*?)['"][^>]*>/g;
+  while ((match = mediaRegex.exec(content)) !== null) {
+    references.push(match[2]);
+  }
+  return references;
+}
+
+// 辅助函数：同步文件引用到files/feed_files
+export async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
+  const refs = extractFileReferences(content).filter(Boolean);
+  if (refs.length === 0) return;
+  // 先查已有files
+  const filesInDb = await db.select({id: db.schema.files.id, path: db.schema.files.path}).from(db.schema.files).where(db.schema.files.path.in(refs));
+  const pathToId = new Map<string, number>(filesInDb.map((f: {path: string, id: number}) => [f.path, f.id]));
+  // 批量补全files表
+  for (const path of refs) {
+    if (!pathToId.has(path)) {
+      // 简单推断类型
+      const name = path.split('/').pop() || path;
+      const mimeType = name.includes('.') ? name.split('.').pop() : 'application/octet-stream';
+      const inserted = await db.insert(db.schema.files).values({
+        path,
+        name,
+        size: 0,
+        mimeType,
+        userId,
+        hash: name,
+      }).returning({id: db.schema.files.id});
+      pathToId.set(path, inserted[0].id);
+    }
+  }
+  // 清空旧关联
+  await db.delete(db.schema.feedFiles).where(db.schema.feedFiles.feedId.eq(feedId));
+  // 插入新关联
+  let order = 0;
+  for (const path of refs) {
+    const fileId = pathToId.get(path);
+    if (fileId) {
+      await db.insert(db.schema.feedFiles).values({
+        feedId,
+        fileId,
+        relationType: 'embed',
+        displayOrder: order++
+      });
+    }
+  }
 }
