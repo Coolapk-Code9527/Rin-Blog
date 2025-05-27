@@ -689,15 +689,34 @@ export function FileManager({
 
             {/* 数据同步按钮 */}
             <Button onClick={handleSyncFiles} title={isSyncing ? t('files.syncing') : t('files.sync')} secondary={true} />
-            {/* 优化：同步结果弹窗 */}
-            {syncResult && !syncDetailOpen && (
+            {/* 合并同步结果与失败详情弹窗 */}
+            {(syncResult || syncDetailOpen) && (
               <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
-                  <h3 className="text-lg font-medium mb-4 text-green-600 dark:text-green-400">{t('files.sync_result')}</h3>
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full shadow-2xl">
+                  <h3 className={`text-lg font-medium mb-4 ${syncDetailList.length > 0 ? 'text-red-600' : 'text-green-600 dark:text-green-400'}`}>{syncDetailList.length > 0 ? t('files.sync_failed') : t('files.sync_result')}</h3>
                   <div className="mb-4 text-sm whitespace-pre-wrap break-all">{syncResult}</div>
+                  {syncDetailList.length > 0 && (
+                    <div className="max-h-80 overflow-y-auto text-xs mb-4">
+                      {syncDetailList.map((d, i) => (
+                        <details key={i} className="mb-2">
+                          <summary className="cursor-pointer text-theme">文章ID: {d.feedId} UID: {d.uid}</summary>
+                          <div className="mt-1 whitespace-pre-wrap break-all">
+                            <b>内容片段:</b> {d.contentSnippet}
+                            <br /><b>错误:</b> {d.error}
+                            {d.stack && <><br /><b>堆栈:</b> {d.stack}</>}
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex justify-end mt-6 gap-2">
-                    <button onClick={() => { navigator.clipboard.writeText(syncResult); }} className="px-4 py-2 bg-theme text-white rounded-md">{t('copy')}</button>
-                    <button onClick={() => setSyncResult(null)} className="px-4 py-2 bg-gray-500 text-white rounded-md">{t('close')}</button>
+                    <button onClick={() => {
+                      const text = syncDetailList.length > 0
+                        ? syncDetailList.map(d => `文章ID:${d.feedId} UID:${d.uid}\n内容:${d.contentSnippet}\n错误:${d.error}\n${d.stack ? '堆栈:' + d.stack : ''}`).join('\n---\n')
+                        : syncResult;
+                      navigator.clipboard.writeText(text as string);
+                    }} className="px-4 py-2 bg-theme text-white rounded-md">{t('copy')}</button>
+                    <button onClick={() => { setSyncResult(null); setSyncDetailOpen(false); }} className="px-4 py-2 bg-gray-500 text-white rounded-md">{t('close')}</button>
                   </div>
                 </div>
               </div>
@@ -829,34 +848,6 @@ export function FileManager({
             )}
             <div className="flex justify-end mt-6">
               <button onClick={() => setRefDialogOpen(false)} className="px-4 py-2 bg-theme text-white rounded-md">{t('close')}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 同步详情弹窗 */}
-      {syncDetailOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full shadow-2xl">
-            <h3 className="text-lg font-medium mb-4">{t('files.sync_failed')}</h3>
-            <div className="max-h-80 overflow-y-auto text-xs">
-              {syncDetailList.map((d, i) => (
-                <details key={i} className="mb-2">
-                  <summary className="cursor-pointer text-theme">文章ID: {d.feedId} UID: {d.uid}</summary>
-                  <div className="mt-1 whitespace-pre-wrap break-all">
-                    <b>内容片段:</b> {d.contentSnippet}
-                    <br /><b>错误:</b> {d.error}
-                    {d.stack && <><br /><b>堆栈:</b> {d.stack}</>}
-                  </div>
-                </details>
-              ))}
-            </div>
-            <div className="flex justify-end mt-6 gap-2">
-              <button onClick={() => {
-                const text = syncDetailList.map(d => `文章ID:${d.feedId} UID:${d.uid}\n内容:${d.contentSnippet}\n错误:${d.error}\n${d.stack ? '堆栈:' + d.stack : ''}`).join('\n---\n');
-                navigator.clipboard.writeText(text);
-              }} className="px-4 py-2 bg-theme text-white rounded-md">{t('copy')}</button>
-              <button onClick={() => setSyncDetailOpen(false)} className="px-4 py-2 bg-gray-500 text-white rounded-md">{t('close')}</button>
             </div>
           </div>
         </div>

@@ -659,12 +659,11 @@ export function FileService() {
                         return { error: 'Permission denied' };
                     }
                     const db = getDB();
-                    const filesTable = db.schema?.files || db.files;
                     const r2Files = await listAllR2Files();
                     let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
                     for (const path of r2Files) {
                         try {
-                            const exist = await db.select({id: filesTable.id}).from(filesTable).where(filesTable.path.eq(path));
+                            const exist = await db.select({id: files.id}).from(files).where(eq(files.path, path));
                             if (exist && exist.length > 0) { skipped++; continue; }
                             const meta = await getR2FileMeta(path);
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
@@ -672,7 +671,7 @@ export function FileService() {
                             const mimeType = meta.mimeType || 'application/octet-stream';
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
-                            await db.insert(filesTable).values({
+                            await db.insert(files).values({
                                 path,
                                 name,
                                 size,
@@ -683,7 +682,7 @@ export function FileService() {
                             inserted++;
                         } catch (e) {
                             failed++;
-                            failedList.push({ path, error: e?.message || String(e) });
+                            failedList.push({ path, error: String(e) });
                         }
                         total++;
                     }
