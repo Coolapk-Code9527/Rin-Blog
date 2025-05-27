@@ -4,7 +4,6 @@ import { Elysia } from 'elysia';
 import { CommentService } from './services/comments';
 import { FaviconService } from "./services/favicon";
 import { FeedService } from './services/feed';
-import { FileService } from './services/files';
 import { FriendService } from './services/friends';
 import { RSSService } from './services/rss';
 import { SEOService } from './services/seo';
@@ -35,7 +34,6 @@ export const app = () => new Elysia({ aot: false })
     .use(CommentService())
     .use(TagService())
     .use(StorageService())
-    .use(FileService())
     .use(FriendService())
     .use(SEOService())
     .use(RSSService())

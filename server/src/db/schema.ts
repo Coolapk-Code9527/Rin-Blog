@@ -77,32 +77,6 @@ export const feedHashtags = sqliteTable("feed_hashtags", {
     updatedAt: updated_at,
 });
 
-// 文件表
-export const files = sqliteTable("files", {
-    id: integer("id").primaryKey(),
-    path: text("path").notNull().unique(),
-    name: text("name").notNull(),
-    size: integer("size").notNull(),
-    mimeType: text("mime_type").notNull(),
-    userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-    thumbnailHash: text("thumbnail_hash"),
-    accessLevel: text("access_level").default("public").notNull(),
-    isFolder: integer("is_folder").default(0).notNull(),
-    parentPath: text("parent_path"),
-    hash: text("hash").notNull(),
-    createdAt: created_at,
-    modifiedAt: integer("modified_at", { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
-});
-
-// 文件与文章关联表
-export const feedFiles = sqliteTable("feed_files", {
-    feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
-    fileId: integer("file_id").references(() => files.id, { onDelete: 'cascade' }).notNull(),
-    relationType: text("relation_type").default("embed").notNull(),
-    displayOrder: integer("display_order").default(0).notNull(),
-    createdAt: created_at,
-});
-
 export const feedsRelations = relations(feeds, ({ many, one }) => ({
     hashtags: many(feedHashtags),
     user: one(users, {
@@ -110,7 +84,6 @@ export const feedsRelations = relations(feeds, ({ many, one }) => ({
         references: [users.id],
     }),
     comments: many(comments),
-    files: many(feedFiles)
 }));
 
 export const commentsRelations = relations(comments, ({ one }) => ({
@@ -136,26 +109,5 @@ export const feedHashtagsRelations = relations(feedHashtags, ({ one }) => ({
     hashtag: one(hashtags, {
         fields: [feedHashtags.hashtagId],
         references: [hashtags.id],
-    }),
-}));
-
-// 文件关系定义
-export const filesRelations = relations(files, ({ one, many }) => ({
-    user: one(users, {
-        fields: [files.userId],
-        references: [users.id],
-    }),
-    feeds: many(feedFiles),
-}));
-
-// 文件-文章关系定义
-export const feedFilesRelations = relations(feedFiles, ({ one }) => ({
-    feed: one(feeds, {
-        fields: [feedFiles.feedId],
-        references: [feeds.id],
-    }),
-    file: one(files, {
-        fields: [feedFiles.fileId],
-        references: [files.id],
     }),
 }));

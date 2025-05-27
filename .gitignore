@@ -35,9 +35,10 @@ dist-ssr
 /.dev.vars
 
 Rin_Blog_bak/
+.cursor/
+.cursorignore
 .cursorignore
 .vscode
-develop.md
-规则说明.md
-working.md
-final_review_gate.py
+
+
+

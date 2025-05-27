@@ -22,23 +22,6 @@ export type Config = {
   [key: string]: any;
 };
 
-// 文件项类型
-export type FileItem = {
-  id: number;
-  path: string;
-  name: string;
-  size: number;
-  mimeType: string;
-  isFolder: boolean;
-  accessLevel: "public" | "private" | "restricted";
-  thumbnailHash?: string;
-  parentPath: string;
-  createdAt: number;
-  modifiedAt: number;
-  url?: string;
-  references?: Array<{id: number, title: string, type: string}>;
-};
-
 // 文章类型
 export type Feed = {
   id: number;
@@ -179,20 +162,6 @@ export interface ApiClient {
   storage: {
     index: {
       post: (data: any, options?: any) => Promise<TreatyResponse<{url: string}>>;
-    };
-  };
-  files: {
-    index: {
-      get: (options?: any) => Promise<TreatyResponse<{files: FileItem[], total: number, page: number, limit: number}>>;
-      post: (data: any, options?: any) => Promise<TreatyResponse<FileItem>>;
-    };
-    folder: {
-      post: (data: any, options?: any) => Promise<TreatyResponse<FileItem>>;
-    };
-    (params: {id: number}): {
-      get: (options?: any) => Promise<TreatyResponse<FileItem>>;
-      patch: (data: any, options?: any) => Promise<TreatyResponse<FileItem>>;
-      delete: (options?: any) => Promise<TreatyResponse<{success: boolean}>>;
     };
   };
   favicon: {

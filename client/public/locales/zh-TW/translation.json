@@ -99,34 +99,8 @@
     "github_callback": "GitHub OAuth 回調地址應為 `https://<Worker 地址>/user/github/callback，請檢查 GitHub OAuth 回調地址是否正確"
   },
   "feed_card": {
-    "published$time": "發布於 {{time}}",
-    "updated$time": "更新於 {{time}}"
-  },
-  "files": {
-    "page_title": "檔案管理",
-    "page_description": "管理你上傳的檔案和資料夾",
-    "root": "根目錄",
-    "empty": "暫無檔案",
-    "load_error": "載入檔案失敗: {{error}}",
-    "no_selection": "請選擇一個檔案",
-    "folder_name_required": "資料夾名稱不能為空",
-    "folder_create_error": "建立資料夹失敗: {{error}}",
-    "confirm_delete": "確定要刪除 {{name}} 嗎?",
-    "delete_error": "刪除失敗: {{error}}",
-    "columns": {
-      "name": "名稱",
-      "size": "大小",
-      "date": "日期"
-    },
-    "search_placeholder": "搜尋檔案...",
-    "grid_view": "網格視圖",
-    "list_view": "列表視圖",
-    "new_folder": "新建資料夹",
-    "upload": "上傳",
-    "selected": "已選擇 {{count}} 個檔案",
-    "confirm_selection": "確認選擇",
-    "create_folder": "建立資料夹",
-    "folder_name": "資料夹名稱"
+    "published$time": "{{time}} 發布",
+    "updated$time": "{{time}} 更新"
   },
   "footer": {
     "rss": "RSS 訂閱連結"
@@ -278,14 +252,11 @@
   },
   "update$sth": "更新 {{sth}}",
   "upload": {
-    "failed": "上傳失敗: {{error}}",
-    "failed$size": "檔案太大 (最大 {{size}}MB)",
-    "success": "上傳成功",
-    "image_only": "只能上傳圖片",
-    "title": "上傳",
-    "uploading": "上傳中..."
+    "failed": "上傳失敗",
+    "failed$size": "上傳失敗，文件大小不能超過 {{size}} MB",
+    "title": "上傳"
   },
-  "uploading": "上傳中...",
+  "uploading": "上傳中",
   "url": "網站 URL",
   "visible": {
     "self_only": "僅自己可見"
