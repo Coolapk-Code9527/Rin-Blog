@@ -12,12 +12,12 @@ import {markdownToPlainText} from "../utils/markdown";
 import {bindTagToPost} from "./tag";
 
 export function FeedService() {
-    const db: DB = getDB();
     return new Elysia({ aot: false })
         .use(setup())
         .group('/feed', (group) =>
             group
                 .get('/', async ({ admin, set, query: { page, limit, type, cursor } }) => {
+                    const db: DB = getDB();
                     if ((type === 'draft' || type === 'unlisted') && !admin) {
                         set.status = 403;
                         return 'Permission denied';
@@ -152,6 +152,7 @@ export function FeedService() {
                     })
                 })
                 .get('/timeline', async () => {
+                    const db: DB = getDB();
                     const where = and(eq(feeds.draft, 0), eq(feeds.listed, 1));
                     return (await db.query.feeds.findMany({
                         where: where,
@@ -164,6 +165,7 @@ export function FeedService() {
                     }))
                 })
                 .post('/', async ({ admin, set, uid, body: { title, alias, listed, content, summary, draft, tags, createdAt } }) => {
+                    const db: DB = getDB();
                     if (!admin) {
                         set.status = 403;
                         return 'Permission denied';
@@ -222,7 +224,8 @@ export function FeedService() {
                     } catch (error) {
                         console.error("Error creating feed:", error);
                         set.status = 500;
-                        return "Internal Server Error";
+                        const err = error as any;
+                        return err?.message ? `${err.message}\n${err.stack || ''}` : String(err);
                     }
                 }, {
                     body: t.Object({
@@ -237,6 +240,7 @@ export function FeedService() {
                     })
                 })
                 .get('/:id', async ({ uid, admin, set, headers, params: { id } }) => {
+                    const db: DB = getDB();
                     const id_num = parseInt(id);
                     const cache = PublicCache();
                     const cacheKey = `feed_${id}`;
@@ -293,6 +297,7 @@ export function FeedService() {
                     return data;
                 })
                 .get("/adjacent/:id", async ({ set, params: { id } }) => {
+                    const db: DB = getDB();
                     let id_num: number;
                     if (isNaN(parseInt(id))) {
                         const aliasRecord = await db
@@ -420,6 +425,7 @@ export function FeedService() {
                     params: { id },
                     body: { title, listed, content, summary, alias, draft, top, tags, createdAt }
                 }) => {
+                    const db: DB = getDB();
                     const id_num = parseInt(id);
                     const feed = await db.query.feeds.findFirst({
                         where: eq(feeds.id, id_num)
@@ -472,6 +478,7 @@ export function FeedService() {
                     params: { id },
                     body: { top }
                 }) => {
+                    const db: DB = getDB();
                     const id_num = parseInt(id);
                     const feed = await db.query.feeds.findFirst({
                         where: eq(feeds.id, id_num)
@@ -495,6 +502,7 @@ export function FeedService() {
                     })
                 })
                 .delete('/:id', async ({ admin, set, uid, params: { id } }) => {
+                    const db: DB = getDB();
                     const id_num = parseInt(id);
                     const feed = await db.query.feeds.findFirst({
                         where: eq(feeds.id, id_num)
@@ -513,6 +521,7 @@ export function FeedService() {
                 })
         )
         .get('/search/:keyword', async ({ admin, params: { keyword }, query: { page, limit } }) => {
+            const db: DB = getDB();
             keyword = decodeURI(keyword);
             const cache = PublicCache();
             const page_num = (page ? page > 0 ? page : 1 : 1) - 1;
@@ -582,6 +591,7 @@ export function FeedService() {
             })
         })
         .post('wp', async ({ set, admin, body: { data } }) => {
+            const db: DB = getDB();
             if (!admin) {
                 set.status = 403;
                 return 'Permission denied';
@@ -745,15 +755,36 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
       // 简单推断类型
       const name = path.split('/').pop() || path;
       const mimeType = name.includes('.') ? name.split('.').pop() : 'application/octet-stream';
-      const inserted = await db.insert(filesTable).values({
-        path,
-        name,
-        size: 0,
-        mimeType,
-        userId,
-        hash: name,
-      }).returning({id: filesTable.id});
-      pathToId.set(path, inserted[0].id);
+      let safeUserId = userId;
+      if (!safeUserId) {
+        console.error('syncFeedFileReferences: userId为空，自动回退为1，path:', path);
+        safeUserId = 1;
+      }
+      try {
+        // 插入前先查是否已存在该path
+        const exist = await db.select({id: filesTable.id}).from(filesTable).where(filesTable.path.eq(path));
+        if (exist && exist.length > 0) {
+          pathToId.set(path, exist[0].id);
+          continue;
+        }
+        const inserted = await db.insert(filesTable).values({
+          path,
+          name,
+          size: 0,
+          mimeType,
+          userId: safeUserId,
+          hash: name,
+        }).returning({id: filesTable.id});
+        if (Array.isArray(inserted) && inserted.length > 0 && inserted[0] && inserted[0].id) {
+          pathToId.set(path, inserted[0].id);
+        } else {
+          console.error('syncFeedFileReferences插入files表未返回id:', { path, name, mimeType, userId: safeUserId, inserted });
+          continue;
+        }
+      } catch (e) {
+        console.error('syncFeedFileReferences插入files表异常:', e, { path, name, mimeType, userId: safeUserId });
+        continue;
+      }
     }
   }
   // 清空旧关联
