@@ -75,6 +75,13 @@ export function FileManager({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
+  // 新增引用详情弹窗状态
+  const [refDialogOpen, setRefDialogOpen] = useState(false);
+  const [refDialogFile, setRefDialogFile] = useState<FileItem | null>(null);
+  const [refDialogLoading, setRefDialogLoading] = useState(false);
+  const [refDialogRefs, setRefDialogRefs] = useState<{id:number,title:string,type:string}[]>([]);
+  const [refDialogError, setRefDialogError] = useState<string|null>(null);
+
   // 加载文件列表
   const loadFiles = async (reload = false) => {
     try {
@@ -353,6 +360,27 @@ export function FileManager({
     setIsSyncing(false);
   };
 
+  // 打开引用详情弹窗
+  const handleShowReferences = async (file: FileItem) => {
+    setRefDialogFile(file);
+    setRefDialogOpen(true);
+    setRefDialogLoading(true);
+    setRefDialogError(null);
+    setRefDialogRefs([]);
+    try {
+      const res = await fetch(`${endpoint}/files/${file.id}`, { headers: headersWithAuth() });
+      const data = await res.json();
+      if (res.ok && data.references) {
+        setRefDialogRefs(data.references);
+      } else {
+        setRefDialogError(data.error || t('files.ref_load_error'));
+      }
+    } catch (e: any) {
+      setRefDialogError(e.message);
+    }
+    setRefDialogLoading(false);
+  };
+
   // 渲染网格视图
   const renderGridView = () => {
     return (
@@ -376,6 +404,17 @@ export function FileManager({
             <p className="text-xs text-gray-500 mt-1">
               {file.isFolder ? '' : formatFileSize(file.size)}
             </p>
+            
+            {/* 引用计数按钮 */}
+            {!file.isFolder && (
+              <button
+                className="absolute bottom-1 right-1 text-xs text-blue-500 hover:underline bg-white/80 dark:bg-gray-900/80 rounded px-2 py-0.5"
+                onClick={e => { e.stopPropagation(); handleShowReferences(file); }}
+                title={t('files.references')}
+              >
+                {file.references ? file.references.length : '-'} {t('files.ref_count')}
+              </button>
+            )}
             
             {/* 删除按钮 */}
             <button 
@@ -478,6 +517,13 @@ export function FileManager({
                   {new Date(file.modifiedAt * 1000).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-3 text-sm text-right">
+                  <button 
+                    className="text-blue-500 hover:underline text-xs mr-2"
+                    onClick={e => { e.stopPropagation(); handleShowReferences(file); }}
+                    title={t('files.references')}
+                  >
+                    {file.references ? file.references.length : '-'} {t('files.ref_count')}
+                  </button>
                   <button 
                     className="text-red-500 hover:text-red-700 transition-colors p-1"
                     onClick={(e) => { e.stopPropagation(); handleDeleteFile(file); }}
@@ -727,6 +773,36 @@ export function FileManager({
               >
                 {t('index.back')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 引用详情弹窗 */}
+      {refDialogOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-lg font-medium mb-4">{t('files.ref_detail')}</h3>
+            {refDialogLoading ? (
+              <div className="text-center text-gray-500">{t('loading')}</div>
+            ) : refDialogError ? (
+              <div className="text-red-500">{refDialogError}</div>
+            ) : refDialogRefs.length === 0 ? (
+              <div className="text-gray-500">{t('files.ref_none')}</div>
+            ) : (
+              <ul className="space-y-2">
+                {refDialogRefs.map(ref => (
+                  <li key={ref.id}>
+                    <a href={`/feed/${ref.id}`} target="_blank" rel="noopener" className="text-blue-600 hover:underline">
+                      {ref.title || t('files.ref_no_title')}
+                    </a>
+                    <span className="ml-2 text-xs text-gray-400">[{ref.type}]</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex justify-end mt-6">
+              <button onClick={() => setRefDialogOpen(false)} className="px-4 py-2 bg-theme text-white rounded-md">{t('close')}</button>
             </div>
           </div>
         </div>
