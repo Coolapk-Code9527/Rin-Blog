@@ -12,13 +12,13 @@
     "preview": "wrangler pages dev dist --compatibility-date=2023-12-20"
   },
   "devDependencies": {
-    "@types/bun": "^1.1.2",
-    "drizzle-kit": "^0.21.2",
-    "wrangler": "^3.63.1",
     "@cloudflare/vitest-pool-workers": "^0.1.0",
     "@cloudflare/workers-types": "^4.20240529.0",
+    "@types/bun": "^1.1.2",
+    "drizzle-kit": "^0.21.2",
+    "strip-indent": "^4.0.0",
     "typescript": "^5.0.4",
-    "strip-indent": "^4.0.0"
+    "wrangler": "4"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
