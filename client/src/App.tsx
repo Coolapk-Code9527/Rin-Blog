@@ -10,6 +10,7 @@ import { client } from './main'
 import { CallbackPage } from './page/callback'
 import { FeedPage, TOCHeader } from './page/feed'
 import { FeedsPage } from './page/feeds'
+import { FilesPage } from './page/files'
 import { FriendsPage } from './page/friends'
 import { HashtagPage } from './page/hashtag.tsx'
 import { HashtagsPage } from './page/hashtags.tsx'
@@ -131,6 +132,9 @@ function App() {
               <TimelinePage />
             </RouteMe>
 
+            <RouteMe path="/files">
+              <FilesPage />
+            </RouteMe>
 
             <RouteMe path="/friends">
               <FriendsPage />
