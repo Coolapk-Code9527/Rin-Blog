@@ -689,7 +689,19 @@ export function FileManager({
 
             {/* 数据同步按钮 */}
             <Button onClick={handleSyncFiles} title={isSyncing ? t('files.syncing') : t('files.sync')} secondary={true} />
-            {syncResult && <span className="ml-2 text-xs text-green-600 dark:text-green-400">{syncResult}</span>}
+            {/* 优化：同步结果弹窗 */}
+            {syncResult && !syncDetailOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+                  <h3 className="text-lg font-medium mb-4 text-green-600 dark:text-green-400">{t('files.sync_result')}</h3>
+                  <div className="mb-4 text-sm whitespace-pre-wrap break-all">{syncResult}</div>
+                  <div className="flex justify-end mt-6 gap-2">
+                    <button onClick={() => { navigator.clipboard.writeText(syncResult); }} className="px-4 py-2 bg-theme text-white rounded-md">{t('copy')}</button>
+                    <button onClick={() => setSyncResult(null)} className="px-4 py-2 bg-gray-500 text-white rounded-md">{t('close')}</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         

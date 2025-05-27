@@ -735,61 +735,47 @@ function extractFileReferences(content: string): string[] {
 
 // 辅助函数：同步文件引用到files/feed_files
 async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
-  // 调试日志
-  console.log('syncFeedFileReferences 调试:', {
-    dbKeys: Object.keys(db),
-    dbSchemaKeys: db.schema ? Object.keys(db.schema) : undefined,
-    dbFiles: db.files,
-    dbFeedFiles: db.feedFiles,
-    userId,
-    feedId,
-    content,
-  });
+  // 提取所有引用
+  let refs = extractFileReferences(content).filter(Boolean);
+  // 彻底过滤无效/外链/空字符串
+  let filteredRefs = refs.filter(
+    x => typeof x === 'string' && x.length > 1 && x.startsWith('/') && !x.startsWith('http://') && !x.startsWith('https://')
+  );
+  if (filteredRefs.length === 0) return; // 没有本地引用，直接返回
+
+  // 只查一次已有files
   const filesTable = db.schema?.files || db.files;
   const feedFilesTable = db.schema?.feedFiles || db.feedFiles;
-  const refs = extractFileReferences(content).filter(Boolean);
-  console.log('syncFeedFileReferences refs:', refs, 'filesTable:', filesTable, 'feedFilesTable:', feedFilesTable);
-  if (refs.length === 0) return;
-  let filteredRefs = refs.filter(x => typeof x === 'string' && x.length > 1);
-  // 只查一次已有files
-  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(filteredRefs));
-  const pathToId = new Map<string, number>(filesInDb.map((f: {path: string, id: number}) => [f.path, f.id]));
+  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path})
+    .from(filesTable)
+    .where(filesTable.path.in(filteredRefs));
+  const pathToId = new Map<string, number>(
+    Array.isArray(filesInDb)
+      ? filesInDb.filter(f => typeof f.id === 'number' && typeof f.path === 'string').map((f: {path: string, id: number}) => [f.path, f.id])
+      : []
+  );
+
+  // 先清空旧关联
+  await db.delete(feedFilesTable).where(feedFilesTable.feedId.eq(feedId));
+
+  // 插入新关联
+  let order = 0;
   for (const path of filteredRefs) {
-    if (!path.startsWith('/') || path.startsWith('http://') || path.startsWith('https://')) {
-      console.warn('无效文件引用path:', path);
-      continue;
-    }
     const fileId = pathToId.get(path);
     if (typeof fileId !== 'number') {
-      console.warn('files表不存在该path或fileId无效，跳过:', path, fileId);
+      console.warn('同步失败：本地图片未上传，files表无此记录，跳过', path);
       continue;
     }
     try {
-      console.log('插入feedFiles:', { feedId, fileId, path });
-      await db.insert(feedFilesTable).values({
-        feedId,
-        fileId,
-        relationType: 'embed',
-        displayOrder: 0
-      });
-    } catch (e) {
-      console.error('插入feedFiles异常:', e, { feedId, fileId, path });
-      continue;
-    }
-  }
-  // 清空旧关联
-  await db.delete(feedFilesTable).where(feedFilesTable.feedId.eq(feedId));
-  // 插入新关联
-  let order = 0;
-  for (const path of refs) {
-    const fileId = pathToId.get(path);
-    if (fileId) {
       await db.insert(feedFilesTable).values({
         feedId,
         fileId,
         relationType: 'embed',
         displayOrder: order++
       });
+    } catch (e) {
+      console.error('插入feedFiles异常:', e, { feedId, fileId, path });
+      continue;
     }
   }
 }
