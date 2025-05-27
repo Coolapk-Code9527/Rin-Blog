@@ -34,23 +34,17 @@ jobs:
           compatibility_date = "2024-05-29"
           compatibility_flags = ["nodejs_compat"]
 
+          [triggers]
+          crons = ["*/20 * * * *"]
+
           [vars]
-          CLOUDFLARE_ACCOUNT_ID = "${{ env.CLOUDFLARE_ACCOUNT_ID }}"
-          CLOUDFLARE_API_TOKEN = "${{ env.CLOUDFLARE_API_TOKEN }}"
-          S3_ACCESS_KEY_ID = "${{ env.S3_ACCESS_KEY_ID }}"
-          S3_SECRET_ACCESS_KEY = "${{ env.S3_SECRET_ACCESS_KEY }}"
-          JWT_SECRET = "${{ env.JWT_SECRET }}"
-          RIN_GITHUB_CLIENT_ID = "${{ env.RIN_GITHUB_CLIENT_ID }}"
-          RIN_GITHUB_CLIENT_SECRET = "${{ env.RIN_GITHUB_CLIENT_SECRET }}"
-          DB_NAME = "${{ env.DB_NAME }}"
-          WORKER_NAME = "${{ env.WORKER_NAME }}"
           FRONTEND_URL = "${{ env.FRONTEND_URL }}"
+          S3_FOLDER = "${{ env.S3_FOLDER }}"
+          S3_CACHE_FOLDER = "${{ env.S3_CACHE_FOLDER }}"
+          S3_REGION = "${{ env.S3_REGION }}"
+          S3_ENDPOINT = "${{ env.S3_ENDPOINT }}"
           S3_ACCESS_HOST = "${{ env.S3_ACCESS_HOST }}"
           S3_BUCKET = "${{ env.S3_BUCKET }}"
-          S3_CACHE_FOLDER = "${{ env.S3_CACHE_FOLDER }}"
-          S3_ENDPOINT = "${{ env.S3_ENDPOINT }}"
-          S3_FOLDER = "${{ env.S3_FOLDER }}"
-          S3_REGION = "${{ env.S3_REGION }}"
           S3_FORCE_PATH_STYLE = "${{ env.S3_FORCE_PATH_STYLE }}"
           WEBHOOK_URL = "${{ env.WEBHOOK_URL }}"
           RSS_TITLE = "${{ env.RSS_TITLE }}"
@@ -61,6 +55,15 @@ jobs:
           database_name = "${{ env.DB_NAME }}"
           database_id = "${{ secrets.D1_DATABASE_ID }}"
           EOF
+
+      - name: Show wrangler.toml
+        run: cat Rin/wrangler.toml
+
+      - name: Find all wrangler files
+        run: find . -name "wrangler*"
+
+      - name: Search node_compat
+        run: grep -r "node_compat" . || true
 
       - name: Deploy
         env: # Or as an environment variable
