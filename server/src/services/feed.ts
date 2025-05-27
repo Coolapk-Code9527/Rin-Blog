@@ -764,14 +764,18 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
       console.warn('files表不存在该path或fileId无效，跳过:', path, fileId);
       continue;
     }
-    // debug日志
-    console.log('插入feedFiles:', { feedId, fileId, path });
-    await db.insert(feedFilesTable).values({
-      feedId,
-      fileId,
-      relationType: 'embed',
-      displayOrder: 0
-    });
+    try {
+      console.log('插入feedFiles:', { feedId, fileId, path });
+      await db.insert(feedFilesTable).values({
+        feedId,
+        fileId,
+        relationType: 'embed',
+        displayOrder: 0
+      });
+    } catch (e) {
+      console.error('插入feedFiles异常:', e, { feedId, fileId, path });
+      continue;
+    }
   }
   // 清空旧关联
   await db.delete(feedFilesTable).where(feedFilesTable.feedId.eq(feedId));
