@@ -10,6 +10,7 @@ import {getDB} from "../utils/di";
 import {extractImage} from "../utils/image";
 import {markdownToPlainText} from "../utils/markdown";
 import {bindTagToPost} from "./tag";
+import { getR2FileMeta } from '../utils/s3';
 
 export function FeedService() {
     return new Elysia({ aot: false })
@@ -735,35 +736,52 @@ function extractFileReferences(content: string): string[] {
 
 // 辅助函数：同步文件引用到files/feed_files
 async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
-  // 提取所有引用
   let refs = extractFileReferences(content).filter(Boolean);
-  // 彻底过滤无效/外链/空字符串
   let filteredRefs = refs.filter(
     x => typeof x === 'string' && x.length > 1 && x.startsWith('/') && !x.startsWith('http://') && !x.startsWith('https://')
   );
-  if (filteredRefs.length === 0) return; // 没有本地引用，直接返回
-
-  // 只查一次已有files
+  if (filteredRefs.length === 0) return;
   const filesTable = db.schema?.files || db.files;
   const feedFilesTable = db.schema?.feedFiles || db.feedFiles;
-  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path})
-    .from(filesTable)
-    .where(filesTable.path.in(filteredRefs));
-  const pathToId = new Map<string, number>(
-    Array.isArray(filesInDb)
-      ? filesInDb.filter(f => typeof f.id === 'number' && typeof f.path === 'string').map((f: {path: string, id: number}) => [f.path, f.id])
-      : []
-  );
-
+  // 查询已存在的files
+  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(filteredRefs));
+  const pathToId = new Map<string, number>(Array.isArray(filesInDb) ? filesInDb.filter(f => typeof f.id === 'number' && typeof f.path === 'string').map((f: {path: string, id: number}) => [f.path, f.id]) : []);
+  // 自动补录缺失文件
+  for (const path of filteredRefs) {
+    if (!pathToId.has(path)) {
+      try {
+        // 从R2获取元信息
+        const meta = await getR2FileMeta(path);
+        if (!meta) continue;
+        const name = path.split('/').pop() || path;
+        const mimeType = meta.mimeType || 'application/octet-stream';
+        const size = meta.size || 0;
+        const hash = meta.hash || '';
+        const insertRes = await db.insert(filesTable).values({
+          path,
+          name,
+          size,
+          mimeType,
+          userId: userId || 1,
+          hash
+        }).returning({id: filesTable.id});
+        if (insertRes && insertRes[0] && typeof insertRes[0].id === 'number') {
+          pathToId.set(path, insertRes[0].id);
+        }
+      } catch (e) {
+        console.warn('自动补录文件失败:', path, e);
+        continue;
+      }
+    }
+  }
   // 先清空旧关联
   await db.delete(feedFilesTable).where(feedFilesTable.feedId.eq(feedId));
-
   // 插入新关联
   let order = 0;
   for (const path of filteredRefs) {
     const fileId = pathToId.get(path);
     if (typeof fileId !== 'number') {
-      console.warn('同步失败：本地图片未上传，files表无此记录，跳过', path);
+      console.warn('同步失败：本地图片未上传且R2无此文件，files表无此记录，跳过', path);
       continue;
     }
     try {

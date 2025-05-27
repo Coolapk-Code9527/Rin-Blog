@@ -8,6 +8,7 @@ import { setup } from "../setup";
 import { getEnv, getDB } from "../utils/di";
 import { createS3Client } from "../utils/s3";
 import { syncFeedFileReferences } from './feed';
+import { listAllR2Files, getR2FileMeta } from '../utils/s3';
 
 // 定义引用接口
 interface FileReference {
@@ -649,6 +650,44 @@ export function FileService() {
                         total++;
                     }
                     return { total, success, failed, failedDetails };
+                })
+
+                // R2同步
+                .post('/r2sync', async ({ uid, admin, set }) => {
+                    if (!admin) {
+                        set.status = 403;
+                        return { error: 'Permission denied' };
+                    }
+                    const db = getDB();
+                    const filesTable = db.schema?.files || db.files;
+                    const r2Files = await listAllR2Files();
+                    let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
+                    for (const path of r2Files) {
+                        try {
+                            const exist = await db.select({id: filesTable.id}).from(filesTable).where(filesTable.path.eq(path));
+                            if (exist && exist.length > 0) { skipped++; continue; }
+                            const meta = await getR2FileMeta(path);
+                            if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
+                            const name = path.split('/').pop() || path;
+                            const mimeType = meta.mimeType || 'application/octet-stream';
+                            const size = meta.size || 0;
+                            const hash = meta.hash || '';
+                            await db.insert(filesTable).values({
+                                path,
+                                name,
+                                size,
+                                mimeType,
+                                userId: uid || 1,
+                                hash
+                            });
+                            inserted++;
+                        } catch (e) {
+                            failed++;
+                            failedList.push({ path, error: e?.message || String(e) });
+                        }
+                        total++;
+                    }
+                    return { total, inserted, skipped, failed, failedList };
                 })
         );
 } 
