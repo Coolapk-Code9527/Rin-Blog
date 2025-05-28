@@ -660,14 +660,30 @@ export function FileService() {
                     }
                     const db = getDB();
                     const env = getEnv();
-                    const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+|\/+$/g, '') + '/';
+                    const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+/g, '').replace(/\/+$/g, '') + '/';
                     const r2Files = await listAllR2Files();
-                    let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
-                    for (const path of r2Files) {
+                    // 1. 获取所有R2真实Key（去除前导/）
+                    const r2KeySet = new Set(r2Files.map(p => p.replace(/^\/+/, '')));
+                    // 2. 查询files表所有记录
+                    const allFiles = await db.select({id: files.id, path: files.path}).from(files);
+                    let total = 0, inserted = 0, skipped = 0, failed = 0, deleted = 0, failedList: any[] = [];
+                    // 3. 清理files表中无效/外链/重复数据（只保留R2真实Key）
+                    for (const file of allFiles) {
+                        if (!r2KeySet.has(file.path)) {
+                            try {
+                                await db.delete(files).where(eq(files.id, file.id));
+                                deleted++;
+                            } catch (e) {
+                                failed++;
+                                failedList.push({ path: file.path, error: String(e) });
+                            }
+                        }
+                    }
+                    // 4. 补录R2中有但files表没有的Key
+                    for (const path of r2KeySet) {
+                        const exist = allFiles.find(f => f.path === path);
+                        if (exist) { skipped++; continue; }
                         try {
-                            // path本身已带images/前缀
-                            const exist = await db.select({id: files.id}).from(files).where(eq(files.path, path));
-                            if (exist && exist.length > 0) { skipped++; continue; }
                             const meta = await getR2FileMeta(path);
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
                             const name = path.split('/').pop() || path;
@@ -675,7 +691,7 @@ export function FileService() {
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
                             await db.insert(files).values({
-                                path: path.replace(/^\//, ''),
+                                path,
                                 name,
                                 size,
                                 mimeType,
@@ -690,7 +706,118 @@ export function FileService() {
                         }
                         total++;
                     }
-                    return { total, inserted, skipped, failed, failedList };
+                    return { total: r2KeySet.size, inserted, skipped, deleted, failed, failedList };
+                })
+
+                // R2对象重命名/移动
+                .post('/rename', async ({ body, uid, admin, set }) => {
+                    const { fileId, newPath } = body;
+                    if (!uid) {
+                        set.status = 401;
+                        return { error: 'Unauthorized' };
+                    }
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+                    try {
+                        // 获取文件信息
+                        const fileInfo = await db.select().from(files).where(eq(files.id, fileId));
+                        if (fileInfo.length === 0) {
+                            set.status = 404;
+                            return { error: 'File not found' };
+                        }
+                        const file = fileInfo[0];
+                        // 仅允许管理员或文件所有者操作
+                        if (!admin && file.userId !== uid) {
+                            set.status = 403;
+                            return { error: 'Permission denied' };
+                        }
+                        // R2对象Key重命名（copy+delete）
+                        await s3.send(new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: newPath,
+                            Body: (await s3.send(new GetObjectCommand({ Bucket: bucket, Key: file.path }))).Body,
+                            ContentType: file.mimeType
+                        }));
+                        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: file.path }));
+                        // files表同步更新
+                        await db.update(files).set({ path: newPath, name: newPath.split('/').pop() || newPath, modifiedAt: new Date() }).where(eq(files.id, fileId));
+                        return { success: true, newPath };
+                    } catch (error: any) {
+                        set.status = 500;
+                        return { error: error.message };
+                    }
+                }, {
+                    body: t.Object({
+                        fileId: t.Numeric(),
+                        newPath: t.String(),
+                    })
+                })
+
+                // 批量删除文件
+                .post('/batch-delete', async ({ body, uid, admin, set }) => {
+                    const { fileIds } = body;
+                    if (!uid) {
+                        set.status = 401;
+                        return { error: 'Unauthorized' };
+                    }
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+                    let deleted = 0, failed = 0, failedList: any[] = [];
+                    for (const fileId of fileIds) {
+                        try {
+                            const fileInfo = await db.select().from(files).where(eq(files.id, fileId));
+                            if (fileInfo.length === 0) { failed++; failedList.push({ fileId, error: 'File not found' }); continue; }
+                            const file = fileInfo[0];
+                            if (!admin && file.userId !== uid) { failed++; failedList.push({ fileId, error: 'Permission denied' }); continue; }
+                            // 删除R2对象
+                            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: file.path }));
+                            // 删除files表记录
+                            await db.delete(files).where(eq(files.id, fileId));
+                            deleted++;
+                        } catch (e) {
+                            failed++;
+                            failedList.push({ fileId, error: String(e) });
+                        }
+                    }
+                    return { deleted, failed, failedList };
+                }, {
+                    body: t.Object({ fileIds: t.Array(t.Numeric()) })
+                })
+
+                // 批量导出文件（返回下载链接，实际可扩展为zip打包下载）
+                .post('/batch-export', async ({ body, uid, admin, set }) => {
+                    const { fileIds } = body;
+                    if (!uid) {
+                        set.status = 401;
+                        return { error: 'Unauthorized' };
+                    }
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+                    let links: string[] = [], failed = 0, failedList: any[] = [];
+                    for (const fileId of fileIds) {
+                        try {
+                            const fileInfo = await db.select().from(files).where(eq(files.id, fileId));
+                            if (fileInfo.length === 0) { failed++; failedList.push({ fileId, error: 'File not found' }); continue; }
+                            const file = fileInfo[0];
+                            if (!admin && file.userId !== uid) { failed++; failedList.push({ fileId, error: 'Permission denied' }); continue; }
+                            links.push(`${accessHost}/${file.path}`);
+                        } catch (e) {
+                            failed++;
+                            failedList.push({ fileId, error: String(e) });
+                        }
+                    }
+                    return { links, failed, failedList };
+                }, {
+                    body: t.Object({ fileIds: t.Array(t.Numeric()) })
                 })
         );
 } 

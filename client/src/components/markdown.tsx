@@ -242,12 +242,12 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           }) => (
             <span className={`mx-auto ${rounded ? "rounded-xl" : ""}`} style={{ zoom: scale }}>
               <img
-                src={src}
-                alt={props.alt}
-                onClick={() => show(src)}
+              src={src}
+              alt={props.alt}
+              onClick={() => show(src)}
                 className={rounded ? "rounded-xl" : ""}
                 style={{ cursor: 'pointer' }}
-              />
+            />
             </span>
           );
           

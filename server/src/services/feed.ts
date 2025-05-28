@@ -226,7 +226,7 @@ export function FeedService() {
                             console.error('syncFeedFileReferences自动同步失败:', e);
                         }
                         return result[0];
-                    }
+                        }
                     } catch (error) {
                         console.error("Error creating feed:", error);
                         set.status = 500;
