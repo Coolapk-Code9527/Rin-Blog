@@ -327,7 +327,12 @@ export function FileManager({
       });
       const data = await response.json();
       if (!response.ok || data.error) {
-        showAlert(t('files.delete_error', { error: data.error?.value || data.error || response.statusText }));
+        // 检查是否因被引用导致删除失败
+        if (response.status === 409 && (data.error?.includes('referenced') || data.error?.includes('引用'))) {
+          showAlert(t('files.delete_error', { error: t('files.delete_ref_conflict') }), () => handleShowReferences(file));
+        } else {
+          showAlert(t('files.delete_error', { error: data.error?.value || data.error || response.statusText }));
+        }
       } else {
         setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
         loadFiles();

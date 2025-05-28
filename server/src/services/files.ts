@@ -300,42 +300,20 @@ export function FileService() {
                         );
                         const hash = buf2hex(hashArray);
                         
-                        // 检查是否已有相同哈希的文件
+                        // 检查是否已有相同虚拟路径的文件
+                        const fileName = name || file.name;
+                        const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
                         const existingFile = await db
                             .select({ id: files.id, path: files.path })
                             .from(files)
-                            .where(eq(files.hash, hash));
+                            .where(eq(files.path, filePath));
 
-                        // 如果存在相同哈希的文件，直接引用
                         if (existingFile.length > 0) {
-                            const fileName = name || file.name;
-                            const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
-                            
-                            // 创建新的文件记录，但引用相同的哈希
-                            const result = await db.insert(files).values({
-                                path: filePath,
-                                name: fileName,
-                                size: file.size,
-                                mimeType: file.type || getMimeTypeFromFileName(fileName),
-                                userId: uid,
-                                hash: hash,
-                                parentPath,
-                            }).returning({ id: files.id });
-
-                            return {
-                                id: result[0].id,
-                                path: filePath,
-                                url: `${accessHost}/${existingFile[0].path}`,
-                                name: fileName,
-                                size: file.size,
-                                mimeType: file.type || getMimeTypeFromFileName(fileName),
-                                hash,
-                                isFolder: false,
-                            };
+                            set.status = 409;
+                            return { error: 'File already exists at this path' };
                         }
 
                         // 生成S3存储路径
-                        const fileName = name || file.name;
                         const s3Key = path.join(folder, hash);
                         
                         // 上传到S3
@@ -346,17 +324,14 @@ export function FileService() {
                             ContentType: file.type || getMimeTypeFromFileName(fileName),
                         }));
 
-                        // 创建文件路径
-                        const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
-                        
-                        // 保存文件记录
+                        // 保存文件记录，path为虚拟路径，hash为S3物理路径
                         const result = await db.insert(files).values({
-                            path: s3Key,
+                            path: filePath,
                             name: fileName,
                             size: file.size,
                             mimeType: file.type || getMimeTypeFromFileName(fileName),
                             userId: uid,
-                            hash: hash,
+                            hash: s3Key,
                             parentPath,
                         }).returning({ id: files.id });
 
@@ -367,7 +342,7 @@ export function FileService() {
                             name: fileName,
                             size: file.size,
                             mimeType: file.type || getMimeTypeFromFileName(fileName),
-                            hash,
+                            hash: s3Key,
                             isFolder: false,
                         };
                     } catch (error: any) {
