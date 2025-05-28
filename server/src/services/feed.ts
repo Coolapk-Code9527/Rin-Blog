@@ -747,81 +747,94 @@ function normalizePath(path: string): string {
 
 // 辅助函数：同步文件引用到files/feed_files
 async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
-  const env = getEnv();
-  const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+/g, '').replace(/\/+$/g, '') + '/';
-  let refs = extractFileReferences(content).filter(Boolean);
-  // 只处理有效图片路径，去除域名，标准化为images/xxx.png
-  let filteredRefs = refs
-    .map(ref => normalizePath(ref))
-    .filter(x => x.startsWith(S3_FOLDER) && !x.startsWith('http://') && !x.startsWith('https://'));
-  if (filteredRefs.length === 0) return;
-  const filesTable = db.schema?.files || db.files;
-  const feedFilesTable = db.schema?.feedFiles || db.feedFiles;
-  // 查询已存在的files（只查标准化后的路径）
-  const allPaths = filteredRefs.filter(p => typeof p === 'string' && p.length > 8 && !p.includes(' '));
-  console.warn(`[同步调试][feedId=${feedId}] allPaths=`, allPaths);
-  const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(allPaths));
-  console.warn(`[同步调试][feedId=${feedId}] filesInDb=`, filesInDb);
-  const validFilesInDb = Array.isArray(filesInDb) ? filesInDb.filter(f => f && typeof f.id === 'number' && typeof f.path === 'string') : [];
-  console.warn(`[同步调试][feedId=${feedId}] validFilesInDb=`, validFilesInDb);
-  const pathToId = new Map<string, number>(validFilesInDb.map(f => [f.path, f.id]));
-  // 自动补录缺失文件
-  for (const path of filteredRefs) {
-    if (!pathToId.has(path)) {
+  try {
+    const env = getEnv();
+    const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+/g, '').replace(/\/+$/g, '') + '/';
+    let refs = extractFileReferences(content).filter(Boolean);
+    // 只处理有效图片路径，去除域名，标准化为images/xxx.png
+    let filteredRefs = refs
+      .map(ref => normalizePath(ref))
+      .filter(x => x.startsWith(S3_FOLDER) && !x.startsWith('http://') && !x.startsWith('https://'));
+    if (filteredRefs.length === 0) return;
+    const filesTable = db.schema?.files || db.files;
+    const feedFilesTable = db.schema?.feedFiles || db.feedFiles;
+    // 查询已存在的files（只查标准化后的路径）
+    const allPaths = filteredRefs.filter(p => typeof p === 'string' && p.length > 8 && !p.includes(' '));
+    console.log(`[同步调试][feedId=${feedId}] allPaths=`, allPaths);
+    let filesInDb = [];
+    try {
+      filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(allPaths));
+    } catch (e) {
+      console.error(`[同步异常][feedId=${feedId}] filesInDb查询异常`, e);
+      filesInDb = [];
+    }
+    if (!Array.isArray(filesInDb)) filesInDb = [];
+    const validFilesInDb = filesInDb.filter(f => f && typeof f.id === 'number' && typeof f.path === 'string');
+    console.log(`[同步调试][feedId=${feedId}] validFilesInDb=`, validFilesInDb);
+    const pathToId = new Map<string, number>(validFilesInDb.map(f => [f.path, f.id]));
+    // 自动补录缺失文件
+    for (const path of filteredRefs) {
+      if (!path || typeof path !== 'string') continue;
+      if (!pathToId.has(path)) {
+        try {
+          // 从R2获取元信息
+          const meta = await getR2FileMeta('/' + path);
+          if (!meta || typeof meta !== 'object' || !meta.size || !meta.mimeType) {
+            console.warn(`[同步失败][feedId=${feedId}] R2无元信息 path=${path} meta=`, meta);
+            continue;
+          }
+          const name = path.split('/').pop() || path;
+          const mimeType = meta.mimeType || 'application/octet-stream';
+          const size = meta.size || 0;
+          const hash = meta.hash || '';
+          const insertRes = await db.insert(filesTable).values({
+            path,
+            name,
+            size,
+            mimeType,
+            userId: 1, // 统一用管理员ID兜底
+            parentPath: '/',
+            hash
+          }).returning({id: filesTable.id});
+          if (insertRes && Array.isArray(insertRes) && insertRes[0] && typeof insertRes[0].id === 'number') {
+            pathToId.set(path, insertRes[0].id);
+          } else {
+            console.warn(`[同步失败][feedId=${feedId}] 插入files表无返回id path=${path} insertRes=`, insertRes);
+            continue;
+          }
+        } catch (e) {
+          console.warn(`[同步异常][feedId=${feedId}] path=${path} error=`, e, { path, feedId, pathToId: Array.from(pathToId.entries()) });
+          continue;
+        }
+      }
+    }
+    // 先清空旧关联
+    await db.delete(feedFilesTable).where(feedFilesTable.feedId.eq(feedId));
+    // 插入新关联
+    let order = 0;
+    for (const path of filteredRefs) {
+      if (!path || typeof path !== 'string') continue;
+      const fileId = pathToId.get(path);
+      if (typeof fileId !== 'number' || !Number.isFinite(fileId)) {
+        // 增强日志：输出查找失败的路径和数据库现有路径
+        const allDbPaths = Array.from(pathToId.keys()).join(', ');
+        console.warn(`[同步失败][feedId=${feedId}] 本地图片未上传且R2无此文件，files表无此记录，跳过 path=${path} 已有paths=[${allDbPaths}]`);
+        continue;
+      }
       try {
-        // 从R2获取元信息
-        const meta = await getR2FileMeta('/' + path);
-        if (!meta || !meta.size || !meta.mimeType) {
-          console.warn(`[同步失败][feedId=${feedId}] R2无元信息 path=${path}`);
-          continue;
-        }
-        const name = path.split('/').pop() || path;
-        const mimeType = meta.mimeType || 'application/octet-stream';
-        const size = meta.size || 0;
-        const hash = meta.hash || '';
-        const insertRes = await db.insert(filesTable).values({
-          path,
-          name,
-          size,
-          mimeType,
-          userId: 1, // 统一用管理员ID兜底
-          parentPath: '/',
-          hash
-        }).returning({id: filesTable.id});
-        if (insertRes && insertRes[0] && typeof insertRes[0].id === 'number') {
-          pathToId.set(path, insertRes[0].id);
-        } else {
-          console.warn(`[同步失败][feedId=${feedId}] 插入files表无返回id path=${path} insertRes=`, insertRes);
-          continue;
-        }
+        await db.insert(feedFilesTable).values({
+          feedId,
+          fileId,
+          relationType: 'embed',
+          displayOrder: order++
+        });
       } catch (e) {
-        console.warn(`[同步异常][feedId=${feedId}] path=${path} error=`, e);
+        console.error(`[插入feedFiles异常][feedId=${feedId}] fileId=${fileId} path=${path} error=`, e, { feedId, fileId, path });
         continue;
       }
     }
-  }
-  // 先清空旧关联
-  await db.delete(feedFilesTable).where(feedFilesTable.feedId.eq(feedId));
-  // 插入新关联
-  let order = 0;
-  for (const path of filteredRefs) {
-    const fileId = pathToId.get(path);
-    if (typeof fileId !== 'number' || !Number.isFinite(fileId)) {
-      // 增强日志：输出查找失败的路径和数据库现有路径
-      const allDbPaths = Array.from(pathToId.keys()).join(', ');
-      console.warn(`[同步失败][feedId=${feedId}] 本地图片未上传且R2无此文件，files表无此记录，跳过 path=${path} 已有paths=[${allDbPaths}]`);
-      continue;
-    }
-    try {
-      await db.insert(feedFilesTable).values({
-        feedId,
-        fileId,
-        relationType: 'embed',
-        displayOrder: order++
-      });
-    } catch (e) {
-      console.error(`[插入feedFiles异常][feedId=${feedId}] fileId=${fileId} path=${path} error=`, e);
-      continue;
-    }
+  } catch (e) {
+    console.error(`[syncFeedFileReferences全局异常][feedId=${feedId}]`, e);
+    throw e;
   }
 }

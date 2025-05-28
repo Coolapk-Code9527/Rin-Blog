@@ -755,7 +755,7 @@ export function FileManager({
                   <div className="mb-4 text-sm whitespace-pre-wrap break-all">{syncResult}</div>
                   {syncDetailList.length > 0 && (
                     <div className="max-h-80 overflow-y-auto text-xs mb-4">
-                      {syncDetailList.map((d, i) => (
+                      {Array.isArray(syncDetailList) && syncDetailList.filter(d => d && typeof d === 'object' && typeof d.feedId !== 'undefined').map((d, i) => (
                         <details key={i} className="mb-2">
                           <summary className="cursor-pointer text-theme">文章ID: {d.feedId} UID: {d.userId || 1}</summary>
                           <div className="mt-1 whitespace-pre-wrap break-all">

@@ -644,12 +644,19 @@ export function FileService() {
                             success++;
                         } catch (e: any) {
                             failed++;
+                            let errObj: any = {};
+                            if (e && typeof e === 'object') {
+                              errObj = e;
+                            } else {
+                              errObj = { message: String(e), stack: '' };
+                            }
+                            // 兜底所有字段
                             failedDetails.push({
-                                feedId: feed.id,
+                                feedId: typeof feed.id !== 'undefined' ? feed.id : -1,
                                 userId: 1,
                                 contentSnippet: (feed.content || '').slice(0, 100),
-                                error: e?.message || String(e),
-                                stack: e?.stack || ''
+                                error: errObj?.message || String(errObj),
+                                stack: errObj?.stack || ''
                             });
                         }
                         total++;
