@@ -321,12 +321,13 @@ export function FileManager({
     }
 
     try {
-      const response = await client.files({ id: file.id }).delete({
-        headers: headersWithAuth()
+      const response = await fetch(`${endpoint}/files/${file.id}`, {
+        method: 'DELETE',
+        headers: headersWithAuth(),
       });
-
-      if (response.error) {
-        showAlert(t('files.delete_error', { error: response.error.value }));
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        showAlert(t('files.delete_error', { error: data.error?.value || data.error || response.statusText }));
       } else {
         setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
         loadFiles();
