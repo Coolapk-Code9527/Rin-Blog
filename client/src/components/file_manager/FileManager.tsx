@@ -321,18 +321,12 @@ export function FileManager({
     }
 
     try {
-      const response = await fetch(`${endpoint}/files/${file.id}`, {
-        method: 'DELETE',
-        headers: headersWithAuth(),
+      const response = await client.files({ id: file.id }).delete({
+        headers: headersWithAuth()
       });
-      const data = await response.json();
-      if (!response.ok || data.error) {
-        // 检查是否因被引用导致删除失败
-        if (response.status === 409 && (data.error?.includes('referenced') || data.error?.includes('引用'))) {
-          showAlert(t('files.delete_error', { error: t('files.delete_ref_conflict') }), () => handleShowReferences(file));
-        } else {
-          showAlert(t('files.delete_error', { error: data.error?.value || data.error || response.statusText }));
-        }
+
+      if (response.error) {
+        showAlert(t('files.delete_error', { error: response.error.value }));
       } else {
         setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
         loadFiles();
