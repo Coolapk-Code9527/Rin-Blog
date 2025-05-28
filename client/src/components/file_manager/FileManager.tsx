@@ -455,10 +455,9 @@ export function FileManager({
 
   // 渲染网格视图
   const renderGridView = () => {
-    const displayFiles = getDisplayFiles();
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
-        {displayFiles.map(file => (
+        {files.map(file => (
           <div 
             key={file.id}
             className={`p-3 rounded-lg border ${selectedFiles.some(f => f.id === file.id) ? 'border-theme bg-pink-50 dark:bg-pink-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50'} 
@@ -500,7 +499,7 @@ export function FileManager({
           </div>
         ))}
         
-        {displayFiles.length === 0 && !isLoading && (
+        {files.length === 0 && !isLoading && (
           <div className="col-span-full flex flex-col items-center justify-center py-10">
             <i className="ri-inbox-line text-4xl text-gray-400"></i>
             <p className="mt-2 text-gray-500">{t('files.empty')}</p>
@@ -512,7 +511,6 @@ export function FileManager({
   
   // 渲染列表视图
   const renderListView = () => {
-    const displayFiles = getDisplayFiles();
     return (
       <div className="overflow-x-auto w-full">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -561,7 +559,7 @@ export function FileManager({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
-            {displayFiles.map(file => (
+            {files.map(file => (
               <tr 
                 key={file.id}
                 className={`${selectedFiles.some(f => f.id === file.id) ? 'bg-pink-50 dark:bg-pink-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'} cursor-pointer transition-colors`}
@@ -608,7 +606,7 @@ export function FileManager({
                 </td>
               </tr>
             ))}
-            {displayFiles.length === 0 && !isLoading && (
+            {files.length === 0 && !isLoading && (
               <tr>
                 <td colSpan={showSelector && multiple ? 5 : 4} className="py-8 text-center">
                   <div className="flex flex-col items-center justify-center">
@@ -677,16 +675,6 @@ export function FileManager({
         </button>
       </div>
     ) : null;
-  };
-
-  // 渲染网格视图和列表视图前，根目录下自动筛选所有parentPath为'/'的文件和文件夹，支持孤立文件显示
-  const getDisplayFiles = () => {
-    if (currentPath === '/') {
-      // 根目录：显示所有parentPath为'/'的文件和文件夹
-      return files.filter(f => f.parentPath === '/');
-    }
-    // 其它目录：显示所有当前目录下的文件和文件夹
-    return files;
   };
 
   return (

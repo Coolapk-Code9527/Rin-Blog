@@ -53,14 +53,6 @@ function getMimeTypeFromFileName(fileName: string): string {
     return mimeTypes[extension] || 'application/octet-stream';
 }
 
-// 新增：根据S3 Key自动推导parentPath的工具函数
-function getParentPathFromKey(key: string): string {
-  if (!key) return '/';
-  const parts = key.replace(/^\/+/, '').split('/');
-  if (parts.length <= 1) return '/';
-  return parts.slice(0, -1).join('/') + '/';
-}
-
 export function FileService() {
     const env = getEnv();
     const endpoint = env.S3_ENDPOINT;
@@ -252,7 +244,7 @@ export function FileService() {
                             userId: uid,
                             accessLevel: 'public',
                             isFolder: 1,
-                            parentPath: getParentPathFromKey(folderPath),
+                            parentPath,
                             hash: 'folder',
                         }).returning({ id: files.id });
 
@@ -261,7 +253,7 @@ export function FileService() {
                             path: folderPath,
                             name,
                             isFolder: true,
-                            parentPath: getParentPathFromKey(folderPath),
+                            parentPath,
                         };
                     } catch (error: any) {
                         console.error(error);
@@ -332,28 +324,28 @@ export function FileService() {
                         // 如果存在相同哈希的文件，直接引用
                         if (existingFile.length > 0) {
                             const fileName = name || file.name;
-                            const s3Key = path.join(parentPath === '/' ? '' : parentPath, fileName).replace(/^\/+/, '');
+                            const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
+                            
                             // 创建新的文件记录，但引用相同的哈希
                             const result = await db.insert(files).values({
-                                path: s3Key,
+                                path: filePath,
                                 name: fileName,
                                 size: file.size,
                                 mimeType: file.type || getMimeTypeFromFileName(fileName),
                                 userId: uid,
                                 hash: hash,
-                                parentPath: getParentPathFromKey(s3Key),
+                                parentPath,
                             }).returning({ id: files.id });
 
                             return {
                                 id: result[0].id,
-                                path: s3Key,
+                                path: filePath,
                                 url: `${accessHost}/${existingFile[0].path}`,
                                 name: fileName,
                                 size: file.size,
                                 mimeType: file.type || getMimeTypeFromFileName(fileName),
                                 hash,
                                 isFolder: false,
-                                parentPath: getParentPathFromKey(s3Key),
                             };
                         }
 
@@ -380,19 +372,18 @@ export function FileService() {
                             mimeType: file.type || getMimeTypeFromFileName(fileName),
                             userId: uid,
                             hash: hash,
-                            parentPath: getParentPathFromKey(s3Key),
+                            parentPath,
                         }).returning({ id: files.id });
 
                         return {
                             id: result[0].id,
-                            path: s3Key,
+                            path: filePath,
                             url: `${accessHost}/${s3Key}`,
                             name: fileName,
                             size: file.size,
                             mimeType: file.type || getMimeTypeFromFileName(fileName),
                             hash,
                             isFolder: false,
-                            parentPath: getParentPathFromKey(s3Key),
                         };
                     } catch (error: any) {
                         console.error(error);
@@ -701,7 +692,7 @@ export function FileService() {
                                 size,
                                 mimeType,
                                 userId: uid || 1,
-                                parentPath: getParentPathFromKey(path),
+                                parentPath: '/',
                                 hash
                             });
                             inserted++;
