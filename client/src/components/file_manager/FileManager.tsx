@@ -444,13 +444,13 @@ export function FileManager({
             </p>
             
             {/* 引用计数按钮 */}
-            {!file.isFolder && (
+            {!file.isFolder && file.referencesCount > 0 && (
               <button
-                className="absolute bottom-1 right-1 text-xs text-blue-500 hover:underline bg-white/80 dark:bg-gray-900/80 rounded px-2 py-0.5"
+                className={"absolute bottom-1 right-1 text-xs rounded px-2 py-0.5 text-blue-500 hover:underline bg-white/80 dark:bg-gray-900/80 cursor-pointer"}
                 onClick={e => { e.stopPropagation(); handleShowReferences(file); }}
                 title={t('files.references')}
               >
-                {file.references ? file.references.length : '-'} {t('files.ref_count')}
+                {file.referencesCount} {t('files.ref_count')}
               </button>
             )}
             
@@ -556,11 +556,11 @@ export function FileManager({
                 </td>
                 <td className="px-4 py-3 text-sm text-right">
                   <button 
-                    className="text-blue-500 hover:underline text-xs mr-2"
+                    className={`text-xs mr-2 rounded px-2 py-0.5 text-blue-500 hover:underline`}
                     onClick={e => { e.stopPropagation(); handleShowReferences(file); }}
                     title={t('files.references')}
                   >
-                    {file.references ? file.references.length : '-'} {t('files.ref_count')}
+                    {file.referencesCount} {t('files.ref_count')}
                   </button>
                   <button 
                     className="text-red-500 hover:text-red-700 transition-colors p-1"

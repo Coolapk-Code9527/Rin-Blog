@@ -1,5 +1,5 @@
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { eq, sql, and, like, desc, asc, or, isNull } from "drizzle-orm";
+import { eq, sql, and, like, desc, asc, or, isNull, inArray } from "drizzle-orm";
 import Elysia, { t } from "elysia";
 import path from "node:path";
 import type { Env } from "../db/db";
@@ -68,7 +68,7 @@ export function FileService() {
         .group('/files', (group) =>
             group
                 // 获取文件列表
-                .get('/', async ({ query, uid, set }) => {
+                .get('/', async ({ query, uid, admin, set }) => {
                     if (!uid) {
                         set.status = 401;
                         return { error: 'Unauthorized' };
@@ -81,10 +81,12 @@ export function FileService() {
                         return { error: 'Database connection not available' };
                     }
 
-                    const { path = '/', type, search, sort = 'name', order = 'asc', page = 1, limit = 20 } = query;
+                    const { path = '/', type, search, sort = 'name', order = 'asc', page = 1, limit = 20, all } = query;
                     const offset = (page - 1) * limit;
 
                     try {
+                        // 管理员可查所有用户文件
+                        const userFilter = (admin && all === '1') ? undefined : eq(files.userId, uid);
                         // 构建查询条件并链式调用
                         const result = await db
                             .select({
@@ -103,7 +105,7 @@ export function FileService() {
                             .from(files)
                             .where(
                                 and(
-                                    eq(files.userId, uid),
+                                    ...(userFilter ? [userFilter] : []),
                                     eq(files.parentPath, path),
                                     ...(type ? [like(files.mimeType, `${type}/%`)] : []),
                                     ...(search ? [like(files.name, `%${search}%`)] : [])
@@ -128,13 +130,24 @@ export function FileService() {
                             .from(files)
                             .where(
                                 and(
-                                    eq(files.userId, uid),
+                                    ...(userFilter ? [userFilter] : []),
                                     eq(files.parentPath, path),
                                     ...(type ? [like(files.mimeType, `${type}/%`)] : []),
                                     ...(search ? [like(files.name, `%${search}%`)] : [])
                                 )
                             );
 
+                        // 获取每个文件的引用计数
+                        const fileIds = resultData.map((f: any) => f.id);
+                        let referencesMap: Record<number, number> = {};
+                        if (fileIds.length > 0) {
+                            const refs = await db
+                                .select({ fileId: feedFiles.fileId, count: sql<number>`count(*)` })
+                                .from(feedFiles)
+                                .where(fileIds.length === 1 ? eq(feedFiles.fileId, fileIds[0]) : inArray(feedFiles.fileId, fileIds))
+                                .groupBy(feedFiles.fileId);
+                            refs.forEach((r: any) => { referencesMap[r.fileId] = r.count; });
+                        }
                         return {
                             files: resultData.map((file: any) => ({
                                 ...file,
@@ -142,7 +155,8 @@ export function FileService() {
                                     (typeof file.modifiedAt === 'object' ? 
                                        Math.floor(file.modifiedAt.getTime() / 1000) : 
                                        file.modifiedAt) : 
-                                    Math.floor(Date.now() / 1000)
+                                    Math.floor(Date.now() / 1000),
+                                referencesCount: Number(referencesMap[file.id] || 0)
                             })),
                             total: countQuery[0].count,
                             page,
@@ -162,6 +176,7 @@ export function FileService() {
                         order: t.Optional(t.String()),
                         page: t.Optional(t.Numeric()),
                         limit: t.Optional(t.Numeric()),
+                        all: t.Optional(t.String()),
                     }),
                 })
                 
@@ -620,18 +635,18 @@ export function FileService() {
                         return { error: 'Database connection not available' };
                     }
                     // 扫描所有文章内容
-                    const allFeeds = await db.select({ id: feeds.id, content: feeds.content, uid: feeds.uid }).from(feeds);
+                    const allFeeds = await db.select({ id: feeds.id, content: feeds.content }).from(feeds);
                     let total = 0, success = 0, failed = 0;
                     const failedDetails: any[] = [];
                     for (const feed of allFeeds) {
                         try {
-                            await syncFeedFileReferences(db, feed.id, feed.content, feed.uid);
+                            // 强制userId为当前管理员uid
+                            await syncFeedFileReferences(db, feed.id, feed.content, uid);
                             success++;
                         } catch (e: any) {
                             failed++;
                             failedDetails.push({
                                 feedId: feed.id,
-                                uid: feed.uid,
                                 contentSnippet: (feed.content || '').slice(0, 100),
                                 error: e?.message || String(e),
                                 stack: e?.stack || ''

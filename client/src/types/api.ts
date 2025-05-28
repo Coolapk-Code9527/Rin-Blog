@@ -37,6 +37,7 @@ export type FileItem = {
   modifiedAt: number;
   url?: string;
   references?: Array<{id: number, title: string, type: string}>;
+  referencesCount?: number;
 };
 
 // 文章类型

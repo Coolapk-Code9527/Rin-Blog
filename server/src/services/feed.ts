@@ -760,7 +760,10 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
       try {
         // 从R2获取元信息
         const meta = await getR2FileMeta('/' + r2Path);
-        if (!meta) continue;
+        if (!meta) {
+          console.warn('自动补录文件失败：R2无元信息', r2Path);
+          continue;
+        }
         const name = path.split('/').pop() || path;
         const mimeType = meta.mimeType || 'application/octet-stream';
         const size = meta.size || 0;
@@ -776,9 +779,12 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
         }).returning({id: filesTable.id});
         if (insertRes && insertRes[0] && typeof insertRes[0].id === 'number') {
           pathToId.set(r2Path, insertRes[0].id);
+        } else {
+          console.warn('自动补录文件失败：插入files表无返回id', r2Path, insertRes);
+          continue;
         }
       } catch (e) {
-        console.warn('自动补录文件失败:', r2Path, e);
+        console.warn('自动补录文件异常:', r2Path, e);
         continue;
       }
     }
