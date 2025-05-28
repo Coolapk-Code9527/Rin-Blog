@@ -745,6 +745,14 @@ function normalizePath(path: string): string {
   return path;
 }
 
+// 辅助函数：引入getParentPathFromKey工具函数（可与files.ts共用）
+function getParentPathFromKey(key: string): string {
+  if (!key) return '/';
+  const parts = key.replace(/^\/+/, '').split('/');
+  if (parts.length <= 1) return '/';
+  return parts.slice(0, -1).join('/') + '/';
+}
+
 // 辅助函数：同步文件引用到files/feed_files
 async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
   try {
@@ -793,7 +801,7 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
             size,
             mimeType,
             userId: 1, // 统一用管理员ID兜底
-            parentPath: '/',
+            parentPath: getParentPathFromKey(path),
             hash
           }).returning({id: filesTable.id});
           if (insertRes && Array.isArray(insertRes) && insertRes[0] && typeof insertRes[0].id === 'number') {
