@@ -640,13 +640,13 @@ export function FileService() {
                     const failedDetails: any[] = [];
                     for (const feed of allFeeds) {
                         try {
-                            // userId始终为1
                             await syncFeedFileReferences(db, feed.id, feed.content, 1);
                             success++;
                         } catch (e: any) {
                             failed++;
                             failedDetails.push({
                                 feedId: feed.id,
+                                userId: 1,
                                 contentSnippet: (feed.content || '').slice(0, 100),
                                 error: e?.message || String(e),
                                 stack: e?.stack || ''

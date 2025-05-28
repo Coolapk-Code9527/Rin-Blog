@@ -758,9 +758,13 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
   const filesTable = db.schema?.files || db.files;
   const feedFilesTable = db.schema?.feedFiles || db.feedFiles;
   // 查询已存在的files（只查标准化后的路径）
-  const allPaths = filteredRefs;
+  const allPaths = filteredRefs.filter(p => typeof p === 'string' && p.length > 8 && !p.includes(' '));
+  console.warn(`[同步调试][feedId=${feedId}] allPaths=`, allPaths);
   const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(allPaths));
-  const pathToId = new Map<string, number>(Array.isArray(filesInDb) ? filesInDb.filter(f => typeof f.id === 'number' && typeof f.path === 'string').map((f: {path: string, id: number}) => [f.path, f.id]) : []);
+  console.warn(`[同步调试][feedId=${feedId}] filesInDb=`, filesInDb);
+  const validFilesInDb = Array.isArray(filesInDb) ? filesInDb.filter(f => f && typeof f.id === 'number' && typeof f.path === 'string') : [];
+  console.warn(`[同步调试][feedId=${feedId}] validFilesInDb=`, validFilesInDb);
+  const pathToId = new Map<string, number>(validFilesInDb.map(f => [f.path, f.id]));
   // 自动补录缺失文件
   for (const path of filteredRefs) {
     if (!pathToId.has(path)) {
@@ -768,7 +772,7 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
         // 从R2获取元信息
         const meta = await getR2FileMeta('/' + path);
         if (!meta || !meta.size || !meta.mimeType) {
-          console.warn('自动补录文件失败：R2无元信息', path);
+          console.warn(`[同步失败][feedId=${feedId}] R2无元信息 path=${path}`);
           continue;
         }
         const name = path.split('/').pop() || path;
@@ -787,11 +791,11 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
         if (insertRes && insertRes[0] && typeof insertRes[0].id === 'number') {
           pathToId.set(path, insertRes[0].id);
         } else {
-          console.warn('自动补录文件失败：插入files表无返回id', path, insertRes);
+          console.warn(`[同步失败][feedId=${feedId}] 插入files表无返回id path=${path} insertRes=`, insertRes);
           continue;
         }
       } catch (e) {
-        console.warn('自动补录文件异常:', path, e);
+        console.warn(`[同步异常][feedId=${feedId}] path=${path} error=`, e);
         continue;
       }
     }
@@ -802,8 +806,10 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
   let order = 0;
   for (const path of filteredRefs) {
     const fileId = pathToId.get(path);
-    if (typeof fileId !== 'number') {
-      console.warn('同步失败：本地图片未上传且R2无此文件，files表无此记录，跳过', path);
+    if (typeof fileId !== 'number' || !Number.isFinite(fileId)) {
+      // 增强日志：输出查找失败的路径和数据库现有路径
+      const allDbPaths = Array.from(pathToId.keys()).join(', ');
+      console.warn(`[同步失败][feedId=${feedId}] 本地图片未上传且R2无此文件，files表无此记录，跳过 path=${path} 已有paths=[${allDbPaths}]`);
       continue;
     }
     try {
@@ -814,7 +820,7 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
         displayOrder: order++
       });
     } catch (e) {
-      console.error('插入feedFiles异常:', e, { feedId, fileId, path });
+      console.error(`[插入feedFiles异常][feedId=${feedId}] fileId=${fileId} path=${path} error=`, e);
       continue;
     }
   }

@@ -757,7 +757,7 @@ export function FileManager({
                     <div className="max-h-80 overflow-y-auto text-xs mb-4">
                       {syncDetailList.map((d, i) => (
                         <details key={i} className="mb-2">
-                          <summary className="cursor-pointer text-theme">文章ID: {d.feedId} UID: {d.uid}</summary>
+                          <summary className="cursor-pointer text-theme">文章ID: {d.feedId} UID: {d.userId || 1}</summary>
                           <div className="mt-1 whitespace-pre-wrap break-all">
                             <b>内容片段:</b> {d.contentSnippet}
                             <br /><b>错误:</b> {d.error}
@@ -770,7 +770,7 @@ export function FileManager({
                   <div className="flex justify-end mt-6 gap-2">
                     <button onClick={() => {
                       const text = syncDetailList.length > 0
-                        ? syncDetailList.map(d => `文章ID:${d.feedId} UID:${d.uid}\n内容:${d.contentSnippet}\n错误:${d.error}\n${d.stack ? '堆栈:' + d.stack : ''}`).join('\n---\n')
+                        ? syncDetailList.map(d => `文章ID:${d.feedId} UID:${d.userId || 1}\n内容:${d.contentSnippet}\n错误:${d.error}\n${d.stack ? '堆栈:' + d.stack : ''}`).join('\n---\n')
                         : syncResult;
                       navigator.clipboard.writeText(text as string);
                     }} className="px-4 py-2 bg-theme text-white rounded-md">{t('copy')}</button>
