@@ -735,33 +735,40 @@ function extractFileReferences(content: string): string[] {
   return references;
 }
 
+// 辅助函数：标准化路径，去除域名和多余/
+function normalizePath(path: string): string {
+  if (!path) return '';
+  // 去除域名
+  path = path.replace(/^https?:\/\/(?:[\w.-]+)\/?/, '');
+  // 去除多余前缀/
+  path = path.replace(/^\/+/, '');
+  return path;
+}
+
 // 辅助函数：同步文件引用到files/feed_files
 async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
   const env = getEnv();
-  const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+|\/+$/g, '') + '/';
+  const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+/g, '').replace(/\/+$/g, '') + '/';
   let refs = extractFileReferences(content).filter(Boolean);
-  let filteredRefs = refs.filter(
-    x => typeof x === 'string' && x.length > 1 && x.startsWith('/') && !x.startsWith('http://') && !x.startsWith('https://')
-  );
+  // 只处理有效图片路径，去除域名，标准化为images/xxx.png
+  let filteredRefs = refs
+    .map(ref => normalizePath(ref))
+    .filter(x => x.startsWith(S3_FOLDER) && !x.startsWith('http://') && !x.startsWith('https://'));
   if (filteredRefs.length === 0) return;
   const filesTable = db.schema?.files || db.files;
   const feedFilesTable = db.schema?.feedFiles || db.feedFiles;
-  // 查询已存在的files（原始路径和加S3_FOLDER前缀的路径都查）
-  const allPaths = [
-    ...filteredRefs,
-    ...filteredRefs.map(p => '/' + S3_FOLDER + p.replace(/^\//, ''))
-  ];
+  // 查询已存在的files（只查标准化后的路径）
+  const allPaths = filteredRefs;
   const filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(allPaths));
   const pathToId = new Map<string, number>(Array.isArray(filesInDb) ? filesInDb.filter(f => typeof f.id === 'number' && typeof f.path === 'string').map((f: {path: string, id: number}) => [f.path, f.id]) : []);
   // 自动补录缺失文件
   for (const path of filteredRefs) {
-    let r2Path = S3_FOLDER + path.replace(/^\//, '');
-    if (!pathToId.has(r2Path)) {
+    if (!pathToId.has(path)) {
       try {
         // 从R2获取元信息
-        const meta = await getR2FileMeta('/' + r2Path);
-        if (!meta) {
-          console.warn('自动补录文件失败：R2无元信息', r2Path);
+        const meta = await getR2FileMeta('/' + path);
+        if (!meta || !meta.size || !meta.mimeType) {
+          console.warn('自动补录文件失败：R2无元信息', path);
           continue;
         }
         const name = path.split('/').pop() || path;
@@ -769,22 +776,22 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
         const size = meta.size || 0;
         const hash = meta.hash || '';
         const insertRes = await db.insert(filesTable).values({
-          path: r2Path,
+          path,
           name,
           size,
           mimeType,
-          userId: userId || 1,
+          userId: 1, // 统一用管理员ID兜底
           parentPath: '/',
           hash
         }).returning({id: filesTable.id});
         if (insertRes && insertRes[0] && typeof insertRes[0].id === 'number') {
-          pathToId.set(r2Path, insertRes[0].id);
+          pathToId.set(path, insertRes[0].id);
         } else {
-          console.warn('自动补录文件失败：插入files表无返回id', r2Path, insertRes);
+          console.warn('自动补录文件失败：插入files表无返回id', path, insertRes);
           continue;
         }
       } catch (e) {
-        console.warn('自动补录文件异常:', r2Path, e);
+        console.warn('自动补录文件异常:', path, e);
         continue;
       }
     }
@@ -794,10 +801,9 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
   // 插入新关联
   let order = 0;
   for (const path of filteredRefs) {
-    let r2Path = S3_FOLDER + path.replace(/^\//, '');
-    const fileId = pathToId.get(r2Path);
+    const fileId = pathToId.get(path);
     if (typeof fileId !== 'number') {
-      console.warn('同步失败：本地图片未上传且R2无此文件，files表无此记录，跳过', r2Path);
+      console.warn('同步失败：本地图片未上传且R2无此文件，files表无此记录，跳过', path);
       continue;
     }
     try {
@@ -808,7 +814,7 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
         displayOrder: order++
       });
     } catch (e) {
-      console.error('插入feedFiles异常:', e, { feedId, fileId, r2Path });
+      console.error('插入feedFiles异常:', e, { feedId, fileId, path });
       continue;
     }
   }

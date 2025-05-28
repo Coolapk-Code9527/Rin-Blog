@@ -24,6 +24,25 @@ const Button = ({ onClick, title, secondary = false }: { onClick: () => void, ti
   </button>
 );
 
+// 获取S3访问域名（优先window全局变量，其次后端接口/配置）
+let S3_ACCESS_HOST = '';
+if (typeof window !== 'undefined' && (window as any).S3_ACCESS_HOST) {
+  S3_ACCESS_HOST = (window as any).S3_ACCESS_HOST;
+} else if (typeof S3_ACCESS_HOST !== 'undefined' && S3_ACCESS_HOST) {
+  // 构建时注入的全局变量
+  S3_ACCESS_HOST = S3_ACCESS_HOST;
+} else {
+  // 可选：后端接口动态获取，或兜底为空
+  S3_ACCESS_HOST = '';
+}
+
+// 文件展示时拼接完整URL
+function getFileUrl(path: string) {
+  if (!path) return '';
+  if (!S3_ACCESS_HOST) return path; // 若未配置则返回原始路径
+  return S3_ACCESS_HOST.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
+}
+
 // 文件管理器组件
 export function FileManager({
   onSelect,
@@ -398,13 +417,17 @@ export function FileManager({
         if (data.failedDetails && data.failedDetails.length > 0) {
           setSyncDetailList(data.failedDetails);
           setSyncDetailOpen(true);
+        } else {
+          setSyncDetailOpen(true);
         }
-        loadFiles(true);
+        loadFiles(true); // 同步后自动刷新
       } else {
         setSyncResult(t('files.sync_failed', { error: data.error || res.status }));
+        setSyncDetailOpen(true);
       }
     } catch (e: any) {
       setSyncResult(t('files.sync_failed', { error: e.message }));
+      setSyncDetailOpen(true);
     }
     setIsSyncing(false);
   };
@@ -876,7 +899,6 @@ export function FileManager({
                     <a href={`/feed/${ref.id}`} target="_blank" rel="noopener" className="text-blue-600 hover:underline">
                       {ref.title || t('files.ref_no_title')}
                     </a>
-                    <span className="ml-2 text-xs text-gray-400">[{ref.type}]</span>
                   </li>
                 ))}
               </ul>

@@ -39,12 +39,20 @@ export async function listAllR2Files(): Promise<string[]> {
     return files.filter(Boolean);
 }
 
+export function normalizeR2Path(path: string): string {
+    if (!path) return '';
+    path = path.replace(/^https?:\/\/(?:[\w.-]+)\/?/, '');
+    path = path.replace(/^\/+/, '');
+    return path;
+}
+
 export async function getR2FileMeta(path: string): Promise<{size?: number, mimeType?: string, hash?: string} | null> {
-    const env: Env = getEnv();
-    const s3 = createS3Client();
-    const bucket = env.S3_BUCKET;
-    const key = path.startsWith('/') ? path.slice(1) : path;
     try {
+        path = normalizeR2Path(path);
+        const env: Env = getEnv();
+        const s3 = createS3Client();
+        const bucket = env.S3_BUCKET;
+        const key = path.startsWith('/') ? path.slice(1) : path;
         const res: any = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
         return {
             size: res.ContentLength,

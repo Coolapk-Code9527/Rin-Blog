@@ -640,8 +640,8 @@ export function FileService() {
                     const failedDetails: any[] = [];
                     for (const feed of allFeeds) {
                         try {
-                            // 强制userId为当前管理员uid
-                            await syncFeedFileReferences(db, feed.id, feed.content, uid);
+                            // userId始终为1
+                            await syncFeedFileReferences(db, feed.id, feed.content, 1);
                             success++;
                         } catch (e: any) {
                             failed++;
