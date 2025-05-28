@@ -127,7 +127,9 @@
     "confirm_selection": "確認選擇",
     "create_folder": "建立資料夹",
     "folder_name": "資料夹名稱",
-    "force_delete_confirm": "該檔案被文章引用，刪除後文章中的引用將失效，是否強制刪除？"
+    "force_delete_confirm": "該檔案被文章引用，刪除後文章中的引用將失效，是否強制刪除？",
+    "all_files": "全部檔案",
+    "my_files": "我的檔案"
   },
   "footer": {
     "rss": "RSS 訂閱連結"

@@ -86,6 +86,16 @@ export function FileManager({
   const [refDialogRefs, setRefDialogRefs] = useState<{id:number,title:string,type:string}[]>([]);
   const [refDialogError, setRefDialogError] = useState<string|null>(null);
 
+  // 新增：管理员全部文件切换
+  const [showAll, setShowAll] = useState(false);
+
+  // 判断是否管理员（需根据实际用户信息实现）
+  const isAdmin = true; // TODO: 替换为真实权限判断
+
+  if (!isAdmin) {
+    return null;
+  }
+
   // 加载文件列表
   const loadFiles = async (reload = false) => {
     try {
@@ -111,6 +121,7 @@ export function FileManager({
       params.append('order', sortOrder);
       params.append('page', String(currentPage));
       params.append('limit', String(itemsPerPage));
+      params.append('all', '1');
 
       // 获取授权头
       const authHeaders = headersWithAuth();

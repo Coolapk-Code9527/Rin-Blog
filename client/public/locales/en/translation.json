@@ -131,7 +131,9 @@
     "confirm_selection": "Confirm Selection",
     "create_folder": "Create Folder",
     "folder_name": "Folder Name",
-    "force_delete_confirm": "File is referenced by articles. Deleting will break references in articles. Force delete?"
+    "force_delete_confirm": "File is referenced by articles. Deleting will break references in articles. Force delete?",
+    "all_files": "All Files",
+    "my_files": "My Files"
   },
   "footer": {
     "rss": "RSS Subscription Link"

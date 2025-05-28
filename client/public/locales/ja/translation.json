@@ -127,7 +127,9 @@
     "confirm_selection": "選択を確定する",
     "create_folder": "フォルダを作成",
     "folder_name": "フォルダ名",
-    "force_delete_confirm": "このファイルは記事で参照されています。削除すると記事内の参照が失われます。本当に強制削除しますか？"
+    "force_delete_confirm": "このファイルは記事で参照されています。削除すると記事内の参照が失われます。本当に強制削除しますか？",
+    "all_files": "すべてのファイル",
+    "my_files": "自分のファイル"
   },
   "footer": {
     "rss": "RSS 購読リンク"
