@@ -146,7 +146,8 @@
     "syncing": "同步中...",
     "sync_confirm": "确定要同步所有文章文件引用吗？",
     "sync_success": "同步完成：共{{total}}篇，成功{{success}}，失败{{failed}}",
-    "sync_failed": "同步失败：{{error}}"
+    "sync_failed": "同步失败：{{error}}",
+    "force_delete_confirm": "该文件被文章引用，删除后文章中的引用将失效，是否强制删除？"
   },
   "footer": {
     "rss": "RSS 订阅链接"

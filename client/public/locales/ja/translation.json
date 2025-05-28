@@ -126,7 +126,8 @@
     "selected": "{{count}} 個のファイルが選択されました",
     "confirm_selection": "選択を確定する",
     "create_folder": "フォルダを作成",
-    "folder_name": "フォルダ名"
+    "folder_name": "フォルダ名",
+    "force_delete_confirm": "このファイルは記事で参照されています。削除すると記事内の参照が失われます。本当に強制削除しますか？"
   },
   "footer": {
     "rss": "RSS 購読リンク"

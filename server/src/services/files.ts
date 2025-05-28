@@ -461,7 +461,6 @@ export function FileService() {
                     }
 
                     const db = getDB();
-                    
                     if (!db) {
                         set.status = 500;
                         return { error: 'Database connection not available' };
@@ -469,7 +468,6 @@ export function FileService() {
 
                     try {
                         const fileId = Number(params.id);
-                        
                         // 获取文件信息
                         const fileInfo = await db
                             .select()
@@ -499,40 +497,32 @@ export function FileService() {
                                 set.status = 409;
                                 return { error: 'Folder is not empty' };
                             }
-                        } else {
-                            // 检查文件引用
-                            const references = await db
-                                .select({ count: sql<number>`count(*)` })
-                                .from(feedFiles)
-                                .where(eq(feedFiles.fileId, fileId));
+                        }
 
-                            if (references[0].count > 0) {
-                                set.status = 409;
-                                return { error: 'File is referenced by articles' };
-                            }
+                        // 删除 feedFiles 关联
+                        await db.delete(feedFiles).where(eq(feedFiles.fileId, fileId));
 
-                            // 检查是否有其他文件记录引用相同的存储路径
-                            const samePathFiles = await db
-                                .select({ count: sql<number>`count(*)` })
-                                .from(files)
-                                .where(
-                                    and(
-                                        eq(files.path, file.path),
-                                        sql`id != ${fileId}`
-                                    )
-                                );
+                        // 检查是否有其他文件记录引用相同的存储路径
+                        const samePathFiles = await db
+                            .select({ count: sql<number>`count(*)` })
+                            .from(files)
+                            .where(
+                                and(
+                                    eq(files.path, file.path),
+                                    sql`id != ${fileId}`
+                                )
+                            );
 
-                            // 如果没有其他文件引用，删除S3对象
-                            if (samePathFiles[0].count === 0) {
-                                try {
-                                    await s3.send(new DeleteObjectCommand({
-                                        Bucket: bucket,
-                                        Key: file.path,
-                                    }));
-                                } catch (error: any) {
-                                    console.error('Failed to delete S3 object:', error);
-                                    // 继续删除数据库记录，即使S3删除失败
-                                }
+                        // 如果没有其他文件引用，删除S3对象
+                        if (samePathFiles[0].count === 0) {
+                            try {
+                                await s3.send(new DeleteObjectCommand({
+                                    Bucket: bucket,
+                                    Key: file.path,
+                                }));
+                            } catch (error: any) {
+                                console.error('Failed to delete S3 object:', error);
+                                // 继续删除数据库记录，即使S3删除失败
                             }
                         }
 

@@ -126,7 +126,8 @@
     "selected": "已選擇 {{count}} 個檔案",
     "confirm_selection": "確認選擇",
     "create_folder": "建立資料夹",
-    "folder_name": "資料夹名稱"
+    "folder_name": "資料夹名稱",
+    "force_delete_confirm": "該檔案被文章引用，刪除後文章中的引用將失效，是否強制刪除？"
   },
   "footer": {
     "rss": "RSS 訂閱連結"

@@ -321,12 +321,36 @@ export function FileManager({
     }
 
     try {
-      const response = await client.files({ id: file.id }).delete({
-        headers: headersWithAuth()
+      // 直接用fetch发送DELETE请求，确保header带上
+      const res = await fetch(`${endpoint}/files/${file.id}`, {
+        method: 'DELETE',
+        headers: headersWithAuth(),
       });
-
-      if (response.error) {
-        showAlert(t('files.delete_error', { error: response.error.value }));
+      const data = await res.json();
+      if (res.status === 409 && data.error) {
+        // 冲突，尝试获取引用详情
+        const refRes = await fetch(`${endpoint}/files/${file.id}`, { headers: headersWithAuth() });
+        const refData = await refRes.json();
+        if (refRes.ok && refData.references && refData.references.length > 0) {
+          if (window.confirm(t('files.delete_error', { error: data.error }) + '\n' + t('files.ref_detail') + '\n' + refData.references.map((r:any) => `${r.title || t('files.ref_no_title')}`).join('\n') + '\n' + t('files.force_delete_confirm'))) {
+            // 用户确认强制删除，再次发起删除
+            const forceRes = await fetch(`${endpoint}/files/${file.id}`, {
+              method: 'DELETE',
+              headers: headersWithAuth(),
+            });
+            const forceData = await forceRes.json();
+            if (!forceRes.ok || forceData.error) {
+              showAlert(t('files.delete_error', { error: forceData.error || forceRes.status }));
+            } else {
+              setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
+              loadFiles();
+            }
+          }
+        } else {
+          showAlert(t('files.delete_error', { error: data.error }));
+        }
+      } else if (!res.ok || data.error) {
+        showAlert(t('files.delete_error', { error: data.error || res.status }));
       } else {
         setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
         loadFiles();

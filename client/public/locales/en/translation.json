@@ -130,7 +130,8 @@
     "selected": "{{count}} files selected",
     "confirm_selection": "Confirm Selection",
     "create_folder": "Create Folder",
-    "folder_name": "Folder Name"
+    "folder_name": "Folder Name",
+    "force_delete_confirm": "File is referenced by articles. Deleting will break references in articles. Force delete?"
   },
   "footer": {
     "rss": "RSS Subscription Link"
