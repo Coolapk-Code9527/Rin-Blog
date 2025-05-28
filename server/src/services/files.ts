@@ -844,5 +844,57 @@ export function FileService() {
                         return { error: error.message };
                     }
                 })
+
+                // 自动修复files表元数据（parentPath、isFolder），确保前端可识别
+                .post('/fix-metadata', async ({ uid, admin, set }) => {
+                    if (!admin) {
+                        set.status = 403;
+                        return { error: 'Permission denied' };
+                    }
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+                    let fixed = 0, failed = 0, failedList: any[] = [];
+                    try {
+                        const allFiles = await db.select().from(files);
+                        for (const file of allFiles) {
+                            let needUpdate = false;
+                            let newParentPath = file.parentPath;
+                            let newIsFolder = file.isFolder;
+                            // 修正parentPath: 根目录或无/错误的parentPath统一为'/'
+                            if (!file.parentPath || typeof file.parentPath !== 'string' || file.parentPath.trim() === '' || file.parentPath === null) {
+                                newParentPath = '/';
+                                needUpdate = true;
+                            }
+                            // 修正isFolder: 以'folder'为mimeType或path以'/'结尾视为文件夹
+                            if (file.mimeType === 'folder' || (typeof file.path === 'string' && file.path.endsWith('/'))) {
+                                if (file.isFolder !== 1) {
+                                    newIsFolder = 1;
+                                    needUpdate = true;
+                                }
+                            } else {
+                                if (file.isFolder !== 0) {
+                                    newIsFolder = 0;
+                                    needUpdate = true;
+                                }
+                            }
+                            if (needUpdate) {
+                                try {
+                                    await db.update(files).set({ parentPath: newParentPath, isFolder: newIsFolder }).where(eq(files.id, file.id));
+                                    fixed++;
+                                } catch (e) {
+                                    failed++;
+                                    failedList.push({ id: file.id, error: String(e) });
+                                }
+                            }
+                        }
+                        return { fixed, failed, failedList };
+                    } catch (error: any) {
+                        set.status = 500;
+                        return { error: error.message };
+                    }
+                })
         );
 } 
