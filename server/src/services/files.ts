@@ -652,7 +652,7 @@ export function FileService() {
                     return { total, success, failed, failedDetails };
                 })
 
-                // R2同步
+                // R2同步（严格清理外链/无效数据，只保留R2真实Key）
                 .post('/r2sync', async ({ uid, admin, set }) => {
                     if (!admin) {
                         set.status = 403;
@@ -666,13 +666,18 @@ export function FileService() {
                     const r2KeySet = new Set(r2Files.map(p => p.replace(/^\/+/, '')));
                     // 2. 查询files表所有记录
                     const allFiles = await db.select({id: files.id, path: files.path}).from(files);
-                    let total = 0, inserted = 0, skipped = 0, failed = 0, deleted = 0, failedList: any[] = [];
+                    let total = 0, inserted = 0, skipped = 0, failed = 0, deleted = 0, deletedExternal = 0, failedList: any[] = [];
                     // 3. 清理files表中无效/外链/重复数据（只保留R2真实Key）
                     for (const file of allFiles) {
-                        if (!r2KeySet.has(file.path)) {
+                        // 外链（http/https开头）或R2中不存在的path都删除
+                        if (/^https?:\/\//.test(file.path) || !r2KeySet.has(file.path)) {
                             try {
                                 await db.delete(files).where(eq(files.id, file.id));
-                                deleted++;
+                                if (/^https?:\/\//.test(file.path)) {
+                                    deletedExternal++;
+                                } else {
+                                    deleted++;
+                                }
                             } catch (e) {
                                 failed++;
                                 failedList.push({ path: file.path, error: String(e) });
@@ -706,7 +711,7 @@ export function FileService() {
                         }
                         total++;
                     }
-                    return { total: r2KeySet.size, inserted, skipped, deleted, failed, failedList };
+                    return { total: r2KeySet.size, inserted, skipped, deleted, deletedExternal, failed, failedList };
                 })
 
                 // R2对象重命名/移动
@@ -818,6 +823,26 @@ export function FileService() {
                     return { links, failed, failedList };
                 }, {
                     body: t.Object({ fileIds: t.Array(t.Numeric()) })
+                })
+
+                // 全量列举所有文件（不按parentPath过滤，便于前端和调试）
+                .get('/all', async ({ uid, admin, set }) => {
+                    if (!admin) {
+                        set.status = 403;
+                        return { error: 'Permission denied' };
+                    }
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+                    try {
+                        const allFiles = await db.select().from(files);
+                        return { files: allFiles };
+                    } catch (error: any) {
+                        set.status = 500;
+                        return { error: error.message };
+                    }
                 })
         );
 } 
