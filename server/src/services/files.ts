@@ -320,7 +320,7 @@ export function FileService() {
                     let { file, name, parentPath = '/' } = body;
                     const env = getEnv();
                     // 允许 parentPath 为 S3_FOLDER/S3_CACHE_FOLDER
-                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+/g, '').replace(/\/+$/g, ''));
+                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+|\/+$/g, ''));
                     // 统一 parentPath 格式
                     parentPath = parentPath.replace(/\/+$/, '').replace(/^([^/])/, '/$1');
                     let folderName = '';
@@ -341,14 +341,6 @@ export function FileService() {
                         // 生成S3存储路径
                         const fileName = name || file.name;
                         let s3Key = folderName ? folderName + '/' + hash : hash;
-                        // 检查是否已存在同hash文件，若有则复用name和parentPath
-                        const exist = await db.select().from(files).where(eq(files.hash, hash));
-                        let dbName = fileName;
-                        let dbParentPath = parentPath;
-                        if (exist && exist.length > 0) {
-                            dbName = exist[0].name;
-                            dbParentPath = exist[0].parentPath || '/';
-                        }
                         // 日志输出关键参数
                         console.info('[文件上传]', { parentPath, folderName, s3Key, fileName, size: file.size, type: file.type });
                         // 上传到S3
@@ -358,21 +350,23 @@ export function FileService() {
                             Body: file,
                             ContentType: file.type || getMimeTypeFromFileName(fileName),
                         }));
+                        // 创建文件路径
+                        const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
                         // 保存文件记录
                         const result = await db.insert(files).values({
                             path: s3Key,
-                            name: dbName,
+                            name: fileName,
                             size: file.size,
                             mimeType: file.type || getMimeTypeFromFileName(fileName),
                             userId: uid,
                             hash: hash,
-                            parentPath: dbParentPath,
+                            parentPath,
                         }).returning({ id: files.id });
                         return {
                             id: result[0].id,
-                            path: s3Key,
+                            path: filePath,
                             url: `${accessHost}/${s3Key}`,
-                            name: dbName,
+                            name: fileName,
                             size: file.size,
                             mimeType: file.type || getMimeTypeFromFileName(fileName),
                             hash,
@@ -679,23 +673,19 @@ export function FileService() {
                             // parentPath 设为 /images 或 /cache 等，去除多余斜杠
                             const parentPath = '/' + matchedFolder.replace(/\/+$/, '');
                             const dbPath = path.replace(/^\//, '');
-                            const exist = await db.select({id: files.id}).from(files).where(eq(files.path, dbPath));
-                            if (exist && exist.length > 0) { skipped++; continue; }
+                            const exist = await db.select({id: files.id, name: files.name}).from(files).where(eq(files.path, dbPath));
+                            const hashName = path.split('/').pop() || path;
+                            if (exist && exist.length > 0) {
+                                // 如果 name 字段为 hash，则自动修正为"hash（无原始名）"
+                                if (/^[a-f0-9]{32,}$/.test(exist[0].name)) {
+                                    await db.update(files).set({ name: hashName }).where(eq(files.id, exist[0].id));
+                                }
+                                skipped++;
+                                continue;
+                            }
                             const meta = await getR2FileMeta(path);
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
-                            // 判断文件名
-                            let name = path.split('/').pop() || path;
-                            // 如果是hash（40位16进制），尝试查找数据库同hash文件
-                            if (/^[a-f0-9]{40}$/.test(name)) {
-                                const hashExist = await db.select().from(files).where(eq(files.hash, name));
-                                if (hashExist && hashExist.length > 0) {
-                                    // 用已存在的name和parentPath
-                                    name = hashExist[0].name;
-                                } else {
-                                    // 以hash为name，允许前端后续重命名
-                                    name = name;
-                                }
-                            }
+                            let name = hashName;
                             const mimeType = meta.mimeType || 'application/octet-stream';
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
@@ -706,7 +696,8 @@ export function FileService() {
                                 mimeType,
                                 userId: uid || 1,
                                 parentPath,
-                                hash
+                                hash,
+                                isFolder: 0
                             });
                             inserted++;
                         } catch (e) {

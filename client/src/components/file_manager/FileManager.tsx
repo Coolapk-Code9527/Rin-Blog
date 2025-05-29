@@ -510,7 +510,11 @@ export function FileManager({
               <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType)} text-4xl`}></i>
             </div>
             {/* 文件名 */}
-            <p className={`mt-2 text-sm truncate w-full text-center ${/^[a-f0-9]{16,}$/.test(file.name) ? 'text-gray-400 italic' : ''}`}>{file.name}</p>
+            <p className={`mt-2 text-sm truncate w-full text-center ${/^[a-f0-9]{16,}$/.test(file.name) ? 'text-gray-400 italic' : ''}`}>
+              {/^[a-f0-9]{32,}$/.test(file.name)
+                ? `${file.name}（无原始名）`
+                : file.name}
+            </p>
             {/* 操作按钮区 */}
             <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               {/* 重命名按钮 */}
@@ -627,7 +631,11 @@ export function FileManager({
                 )}
                 <td className="px-4 py-3 flex items-center">
                   <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType)} mr-2 text-xl`}></i>
-                  <span className="truncate">{file.name}</span>
+                  <span className="truncate">
+                    {/^[a-f0-9]{32,}$/.test(file.name)
+                      ? `${file.name}（无原始名）`
+                      : file.name}
+                  </span>
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-500">
                   {file.isFolder ? '-' : formatFileSize(file.size)}
