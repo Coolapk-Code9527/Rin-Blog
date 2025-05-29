@@ -1,9 +1,9 @@
-import {and, asc, count, desc, eq, gt, like, lt, or} from "drizzle-orm";
+import {and, asc, count, desc, eq, gt, like, lt, or, inArray} from "drizzle-orm";
 import Elysia, {t} from "elysia";
 import {XMLParser} from "fast-xml-parser";
 import html2md from 'html-to-md';
 import type {DB} from "../_worker";
-import {feeds, visits} from "../db/schema";
+import {feeds, visits, files, feedFiles} from "../db/schema";
 import {setup} from "../setup";
 import {ClientConfig, PublicCache} from "../utils/cache";
 import {getDB} from "../utils/di";
@@ -747,6 +747,12 @@ function normalizePath(path: string): string {
 
 // 辅助函数：同步文件引用到files/feed_files
 async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
+  if (!feedId || typeof feedId !== 'number' || !Number.isFinite(feedId)) {
+    throw new Error('syncFeedFileReferences: feedId 无效，当前值为 ' + String(feedId));
+  }
+  // 直接使用 schema 导出的表对象
+  const filesTable = files;
+  const feedFilesTable = feedFiles;
   try {
     const env = getEnv();
     const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+|\/+$/g, '') + '/');
@@ -756,13 +762,11 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
       .map(ref => normalizePath(ref))
       .filter(x => s3Folders.some(folder => x.startsWith(folder)) && !x.startsWith('http://') && !x.startsWith('https://'));
     if (filteredRefs.length === 0) return;
-    const filesTable = db.schema?.files || db.files;
-    const feedFilesTable = db.schema?.feedFiles || db.feedFiles;
     // 查询已存在的files（只查标准化后的路径）
     const allPaths = filteredRefs.filter(p => typeof p === 'string' && p.length > 8 && !p.includes(' '));
     let filesInDb = [];
     try {
-      filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(filesTable.path.in(allPaths));
+      filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(inArray(filesTable.path, allPaths));
     } catch (e) {
       filesInDb = [];
     }
@@ -805,7 +809,7 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
       }
     }
     // 先清空旧关联
-    await db.delete(feedFilesTable).where(feedFilesTable.feedId.eq(feedId));
+    await db.delete(feedFilesTable).where(eq(feedFilesTable.feedId, feedId));
     // 插入新关联
     let order = 0;
     for (const path of filteredRefs) {
