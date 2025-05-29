@@ -884,6 +884,21 @@ export function FileManager({
     );
   };
 
+  useEffect(() => {
+    const hasModal = showNewFolderDialog || errorMessage || refDialogOpen || showMoveDialog;
+    if (hasModal) {
+      document.body.classList.add('modal-open');
+      window.dispatchEvent(new Event('modal-toggle'));
+    } else {
+      document.body.classList.remove('modal-open');
+      window.dispatchEvent(new Event('modal-toggle'));
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+      window.dispatchEvent(new Event('modal-toggle'));
+    };
+  }, [showNewFolderDialog, errorMessage, refDialogOpen, showMoveDialog]);
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
       {/* 工具栏 */}
@@ -1053,9 +1068,9 @@ export function FileManager({
       
       {/* 新建文件夹对话框 */}
       {showNewFolderDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[11000]">
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-lg font-medium mb-4">{t('files.create_folder')}</h3>
+            <h3 className="text-lg font-medium mb-4">{t('files.create_folder', { defaultValue: '新建文件夹' })}</h3>
             <input
               ref={folderNameInputRef}
               type="text"
@@ -1064,13 +1079,8 @@ export function FileManager({
               autoFocus
             />
             <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowNewFolderDialog(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                {t('cancel')}
-              </button>
-              <Button onClick={handleCreateFolder} title={t('create')} />
+              <Button onClick={() => setShowNewFolderDialog(false)} title={t('cancel')} secondary />
+              <Button onClick={handleCreateFolder} title={typeof t('create_action.title') === 'string' ? t('create_action.title') : '创建'} />
             </div>
           </div>
         </div>
@@ -1078,7 +1088,7 @@ export function FileManager({
       
       {/* 错误信息对话框 */}
       {errorMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[11000]">
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
             <h3 className="text-lg font-medium text-red-600 mb-4">{t('alert')}</h3>
             <p className="mb-6">{t('files.load_error', { error: errorMessage })}</p>
@@ -1111,7 +1121,7 @@ export function FileManager({
 
       {/* 引用详情弹窗 */}
       {refDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[11000]">
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
             <h3 className="text-lg font-medium mb-4">{t('files.ref_detail')}</h3>
             {refDialogLoading ? (
@@ -1140,7 +1150,7 @@ export function FileManager({
 
       {/* 移动弹窗 */}
       {showMoveDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[11000]">
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
             <h3 className="text-lg font-medium mb-4">{t('files.move_to')}</h3>
             <input

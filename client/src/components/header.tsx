@@ -29,6 +29,26 @@ export function Header({ children }: { children?: React.ReactNode }) {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // 全局遮罩层（如body有.modal-open类时）
+    useEffect(() => {
+        const handler = () => {
+            const hasModal = document.body.classList.contains('modal-open');
+            const mask = document.getElementById('global-header-mask');
+            if (hasModal) {
+                if (!mask) {
+                    const div = document.createElement('div');
+                    div.id = 'global-header-mask';
+                    div.className = 'fixed inset-0 bg-black bg-opacity-40 z-[10500] pointer-events-none';
+                    document.body.appendChild(div);
+                }
+            } else {
+                if (mask) mask.remove();
+            }
+        };
+        window.addEventListener('modal-toggle', handler);
+        return () => window.removeEventListener('modal-toggle', handler);
+    }, []);
+
     return useMemo(() => (
         <>
             <div 

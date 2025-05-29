@@ -41,7 +41,7 @@ async function publish({ name, avatar, desc, url, showAlert }: { name: string, a
     if (error) {
         showAlert(error.value as string)
     } else {
-        showAlert(t('create.success'), () => {
+        showAlert(t('create_action.success'), () => {
             window.location.reload()
         })
     }
@@ -117,7 +117,7 @@ export function FriendsPage() {
                                 <Input value={avatar} setValue={setAvatar} placeholder={t('avatar.url')} className="mt-2" />
                                 <Input value={url} setValue={setUrl} placeholder={t('url')} className="my-2" />
                                 <div className='flex flex-row justify-center'>
-                                    <button onClick={publishButton} className='basis-1/2 bg-theme text-white py-4 rounded-full shadow-xl shadow-light'>{t('create.title')}</button>
+                                    <button onClick={publishButton} className='basis-1/2 bg-theme text-white py-4 rounded-full shadow-xl shadow-light'>{t('create_action.title')}</button>
                                 </div>
                             </div>
                         </div>
@@ -204,11 +204,27 @@ function Friend({ friend, key }: { friend: FriendItem; key?: number | string }) 
         { value: 0, label: t('friends.review.waiting') },
         { value: 1, label: t('friends.review.accepted') }
     ]
+
+    useEffect(() => {
+        if (modalIsOpen) {
+            document.body.classList.add('modal-open');
+            window.dispatchEvent(new Event('modal-toggle'));
+        } else {
+            document.body.classList.remove('modal-open');
+            window.dispatchEvent(new Event('modal-toggle'));
+        }
+        return () => {
+            document.body.classList.remove('modal-open');
+            window.dispatchEvent(new Event('modal-toggle'));
+        };
+    }, [modalIsOpen]);
+
     return (
         <>
             <a title={friend.name} href={friend.url} target="_blank" className="bg-button w-full bg-w rounded-xl p-4 flex flex-col justify-center items-center relative">
-                <div className="w-16 h-16">
-                    <img className={"rounded-full " + (friend.health.length > 0 ? "grayscale" : "")} src={friend.avatar} alt={friend.name} />
+                <div className="w-16 h-16 relative flex items-center justify-center">
+                    <img className={"rounded-xl w-full h-full object-cover " + (friend.health.length > 0 ? "grayscale" : "")} src={friend.avatar} alt={friend.name} style={{zIndex:1, position:'relative'}} />
+                    {modalIsOpen && <div className="absolute inset-0 rounded-xl bg-black/40 pointer-events-none flex items-center justify-center" style={{zIndex:2}}></div>}
                 </div>
                 <p className="text-base text-center">{friend.name}</p>
                 {friend.health.length == 0 && <p className="text-sm text-neutral-500 text-center">{friend.desc}</p>}
@@ -238,19 +254,20 @@ function Friend({ friend, key }: { friend: FriendItem; key?: number | string }) 
                         justifyContent: 'center',
                         alignItems: 'center',
                         background: 'white',
+                        zIndex: 11001
                     },
                     overlay: {
                         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        zIndex: 1000
+                        zIndex: 11000
                     }
-                }
-                }
+                }}
                 onRequestClose={() => setIsOpen(false)}
                 contentLabel={t('update$sth', { sth: friend.name })}
             >
                 <div className="w-[80vw] sm:w-[60vw] md:w-[50vw] lg:w-[40vw] xl:w-[30vw] bg-w rounded-xl p-4 flex flex-col justify-start items-center relative">
-                    <div className="w-16 h-16">
-                        <img className={"rounded-xl " + (friend.health.length > 0 ? "grayscale" : "")} src={friend.avatar} alt={friend.name} />
+                    <div className="w-16 h-16 relative flex items-center justify-center">
+                        <img className={"rounded-xl w-full h-full object-cover " + (friend.health.length > 0 ? "grayscale" : "")} src={friend.avatar} alt={friend.name} style={{zIndex:1, position:'relative'}} />
+                        {modalIsOpen && <div className="absolute inset-0 rounded-xl bg-black/40 pointer-events-none flex items-center justify-center" style={{zIndex:2}}></div>}
                     </div>
                     {profile?.permission &&
                         <div className="flex flex-col w-full items-start mt-4 px-4">
