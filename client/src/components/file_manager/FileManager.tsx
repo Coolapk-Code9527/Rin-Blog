@@ -203,11 +203,20 @@ export function FileManager({
 
   // 初始加载和依赖变更时重新加载
   useEffect(() => {
+    // 进入界面自动同步R2
+    const syncR2 = async () => {
+      try {
+        await fetch(`${endpoint}/files/r2sync`, {
+          method: 'POST',
+          headers: headersWithAuth(),
+        });
+      } catch (e) {}
+    };
+    syncR2();
     const fetchData = async () => {
       await loadFiles();
     };
     fetchData();
-    
     // 在组件卸载时取消未完成的请求
     return () => {
       if (abortControllerRef.current) {

@@ -1,4 +1,4 @@
-import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { eq, sql, and, like, desc, asc, or, isNull, inArray } from "drizzle-orm";
 import Elysia, { t } from "elysia";
 import path from "node:path";
@@ -319,26 +319,17 @@ export function FileService() {
                     }
                     let { file, name, parentPath = '/' } = body;
                     const env = getEnv();
-                    // 允许 parentPath 为虚拟一级目录
+                    // 允许 parentPath 为 S3_FOLDER/S3_CACHE_FOLDER
                     const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+|\/+$/g, ''));
+                    // 统一 parentPath 格式
+                    parentPath = parentPath.replace(/\/+$/, '').replace(/^([^/])/, '/$1');
+                    let folderName = '';
                     if (s3Folders.includes(parentPath)) {
-                        // 跳过数据库校验，直接允许上传
-                    } else if (parentPath !== '/') {
-                        // 仅当 parentPath 不是虚拟目录时校验
-                        const parentFolder = await db
-                            .select({ id: files.id })
-                            .from(files)
-                            .where(
-                                and(
-                                    eq(files.path, parentPath),
-                                    eq(files.userId, uid),
-                                    eq(files.isFolder, 1)
-                                )
-                            );
-                        if (parentFolder.length === 0) {
-                            set.status = 404;
-                            return { error: 'Parent folder not found' };
-                        }
+                        folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
+                    } else if (parentPath === '/') {
+                        folderName = '';
+                    } else {
+                        folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
                     }
                     try {
                         // 计算文件哈希
@@ -347,21 +338,9 @@ export function FileService() {
                             await file.arrayBuffer()
                         );
                         const hash = buf2hex(hashArray);
-                        // 检查是否已有相同哈希的文件
-                        const existingFile = await db
-                            .select({ id: files.id, path: files.path })
-                            .from(files)
-                            .where(eq(files.hash, hash));
                         // 生成S3存储路径
                         const fileName = name || file.name;
-                        let s3Key = '';
-                        if (s3Folders.includes(parentPath)) {
-                            // 映射到对应 S3_FOLDER/S3_CACHE_FOLDER
-                            const folderName = parentPath.replace(/^\//, '').replace(/\/$/, '');
-                            s3Key = folderName + '/' + hash;
-                        } else {
-                            s3Key = path.join(folder, hash);
-                        }
+                        let s3Key = folderName ? folderName + '/' + hash : hash;
                         // 上传到S3
                         await s3.send(new PutObjectCommand({
                             Bucket: bucket,
@@ -502,6 +481,9 @@ export function FileService() {
                             return { error: 'File not found' };
                         }
                         const file = fileInfo[0];
+                        const env = getEnv();
+                        const s3 = createS3Client();
+                        const bucket = env.S3_BUCKET;
                         // 如果是文件夹，检查是否为空
                         if (file.isFolder) {
                             const childFiles = await db
@@ -513,15 +495,23 @@ export function FileService() {
                                 return { error: 'Folder is not empty' };
                             }
                             // 删除R2存储桶下的 .keep 空对象
-                            const env = getEnv();
-                            const s3 = createS3Client();
-                            const bucket = env.S3_BUCKET;
                             let r2Key = file.path.replace(/^\//, '').replace(/\/+$/, '') + '/.keep';
                             try {
-                                await s3.send(new DeleteObjectCommand({
-                                    Bucket: bucket,
-                                    Key: r2Key,
-                                }));
+                                // 检查R2对象是否存在
+                                const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: r2Key }));
+                                if (head) {
+                                    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
+                                }
+                            } catch (e) {
+                                // 忽略R2删除异常
+                            }
+                        } else {
+                            // 检查R2对象是否存在
+                            try {
+                                const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: file.path }));
+                                if (head) {
+                                    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: file.path }));
+                                }
                             } catch (e) {
                                 // 忽略R2删除异常
                             }
@@ -538,17 +528,6 @@ export function FileService() {
                                     sql`id != ${fileId}`
                                 )
                             );
-                        // 如果没有其他文件引用，删除S3对象
-                        if (samePathFiles[0].count === 0 && !file.isFolder) {
-                            try {
-                                await s3.send(new DeleteObjectCommand({
-                                    Bucket: bucket,
-                                    Key: file.path,
-                                }));
-                            } catch (error: any) {
-                                // 继续删除数据库记录，即使S3删除失败
-                            }
-                        }
                         // 删除文件记录
                         await db.delete(files).where(eq(files.id, fileId));
                         return { success: true };
@@ -687,9 +666,10 @@ export function FileService() {
                             // 判断属于哪个一级目录
                             const matchedFolder = s3Folders.find(folder => path.startsWith('/' + folder + '/'));
                             if (!matchedFolder) { skipped++; continue; }
-                            // parentPath 设为 /images 或 /cache 等
-                            const parentPath = '/' + matchedFolder;
-                            const exist = await db.select({id: files.id}).from(files).where(eq(files.path, path.replace(/^\//, '')));
+                            // parentPath 设为 /images 或 /cache 等，去除多余斜杠
+                            const parentPath = '/' + matchedFolder.replace(/\/+$/, '');
+                            const dbPath = path.replace(/^\//, '');
+                            const exist = await db.select({id: files.id}).from(files).where(eq(files.path, dbPath));
                             if (exist && exist.length > 0) { skipped++; continue; }
                             const meta = await getR2FileMeta(path);
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
@@ -698,7 +678,7 @@ export function FileService() {
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
                             await db.insert(files).values({
-                                path: path.replace(/^\//, ''),
+                                path: dbPath,
                                 name,
                                 size,
                                 mimeType,
