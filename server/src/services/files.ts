@@ -349,10 +349,15 @@ export function FileService() {
                             };
                         }
 
-                        // 生成S3存储路径
+                        // 生成S3存储路径（parentPath/hash，支持任意目录）
                         const fileName = name || file.name;
-                        const s3Key = path.join(folder, hash);
-                        
+                        let s3Key = '';
+                        if (parentPath === '/' || !parentPath) {
+                            s3Key = path.join(folder, hash);
+                        } else {
+                            // parentPath 形如 /images/xxx
+                            s3Key = path.join(parentPath.replace(/^\//, ''), hash);
+                        }
                         // 上传到S3
                         await s3.send(new PutObjectCommand({
                             Bucket: bucket,
@@ -360,10 +365,8 @@ export function FileService() {
                             Body: file,
                             ContentType: file.type || getMimeTypeFromFileName(fileName),
                         }));
-
                         // 创建文件路径
                         const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
-                        
                         // 保存文件记录
                         const result = await db.insert(files).values({
                             path: s3Key,
@@ -374,7 +377,6 @@ export function FileService() {
                             hash: hash,
                             parentPath,
                         }).returning({ id: files.id });
-
                         return {
                             id: result[0].id,
                             path: filePath,
@@ -521,188 +523,30 @@ export function FileService() {
                         const samePathFiles = await db
                             .select({ count: sql<number>`count(*)` })
                             .from(files)
-                            .where(
-                                and(
-                                    eq(files.path, file.path),
-                                    sql`id != ${fileId}`
-                                )
-                            );
+                            .where(eq(files.path, file.path));
 
-                        // 如果没有其他文件引用，删除S3对象
-                        if (samePathFiles[0].count === 0) {
-                            try {
-                                await s3.send(new DeleteObjectCommand({
-                                    Bucket: bucket,
-                                    Key: file.path,
-                                }));
-                            } catch (error: any) {
-                                console.error('Failed to delete S3 object:', error);
-                                // 继续删除数据库记录，即使S3删除失败
-                            }
+                        if (samePathFiles[0].count > 1) {
+                            set.status = 409;
+                            return { error: 'File is referenced by other files' };
                         }
 
                         // 删除文件记录
                         await db.delete(files).where(eq(files.id, fileId));
 
-                        return { success: true };
-                    } catch (error: any) {
-                        console.error(error);
-                        set.status = 500;
-                        return { error: error.message };
-                    }
-                })
-
-                // 更新文件信息
-                .patch('/:id', async ({ params, body, uid, set }) => {
-                    if (!uid) {
-                        set.status = 401;
-                        return { error: 'Unauthorized' };
-                    }
-
-                    const db = getDB();
-                    
-                    if (!db) {
-                        set.status = 500;
-                        return { error: 'Database connection not available' };
-                    }
-
-                    const { name, accessLevel } = body;
-                    if (!name && !accessLevel) {
-                        set.status = 400;
-                        return { error: 'No fields to update' };
-                    }
-
-                    try {
-                        const fileId = Number(params.id);
-                        
-                        // 获取文件信息
-                        const fileInfo = await db
-                            .select()
-                            .from(files)
-                            .where(
-                                and(
-                                    eq(files.id, fileId),
-                                    eq(files.userId, uid)
-                                )
-                            );
-
-                        if (fileInfo.length === 0) {
-                            set.status = 404;
-                            return { error: 'File not found' };
-                        }
-
-                        // 准备更新数据
-                        const updateData: {
-                            name?: string;
-                            accessLevel?: string;
-                            modifiedAt: Date;
-                        } = {
-                            modifiedAt: new Date(),
+                        return {
+                            id: fileId,
+                            path: file.path,
+                            name: file.name,
+                            size: file.size,
+                            mimeType: file.mimeType,
+                            isFolder: file.isFolder,
+                            parentPath: file.parentPath,
                         };
-
-                        if (name) updateData.name = name;
-                        if (accessLevel) updateData.accessLevel = accessLevel;
-
-                        // 更新文件记录
-                        const result = await db
-                            .update(files)
-                            .set(updateData)
-                            .where(eq(files.id, fileId))
-                            .returning();
-
-                        return result[0];
                     } catch (error: any) {
                         console.error(error);
                         set.status = 500;
                         return { error: error.message };
                     }
-                }, {
-                    body: t.Object({
-                        name: t.Optional(t.String()),
-                        accessLevel: t.Optional(t.String()),
-                    }),
                 })
-
-                // 同步文件
-                .post('/sync', async ({ uid, admin, set }) => {
-                    if (!admin) {
-                        set.status = 403;
-                        return { error: 'Permission denied' };
-                    }
-                    const db = getDB();
-                    if (!db) {
-                        set.status = 500;
-                        return { error: 'Database connection not available' };
-                    }
-                    // 扫描所有文章内容
-                    const allFeeds = await db.select({ id: feeds.id, content: feeds.content }).from(feeds);
-                    let total = 0, success = 0, failed = 0;
-                    const failedDetails: any[] = [];
-                    for (const feed of allFeeds) {
-                        try {
-                            await syncFeedFileReferences(db, feed.id, feed.content, 1);
-                            success++;
-                        } catch (e: any) {
-                            failed++;
-                            let errObj: any = {};
-                            if (e && typeof e === 'object') {
-                              errObj = e;
-                            } else {
-                              errObj = { message: String(e), stack: '' };
-                            }
-                            // 兜底所有字段
-                            failedDetails.push({
-                                feedId: typeof feed.id !== 'undefined' ? feed.id : -1,
-                                userId: 1,
-                                contentSnippet: (feed.content || '').slice(0, 100),
-                                error: errObj?.message || String(errObj),
-                                stack: errObj?.stack || ''
-                            });
-                        }
-                        total++;
-                    }
-                    return { total, success, failed, failedDetails };
-                })
-
-                // R2同步
-                .post('/r2sync', async ({ uid, admin, set }) => {
-                    if (!admin) {
-                        set.status = 403;
-                        return { error: 'Permission denied' };
-                    }
-                    const db = getDB();
-                    const env = getEnv();
-                    const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+|\/+$/g, '') + '/';
-                    const r2Files = await listAllR2Files();
-                    let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
-                    for (const path of r2Files) {
-                        try {
-                            // path本身已带images/前缀
-                            const exist = await db.select({id: files.id}).from(files).where(eq(files.path, path));
-                            if (exist && exist.length > 0) { skipped++; continue; }
-                            const meta = await getR2FileMeta(path);
-                            if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
-                            const name = path.split('/').pop() || path;
-                            const mimeType = meta.mimeType || 'application/octet-stream';
-                            const size = meta.size || 0;
-                            const hash = meta.hash || '';
-                            await db.insert(files).values({
-                                path: path.replace(/^\//, ''),
-                                name,
-                                size,
-                                mimeType,
-                                userId: uid || 1,
-                                parentPath: '/',
-                                hash
-                            });
-                            inserted++;
-                        } catch (e) {
-                            failed++;
-                            failedList.push({ path, error: String(e) });
-                        }
-                        total++;
-                    }
-                    return { total, inserted, skipped, failed, failedList };
-                })
-        );
-} 
+        )
+}
