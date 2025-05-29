@@ -118,30 +118,40 @@ export function FileManager({
   // 加载文件列表
   const loadFiles = async (reload = false) => {
     try {
+      // 如果有之前的请求，取消它
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      
+      // 创建新的AbortController
       abortControllerRef.current = new AbortController();
+      
       if (reload) {
         setFiles([]);
       }
       setIsLoading(true);
       setErrorMessage(null);
+
       // 构建查询参数
       const params = new URLSearchParams();
       params.append('path', currentPath);
-      params.append('tree', '1'); // 递归树形查询
       if (search) params.append('search', search);
       params.append('sort', sortBy);
       params.append('order', sortOrder);
       params.append('page', String(currentPage));
       params.append('limit', String(itemsPerPage));
       params.append('all', '1');
+
+      // 获取授权头
       const authHeaders = headersWithAuth();
+
+      // 发起请求并添加授权头和signal
       const response = await fetch(`${endpoint}/files?${params.toString()}`, {
         headers: authHeaders,
         signal: abortControllerRef.current.signal
       });
+      
+      // 检查响应状态码
       if (!response.ok) {
         let errorText = `HTTP error ${response.status}`;
         try {
@@ -159,20 +169,29 @@ export function FileManager({
         }
         throw new Error(errorText);
       }
+
       const data = await response.json();
-      // 只显示当前目录下的直接子项
-      const directChildren = (data.files || []).filter((f: FileItem) => f.parentPath === currentPath);
-      setFiles(directChildren);
-      setTotalItems(directChildren.length);
+      setFiles(data.files || []);
+      setTotalItems(data.total || 0);
       setIsLoading(false);
     } catch (error: any) {
-      if (error.name === 'AbortError') return;
+      // 检查是否是AbortError，如果是则忽略
+      if (error.name === 'AbortError') {
+        // 这是正常的取消请求，不是错误，不需要处理
+        return;
+      }
+      
       console.error('文件加载错误:', error);
       setIsLoading(false);
+      // 确保错误信息是字符串
       let errorMessage = '';
-      if (error instanceof Error) errorMessage = error.message;
-      else if (typeof error === 'string') errorMessage = error;
-      else errorMessage = String(error);
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else {
+        errorMessage = String(error);
+      }
       setErrorMessage(errorMessage || t('files.load_error', { error: 'Unknown error' }));
     }
   };
