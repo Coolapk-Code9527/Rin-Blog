@@ -274,23 +274,26 @@ export function FileManager({
     }
   };
 
-  // 创建文件夹处理
+  // 新建文件夹处理
   const handleCreateFolder = async () => {
     const folderName = folderNameInputRef.current?.value;
-    
     if (!folderName || folderName.trim() === '') {
       showAlert(t('files.folder_name_required'));
       return;
     }
-
+    // 判断当前目录是否为虚拟一级目录
+    const virtualFolders = ["/images", "/cache"];
+    let createPath = currentPath;
+    if (virtualFolders.includes(currentPath)) {
+      createPath = currentPath;
+    }
     try {
       const response = await client.files.folder.post({
         name: folderName.trim(),
-        parentPath: currentPath
+        parentPath: createPath
       }, {
         headers: headersWithAuth()
       });
-
       if (response.error) {
         showAlert(t('files.folder_create_error', { error: response.error.value }));
       } else {
@@ -346,10 +349,15 @@ export function FileManager({
 
   // 删除文件处理
   const handleDeleteFile = async (file: FileItem) => {
+    // 禁止删除虚拟一级目录
+    const virtualFolders = ["/images", "/cache"];
+    if (virtualFolders.includes(file.path)) {
+      showAlert(t('delete_error', { error: t('files.delete_error') + ' (不能删除系统目录)' }));
+      return;
+    }
     if (!confirm(t('files.confirm_delete', { name: file.name }))) {
       return;
     }
-
     try {
       // 直接用fetch发送DELETE请求，确保header带上
       const res = await fetch(`${endpoint}/files/${file.id}`, {
@@ -740,7 +748,42 @@ export function FileManager({
                 type="file"
                 multiple
                 className="hidden"
-                onChange={handleFileUpload}
+                onChange={async (event) => {
+                  const files = event.target.files;
+                  if (!files || files.length === 0) return;
+                  setIsUploading(true);
+                  setUploadProgress(0);
+                  // 判断当前目录是否为虚拟一级目录
+                  const virtualFolders = ["/images", "/cache"];
+                  let uploadPath = currentPath;
+                  if (virtualFolders.includes(currentPath)) {
+                    uploadPath = currentPath;
+                  }
+                  for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    setUploadProgress(Math.round((i / files.length) * 100));
+                    try {
+                      const response = await client.files.index.post({
+                        file,
+                        name: file.name,
+                        parentPath: uploadPath
+                      }, {
+                        headers: headersWithAuth()
+                      });
+                      if (response.error) {
+                        showAlert(t('upload.failed', { error: response.error.value }));
+                      }
+                    } catch (error: any) {
+                      showAlert(t('upload.failed', { error: error.message }));
+                    }
+                  }
+                  setIsUploading(false);
+                  setUploadProgress(100);
+                  if (uploadInputRef.current) {
+                    uploadInputRef.current.value = '';
+                  }
+                  loadFiles();
+                }}
                 accept={allowedTypes ? allowedTypes.map(type => type + '/*').join(',') : undefined}
               />
             </button>

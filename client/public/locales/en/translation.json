@@ -113,10 +113,10 @@
     "empty": "No files yet",
     "load_error": "Failed to load files: {{error}}",
     "no_selection": "Please select a file",
-    "folder_name_required": "Folder name is required",
-    "folder_create_error": "Failed to create folder: {{error}}",
+    "folder_name_required": "Please enter folder name",
+    "folder_create_error": "Create folder failed: {{error}}",
     "confirm_delete": "Are you sure you want to delete {{name}}?",
-    "delete_error": "Failed to delete: {{error}}",
+    "delete_error": "Delete failed",
     "columns": {
       "name": "Name",
       "size": "Size",
@@ -131,13 +131,15 @@
     "confirm_selection": "Confirm Selection",
     "create_folder": "Create Folder",
     "folder_name": "Folder Name",
-    "force_delete_confirm": "File is referenced by articles. Deleting will break references in articles. Force delete?",
+    "force_delete_confirm": "Force delete? (This action is irreversible)",
     "all_files": "All Files",
     "my_files": "My Files",
     "r2sync": "Full R2 Sync",
     "r2sync_confirm": "Are you sure you want to sync all files from R2 bucket to the database?",
     "r2sync_success": "R2 sync completed: total {{total}}, inserted {{inserted}}, skipped {{skipped}}, failed {{failed}}.",
-    "r2sync_failed": "R2 sync failed: {{error}}"
+    "r2sync_failed": "R2 sync failed: {{error}}",
+    "ref_detail": "The following content is referencing this file:",
+    "ref_no_title": "No title"
   },
   "footer": {
     "rss": "RSS Subscription Link"

@@ -109,10 +109,10 @@
     "empty": "ファイルはありません",
     "load_error": "ファイル読み込み失敗: {{error}}",
     "no_selection": "ファイルを選択してください",
-    "folder_name_required": "フォルダ名は必須です",
-    "folder_create_error": "フォルダ作成失敗: {{error}}",
+    "folder_name_required": "フォルダ名を入力してください",
+    "folder_create_error": "フォルダ作成に失敗: {{error}}",
     "confirm_delete": "{{name}} を削除してもよろしいですか？",
-    "delete_error": "削除失敗: {{error}}",
+    "delete_error": "削除に失敗しました",
     "columns": {
       "name": "名前",
       "size": "サイズ",
@@ -127,13 +127,15 @@
     "confirm_selection": "選択を確定する",
     "create_folder": "フォルダを作成",
     "folder_name": "フォルダ名",
-    "force_delete_confirm": "このファイルは記事で参照されています。削除すると記事内の参照が失われます。本当に強制削除しますか？",
+    "force_delete_confirm": "強制削除しますか？（この操作は元に戻せません）",
     "all_files": "すべてのファイル",
     "my_files": "自分のファイル",
     "r2sync": "R2全同期化",
     "r2sync_confirm": "R2バケットの全ファイルをデータベースに同期しますか？",
     "r2sync_success": "R2同期完了：合計{{total}}件、新規{{inserted}}件、スキップ{{skipped}}件、失敗{{failed}}件。",
-    "r2sync_failed": "R2同期失敗：{{error}}"
+    "r2sync_failed": "R2同期失敗：{{error}}",
+    "ref_detail": "以下のコンテンツがこのファイルを参照しています：",
+    "ref_no_title": "タイトルなし"
   },
   "footer": {
     "rss": "RSS 購読リンク"

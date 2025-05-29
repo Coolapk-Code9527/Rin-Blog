@@ -221,16 +221,12 @@ export function FileService() {
                         set.status = 401;
                         return { error: 'Unauthorized' };
                     }
-
                     const db = getDB();
-                    
                     if (!db) {
                         set.status = 500;
                         return { error: 'Database connection not available' };
                     }
-
                     const { name, parentPath = '/' } = body;
-
                     try {
                         // 检查父文件夹是否存在
                         if (parentPath !== '/') {
@@ -244,16 +240,13 @@ export function FileService() {
                                         eq(files.isFolder, 1)
                                     )
                                 );
-
                             if (parentFolder.length === 0) {
                                 set.status = 404;
                                 return { error: 'Parent folder not found' };
                             }
                         }
-
                         // 创建文件夹路径
                         const folderPath = parentPath === '/' ? `/${name}` : `${parentPath}/${name}`;
-
                         // 检查文件夹是否已存在
                         const existingFolder = await db
                             .select({ id: files.id })
@@ -264,12 +257,20 @@ export function FileService() {
                                     eq(files.userId, uid)
                                 )
                             );
-
                         if (existingFolder.length > 0) {
                             set.status = 409;
                             return { error: 'Folder already exists' };
                         }
-
+                        // 在R2存储桶创建空对象（如 images/.keep）
+                        const env = getEnv();
+                        const s3 = createS3Client();
+                        let r2Key = folderPath.replace(/^\//, '').replace(/\/+$/, '') + '/.keep';
+                        await s3.send(new PutObjectCommand({
+                            Bucket: env.S3_BUCKET,
+                            Key: r2Key,
+                            Body: '',
+                            ContentType: 'text/plain',
+                        }));
                         // 创建文件夹记录
                         const result = await db.insert(files).values({
                             path: folderPath,
@@ -282,7 +283,6 @@ export function FileService() {
                             parentPath,
                             hash: 'folder',
                         }).returning({ id: files.id });
-
                         return {
                             id: result[0].id,
                             path: folderPath,
@@ -308,86 +308,60 @@ export function FileService() {
                         set.status = 401;
                         return { error: 'Unauthorized' };
                     }
-
                     const db = getDB();
-                    
                     if (!db) {
                         set.status = 500;
                         return { error: 'Database connection not available' };
                     }
-
                     if (!endpoint || !accessKeyId || !secretAccessKey || !bucket) {
                         set.status = 500;
                         return { error: 'S3 configuration not found' };
                     }
-
-                    const { file, name, parentPath = '/' } = body;
-
-                    try {
-                        // 检查父文件夹是否存在
-                        if (parentPath !== '/') {
-                            const parentFolder = await db
-                                .select({ id: files.id })
-                                .from(files)
-                                .where(
-                                    and(
-                                        eq(files.path, parentPath),
-                                        eq(files.userId, uid),
-                                        eq(files.isFolder, 1)
-                                    )
-                                );
-
-                            if (parentFolder.length === 0) {
-                                set.status = 404;
-                                return { error: 'Parent folder not found' };
-                            }
+                    let { file, name, parentPath = '/' } = body;
+                    const env = getEnv();
+                    // 允许 parentPath 为虚拟一级目录
+                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+|\/+$/g, ''));
+                    if (s3Folders.includes(parentPath)) {
+                        // 跳过数据库校验，直接允许上传
+                    } else if (parentPath !== '/') {
+                        // 仅当 parentPath 不是虚拟目录时校验
+                        const parentFolder = await db
+                            .select({ id: files.id })
+                            .from(files)
+                            .where(
+                                and(
+                                    eq(files.path, parentPath),
+                                    eq(files.userId, uid),
+                                    eq(files.isFolder, 1)
+                                )
+                            );
+                        if (parentFolder.length === 0) {
+                            set.status = 404;
+                            return { error: 'Parent folder not found' };
                         }
-
+                    }
+                    try {
                         // 计算文件哈希
                         const hashArray = await crypto.subtle.digest(
                             { name: 'SHA-1' },
                             await file.arrayBuffer()
                         );
                         const hash = buf2hex(hashArray);
-                        
                         // 检查是否已有相同哈希的文件
                         const existingFile = await db
                             .select({ id: files.id, path: files.path })
                             .from(files)
                             .where(eq(files.hash, hash));
-
-                        // 如果存在相同哈希的文件，直接引用
-                        if (existingFile.length > 0) {
-                            const fileName = name || file.name;
-                            const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
-                            
-                            // 创建新的文件记录，但引用相同的哈希
-                            const result = await db.insert(files).values({
-                                path: filePath,
-                                name: fileName,
-                                size: file.size,
-                                mimeType: file.type || getMimeTypeFromFileName(fileName),
-                                userId: uid,
-                                hash: hash,
-                                parentPath,
-                            }).returning({ id: files.id });
-
-                            return {
-                                id: result[0].id,
-                                path: filePath,
-                                url: `${accessHost}/${existingFile[0].path}`,
-                                name: fileName,
-                                size: file.size,
-                                mimeType: file.type || getMimeTypeFromFileName(fileName),
-                                hash,
-                                isFolder: false,
-                            };
-                        }
-
                         // 生成S3存储路径
                         const fileName = name || file.name;
-                        const s3Key = path.join(folder, hash);
-                        
+                        let s3Key = '';
+                        if (s3Folders.includes(parentPath)) {
+                            // 映射到对应 S3_FOLDER/S3_CACHE_FOLDER
+                            const folderName = parentPath.replace(/^\//, '').replace(/\/$/, '');
+                            s3Key = folderName + '/' + hash;
+                        } else {
+                            s3Key = path.join(folder, hash);
+                        }
                         // 上传到S3
                         await s3.send(new PutObjectCommand({
                             Bucket: bucket,
@@ -395,10 +369,8 @@ export function FileService() {
                             Body: file,
                             ContentType: file.type || getMimeTypeFromFileName(fileName),
                         }));
-
                         // 创建文件路径
                         const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
-                        
                         // 保存文件记录
                         const result = await db.insert(files).values({
                             path: s3Key,
@@ -409,7 +381,6 @@ export function FileService() {
                             hash: hash,
                             parentPath,
                         }).returning({ id: files.id });
-
                         return {
                             id: result[0].id,
                             path: filePath,
@@ -509,13 +480,11 @@ export function FileService() {
                         set.status = 401;
                         return { error: 'Unauthorized' };
                     }
-
                     const db = getDB();
                     if (!db) {
                         set.status = 500;
                         return { error: 'Database connection not available' };
                     }
-
                     try {
                         const fileId = Number(params.id);
                         // 获取文件信息
@@ -528,30 +497,37 @@ export function FileService() {
                                     eq(files.userId, uid)
                                 )
                             );
-
                         if (fileInfo.length === 0) {
                             set.status = 404;
                             return { error: 'File not found' };
                         }
-
                         const file = fileInfo[0];
-
                         // 如果是文件夹，检查是否为空
                         if (file.isFolder) {
                             const childFiles = await db
                                 .select({ count: sql<number>`count(*)` })
                                 .from(files)
                                 .where(eq(files.parentPath, file.path));
-
                             if (childFiles[0].count > 0) {
                                 set.status = 409;
                                 return { error: 'Folder is not empty' };
                             }
+                            // 删除R2存储桶下的 .keep 空对象
+                            const env = getEnv();
+                            const s3 = createS3Client();
+                            const bucket = env.S3_BUCKET;
+                            let r2Key = file.path.replace(/^\//, '').replace(/\/+$/, '') + '/.keep';
+                            try {
+                                await s3.send(new DeleteObjectCommand({
+                                    Bucket: bucket,
+                                    Key: r2Key,
+                                }));
+                            } catch (e) {
+                                // 忽略R2删除异常
+                            }
                         }
-
                         // 删除 feedFiles 关联
                         await db.delete(feedFiles).where(eq(feedFiles.fileId, fileId));
-
                         // 检查是否有其他文件记录引用相同的存储路径
                         const samePathFiles = await db
                             .select({ count: sql<number>`count(*)` })
@@ -562,23 +538,19 @@ export function FileService() {
                                     sql`id != ${fileId}`
                                 )
                             );
-
                         // 如果没有其他文件引用，删除S3对象
-                        if (samePathFiles[0].count === 0) {
+                        if (samePathFiles[0].count === 0 && !file.isFolder) {
                             try {
                                 await s3.send(new DeleteObjectCommand({
                                     Bucket: bucket,
                                     Key: file.path,
                                 }));
                             } catch (error: any) {
-                                console.error('Failed to delete S3 object:', error);
                                 // 继续删除数据库记录，即使S3删除失败
                             }
                         }
-
                         // 删除文件记录
                         await db.delete(files).where(eq(files.id, fileId));
-
                         return { success: true };
                     } catch (error: any) {
                         console.error(error);

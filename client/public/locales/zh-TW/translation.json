@@ -109,10 +109,10 @@
     "empty": "暫無檔案",
     "load_error": "載入檔案失敗: {{error}}",
     "no_selection": "請選擇一個檔案",
-    "folder_name_required": "資料夾名稱不能為空",
-    "folder_create_error": "建立資料夹失敗: {{error}}",
+    "folder_name_required": "請輸入資料夾名稱",
+    "folder_create_error": "新建資料夾失敗: {{error}}",
     "confirm_delete": "確定要刪除 {{name}} 嗎?",
-    "delete_error": "刪除失敗: {{error}}",
+    "delete_error": "刪除失敗",
     "columns": {
       "name": "名稱",
       "size": "大小",
@@ -127,13 +127,15 @@
     "confirm_selection": "確認選擇",
     "create_folder": "建立資料夹",
     "folder_name": "資料夹名稱",
-    "force_delete_confirm": "該檔案被文章引用，刪除後文章中的引用將失效，是否強制刪除？",
+    "force_delete_confirm": "強制刪除？（此操作不可恢復）",
     "all_files": "全部檔案",
     "my_files": "我的檔案",
     "r2sync": "全量同步R2",
     "r2sync_confirm": "確定要全量同步R2存儲桶所有文件到資料庫嗎？",
     "r2sync_success": "R2同步完成：共{{total}}項，新增{{inserted}}，跳過{{skipped}}，失敗{{failed}}。",
-    "r2sync_failed": "R2同步失敗：{{error}}"
+    "r2sync_failed": "R2同步失敗：{{error}}",
+    "ref_detail": "以下內容正在引用該文件：",
+    "ref_no_title": "無標題"
   },
   "footer": {
     "rss": "RSS 訂閱連結"
