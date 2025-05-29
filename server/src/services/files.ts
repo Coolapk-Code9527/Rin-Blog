@@ -58,10 +58,36 @@ export function FileService() {
     const endpoint = env.S3_ENDPOINT;
     const bucket = env.S3_BUCKET;
     const folder = env.S3_FOLDER || '';
+    const cacheFolder = env.S3_CACHE_FOLDER || '';
     const accessHost = env.S3_ACCESS_HOST || endpoint;
     const accessKeyId = env.S3_ACCESS_KEY_ID;
     const secretAccessKey = env.S3_SECRET_ACCESS_KEY;
     const s3 = createS3Client();
+
+    // 自动补全环境变量配置的目录（如S3_FOLDER、S3_CACHE_FOLDER）为files表的isFolder=1记录
+    async function ensureEnvFolders(db: any, uid: number) {
+        const folders = [folder, cacheFolder]
+            .map(f => (f || '').replace(/^\/+|\/+$/g, ''))
+            .filter(f => f.length > 0)
+            .map(f => '/' + f);
+        for (const f of folders) {
+            const name = f.split('/').filter(Boolean).pop() || f;
+            const exist = await db.select({ id: files.id }).from(files).where(and(eq(files.path, f), eq(files.isFolder, 1)));
+            if (!exist || exist.length === 0) {
+                await db.insert(files).values({
+                    path: f,
+                    name,
+                    size: 0,
+                    mimeType: 'folder',
+                    userId: uid,
+                    accessLevel: 'public',
+                    isFolder: 1,
+                    parentPath: '/',
+                    hash: 'folder',
+                });
+            }
+        }
+    }
 
     return new Elysia({ aot: false })
         .use(setup())
@@ -80,6 +106,9 @@ export function FileService() {
                         set.status = 500;
                         return { error: 'Database connection not available' };
                     }
+
+                    // 自动补全环境变量目录
+                    await ensureEnvFolders(db, uid);
 
                     const { path = '/', type, search, sort = 'name', order = 'asc', page = 1, limit = 20, all } = query;
                     const offset = (page - 1) * limit;
@@ -188,11 +217,12 @@ export function FileService() {
                     }
 
                     const db = getDB();
-                    
                     if (!db) {
                         set.status = 500;
                         return { error: 'Database connection not available' };
                     }
+                    // 自动补全环境变量目录
+                    await ensureEnvFolders(db, uid);
 
                     const { name, parentPath = '/' } = body;
 
@@ -289,6 +319,9 @@ export function FileService() {
                     const { file, name, parentPath = '/' } = body;
 
                     try {
+                        // 自动补全环境变量目录
+                        await ensureEnvFolders(db, uid);
+
                         // 检查父文件夹是否存在
                         if (parentPath !== '/') {
                             const parentFolder = await db
@@ -672,7 +705,9 @@ export function FileService() {
                     }
                     const db = getDB();
                     const env = getEnv();
-                    const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+|\/+$/g, '') + '/';
+                    // 自动补全环境变量目录
+                    await ensureEnvFolders(db, uid || 1);
+                    const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+/g, '').replace(/\/+$/g, '') + '/';
                     const r2Files = await listAllR2Files();
                     let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
                     for (const path of r2Files) {
