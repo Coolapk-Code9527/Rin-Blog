@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
@@ -121,41 +121,22 @@ export function FileManager({
   // 新增同步菜单状态
   const [showSyncMenu, setShowSyncMenu] = useState(false);
 
-  // itemsPerPage自适应：根据容器高度动态设置
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(20);
-  useLayoutEffect(() => {
-    function updateItemsPerPage() {
-      if (!containerRef.current) return;
-      const height = containerRef.current.offsetHeight || 600;
-      // 估算每行高度（列表模式40px，网格模式120px），留出头部和分页空间
-      const rowHeight = viewMode === 'list' ? 48 : 140;
-      const maxRows = Math.max(2, Math.floor((height - 180) / rowHeight));
-      setItemsPerPage(maxRows * (viewMode === 'list' ? 1 : 5));
-    }
-    updateItemsPerPage();
-    window.addEventListener('resize', updateItemsPerPage);
-    return () => window.removeEventListener('resize', updateItemsPerPage);
-  }, [viewMode]);
+  // 新增：每页数量下拉选择
+  const [itemsPerPage, setItemsPerPage] = useState<number>(15);
+  const pageSizeOptions = [5, 10, 15, 20, 30, 50];
 
   // 加载文件列表
   const loadFiles = async (reload = false) => {
     try {
-      // 如果有之前的请求，取消它
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      
-      // 创建新的AbortController
       abortControllerRef.current = new AbortController();
-      
       if (reload) {
         setFiles([]);
       }
       setIsLoading(true);
       setErrorMessage(null);
-
-      // 构建查询参数
       const params = new URLSearchParams();
       params.append('path', currentPath);
       if (search) params.append('search', search);
@@ -164,17 +145,11 @@ export function FileManager({
       params.append('page', String(currentPage));
       params.append('limit', String(itemsPerPage));
       params.append('all', '1');
-
-      // 获取授权头
       const authHeaders = headersWithAuth();
-
-      // 发起请求并添加授权头和signal
       const response = await fetch(`${endpoint}/files?${params.toString()}`, {
         headers: authHeaders,
         signal: abortControllerRef.current.signal
       });
-      
-      // 检查响应状态码
       if (!response.ok) {
         let errorText = `HTTP error ${response.status}`;
         try {
@@ -192,21 +167,31 @@ export function FileManager({
         }
         throw new Error(errorText);
       }
-
       const data = await response.json();
-      setFiles(data.files || []);
-      setTotalItems(data.total || 0);
+      // 修复：根目录下virtualFolders不参与分页，files=virtualFolders+dbItems（分页），totalItems=total-virtualFolders.length
+      let filesData = data.files || [];
+      let total = data.total || 0;
+      if (currentPath === '/' && filesData.length > 0) {
+        // virtualFolders: id为负数的文件夹
+        const virtualFolders = filesData.filter((f:any) => f.isFolder && f.id < 0);
+        const dbItems = filesData.filter((f:any) => !(f.isFolder && f.id < 0));
+        // 只对dbItems分页，virtualFolders始终显示在第一页
+        if (currentPage === 1) {
+          filesData = [...virtualFolders, ...dbItems];
+        } else {
+          filesData = dbItems;
+        }
+        total = total - virtualFolders.length;
+      }
+      setFiles(filesData);
+      setTotalItems(total);
       setIsLoading(false);
     } catch (error: any) {
-      // 检查是否是AbortError，如果是则忽略
       if (error.name === 'AbortError') {
-        // 这是正常的取消请求，不是错误，不需要处理
         return;
       }
-      
       console.error('文件加载错误:', error);
       setIsLoading(false);
-      // 确保错误信息是字符串
       let errorMessage = '';
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -624,9 +609,13 @@ export function FileManager({
     const folders = files.filter(file => file.isFolder);
     const normalFiles = files.filter(file => !file.isFolder);
     const displayFiles = [...folders, ...normalFiles];
+    // 分页：只显示当前页的数据
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    const endIdx = startIdx + itemsPerPage;
+    const pagedFiles = displayFiles.slice(startIdx, endIdx);
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
-        {displayFiles.map(file => (
+        {pagedFiles.map(file => (
           <div 
             key={file.id}
             className={`p-3 rounded-lg border ${selectedFiles.some(f => f.id === file.id) ? 'border-theme bg-pink-50 dark:bg-pink-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50'} 
@@ -701,7 +690,7 @@ export function FileManager({
             )}
           </div>
         ))}
-        {files.length === 0 && !isLoading && (
+        {pagedFiles.length === 0 && !isLoading && (
           <div className="col-span-full flex flex-col items-center justify-center py-10">
             <i className="ri-inbox-line text-4xl text-gray-400"></i>
             <p className="mt-2 text-gray-500">{t('files.empty')}</p>
@@ -717,6 +706,10 @@ export function FileManager({
     const folders = files.filter(file => file.isFolder);
     const normalFiles = files.filter(file => !file.isFolder);
     const displayFiles = [...folders, ...normalFiles];
+    // 分页：只显示当前页的数据
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    const endIdx = startIdx + itemsPerPage;
+    const pagedFiles = displayFiles.slice(startIdx, endIdx);
     return (
       <div className="overflow-x-auto w-full">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -765,7 +758,7 @@ export function FileManager({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
-            {displayFiles.map(file => (
+            {pagedFiles.map(file => (
               <tr 
                 key={file.id}
                 className={`${selectedFiles.some(f => f.id === file.id) ? 'bg-pink-50 dark:bg-pink-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'} cursor-pointer transition-colors`}
@@ -848,7 +841,7 @@ export function FileManager({
                 </td>
               </tr>
             ))}
-            {files.length === 0 && !isLoading && (
+            {pagedFiles.length === 0 && !isLoading && (
               <tr>
                 <td colSpan={showSelector && multiple ? 5 : 4} className="py-8 text-center">
                   <div className="flex flex-col items-center justify-center">
@@ -891,46 +884,51 @@ export function FileManager({
     );
   };
 
-  // 分页切换时只需setCurrentPage，依赖useEffect自动loadFiles
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
   return (
-    <div ref={containerRef} className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
       {/* 工具栏 */}
-      <div className="border-b border-gray-200 dark:border-gray-700 p-2 flex flex-row items-center space-x-2">
-        {/* 面包屑导航 居中 */}
-        <div className="flex-1 flex justify-center">
-          {renderBreadcrumbs()}
-        </div>
-        {/* 搜索框和操作按钮组 */}
-        <div className="flex items-center space-x-2">
-          <div className="relative max-w-xs w-full">
+      <div className="border-b border-gray-200 dark:border-gray-700 p-2 flex flex-col sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0 space-y-2">
+        {/* 左侧：面包屑+搜索框 */}
+        <div className="flex flex-1 min-w-0 items-center gap-2">
+          <div className="flex-shrink-0 min-w-0">{renderBreadcrumbs()}</div>
+          <div className="relative max-w-xs w-full min-w-[120px] flex-shrink-0">
             <i className="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('files.search_placeholder')}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent"
-              style={{ minWidth: 180, maxWidth: 240 }}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent text-sm"
+              style={{ minWidth: 120, maxWidth: 240 }}
             />
           </div>
-          {/* 操作按钮组靠右 */}
-          <div className="flex space-x-2 items-center">
+        </div>
+        {/* 右侧：每页数量+按钮组，整体右对齐 */}
+        <div className="flex flex-row flex-wrap items-center gap-2 justify-end min-w-0">
+          <select
+            value={itemsPerPage}
+            onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            className="h-10 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[70px]"
+            style={{ minWidth: 70, maxWidth: 100 }}
+            title={t('files.page_size') || '每页数量'}
+          >
+            {pageSizeOptions.map(opt => (
+              <option key={opt} value={opt}>{opt + t('files.per_page', { defaultValue: '/页' })}</option>
+            ))}
+          </select>
+          <div className="flex flex-row flex-wrap gap-2 min-w-0">
             {/* 视图切换按钮 */}
-            <div className="flex rounded-md border border-gray-300 dark:border-gray-700">
+            <div className="flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                className={`px-3 py-2 h-10 ${viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
                 title={t('files.grid_view')}
               >
                 <i className="ri-grid-line"></i>
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`px-3 py-2 ${viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                className={`px-3 py-2 h-10 ${viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
                 title={t('files.list_view')}
               >
                 <i className="ri-list-check"></i>
@@ -939,7 +937,7 @@ export function FileManager({
             {/* 单/多选模式切换按钮（仅icon） */}
             <button
               onClick={() => setMultiple(m => !m)}
-              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3 py-2 h-10 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               title={multiple ? t('files.single_select') : t('files.multi_select')}
             >
               <i className={`ri-checkbox-${multiple ? 'multiple' : 'blank'}-line`}></i>
@@ -947,7 +945,7 @@ export function FileManager({
             {/* 新建文件夹按钮 */}
             <button
               onClick={() => setShowNewFolderDialog(true)}
-              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3 py-2 h-10 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               title={t('files.new_folder')}
             >
               <i className="ri-folder-add-line"></i>
@@ -955,7 +953,7 @@ export function FileManager({
             {/* 上传文件按钮 */}
             <button
               onClick={() => uploadInputRef.current?.click()}
-              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3 py-2 h-10 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               title={t('files.upload')}
               disabled={isUploading}
             >
@@ -1001,7 +999,7 @@ export function FileManager({
                 }
                 setIsSyncing(false);
               }}
-              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3 py-2 h-10 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               disabled={isSyncing}
               title={t('files.r2sync')}
             >
@@ -1023,15 +1021,20 @@ export function FileManager({
           </div>
         )}
       </div>
-      
-      {/* 分页 */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={Math.ceil(totalItems / itemsPerPage)}
-          onPageChange={handlePageChange}
-        />
-      </div>
+      {/* 分页：仅当总数大于每页数量时显示，统一用Pagination组件 */}
+      {totalItems > itemsPerPage && (
+        <div className="border-t border-gray-200 dark:border-gray-700 py-2 flex justify-center">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(totalItems / itemsPerPage)}
+            onPageChange={page => {
+              setCurrentPage(page);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="items-center"
+          />
+        </div>
+      )}
       
       {/* 选择操作栏 - 多选模式 */}
       {showSelector && multiple && selectedFiles.length > 0 && (
