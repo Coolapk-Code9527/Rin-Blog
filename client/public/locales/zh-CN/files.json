@@ -1,0 +1,5 @@
+{
+  "rename_prompt": "请输入新文件名",
+  "rename_failed": "重命名失败，请重试",
+  "edit": "重命名"
+} 

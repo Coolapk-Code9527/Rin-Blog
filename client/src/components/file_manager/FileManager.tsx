@@ -336,7 +336,11 @@ export function FileManager({
         });
 
         if (response.error) {
-          showAlert(t('upload.failed', { error: response.error.value }));
+          // 新增：完整输出后端error内容
+          console.error('上传失败详细信息:', response.error);
+          showAlert(typeof response.error === 'object' ? JSON.stringify(response.error) : response.error);
+        } else if ((response as any).reusedMsg) {
+          showAlert((response as any).reusedMsg);
         }
       } catch (error: any) {
         showAlert(t('upload.failed', { error: error.message }));
@@ -470,6 +474,26 @@ export function FileManager({
     setRefDialogLoading(false);
   };
 
+  // 新增重命名逻辑
+  const handleRenameFile = async (file: FileItem) => {
+    const newName = prompt(t('files.rename_prompt') || '请输入新文件名', file.name);
+    if (!newName || newName === file.name) return;
+    try {
+      const res = await fetch(`${endpoint}/files/${file.id}`, {
+        method: 'PATCH',
+        headers: { ...headersWithAuth(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName })
+      });
+      if (res.ok) {
+        loadFiles();
+      } else {
+        showAlert(t('files.rename_failed'));
+      }
+    } catch {
+      showAlert(t('files.rename_failed'));
+    }
+  };
+
   // 渲染网格视图
   const renderGridView = () => {
     return (
@@ -485,15 +509,31 @@ export function FileManager({
             <div className="w-16 h-16 flex items-center justify-center">
               <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType)} text-4xl`}></i>
             </div>
-            
             {/* 文件名 */}
-            <p className="mt-2 text-sm truncate w-full text-center">{file.name}</p>
-            
+            <p className={`mt-2 text-sm truncate w-full text-center ${/^[a-f0-9]{16,}$/.test(file.name) ? 'text-gray-400 italic' : ''}`}>{file.name}</p>
+            {/* 操作按钮区 */}
+            <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* 重命名按钮 */}
+              <button 
+                className="text-blue-500 hover:text-blue-700 p-1"
+                title={t('edit')}
+                onClick={e => {e.stopPropagation(); handleRenameFile(file);}}
+              >
+                <i className="ri-edit-2-line"></i>
+              </button>
+              {/* 删除按钮 */}
+              <button 
+                className="text-red-500 hover:text-red-700 p-1"
+                onClick={(e) => { e.stopPropagation(); handleDeleteFile(file); }}
+                title={t('delete')}
+              >
+                <i className="ri-delete-bin-line"></i>
+              </button>
+            </div>
             {/* 文件大小 */}
             <p className="text-xs text-gray-500 mt-1">
               {file.isFolder ? '' : formatFileSize(file.size)}
             </p>
-            
             {/* 引用计数按钮 */}
             {!file.isFolder && file.referencesCount > 0 && (
               <button
@@ -504,18 +544,8 @@ export function FileManager({
                 {file.referencesCount} {t('files.ref_count')}
               </button>
             )}
-            
-            {/* 删除按钮 */}
-            <button 
-              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition-opacity p-1"
-              onClick={(e) => { e.stopPropagation(); handleDeleteFile(file); }}
-              title={t('delete')}
-            >
-              <i className="ri-delete-bin-line"></i>
-            </button>
           </div>
         ))}
-        
         {files.length === 0 && !isLoading && (
           <div className="col-span-full flex flex-col items-center justify-center py-10">
             <i className="ri-inbox-line text-4xl text-gray-400"></i>
@@ -757,42 +787,7 @@ export function FileManager({
                 type="file"
                 multiple
                 className="hidden"
-                onChange={async (event) => {
-                  const files = event.target.files;
-                  if (!files || files.length === 0) return;
-                  setIsUploading(true);
-                  setUploadProgress(0);
-                  // 判断当前目录是否为虚拟一级目录
-                  const virtualFolders = ["/images", "/cache"];
-                  let uploadPath = currentPath;
-                  if (virtualFolders.includes(currentPath)) {
-                    uploadPath = currentPath;
-                  }
-                  for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    setUploadProgress(Math.round((i / files.length) * 100));
-                    try {
-                      const response = await client.files.index.post({
-                        file,
-                        name: file.name,
-                        parentPath: uploadPath
-                      }, {
-                        headers: headersWithAuth()
-                      });
-                      if (response.error) {
-                        showAlert(t('upload.failed', { error: response.error.value }));
-                      }
-                    } catch (error: any) {
-                      showAlert(t('upload.failed', { error: error.message }));
-                    }
-                  }
-                  setIsUploading(false);
-                  setUploadProgress(100);
-                  if (uploadInputRef.current) {
-                    uploadInputRef.current.value = '';
-                  }
-                  loadFiles();
-                }}
+                onChange={handleFileUpload}
                 accept={allowedTypes ? allowedTypes.map(type => type + '/*').join(',') : undefined}
               />
             </button>

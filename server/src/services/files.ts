@@ -129,48 +129,48 @@ export function FileService() {
                             count = resultData.length;
                         } else {
                             const result = await db
-                                .select({
-                                    id: files.id,
-                                    path: files.path,
-                                    name: files.name,
-                                    size: files.size,
-                                    mimeType: files.mimeType,
-                                    isFolder: files.isFolder,
-                                    accessLevel: files.accessLevel,
-                                    thumbnailHash: files.thumbnailHash,
-                                    parentPath: files.parentPath,
-                                    createdAt: files.createdAt,
-                                    modifiedAt: files.modifiedAt,
-                                })
-                                .from(files)
-                                .where(
-                                    and(
-                                        ...(userFilter ? [userFilter] : []),
-                                        eq(files.parentPath, path),
-                                        ...(type ? [like(files.mimeType, `${type}/%`)] : []),
-                                        ...(search ? [like(files.name, `%${search}%`)] : [])
-                                    )
+                            .select({
+                                id: files.id,
+                                path: files.path,
+                                name: files.name,
+                                size: files.size,
+                                mimeType: files.mimeType,
+                                isFolder: files.isFolder,
+                                accessLevel: files.accessLevel,
+                                thumbnailHash: files.thumbnailHash,
+                                parentPath: files.parentPath,
+                                createdAt: files.createdAt,
+                                modifiedAt: files.modifiedAt,
+                            })
+                            .from(files)
+                            .where(
+                                and(
+                                    ...(userFilter ? [userFilter] : []),
+                                    eq(files.parentPath, path),
+                                    ...(type ? [like(files.mimeType, `${type}/%`)] : []),
+                                    ...(search ? [like(files.name, `%${search}%`)] : [])
                                 )
-                                .orderBy(
-                                    sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
-                                    sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
-                                    sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
-                                    asc(files.name)
-                                )
-                                .limit(limit)
-                                .offset(offset);
+                            )
+                            .orderBy(
+                                sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
+                                sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
+                                sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
+                                asc(files.name)
+                            )
+                            .limit(limit)
+                            .offset(offset);
                             resultData = await result;
                             const countQ = await db
-                                .select({ count: sql<number>`count(*)` })
-                                .from(files)
-                                .where(
-                                    and(
-                                        ...(userFilter ? [userFilter] : []),
-                                        eq(files.parentPath, path),
-                                        ...(type ? [like(files.mimeType, `${type}/%`)] : []),
-                                        ...(search ? [like(files.name, `%${search}%`)] : [])
-                                    )
-                                );
+                            .select({ count: sql<number>`count(*)` })
+                            .from(files)
+                            .where(
+                                and(
+                                    ...(userFilter ? [userFilter] : []),
+                                    eq(files.parentPath, path),
+                                    ...(type ? [like(files.mimeType, `${type}/%`)] : []),
+                                    ...(search ? [like(files.name, `%${search}%`)] : [])
+                                )
+                            );
                             count = countQ[0].count;
                         }
                         const fileIds = resultData.map((f: any) => f.id).filter((id: number) => id > 0);
@@ -330,7 +330,7 @@ export function FileService() {
                         folderName = '';
                     } else {
                         folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
-                    }
+                            }
                     try {
                         // 计算文件哈希
                         const hashArray = await crypto.subtle.digest(
@@ -339,25 +339,63 @@ export function FileService() {
                         );
                         const hash = buf2hex(hashArray);
                         // 生成S3存储路径
-                        const fileName = name || file.name;
+                            const fileName = name || file.name;
                         let s3Key = folderName ? folderName + '/' + hash : hash;
                         // 日志输出关键参数
                         console.info('[文件上传]', { parentPath, folderName, s3Key, fileName, size: file.size, type: file.type });
+                        // 检查数据库是否已存在相同 path/hash
+                        const exist = await db.select().from(files).where(and(eq(files.path, s3Key), eq(files.userId, uid)));
+                        if (exist && exist.length > 0) {
+                            // 已存在则直接返回
+                            return {
+                                id: exist[0].id,
+                                path: parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`,
+                                url: `${accessHost}/${s3Key}`,
+                                name: fileName,
+                                size: exist[0].size,
+                                mimeType: exist[0].mimeType,
+                                hash: exist[0].hash,
+                                isFolder: false,
+                                reused: true,
+                                reusedMsg: '该文件内容已存在，已为你复用，无需重复上传。'
+                            };
+                        }
+                        // 检查同目录下是否有同名文件，若有则自动重命名
+                        let finalName = fileName;
+                        let nameNoExt = fileName;
+                        let ext = '';
+                        if (fileName.includes('.')) {
+                            nameNoExt = fileName.substring(0, fileName.lastIndexOf('.'));
+                            ext = fileName.substring(fileName.lastIndexOf('.'));
+                        }
+                        let idx = 1;
+                        let nameConflict = true;
+                        while (nameConflict) {
+                            const nameExist = await db.select().from(files).where(and(eq(files.name, finalName), eq(files.parentPath, parentPath), eq(files.userId, uid)));
+                            if (nameExist.length === 0) {
+                                nameConflict = false;
+                            } else {
+                                finalName = `${nameNoExt}(${idx})${ext}`;
+                                idx++;
+                            }
+                        }
+                        // 重新生成S3Key（同内容不同名也只存一份）
+                        let finalS3Key = folderName ? folderName + '/' + hash : hash;
                         // 上传到S3
                         await s3.send(new PutObjectCommand({
                             Bucket: bucket,
-                            Key: s3Key,
+                            Key: finalS3Key,
                             Body: file,
-                            ContentType: file.type || getMimeTypeFromFileName(fileName),
+                            ContentType: file.type || getMimeTypeFromFileName(finalName),
                         }));
                         // 创建文件路径
-                        const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
+                        const filePath = parentPath === '/' ? `/${finalName}` : `${parentPath}/${finalName}`;
                         // 保存文件记录
                         const result = await db.insert(files).values({
-                            path: s3Key,
-                            name: fileName,
+                            path: finalS3Key,
+                            name: finalName,
                             size: file.size,
-                            mimeType: file.type || getMimeTypeFromFileName(fileName),
+                            mimeType: file.type || getMimeTypeFromFileName(finalName),
                             userId: uid,
                             hash: hash,
                             parentPath,
@@ -365,19 +403,18 @@ export function FileService() {
                         return {
                             id: result[0].id,
                             path: filePath,
-                            url: `${accessHost}/${s3Key}`,
-                            name: fileName,
+                            url: `${accessHost}/${finalS3Key}`,
+                            name: finalName,
                             size: file.size,
-                            mimeType: file.type || getMimeTypeFromFileName(fileName),
+                            mimeType: file.type || getMimeTypeFromFileName(finalName),
                             hash,
                             isFolder: false,
                         };
                     } catch (error: any) {
-                        // catch作用域内重新声明日志变量（不输出hash/s3Key）
-                        const logVars = { parentPath, folderName, fileName: name || (file && file.name) || '', size: file?.size, type: file?.type, error };
+                        const logVars = { parentPath, folderName, fileName: name || (file && file.name) || '', size: file?.size, type: file?.type, error: error?.message };
                         console.error('[文件上传异常]', logVars);
                         set.status = 500;
-                        return { error: error.message };
+                        return { error: JSON.stringify(logVars) };
                     }
                 }, {
                     body: t.Object({
@@ -581,6 +618,21 @@ export function FileService() {
                             return { error: 'File not found' };
                         }
 
+                        // 检查同目录下是否有同名
+                        let newName = typeof name === 'string' ? name : '';
+                        let i = 1;
+                        const ext = newName && newName.includes('.') ? '.' + newName.split('.').pop() : '';
+                        const base = ext ? newName.slice(0, -ext.length) : newName;
+                        const parentPathStr = typeof fileInfo[0].parentPath === 'string' ? fileInfo[0].parentPath : '';
+                        while (newName && (await db.select().from(files)
+                            .where(and(
+                                eq(files.parentPath, parentPathStr),
+                                eq(files.name, newName),
+                                sql`id != ${fileId}`
+                            ))
+                        ).length > 0) {
+                            newName = `${base}(${i++})${ext}`;
+                        }
                         // 准备更新数据
                         const updateData: {
                             name?: string;
@@ -590,7 +642,7 @@ export function FileService() {
                             modifiedAt: new Date(),
                         };
 
-                        if (name) updateData.name = name;
+                        if (name) updateData.name = newName;
                         if (accessLevel) updateData.accessLevel = accessLevel;
 
                         // 更新文件记录
@@ -673,11 +725,17 @@ export function FileService() {
                             // parentPath 设为 /images 或 /cache 等，去除多余斜杠
                             const parentPath = '/' + matchedFolder.replace(/\/+$/, '');
                             const dbPath = path.replace(/^\//, '');
-                            const exist = await db.select({id: files.id}).from(files).where(eq(files.path, dbPath));
+                            const exist = await db.select({id: files.id, name: files.name}).from(files).where(eq(files.path, dbPath));
                             if (exist && exist.length > 0) { skipped++; continue; }
                             const meta = await getR2FileMeta(path);
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
-                            const name = path.split('/').pop() || path;
+                            // 优先用元信息原始文件名，否则用 hash
+                            let name = (meta && typeof meta === 'object' && 'originalName' in meta && meta.originalName) ? (meta as any).originalName : path.split('/').pop() || path;
+                            // 如果 name 仍为 hash，尝试从路径推断（如 /images/xxx.jpg => xxx.jpg）
+                            if (/^[a-f0-9]{16,}$/.test(name) && path.includes('.')) {
+                                name = path.split('/').pop() || name;
+                            }
+                            if (!name || name.length < 4) name = dbPath;
                             const mimeType = meta.mimeType || 'application/octet-stream';
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
