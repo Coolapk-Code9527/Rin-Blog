@@ -87,43 +87,68 @@ export function FileService() {
                     try {
                         // 管理员可查所有用户文件
                         const userFilter = (admin && all === '1') ? undefined : eq(files.userId, uid);
-                        // 构建查询条件并链式调用
-                        const result = await db
-                            .select({
-                                id: files.id,
-                                path: files.path,
-                                name: files.name,
-                                size: files.size,
-                                mimeType: files.mimeType,
-                                isFolder: files.isFolder,
-                                accessLevel: files.accessLevel,
-                                thumbnailHash: files.thumbnailHash,
-                                parentPath: files.parentPath,
-                                createdAt: files.createdAt,
-                                modifiedAt: files.modifiedAt,
-                            })
-                            .from(files)
-                            .where(
-                                and(
-                                    ...(userFilter ? [userFilter] : []),
-                                    eq(files.parentPath, path),
-                                    ...(type ? [like(files.mimeType, `${type}/%`)] : []),
-                                    ...(search ? [like(files.name, `%${search}%`)] : [])
+                        // 根目录特殊处理：自动显示R2所有一级目录
+                        let resultData;
+                        if (path === '/') {
+                            // 查询所有一级目录（isFolder=1, parentPath='/'）
+                            resultData = await db
+                                .select({
+                                    id: files.id,
+                                    path: files.path,
+                                    name: files.name,
+                                    size: files.size,
+                                    mimeType: files.mimeType,
+                                    isFolder: files.isFolder,
+                                    accessLevel: files.accessLevel,
+                                    thumbnailHash: files.thumbnailHash,
+                                    parentPath: files.parentPath,
+                                    createdAt: files.createdAt,
+                                    modifiedAt: files.modifiedAt,
+                                })
+                                .from(files)
+                                .where(
+                                    and(
+                                        ...(userFilter ? [userFilter] : []),
+                                        eq(files.parentPath, '/'),
+                                        eq(files.isFolder, 1)
+                                    )
+                                );
+                        } else {
+                            // 构建查询条件并链式调用
+                            resultData = await db
+                                .select({
+                                    id: files.id,
+                                    path: files.path,
+                                    name: files.name,
+                                    size: files.size,
+                                    mimeType: files.mimeType,
+                                    isFolder: files.isFolder,
+                                    accessLevel: files.accessLevel,
+                                    thumbnailHash: files.thumbnailHash,
+                                    parentPath: files.parentPath,
+                                    createdAt: files.createdAt,
+                                    modifiedAt: files.modifiedAt,
+                                })
+                                .from(files)
+                                .where(
+                                    and(
+                                        ...(userFilter ? [userFilter] : []),
+                                        eq(files.parentPath, path),
+                                        ...(type ? [like(files.mimeType, `${type}/%`)] : []),
+                                        ...(search ? [like(files.name, `%${search}%`)] : [])
+                                    )
                                 )
-                            )
-                        // 应用排序
-                            .orderBy(
-                                sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
-                                sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
-                                sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
-                                asc(files.name)
-                            )
-                        // 添加分页
-                            .limit(limit)
-                            .offset(offset);
-
-                        const resultData = await result;
-
+                                // 应用排序
+                                .orderBy(
+                                    sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
+                                    sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
+                                    sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
+                                    asc(files.name)
+                                )
+                                // 添加分页
+                                .limit(limit)
+                                .offset(offset);
+                        }
                         // 获取总数
                         const countQuery = await db
                             .select({ count: sql<number>`count(*)` })
@@ -136,7 +161,6 @@ export function FileService() {
                                     ...(search ? [like(files.name, `%${search}%`)] : [])
                                 )
                             );
-
                         // 获取每个文件的引用计数
                         const fileIds = resultData.map((f: any) => f.id);
                         let referencesMap: Record<number, number> = {};
@@ -233,6 +257,20 @@ export function FileService() {
                         if (existingFolder.length > 0) {
                             set.status = 409;
                             return { error: 'Folder already exists' };
+                        }
+
+                        // 在R2创建空目录对象（以/结尾）
+                        const r2FolderKey = folderPath.replace(/^\/+/, '') + '/';
+                        try {
+                            await s3.send(new PutObjectCommand({
+                                Bucket: bucket,
+                                Key: r2FolderKey,
+                                Body: '',
+                                ContentType: 'application/x-directory',
+                            }));
+                        } catch (e) {
+                            // R2目录对象创建失败不影响数据库，但建议记录日志
+                            console.error('R2 create folder failed:', e);
                         }
 
                         // 创建文件夹记录
@@ -352,7 +390,6 @@ export function FileService() {
                         // 生成S3存储路径
                         const fileName = name || file.name;
                         const s3Key = path.join(folder, hash);
-                        
                         // 上传到S3
                         await s3.send(new PutObjectCommand({
                             Bucket: bucket,
@@ -360,13 +397,11 @@ export function FileService() {
                             Body: file,
                             ContentType: file.type || getMimeTypeFromFileName(fileName),
                         }));
-
                         // 创建文件路径
                         const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
-                        
                         // 保存文件记录
                         const result = await db.insert(files).values({
-                            path: s3Key,
+                            path: s3Key, // 只存相对路径
                             name: fileName,
                             size: file.size,
                             mimeType: file.type || getMimeTypeFromFileName(fileName),
@@ -374,10 +409,9 @@ export function FileService() {
                             hash: hash,
                             parentPath,
                         }).returning({ id: files.id });
-
                         return {
                             id: result[0].id,
-                            path: filePath,
+                            path: s3Key,
                             url: `${accessHost}/${s3Key}`,
                             name: fileName,
                             size: file.size,
@@ -453,7 +487,7 @@ export function FileService() {
 
                         return {
                             ...file,
-                            url: `${accessHost}/${file.path}`,
+                            url: `${accessHost}/${file.path.replace(/^https?:\/\/[^/]+\//, '')}`,
                             isFolder: false,
                             references: references.map((ref: FileReference) => ({
                                 id: ref.id,
@@ -552,119 +586,7 @@ export function FileService() {
                     }
                 })
 
-                // 更新文件信息
-                .patch('/:id', async ({ params, body, uid, set }) => {
-                    if (!uid) {
-                        set.status = 401;
-                        return { error: 'Unauthorized' };
-                    }
-
-                    const db = getDB();
-                    
-                    if (!db) {
-                        set.status = 500;
-                        return { error: 'Database connection not available' };
-                    }
-
-                    const { name, accessLevel } = body;
-                    if (!name && !accessLevel) {
-                        set.status = 400;
-                        return { error: 'No fields to update' };
-                    }
-
-                    try {
-                        const fileId = Number(params.id);
-                        
-                        // 获取文件信息
-                        const fileInfo = await db
-                            .select()
-                            .from(files)
-                            .where(
-                                and(
-                                    eq(files.id, fileId),
-                                    eq(files.userId, uid)
-                                )
-                            );
-
-                        if (fileInfo.length === 0) {
-                            set.status = 404;
-                            return { error: 'File not found' };
-                        }
-
-                        // 准备更新数据
-                        const updateData: {
-                            name?: string;
-                            accessLevel?: string;
-                            modifiedAt: Date;
-                        } = {
-                            modifiedAt: new Date(),
-                        };
-
-                        if (name) updateData.name = name;
-                        if (accessLevel) updateData.accessLevel = accessLevel;
-
-                        // 更新文件记录
-                        const result = await db
-                            .update(files)
-                            .set(updateData)
-                            .where(eq(files.id, fileId))
-                            .returning();
-
-                        return result[0];
-                    } catch (error: any) {
-                        console.error(error);
-                        set.status = 500;
-                        return { error: error.message };
-                    }
-                }, {
-                    body: t.Object({
-                        name: t.Optional(t.String()),
-                        accessLevel: t.Optional(t.String()),
-                    }),
-                })
-
-                // 同步文件
-                .post('/sync', async ({ uid, admin, set }) => {
-                    if (!admin) {
-                        set.status = 403;
-                        return { error: 'Permission denied' };
-                    }
-                    const db = getDB();
-                    if (!db) {
-                        set.status = 500;
-                        return { error: 'Database connection not available' };
-                    }
-                    // 扫描所有文章内容
-                    const allFeeds = await db.select({ id: feeds.id, content: feeds.content }).from(feeds);
-                    let total = 0, success = 0, failed = 0;
-                    const failedDetails: any[] = [];
-                    for (const feed of allFeeds) {
-                        try {
-                            await syncFeedFileReferences(db, feed.id, feed.content, 1);
-                            success++;
-                        } catch (e: any) {
-                            failed++;
-                            let errObj: any = {};
-                            if (e && typeof e === 'object') {
-                              errObj = e;
-                            } else {
-                              errObj = { message: String(e), stack: '' };
-                            }
-                            // 兜底所有字段
-                            failedDetails.push({
-                                feedId: typeof feed.id !== 'undefined' ? feed.id : -1,
-                                userId: 1,
-                                contentSnippet: (feed.content || '').slice(0, 100),
-                                error: errObj?.message || String(errObj),
-                                stack: errObj?.stack || ''
-                            });
-                        }
-                        total++;
-                    }
-                    return { total, success, failed, failedDetails };
-                })
-
-                // R2同步
+                // 同步R2文件到数据库
                 .post('/r2sync', async ({ uid, admin, set }) => {
                     if (!admin) {
                         set.status = 403;
@@ -672,9 +594,9 @@ export function FileService() {
                     }
                     const db = getDB();
                     const env = getEnv();
-                    const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+|\/+$/g, '') + '/';
+                    const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+/g, '') + '/';
                     const r2Files = await listAllR2Files();
-                    let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
+                    let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [], fixed = 0;
                     for (const path of r2Files) {
                         try {
                             // path本身已带images/前缀
@@ -686,14 +608,17 @@ export function FileService() {
                             const mimeType = meta.mimeType || 'application/octet-stream';
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
+                            // 目录对象特殊处理
+                            const isFolder = path.endsWith('/');
                             await db.insert(files).values({
                                 path: path.replace(/^\//, ''),
                                 name,
                                 size,
-                                mimeType,
+                                mimeType: isFolder ? 'folder' : mimeType,
                                 userId: uid || 1,
                                 parentPath: '/',
-                                hash
+                                hash: isFolder ? 'folder' : hash,
+                                isFolder: isFolder ? 1 : 0,
                             });
                             inserted++;
                         } catch (e) {
@@ -702,7 +627,16 @@ export function FileService() {
                         }
                         total++;
                     }
-                    return { total, inserted, skipped, failed, failedList };
+                    // 修复历史数据：将files表中path为完整URL的，批量修正为相对路径
+                    const allFiles = await db.select({id: files.id, path: files.path}).from(files);
+                    for (const f of allFiles) {
+                        if (/^https?:\/\//.test(f.path)) {
+                            const rel = f.path.replace(/^https?:\/\/[^/]+\//, '');
+                            await db.update(files).set({ path: rel }).where(eq(files.id, f.id));
+                            fixed++;
+                        }
+                    }
+                    return { total, inserted, skipped, failed, failedList, fixed };
                 })
         );
-} 
+}
