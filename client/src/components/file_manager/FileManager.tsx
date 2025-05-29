@@ -333,7 +333,7 @@ export function FileManager({
         const response = await client.files.index.post({
           file,
           name: file.name,
-          parentPath: currentPath
+          parentPath: currentPath || '/'
         }, {
           headers: headersWithAuth()
         });
@@ -1012,7 +1012,7 @@ export function FileManager({
       </div>
 
       {/* 文件列表主体 */}
-      <div className="min-h-[300px]">
+      <div className="min-h-[60vh]">
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <Loading type="spin" height={32} width={32} />
