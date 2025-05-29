@@ -151,7 +151,12 @@
     "batch": " (Batch)",
     "move_to": "Move to Folder",
     "target_folder": "Target folder path (e.g. /images)",
-    "moving": "Moving..."
+    "moving": "Moving...",
+    "single_select": "Single Select",
+    "multi_select": "Multi Select",
+    "download": "Download",
+    "delete": "Delete",
+    "move": "Move"
   },
   "footer": {
     "rss": "RSS Subscription Link"

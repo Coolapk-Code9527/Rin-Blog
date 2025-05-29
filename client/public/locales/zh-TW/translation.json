@@ -141,7 +141,12 @@
     "batch": "（批次）",
     "move_to": "移動到資料夾",
     "target_folder": "目標資料夾路徑（如 /images）",
-    "moving": "移動中..."
+    "moving": "移動中...",
+    "single_select": "單選模式",
+    "multi_select": "多選模式",
+    "download": "下載",
+    "delete": "刪除",
+    "move": "移動"
   },
   "footer": {
     "rss": "RSS 訂閱連結"

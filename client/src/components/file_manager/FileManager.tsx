@@ -48,12 +48,10 @@ function getFileUrl(path: string) {
 // 文件管理器组件
 export function FileManager({
   onSelect,
-  multiple = false,
   allowedTypes,
   showSelector = true
 }: {
   onSelect?: (files: FileItem | FileItem[]) => void;
-  multiple?: boolean;
   allowedTypes?: string[];
   showSelector?: boolean;
 }) {
@@ -116,6 +114,9 @@ export function FileManager({
   if (!isAdmin) {
     return null;
   }
+
+  // 新增多选/单选切换
+  const [multiple, setMultiple] = useState(true);
 
   // 加载文件列表
   const loadFiles = async (reload = false) => {
@@ -610,6 +611,14 @@ export function FileManager({
                   <i className="ri-download-2-line"></i>
                 </button>
               )}
+              {/* 移动按钮 */}
+              <button
+                className="text-purple-500 hover:text-purple-700 p-1"
+                title={t('move')}
+                onClick={e => {e.stopPropagation(); setSelectedFiles([file]); setShowMoveDialog(true);}}
+              >
+                <i className="ri-folder-transfer-line"></i>
+              </button>
               {/* 重命名按钮 */}
               <button 
                 className="text-blue-500 hover:text-blue-700 p-1"
@@ -747,6 +756,14 @@ export function FileManager({
                       <i className="ri-download-2-line"></i>
                     </button>
                   )}
+                  {/* 移动按钮 */}
+                  <button
+                    className="text-purple-500 hover:text-purple-700 p-1"
+                    title={t('move')}
+                    onClick={e => {e.stopPropagation(); setSelectedFiles([file]); setShowMoveDialog(true);}}
+                  >
+                    <i className="ri-folder-transfer-line"></i>
+                  </button>
                   <button 
                     className={`text-xs mr-2 rounded px-2 py-0.5 text-blue-500 hover:underline`}
                     onClick={e => { e.stopPropagation(); handleShowReferences(file); }}
@@ -875,6 +892,16 @@ export function FileManager({
                 <i className="ri-list-check"></i>
               </button>
             </div>
+
+            {/* 多选/单选切换按钮 */}
+            <button
+              onClick={() => setMultiple(m => !m)}
+              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              title={multiple ? t('files.single_select') : t('files.multi_select')}
+            >
+              <i className={`ri-checkbox-${multiple ? 'multiple' : 'blank'}-line`}></i>
+              <span className="ml-1">{multiple ? t('files.single_select') : t('files.multi_select')}</span>
+            </button>
 
             {/* 新建文件夹按钮 */}
             <button
@@ -1006,12 +1033,12 @@ export function FileManager({
       {showSelector && multiple && selectedFiles.length > 0 && (
         <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between gap-2">
           <div className="text-sm">
-            {t('files.selected', { count: selectedFiles.length })}
+            {selectedFiles.length > 0 ? t('files.selected', { count: selectedFiles.length }) : ''}
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleBatchDownload} title={t('download') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
-            <Button onClick={handleBatchDelete} title={t('delete') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
-            <Button onClick={handleBatchMove} title={t('move') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
+            <Button onClick={handleBatchDownload} title={t('files.download') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
+            <Button onClick={handleBatchDelete} title={t('files.delete') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
+            <Button onClick={handleBatchMove} title={t('files.move') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
             <Button onClick={handleConfirmSelection} title={t('files.confirm_selection')} />
           </div>
         </div>

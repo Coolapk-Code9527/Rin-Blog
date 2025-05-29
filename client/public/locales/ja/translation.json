@@ -141,7 +141,12 @@
     "batch": "（一括）",
     "move_to": "フォルダへ移動",
     "target_folder": "移動先フォルダパス（例: /images）",
-    "moving": "移動中..."
+    "moving": "移動中...",
+    "single_select": "単一選択モード",
+    "multi_select": "複数選択モード",
+    "download": "ダウンロード",
+    "delete": "削除",
+    "move": "移動"
   },
   "footer": {
     "rss": "RSS 購読リンク"
