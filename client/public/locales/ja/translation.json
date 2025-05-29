@@ -135,7 +135,13 @@
     "r2sync_success": "R2同期完了：合計{{total}}件、新規{{inserted}}件、スキップ{{skipped}}件、失敗{{failed}}件。",
     "r2sync_failed": "R2同期失敗：{{error}}",
     "ref_detail": "以下のコンテンツがこのファイルを参照しています：",
-    "ref_no_title": "タイトルなし"
+    "ref_no_title": "タイトルなし",
+    "download_folder_not_supported": "フォルダの直接ダウンロードはまだサポートされていません。",
+    "download_failed": "ダウンロードに失敗しました: {{error}}",
+    "batch": "（一括）",
+    "move_to": "フォルダへ移動",
+    "target_folder": "移動先フォルダパス（例: /images）",
+    "moving": "移動中..."
   },
   "footer": {
     "rss": "RSS 購読リンク"

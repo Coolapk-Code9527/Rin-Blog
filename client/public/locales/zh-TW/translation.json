@@ -135,7 +135,13 @@
     "r2sync_success": "R2同步完成：共{{total}}項，新增{{inserted}}，跳過{{skipped}}，失敗{{failed}}。",
     "r2sync_failed": "R2同步失敗：{{error}}",
     "ref_detail": "以下內容正在引用該文件：",
-    "ref_no_title": "無標題"
+    "ref_no_title": "無標題",
+    "download_folder_not_supported": "暫不支援直接下載整個資料夾",
+    "download_failed": "下載失敗: {{error}}",
+    "batch": "（批次）",
+    "move_to": "移動到資料夾",
+    "target_folder": "目標資料夾路徑（如 /images）",
+    "moving": "移動中..."
   },
   "footer": {
     "rss": "RSS 訂閱連結"

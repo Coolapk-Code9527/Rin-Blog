@@ -5,6 +5,8 @@ import { headersWithAuth } from '../../utils/auth';
 import { formatFileSize, getFileTypeIcon } from './utils';
 import ReactLoading from "react-loading";
 import { ShowAlertType } from '../../hooks/useAlert';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
@@ -496,6 +498,85 @@ export function FileManager({
     }
   };
 
+  // 1. 单文件下载
+  const handleDownloadFile = async (file: FileItem) => {
+    if (file.isFolder) {
+      showAlert(t('files.download_folder_not_supported') || '暂不支持直接下载整个文件夹');
+      return;
+    }
+    try {
+      const url = file.url || getFileUrl(file.path);
+      const response = await fetch(url, { headers: headersWithAuth() });
+      if (!response.ok) throw new Error(t('files.download_failed', { error: response.statusText }));
+      const blob = await response.blob();
+      saveAs(blob, file.name);
+    } catch (e: any) {
+      showAlert(t('files.download_failed', { error: e.message }));
+    }
+  };
+
+  // 2. 批量下载
+  const handleBatchDownload = async () => {
+    if (selectedFiles.length === 0) return;
+    const zip = new JSZip();
+    let count = 0;
+    for (const file of selectedFiles) {
+      if (file.isFolder) continue; // 文件夹暂不支持
+      try {
+        const url = file.url || getFileUrl(file.path);
+        const response = await fetch(url, { headers: headersWithAuth() });
+        if (!response.ok) continue;
+        const blob = await response.blob();
+        zip.file(file.name, blob);
+        count++;
+      } catch {}
+    }
+    if (count === 0) {
+      showAlert(t('files.download_failed', { error: t('files.no_selection') }));
+      return;
+    }
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, `files_${Date.now()}.zip`);
+  };
+
+  // 3. 批量删除
+  const handleBatchDelete = async () => {
+    if (selectedFiles.length === 0) return;
+    if (!window.confirm(t('files.confirm_delete', { name: t('files.selected', { count: selectedFiles.length }) }))) return;
+    for (const file of selectedFiles) {
+      await handleDeleteFile(file);
+    }
+    setSelectedFiles([]);
+    loadFiles();
+  };
+
+  // 4. 批量移动/移动文件夹
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [moveTargetPath, setMoveTargetPath] = useState<string>('');
+  const [moving, setMoving] = useState(false);
+  const handleBatchMove = () => {
+    setShowMoveDialog(true);
+  };
+  const confirmBatchMove = async () => {
+    setMoving(true);
+    for (const file of selectedFiles) {
+      if (file.parentPath === moveTargetPath) continue;
+      await fetch(`${endpoint}/files/${file.id}`, {
+        method: 'PATCH',
+        headers: { ...headersWithAuth(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          // 文件夹移动用重命名逻辑
+          name: file.name,
+          parentPath: moveTargetPath
+        })
+      });
+    }
+    setMoving(false);
+    setShowMoveDialog(false);
+    setSelectedFiles([]);
+    loadFiles();
+  };
+
   // 渲染网格视图
   const renderGridView = () => {
     return (
@@ -519,6 +600,16 @@ export function FileManager({
             </p>
             {/* 操作按钮区 */}
             <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* 下载按钮 */}
+              {!file.isFolder && (
+                <button 
+                  className="text-green-500 hover:text-green-700 p-1"
+                  title={t('download')}
+                  onClick={e => {e.stopPropagation(); handleDownloadFile(file);}}
+                >
+                  <i className="ri-download-2-line"></i>
+                </button>
+              )}
               {/* 重命名按钮 */}
               <button 
                 className="text-blue-500 hover:text-blue-700 p-1"
@@ -608,7 +699,7 @@ export function FileManager({
                   )}
                 </div>
               </th>
-              <th scope="col" className="px-4 py-3 w-20"></th>
+              <th scope="col" className="px-4 py-3 w-32"></th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
@@ -645,7 +736,17 @@ export function FileManager({
                 <td className="px-4 py-3 text-sm text-gray-500">
                   {new Date(file.modifiedAt * 1000).toLocaleDateString()}
                 </td>
-                <td className="px-4 py-3 text-sm text-right">
+                <td className="px-4 py-3 text-sm text-right flex gap-1">
+                  {/* 下载按钮 */}
+                  {!file.isFolder && (
+                    <button 
+                      className="text-green-500 hover:text-green-700 p-1"
+                      title={t('download')}
+                      onClick={e => {e.stopPropagation(); handleDownloadFile(file);}}
+                    >
+                      <i className="ri-download-2-line"></i>
+                    </button>
+                  )}
                   <button 
                     className={`text-xs mr-2 rounded px-2 py-0.5 text-blue-500 hover:underline`}
                     onClick={e => { e.stopPropagation(); handleShowReferences(file); }}
@@ -732,60 +833,6 @@ export function FileManager({
         </button>
       </div>
     ) : null;
-  };
-
-  // 新增：批量操作相关逻辑
-  const handleBatchDelete = async () => {
-    if (selectedFiles.length === 0) return;
-    if (!window.confirm(t('files.batch_delete_confirm', { count: selectedFiles.length }))) return;
-    for (const file of selectedFiles) {
-      // 禁止删除非空文件夹
-      if (file.isFolder) {
-        const hasChild = files.some(f => f.parentPath === file.path);
-        if (hasChild) {
-          showAlert(t('files.delete_error', { error: t('files.folder_not_empty') }));
-          continue;
-        }
-      }
-      await handleDeleteFile(file);
-    }
-    setSelectedFiles([]);
-    loadFiles();
-  };
-
-  const handleBatchMove = async () => {
-    if (selectedFiles.length === 0) return;
-    // TODO: 弹窗选择目标目录并支持新建
-    const targetPath = prompt(t('files.move_target_prompt'));
-    if (!targetPath) return;
-    for (const file of selectedFiles) {
-      // 禁止移动到自身或子目录
-      if (file.path === targetPath || targetPath.startsWith(file.path + '/')) {
-        showAlert(t('files.move_error', { error: t('files.move_to_self') }));
-        continue;
-      }
-      await fetch(`${endpoint}/files/${file.id}`, {
-        method: 'PATCH',
-        headers: { ...headersWithAuth(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ parentPath: targetPath })
-      });
-    }
-    setSelectedFiles([]);
-    loadFiles();
-  };
-
-  const handleBatchDownload = async () => {
-    if (selectedFiles.length === 0) return;
-    for (const file of selectedFiles) {
-      if (file.isFolder) continue; // 文件夹暂不支持批量下载
-      const url = file.url || getFileUrl(file.path);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
   };
 
   return (
@@ -957,14 +1004,14 @@ export function FileManager({
       
       {/* 选择操作栏 - 多选模式 */}
       {showSelector && multiple && selectedFiles.length > 0 && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between gap-2">
           <div className="text-sm">
             {t('files.selected', { count: selectedFiles.length })}
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleBatchDownload} title={t('files.batch_download')}/>
-            <Button onClick={handleBatchMove} title={t('files.batch_move')}/>
-            <Button onClick={handleBatchDelete} title={t('files.batch_delete')}/>
+            <Button onClick={handleBatchDownload} title={t('download') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
+            <Button onClick={handleBatchDelete} title={t('delete') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
+            <Button onClick={handleBatchMove} title={t('move') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
             <Button onClick={handleConfirmSelection} title={t('files.confirm_selection')} />
           </div>
         </div>
@@ -1052,6 +1099,32 @@ export function FileManager({
             )}
             <div className="flex justify-end mt-6">
               <button onClick={() => setRefDialogOpen(false)} className="px-4 py-2 bg-theme text-white rounded-md">{t('close')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 移动弹窗 */}
+      {showMoveDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-lg font-medium mb-4">{t('files.move_to')}</h3>
+            <input
+              type="text"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent mb-4"
+              placeholder={t('files.target_folder')}
+              value={moveTargetPath}
+              onChange={e => setMoveTargetPath(e.target.value)}
+              autoFocus
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setShowMoveDialog(false)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                {t('cancel')}
+              </button>
+              <Button onClick={confirmBatchMove} title={moving ? t('files.moving') : t('move')} />
             </div>
           </div>
         </div>

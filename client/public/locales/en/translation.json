@@ -145,7 +145,13 @@
     "upload_success": "Upload successful",
     "upload_failed": "Upload failed: {{error}}",
     "delete_success": "Delete successful",
-    "delete_failed": "Delete failed: {{error}}"
+    "delete_failed": "Delete failed: {{error}}",
+    "download_folder_not_supported": "Direct download of folders is not supported yet.",
+    "download_failed": "Download failed: {{error}}",
+    "batch": " (Batch)",
+    "move_to": "Move to Folder",
+    "target_folder": "Target folder path (e.g. /images)",
+    "moving": "Moving..."
   },
   "footer": {
     "rss": "RSS Subscription Link"

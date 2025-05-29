@@ -159,7 +159,13 @@
     "upload_success": "上传成功",
     "upload_failed": "上传失败: {{error}}",
     "delete_success": "删除成功",
-    "delete_failed": "删除失败: {{error}}"
+    "delete_failed": "删除失败: {{error}}",
+    "download_folder_not_supported": "暂不支持直接下载整个文件夹",
+    "download_failed": "下载失败: {{error}}",
+    "batch": "（批量）",
+    "move_to": "移动到目录",
+    "target_folder": "目标文件夹路径（如 /images）",
+    "moving": "移动中..."
   },
   "footer": {
     "rss": "RSS 订阅链接"
