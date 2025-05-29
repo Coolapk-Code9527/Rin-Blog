@@ -105,7 +105,7 @@ export function FileService() {
                             }).from(files).where(
                                 and(
                                     ...(userFilter ? [userFilter] : []),
-                                    eq(files.parentPath, '/')
+                                    or(eq(files.parentPath, '/'), eq(files.parentPath, ''))
                                 )
                             );
                             const dbFolderNames = dbItems.filter(f => f.isFolder).map(f => f.name);
@@ -126,51 +126,51 @@ export function FileService() {
                                     referencesCount: 0
                                 }));
                             resultData = [...dbItems, ...virtualFolders];
-                            count = resultData.length;
+                            count = dbItems.length + virtualFolders.length;
                         } else {
-                            const result = await db
-                                .select({
-                                    id: files.id,
-                                    path: files.path,
-                                    name: files.name,
-                                    size: files.size,
-                                    mimeType: files.mimeType,
-                                    isFolder: files.isFolder,
-                                    accessLevel: files.accessLevel,
-                                    thumbnailHash: files.thumbnailHash,
-                                    parentPath: files.parentPath,
-                                    createdAt: files.createdAt,
-                                    modifiedAt: files.modifiedAt,
-                                })
-                                .from(files)
-                                .where(
-                                    and(
-                                        ...(userFilter ? [userFilter] : []),
-                                        eq(files.parentPath, path),
-                                        ...(type ? [like(files.mimeType, `${type}/%`)] : []),
-                                        ...(search ? [like(files.name, `%${search}%`)] : [])
-                                    )
+                        const result = await db
+                            .select({
+                                id: files.id,
+                                path: files.path,
+                                name: files.name,
+                                size: files.size,
+                                mimeType: files.mimeType,
+                                isFolder: files.isFolder,
+                                accessLevel: files.accessLevel,
+                                thumbnailHash: files.thumbnailHash,
+                                parentPath: files.parentPath,
+                                createdAt: files.createdAt,
+                                modifiedAt: files.modifiedAt,
+                            })
+                            .from(files)
+                            .where(
+                                and(
+                                    ...(userFilter ? [userFilter] : []),
+                                    eq(files.parentPath, path),
+                                    ...(type ? [like(files.mimeType, `${type}/%`)] : []),
+                                    ...(search ? [like(files.name, `%${search}%`)] : [])
                                 )
-                                .orderBy(
-                                    sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
-                                    sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
-                                    sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
-                                    asc(files.name)
-                                )
-                                .limit(limit)
-                                .offset(offset);
+                            )
+                            .orderBy(
+                                sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
+                                sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
+                                sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
+                                asc(files.name)
+                            )
+                            .limit(limit)
+                            .offset(offset);
                             resultData = await result;
                             const countQ = await db
-                                .select({ count: sql<number>`count(*)` })
-                                .from(files)
-                                .where(
-                                    and(
-                                        ...(userFilter ? [userFilter] : []),
-                                        eq(files.parentPath, path),
-                                        ...(type ? [like(files.mimeType, `${type}/%`)] : []),
-                                        ...(search ? [like(files.name, `%${search}%`)] : [])
-                                    )
-                                );
+                            .select({ count: sql<number>`count(*)` })
+                            .from(files)
+                            .where(
+                                and(
+                                    ...(userFilter ? [userFilter] : []),
+                                    eq(files.parentPath, path),
+                                    ...(type ? [like(files.mimeType, `${type}/%`)] : []),
+                                    ...(search ? [like(files.name, `%${search}%`)] : [])
+                                )
+                            );
                             count = countQ[0].count;
                         }
                         const fileIds = resultData.map((f: any) => f.id).filter((id: number) => id > 0);
@@ -318,11 +318,11 @@ export function FileService() {
                         return { error: 'S3 configuration not found' };
                     }
                     let { file, name, parentPath = '/' } = body;
+                    // 修复parentPath为空或''时强制为'/'
+                    parentPath = (!parentPath || parentPath === '') ? '/' : parentPath.replace(/\/+$/, '').replace(/^([^/])/, '/$1');
                     const env = getEnv();
                     // 允许 parentPath 为 S3_FOLDER/S3_CACHE_FOLDER
                     const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+|\/+$/g, ''));
-                    // 统一 parentPath 格式
-                    parentPath = parentPath.replace(/\/+$/, '').replace(/^([^/])/, '/$1');
                     let folderName = '';
                     if (s3Folders.includes(parentPath)) {
                         folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
@@ -582,7 +582,7 @@ export function FileService() {
                         if (file.isFolder && name && name !== file.name) {
                             const oldPath = file.path;
                             const newPath = file.parentPath === '/' ? `/${name}` : `${file.parentPath}/${name}`;
-                            // 查找所有以 oldPath 为前缀的文件/文件夹
+                            // 查找所有以 oldPath 为前缀的文件/文件夹（包括多级子文件夹和文件）
                             const children = await db.select().from(files).where(like(files.path, `${oldPath}/%`));
                             // R2对象批量移动
                             const env = getEnv();
@@ -612,12 +612,17 @@ export function FileService() {
                                     }));
                                     await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldR2Key }));
                                 } catch (e) {
-                                    return { error: `R2对象移动失败: ${oldR2Key} -> ${newR2Key}, ${String(e)}` };
+                                    // 如果对象不存在，跳过
+                                    continue;
                                 }
-                                // 更新数据库路径
+                                // 更新数据库路径和parentPath（多级子文件夹也要递归替换parentPath）
+                                let newParentPath = child.parentPath;
+                                if (child.parentPath && child.parentPath.startsWith(oldPath)) {
+                                    newParentPath = child.parentPath.replace(oldPath, newPath);
+                                }
                                 await db.update(files).set({
                                     path: newPath + relative,
-                                    parentPath: (child.parentPath === oldPath ? newPath : (child.parentPath ? child.parentPath.replace(oldPath, newPath) : child.parentPath)),
+                                    parentPath: newParentPath,
                                     modifiedAt: new Date(),
                                 }).where(eq(files.id, child.id));
                             }
@@ -706,16 +711,24 @@ export function FileService() {
                     }
                     const db = getDB();
                     const env = getEnv();
-                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+/g, '').replace(/\/+$/g, ''));
+                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+|\/+$/g, ''));
                     const r2Files = await listAllR2Files();
                     let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
                     for (const path of r2Files) {
                         try {
                             // 判断属于哪个一级目录
                             const matchedFolder = s3Folders.find(folder => path.startsWith('/' + folder + '/'));
-                            if (!matchedFolder) { skipped++; continue; }
-                            // parentPath 设为 /images 或 /cache 等，去除多余斜杠
-                            const parentPath = '/' + matchedFolder.replace(/\/+$/, '');
+                            let parentPath = '/';
+                            if (matchedFolder) {
+                                parentPath = '/' + matchedFolder.replace(/\/+$/, '');
+                            } else {
+                                // 根目录下的文件
+                                if (path.split('/').length === 2) { // 形如 /foo.txt
+                                    parentPath = '/';
+                                } else {
+                                    skipped++; continue;
+                                }
+                            }
                             const dbPath = path.replace(/^\//, '');
                             const exist = await db.select({id: files.id, name: files.name}).from(files).where(eq(files.path, dbPath));
                             const hashName = path.split('/').pop() || path;

@@ -1151,10 +1151,10 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
       onSuccess(imageUrl);
     } else {
       showAlert(t("upload.failed", { error: 'No url returned' }));
-    }
+      }
   } catch (e: any) {
-    console.error(e);
-    showAlert(t("upload.failed", { error: e.message }));
+      console.error(e);
+      showAlert(t("upload.failed", { error: e.message }));
   }
 }
 

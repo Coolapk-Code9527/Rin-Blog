@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
@@ -7,6 +7,7 @@ import ReactLoading from "react-loading";
 import { ShowAlertType } from '../../hooks/useAlert';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { Pagination } from '../pagination';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
@@ -73,7 +74,6 @@ export function FileManager({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalItems, setTotalItems] = useState<number>(0);
-  const [itemsPerPage] = useState<number>(20);
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
   const [breadcrumbs, setBreadcrumbs] = useState<{name: string, path: string}[]>([{ name: t('files.root'), path: '/' }]);
   
@@ -117,6 +117,26 @@ export function FileManager({
 
   // 新增多选/单选切换
   const [multiple, setMultiple] = useState(true);
+
+  // 新增同步菜单状态
+  const [showSyncMenu, setShowSyncMenu] = useState(false);
+
+  // itemsPerPage自适应：根据容器高度动态设置
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(20);
+  useLayoutEffect(() => {
+    function updateItemsPerPage() {
+      if (!containerRef.current) return;
+      const height = containerRef.current.offsetHeight || 600;
+      // 估算每行高度（列表模式40px，网格模式120px），留出头部和分页空间
+      const rowHeight = viewMode === 'list' ? 48 : 140;
+      const maxRows = Math.max(2, Math.floor((height - 180) / rowHeight));
+      setItemsPerPage(maxRows * (viewMode === 'list' ? 1 : 5));
+    }
+    updateItemsPerPage();
+    window.addEventListener('resize', updateItemsPerPage);
+    return () => window.removeEventListener('resize', updateItemsPerPage);
+  }, [viewMode]);
 
   // 加载文件列表
   const loadFiles = async (reload = false) => {
@@ -339,13 +359,33 @@ export function FileManager({
         });
 
         if (response.error) {
-          // 新增：完整输出后端error内容
-          console.error('上传失败详细信息:', response.error);
-          showAlert(typeof response.error === 'object' ? JSON.stringify(response.error) : response.error);
+          // 兼容 value/message 嵌套
+          let msg = '';
+          if (typeof response.error === 'object') {
+            if ('message' in response.error && typeof (response.error as any).message === 'string') {
+              msg = (response.error as any).message;
+            } else if ('value' in response.error) {
+              if (typeof (response.error as any).value === 'string') {
+                msg = (response.error as any).value;
+              } else if (typeof (response.error as any).value === 'object' && (response.error as any).value !== null) {
+                const val = (response.error as any).value;
+                msg = typeof val.message === 'string' ? val.message : JSON.stringify(val);
+              } else {
+                msg = JSON.stringify((response.error as any).value);
+              }
+            } else {
+              msg = JSON.stringify(response.error);
+            }
+          } else {
+            msg = response.error;
+          }
+          showAlert(msg);
+          continue;
         } else if ((response as any).reusedMsg) {
           showAlert((response as any).reusedMsg);
+        } else {
+          showAlert(t('files.upload_success'));
         }
-        showAlert(t('files.upload_success'));
         loadFiles();
       } catch (error: any) {
         showAlert(t('files.upload_failed', { error: error.message }));
@@ -580,9 +620,13 @@ export function FileManager({
 
   // 渲染网格视图
   const renderGridView = () => {
+    // 文件夹优先，文件后面
+    const folders = files.filter(file => file.isFolder);
+    const normalFiles = files.filter(file => !file.isFolder);
+    const displayFiles = [...folders, ...normalFiles];
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
-        {files.map(file => (
+        {displayFiles.map(file => (
           <div 
             key={file.id}
             className={`p-3 rounded-lg border ${selectedFiles.some(f => f.id === file.id) ? 'border-theme bg-pink-50 dark:bg-pink-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50'} 
@@ -641,14 +685,19 @@ export function FileManager({
               {file.isFolder ? '' : formatFileSize(file.size)}
             </p>
             {/* 引用计数按钮 */}
-            {!file.isFolder && file.referencesCount > 0 && (
-              <button
-                className={"absolute bottom-1 right-1 text-xs rounded px-2 py-0.5 text-blue-500 hover:underline bg-white/80 dark:bg-gray-900/80 cursor-pointer"}
-                onClick={e => { e.stopPropagation(); handleShowReferences(file); }}
-                title={t('files.references')}
+            {!file.isFolder && (
+              <span
+                className={`text-xs mr-2 rounded px-2 py-0.5 flex items-center gap-1
+                  ${file.referencesCount > 0
+                    ? 'text-blue-500 bg-gray-100 dark:bg-gray-800'
+                    : 'text-gray-400 bg-gray-100 dark:bg-gray-800'}`}
+                title={file.referencesCount > 0 ? t('files.references') : t('files.ref_none')}
+                style={{ minWidth: 24, justifyContent: 'center', cursor: file.referencesCount > 0 ? 'pointer' : 'default' }}
+                onClick={file.referencesCount > 0 ? (e) => { e.stopPropagation(); handleShowReferences(file); } : undefined}
               >
-                {file.referencesCount} {t('files.ref_count')}
-              </button>
+                <i className={file.referencesCount > 0 ? 'ri-link' : 'ri-link-unlink'} />
+                {file.referencesCount > 0 && file.referencesCount}
+              </span>
             )}
           </div>
         ))}
@@ -664,6 +713,10 @@ export function FileManager({
   
   // 渲染列表视图
   const renderListView = () => {
+    // 文件夹优先，文件后面
+    const folders = files.filter(file => file.isFolder);
+    const normalFiles = files.filter(file => !file.isFolder);
+    const displayFiles = [...folders, ...normalFiles];
     return (
       <div className="overflow-x-auto w-full">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -712,7 +765,7 @@ export function FileManager({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
-            {files.map(file => (
+            {displayFiles.map(file => (
               <tr 
                 key={file.id}
                 className={`${selectedFiles.some(f => f.id === file.id) ? 'bg-pink-50 dark:bg-pink-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'} cursor-pointer transition-colors`}
@@ -723,11 +776,17 @@ export function FileManager({
                     <input 
                       type="checkbox" 
                       checked={selectedFiles.some(f => f.id === file.id)}
-                      onChange={(e) => {
+                      onChange={e => {
                         e.stopPropagation();
-                        handleFileClick(file);
+                        // 只切换选中状态，不触发行点击
+                        setSelectedFiles(prev => {
+                          const exists = prev.some(f => f.id === file.id);
+                          return exists 
+                            ? prev.filter(f => f.id !== file.id)
+                            : [...prev, file];
+                        });
                       }}
-                      className="rounded border-gray-300 text-theme focus:ring-theme"
+                      className="rounded border-gray-300 text-theme focus:ring-theme cursor-pointer"
                     />
                   </td>
                 )}
@@ -745,7 +804,7 @@ export function FileManager({
                 <td className="px-4 py-3 text-sm text-gray-500">
                   {new Date(file.modifiedAt * 1000).toLocaleDateString()}
                 </td>
-                <td className="px-4 py-3 text-sm text-right flex gap-1">
+                <td className="px-4 py-3 text-sm text-right flex gap-1 items-center">
                   {/* 下载按钮 */}
                   {!file.isFolder && (
                     <button 
@@ -764,13 +823,21 @@ export function FileManager({
                   >
                     <i className="ri-folder-transfer-line"></i>
                   </button>
-                  <button 
-                    className={`text-xs mr-2 rounded px-2 py-0.5 text-blue-500 hover:underline`}
-                    onClick={e => { e.stopPropagation(); handleShowReferences(file); }}
-                    title={t('files.references')}
-                  >
-                    {file.referencesCount} {t('files.ref_count')}
-                  </button>
+                  {/* 引用按钮优化：仅被引用的文件显示蓝色按钮，未被引用的显示灰色提示 */}
+                  {!file.isFolder && (
+                    <span
+                      className={`text-xs mr-2 rounded px-2 py-0.5 flex items-center gap-1
+                        ${file.referencesCount > 0
+                          ? 'text-blue-500 bg-gray-100 dark:bg-gray-800'
+                          : 'text-gray-400 bg-gray-100 dark:bg-gray-800'}`}
+                      title={file.referencesCount > 0 ? t('files.references') : t('files.ref_none')}
+                      style={{ minWidth: 24, justifyContent: 'center', cursor: file.referencesCount > 0 ? 'pointer' : 'default' }}
+                      onClick={file.referencesCount > 0 ? (e) => { e.stopPropagation(); handleShowReferences(file); } : undefined}
+                    >
+                      <i className={file.referencesCount > 0 ? 'ri-link' : 'ri-link-unlink'} />
+                      {file.referencesCount > 0 && file.referencesCount}
+                    </span>
+                  )}
                   <button 
                     className="text-red-500 hover:text-red-700 transition-colors p-1"
                     onClick={(e) => { e.stopPropagation(); handleDeleteFile(file); }}
@@ -800,10 +867,10 @@ export function FileManager({
   // 渲染面包屑
   const renderBreadcrumbs = () => {
     return (
-      <div className="flex flex-wrap items-center text-sm mb-4">
+      <div className="flex items-center w-full text-base mb-0 min-h-[40px]">
         {breadcrumbs.map((crumb, index) => (
           <div key={crumb.path} className="flex items-center">
-            {index > 0 && <i className="ri-arrow-right-s-line mx-1 text-gray-400"></i>}
+            {index > 0 && <i className="ri-arrow-right-s-line mx-1 text-gray-400 text-base"></i>}
             <button
               onClick={() => {
                 setCurrentPath(crumb.path);
@@ -812,7 +879,8 @@ export function FileManager({
               }}
               className={`px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
                 index === breadcrumbs.length - 1 ? 'font-medium text-theme' : 'text-gray-600 dark:text-gray-300'
-              }`}
+              } text-base`}
+              style={{ minWidth: 40 }}
             >
               {index === 0 ? <i className="ri-home-line mr-1"></i> : null}
               {crumb.name}
@@ -823,58 +891,34 @@ export function FileManager({
     );
   };
 
-  // 渲染分页
-  const renderPagination = () => {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    
-    return totalPages > 1 ? (
-      <div className="flex items-center justify-center mt-4 space-x-2">
-        <button
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 disabled:opacity-50"
-        >
-          <i className="ri-arrow-left-s-line"></i>
-        </button>
-        
-        <span className="text-sm">
-          {currentPage} / {totalPages}
-        </span>
-        
-        <button
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
-          className="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 disabled:opacity-50"
-        >
-          <i className="ri-arrow-right-s-line"></i>
-        </button>
-      </div>
-    ) : null;
+  // 分页切换时只需setCurrentPage，依赖useEffect自动loadFiles
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
+    <div ref={containerRef} className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
       {/* 工具栏 */}
-      <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex flex-col space-y-4">
-        {/* 面包屑导航 */}
-        {renderBreadcrumbs()}
-        
-        {/* 搜索和操作按钮 */}
-        <div className="flex flex-wrap gap-2 justify-between">
-          <div className="flex flex-1 max-w-md">
-            <div className="relative w-full">
-              <i className="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('files.search_placeholder')}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent"
-              />
-            </div>
+      <div className="border-b border-gray-200 dark:border-gray-700 p-2 flex flex-row items-center space-x-2">
+        {/* 面包屑导航 居中 */}
+        <div className="flex-1 flex justify-center">
+          {renderBreadcrumbs()}
+        </div>
+        {/* 搜索框和操作按钮组 */}
+        <div className="flex items-center space-x-2">
+          <div className="relative max-w-xs w-full">
+            <i className="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('files.search_placeholder')}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent"
+              style={{ minWidth: 180, maxWidth: 240 }}
+            />
           </div>
-
-          <div className="flex space-x-2">
+          {/* 操作按钮组靠右 */}
+          <div className="flex space-x-2 items-center">
             {/* 视图切换按钮 */}
             <div className="flex rounded-md border border-gray-300 dark:border-gray-700">
               <button
@@ -892,17 +936,14 @@ export function FileManager({
                 <i className="ri-list-check"></i>
               </button>
             </div>
-
-            {/* 多选/单选切换按钮 */}
+            {/* 单/多选模式切换按钮（仅icon） */}
             <button
               onClick={() => setMultiple(m => !m)}
               className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               title={multiple ? t('files.single_select') : t('files.multi_select')}
             >
               <i className={`ri-checkbox-${multiple ? 'multiple' : 'blank'}-line`}></i>
-              <span className="ml-1">{multiple ? t('files.single_select') : t('files.multi_select')}</span>
             </button>
-
             {/* 新建文件夹按钮 */}
             <button
               onClick={() => setShowNewFolderDialog(true)}
@@ -911,7 +952,6 @@ export function FileManager({
             >
               <i className="ri-folder-add-line"></i>
             </button>
-
             {/* 上传文件按钮 */}
             <button
               onClick={() => uploadInputRef.current?.click()}
@@ -919,7 +959,7 @@ export function FileManager({
               title={t('files.upload')}
               disabled={isUploading}
             >
-              {isUploading ? <Loading type="spin" height={16} width={16} /> : <i className="ri-upload-2-line"></i>}
+              <i className="ri-upload-2-line"></i>
               <input
                 ref={uploadInputRef}
                 type="file"
@@ -929,86 +969,46 @@ export function FileManager({
                 accept={allowedTypes ? allowedTypes.map(type => type + '/*').join(',') : undefined}
               />
             </button>
-
-            {/* 数据同步按钮 */}
-            <Button onClick={handleSyncFiles} title={isSyncing ? t('files.syncing') : t('files.sync')} secondary={true} />
-            {/* 全量同步R2按钮 */}
-            <Button onClick={async () => {
-              if (!window.confirm(t('files.r2sync_confirm') || '确定要全量同步R2存储桶所有文件到数据库吗？')) return;
-              setIsSyncing(true);
-              setSyncResult(null);
-              setSyncDetailList([]);
-              try {
-                const res = await fetch(`${endpoint}/files/r2sync`, {
-                  method: 'POST',
-                  headers: headersWithAuth(),
-                });
-                const data = await res.json();
-                if (res.ok) {
-                  setSyncResult(t('files.r2sync_success', { total: data.total, inserted: data.inserted, skipped: data.skipped, failed: data.failed }));
-                  if (data.failedList && data.failedList.length > 0) {
-                    setSyncDetailList(data.failedList);
-                    setSyncDetailOpen(true);
+            {/* 全量同步R2按钮（仅icon） */}
+            <button
+              onClick={async () => {
+                if (!window.confirm(t('files.r2sync_confirm') || '确定要全量同步R2存储桶所有文件到数据库吗？')) return;
+                setIsSyncing(true);
+                setSyncResult(null);
+                setSyncDetailList([]);
+                try {
+                  const res = await fetch(`${endpoint}/files/r2sync`, {
+                    method: 'POST',
+                    headers: headersWithAuth(),
+                  });
+                  const data = await res.json();
+                  if (res.ok) {
+                    setSyncResult(t('files.r2sync_success', { total: data.total, inserted: data.inserted, skipped: data.skipped, failed: data.failed }));
+                    if (data.failedList && data.failedList.length > 0) {
+                      setSyncDetailList(data.failedList);
+                      setSyncDetailOpen(true);
+                    } else {
+                      setSyncDetailOpen(true);
+                    }
+                    loadFiles(true);
                   } else {
+                    setSyncResult(t('files.r2sync_failed', { error: data.error || res.status }));
                     setSyncDetailOpen(true);
                   }
-                  loadFiles(true);
-                } else {
-                  setSyncResult(t('files.r2sync_failed', { error: data.error || res.status }));
+                } catch (e: any) {
+                  setSyncResult(t('files.r2sync_failed', { error: e.message }));
                   setSyncDetailOpen(true);
                 }
-              } catch (e: any) {
-                setSyncResult(t('files.r2sync_failed', { error: e.message }));
-                setSyncDetailOpen(true);
-              }
-              setIsSyncing(false);
-            }} title={t('files.r2sync')} secondary={true} />
-            {/* 合并同步结果与失败详情弹窗 */}
-            {(syncResult || syncDetailOpen) && (
-              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full shadow-2xl">
-                  <h3 className={`text-lg font-medium mb-4 ${syncDetailList.length > 0 ? 'text-red-600' : 'text-green-600 dark:text-green-400'}`}>{syncDetailList.length > 0 ? t('files.sync_failed') : t('files.sync_result')}</h3>
-                  <div className="mb-4 text-sm whitespace-pre-wrap break-all">{syncResult}</div>
-                  {syncDetailList.length > 0 && (
-                    <div className="max-h-80 overflow-y-auto text-xs mb-4">
-                      {Array.isArray(syncDetailList) && syncDetailList.filter(d => d && typeof d === 'object' && typeof d.feedId !== 'undefined').map((d, i) => (
-                        <details key={i} className="mb-2">
-                          <summary className="cursor-pointer text-theme">文章ID: {d.feedId} UID: {d.userId || 1}</summary>
-                          <div className="mt-1 whitespace-pre-wrap break-all">
-                            <b>内容片段:</b> {d.contentSnippet}
-                            <br /><b>错误:</b> {d.error}
-                            {d.stack && <><br /><b>堆栈:</b> {d.stack}</>}
-                          </div>
-                        </details>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex justify-end mt-6 gap-2">
-                    <button onClick={() => {
-                      const text = syncDetailList.length > 0
-                        ? syncDetailList.map(d => `文章ID:${d.feedId} UID:${d.userId || 1}\n内容:${d.contentSnippet}\n错误:${d.error}\n${d.stack ? '堆栈:' + d.stack : ''}`).join('\n---\n')
-                        : syncResult;
-                      navigator.clipboard.writeText(text as string);
-                    }} className="px-4 py-2 bg-theme text-white rounded-md">{t('copy')}</button>
-                    <button onClick={() => { setSyncResult(null); setSyncDetailOpen(false); }} className="px-4 py-2 bg-gray-500 text-white rounded-md">{t('close')}</button>
-                  </div>
-                </div>
-              </div>
-            )}
+                setIsSyncing(false);
+              }}
+              className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              disabled={isSyncing}
+              title={t('files.r2sync')}
+            >
+              <i className="ri-refresh-line"></i>
+            </button>
           </div>
         </div>
-        
-        {/* 上传进度条 */}
-        {isUploading && (
-          <div className="w-full mt-2">
-            <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-theme rounded-full transition-all duration-300 ease-in-out" 
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 文件列表主体 */}
@@ -1026,7 +1026,11 @@ export function FileManager({
       
       {/* 分页 */}
       <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-        {renderPagination()}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(totalItems / itemsPerPage)}
+          onPageChange={handlePageChange}
+        />
       </div>
       
       {/* 选择操作栏 - 多选模式 */}
@@ -1039,7 +1043,7 @@ export function FileManager({
             <Button onClick={handleBatchDownload} title={t('files.download') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
             <Button onClick={handleBatchDelete} title={t('files.delete') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
             <Button onClick={handleBatchMove} title={t('files.move') + (selectedFiles.length > 1 ? t('files.batch') : '')} />
-            <Button onClick={handleConfirmSelection} title={t('files.confirm_selection')} />
+          <Button onClick={handleConfirmSelection} title={t('files.confirm_selection')} />
           </div>
         </div>
       )}
