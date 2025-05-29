@@ -73,23 +73,24 @@ export function FileService() {
                         set.status = 401;
                         return { error: 'Unauthorized' };
                     }
-
                     const db = getDB();
-                    
                     if (!db) {
                         set.status = 500;
                         return { error: 'Database connection not available' };
                     }
-
-                    const { path = '/', type, search, sort = 'name', order = 'asc', page = 1, limit = 20, all } = query;
+                    const { path = '/', type, search, sort = 'name', order = 'asc', page: pageRaw = 1, limit: limitRaw = 20, all } = query;
+                    const page = typeof pageRaw === 'string' ? parseInt(pageRaw) : pageRaw;
+                    const limit = typeof limitRaw === 'string' ? parseInt(limitRaw) : limitRaw;
                     const offset = (page - 1) * limit;
-
                     try {
                         // 管理员可查所有用户文件
                         const userFilter = (admin && all === '1') ? undefined : eq(files.userId, uid);
-                        // 构建查询条件并链式调用
-                        const result = await db
-                            .select({
+                        let resultData: any[] = [];
+                        let count = 0;
+                        if (path === '/') {
+                            const env = getEnv();
+                            const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean);
+                            const dbItems = await db.select({
                                 id: files.id,
                                 path: files.path,
                                 name: files.name,
@@ -101,44 +102,78 @@ export function FileService() {
                                 parentPath: files.parentPath,
                                 createdAt: files.createdAt,
                                 modifiedAt: files.modifiedAt,
-                            })
-                            .from(files)
-                            .where(
+                            }).from(files).where(
                                 and(
                                     ...(userFilter ? [userFilter] : []),
-                                    eq(files.parentPath, path),
-                                    ...(type ? [like(files.mimeType, `${type}/%`)] : []),
-                                    ...(search ? [like(files.name, `%${search}%`)] : [])
-                                )
-                            )
-                        // 应用排序
-                            .orderBy(
-                                sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
-                                sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
-                                sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
-                                asc(files.name)
-                            )
-                        // 添加分页
-                            .limit(limit)
-                            .offset(offset);
-
-                        const resultData = await result;
-
-                        // 获取总数
-                        const countQuery = await db
-                            .select({ count: sql<number>`count(*)` })
-                            .from(files)
-                            .where(
-                                and(
-                                    ...(userFilter ? [userFilter] : []),
-                                    eq(files.parentPath, path),
-                                    ...(type ? [like(files.mimeType, `${type}/%`)] : []),
-                                    ...(search ? [like(files.name, `%${search}%`)] : [])
+                                    eq(files.parentPath, '/')
                                 )
                             );
-
-                        // 获取每个文件的引用计数
-                        const fileIds = resultData.map((f: any) => f.id);
+                            const dbFolderNames = dbItems.filter(f => f.isFolder).map(f => f.name);
+                            const now = Math.floor(Date.now() / 1000);
+                            const virtualFolders = s3Folders.filter(folder => folder && !dbFolderNames.includes(folder.replace(/\/$/, '')))
+                                .map((folder, idx) => ({
+                                    id: -1000 - idx,
+                                    path: '/' + folder.replace(/\/$/, ''),
+                                    name: folder.replace(/\/$/, ''),
+                                    size: 0,
+                                    mimeType: 'folder',
+                                    isFolder: true,
+                                    accessLevel: 'public',
+                                    thumbnailHash: null,
+                                    parentPath: '/',
+                                    createdAt: now,
+                                    modifiedAt: now,
+                                    referencesCount: 0
+                                }));
+                            resultData = [...dbItems, ...virtualFolders];
+                            count = resultData.length;
+                        } else {
+                            const result = await db
+                                .select({
+                                    id: files.id,
+                                    path: files.path,
+                                    name: files.name,
+                                    size: files.size,
+                                    mimeType: files.mimeType,
+                                    isFolder: files.isFolder,
+                                    accessLevel: files.accessLevel,
+                                    thumbnailHash: files.thumbnailHash,
+                                    parentPath: files.parentPath,
+                                    createdAt: files.createdAt,
+                                    modifiedAt: files.modifiedAt,
+                                })
+                                .from(files)
+                                .where(
+                                    and(
+                                        ...(userFilter ? [userFilter] : []),
+                                        eq(files.parentPath, path),
+                                        ...(type ? [like(files.mimeType, `${type}/%`)] : []),
+                                        ...(search ? [like(files.name, `%${search}%`)] : [])
+                                    )
+                                )
+                                .orderBy(
+                                    sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
+                                    sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
+                                    sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
+                                    asc(files.name)
+                                )
+                                .limit(limit)
+                                .offset(offset);
+                            resultData = await result;
+                            const countQ = await db
+                                .select({ count: sql<number>`count(*)` })
+                                .from(files)
+                                .where(
+                                    and(
+                                        ...(userFilter ? [userFilter] : []),
+                                        eq(files.parentPath, path),
+                                        ...(type ? [like(files.mimeType, `${type}/%`)] : []),
+                                        ...(search ? [like(files.name, `%${search}%`)] : [])
+                                    )
+                                );
+                            count = countQ[0].count;
+                        }
+                        const fileIds = resultData.map((f: any) => f.id).filter((id: number) => id > 0);
                         let referencesMap: Record<number, number> = {};
                         if (fileIds.length > 0) {
                             const refs = await db
@@ -158,7 +193,7 @@ export function FileService() {
                                     Math.floor(Date.now() / 1000),
                                 referencesCount: Number(referencesMap[file.id] || 0)
                             })),
-                            total: countQuery[0].count,
+                            total: count,
                             page,
                             limit
                         };
@@ -672,13 +707,17 @@ export function FileService() {
                     }
                     const db = getDB();
                     const env = getEnv();
-                    const S3_FOLDER = (env.S3_FOLDER || '').replace(/^\/+|\/+$/g, '') + '/';
+                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+|\/+$/g, ''));
                     const r2Files = await listAllR2Files();
                     let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
                     for (const path of r2Files) {
                         try {
-                            // path本身已带images/前缀
-                            const exist = await db.select({id: files.id}).from(files).where(eq(files.path, path));
+                            // 判断属于哪个一级目录
+                            const matchedFolder = s3Folders.find(folder => path.startsWith('/' + folder + '/'));
+                            if (!matchedFolder) { skipped++; continue; }
+                            // parentPath 设为 /images 或 /cache 等
+                            const parentPath = '/' + matchedFolder;
+                            const exist = await db.select({id: files.id}).from(files).where(eq(files.path, path.replace(/^\//, '')));
                             if (exist && exist.length > 0) { skipped++; continue; }
                             const meta = await getR2FileMeta(path);
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
@@ -692,7 +731,7 @@ export function FileService() {
                                 size,
                                 mimeType,
                                 userId: uid || 1,
-                                parentPath: '/',
+                                parentPath,
                                 hash
                             });
                             inserted++;

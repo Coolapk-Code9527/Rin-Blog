@@ -747,6 +747,37 @@ export function FileManager({
 
             {/* 数据同步按钮 */}
             <Button onClick={handleSyncFiles} title={isSyncing ? t('files.syncing') : t('files.sync')} secondary={true} />
+            {/* 全量同步R2按钮 */}
+            <Button onClick={async () => {
+              if (!window.confirm(t('files.r2sync_confirm') || '确定要全量同步R2存储桶所有文件到数据库吗？')) return;
+              setIsSyncing(true);
+              setSyncResult(null);
+              setSyncDetailList([]);
+              try {
+                const res = await fetch(`${endpoint}/files/r2sync`, {
+                  method: 'POST',
+                  headers: headersWithAuth(),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                  setSyncResult(t('files.r2sync_success', { total: data.total, inserted: data.inserted, skipped: data.skipped, failed: data.failed }));
+                  if (data.failedList && data.failedList.length > 0) {
+                    setSyncDetailList(data.failedList);
+                    setSyncDetailOpen(true);
+                  } else {
+                    setSyncDetailOpen(true);
+                  }
+                  loadFiles(true);
+                } else {
+                  setSyncResult(t('files.r2sync_failed', { error: data.error || res.status }));
+                  setSyncDetailOpen(true);
+                }
+              } catch (e: any) {
+                setSyncResult(t('files.r2sync_failed', { error: e.message }));
+                setSyncDetailOpen(true);
+              }
+              setIsSyncing(false);
+            }} title={t('files.r2sync')} secondary={true} />
             {/* 合并同步结果与失败详情弹窗 */}
             {(syncResult || syncDetailOpen) && (
               <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">

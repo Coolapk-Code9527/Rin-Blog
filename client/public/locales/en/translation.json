@@ -133,7 +133,11 @@
     "folder_name": "Folder Name",
     "force_delete_confirm": "File is referenced by articles. Deleting will break references in articles. Force delete?",
     "all_files": "All Files",
-    "my_files": "My Files"
+    "my_files": "My Files",
+    "r2sync": "Full R2 Sync",
+    "r2sync_confirm": "Are you sure you want to sync all files from R2 bucket to the database?",
+    "r2sync_success": "R2 sync completed: total {{total}}, inserted {{inserted}}, skipped {{skipped}}, failed {{failed}}.",
+    "r2sync_failed": "R2 sync failed: {{error}}"
   },
   "footer": {
     "rss": "RSS Subscription Link"

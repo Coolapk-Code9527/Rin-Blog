@@ -129,7 +129,11 @@
     "folder_name": "フォルダ名",
     "force_delete_confirm": "このファイルは記事で参照されています。削除すると記事内の参照が失われます。本当に強制削除しますか？",
     "all_files": "すべてのファイル",
-    "my_files": "自分のファイル"
+    "my_files": "自分のファイル",
+    "r2sync": "R2全同期化",
+    "r2sync_confirm": "R2バケットの全ファイルをデータベースに同期しますか？",
+    "r2sync_success": "R2同期完了：合計{{total}}件、新規{{inserted}}件、スキップ{{skipped}}件、失敗{{failed}}件。",
+    "r2sync_failed": "R2同期失敗：{{error}}"
   },
   "footer": {
     "rss": "RSS 購読リンク"

@@ -129,7 +129,11 @@
     "folder_name": "資料夹名稱",
     "force_delete_confirm": "該檔案被文章引用，刪除後文章中的引用將失效，是否強制刪除？",
     "all_files": "全部檔案",
-    "my_files": "我的檔案"
+    "my_files": "我的檔案",
+    "r2sync": "全量同步R2",
+    "r2sync_confirm": "確定要全量同步R2存儲桶所有文件到資料庫嗎？",
+    "r2sync_success": "R2同步完成：共{{total}}項，新增{{inserted}}，跳過{{skipped}}，失敗{{failed}}。",
+    "r2sync_failed": "R2同步失敗：{{error}}"
   },
   "footer": {
     "rss": "RSS 訂閱連結"

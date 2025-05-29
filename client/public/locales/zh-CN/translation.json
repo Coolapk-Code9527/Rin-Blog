@@ -149,7 +149,11 @@
     "sync_failed": "同步失败：{{error}}",
     "force_delete_confirm": "该文件被文章引用，删除后文章中的引用将失效，是否强制删除？",
     "all_files": "全部文件",
-    "my_files": "我的文件"
+    "my_files": "我的文件",
+    "r2sync": "全量同步R2",
+    "r2sync_confirm": "确定要全量同步R2存储桶所有文件到数据库吗？",
+    "r2sync_success": "R2同步完成：共{{total}}项，新增{{inserted}}，跳过{{skipped}}，失败{{failed}}。",
+    "r2sync_failed": "R2同步失败：{{error}}"
   },
   "footer": {
     "rss": "RSS 订阅链接"
