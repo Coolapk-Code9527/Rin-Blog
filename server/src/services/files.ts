@@ -341,6 +341,8 @@ export function FileService() {
                         // 生成S3存储路径
                         const fileName = name || file.name;
                         let s3Key = folderName ? folderName + '/' + hash : hash;
+                        // 日志输出关键参数
+                        console.info('[文件上传]', { parentPath, folderName, s3Key, fileName, size: file.size, type: file.type });
                         // 上传到S3
                         await s3.send(new PutObjectCommand({
                             Bucket: bucket,
@@ -371,7 +373,9 @@ export function FileService() {
                             isFolder: false,
                         };
                     } catch (error: any) {
-                        console.error(error);
+                        // catch作用域内重新声明日志变量（不输出hash/s3Key）
+                        const logVars = { parentPath, folderName, fileName: name || (file && file.name) || '', size: file?.size, type: file?.type, error };
+                        console.error('[文件上传异常]', logVars);
                         set.status = 500;
                         return { error: error.message };
                     }
