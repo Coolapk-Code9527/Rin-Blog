@@ -342,8 +342,10 @@ export function FileManager({
         } else if ((response as any).reusedMsg) {
           showAlert((response as any).reusedMsg);
         }
+        showAlert(t('files.upload_success'));
+        loadFiles();
       } catch (error: any) {
-        showAlert(t('upload.failed', { error: error.message }));
+        showAlert(t('files.upload_failed', { error: error.message }));
       }
     }
 
@@ -355,9 +357,6 @@ export function FileManager({
     if (uploadInputRef.current) {
       uploadInputRef.current.value = '';
     }
-    
-    // 重新加载文件列表
-    loadFiles();
   };
 
   // 删除文件处理
@@ -404,10 +403,11 @@ export function FileManager({
         showAlert(t('files.delete_error', { error: data.error || res.status }));
       } else {
         setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
+        showAlert(t('files.delete_success'));
         loadFiles();
       }
     } catch (error: any) {
-      showAlert(t('files.delete_error', { error: error.message }));
+      showAlert(t('files.delete_failed', { error: error.message }));
     }
   };
 
@@ -485,12 +485,14 @@ export function FileManager({
         body: JSON.stringify({ name: newName })
       });
       if (res.ok) {
+        showAlert(t('files.rename_success'));
         loadFiles();
       } else {
-        showAlert(t('files.rename_failed'));
+        const data = await res.json().catch(() => ({}));
+        showAlert(t('files.rename_failed', { error: data.error || res.status }));
       }
-    } catch {
-      showAlert(t('files.rename_failed'));
+    } catch (e: any) {
+      showAlert(t('files.rename_failed', { error: e.message }));
     }
   };
 
@@ -732,6 +734,60 @@ export function FileManager({
     ) : null;
   };
 
+  // 新增：批量操作相关逻辑
+  const handleBatchDelete = async () => {
+    if (selectedFiles.length === 0) return;
+    if (!window.confirm(t('files.batch_delete_confirm', { count: selectedFiles.length }))) return;
+    for (const file of selectedFiles) {
+      // 禁止删除非空文件夹
+      if (file.isFolder) {
+        const hasChild = files.some(f => f.parentPath === file.path);
+        if (hasChild) {
+          showAlert(t('files.delete_error', { error: t('files.folder_not_empty') }));
+          continue;
+        }
+      }
+      await handleDeleteFile(file);
+    }
+    setSelectedFiles([]);
+    loadFiles();
+  };
+
+  const handleBatchMove = async () => {
+    if (selectedFiles.length === 0) return;
+    // TODO: 弹窗选择目标目录并支持新建
+    const targetPath = prompt(t('files.move_target_prompt'));
+    if (!targetPath) return;
+    for (const file of selectedFiles) {
+      // 禁止移动到自身或子目录
+      if (file.path === targetPath || targetPath.startsWith(file.path + '/')) {
+        showAlert(t('files.move_error', { error: t('files.move_to_self') }));
+        continue;
+      }
+      await fetch(`${endpoint}/files/${file.id}`, {
+        method: 'PATCH',
+        headers: { ...headersWithAuth(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ parentPath: targetPath })
+      });
+    }
+    setSelectedFiles([]);
+    loadFiles();
+  };
+
+  const handleBatchDownload = async () => {
+    if (selectedFiles.length === 0) return;
+    for (const file of selectedFiles) {
+      if (file.isFolder) continue; // 文件夹暂不支持批量下载
+      const url = file.url || getFileUrl(file.path);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
       {/* 工具栏 */}
@@ -905,7 +961,12 @@ export function FileManager({
           <div className="text-sm">
             {t('files.selected', { count: selectedFiles.length })}
           </div>
-          <Button onClick={handleConfirmSelection} title={t('files.confirm_selection')} />
+          <div className="flex gap-2">
+            <Button onClick={handleBatchDownload} title={t('files.batch_download')}/>
+            <Button onClick={handleBatchMove} title={t('files.batch_move')}/>
+            <Button onClick={handleBatchDelete} title={t('files.batch_delete')}/>
+            <Button onClick={handleConfirmSelection} title={t('files.confirm_selection')} />
+          </div>
         </div>
       )}
       

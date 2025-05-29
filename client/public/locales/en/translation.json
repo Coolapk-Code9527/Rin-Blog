@@ -139,7 +139,13 @@
     "r2sync_success": "R2 sync completed: total {{total}}, inserted {{inserted}}, skipped {{skipped}}, failed {{failed}}.",
     "r2sync_failed": "R2 sync failed: {{error}}",
     "ref_detail": "The following content is referencing this file:",
-    "ref_no_title": "No title"
+    "ref_no_title": "No title",
+    "rename_success": "Rename successful",
+    "rename_failed": "Rename failed: {{error}}",
+    "upload_success": "Upload successful",
+    "upload_failed": "Upload failed: {{error}}",
+    "delete_success": "Delete successful",
+    "delete_failed": "Delete failed: {{error}}"
   },
   "footer": {
     "rss": "RSS Subscription Link"

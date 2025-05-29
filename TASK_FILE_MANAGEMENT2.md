@@ -93,77 +93,13 @@ export function FileService() {
 添加文件引用计数，跟踪文件使用情况
 使用已有S3工具类，避免代码重复
 3. 数据迁移策略 (1天)
-分析现有数据:
-   // 扫描已有文章内容，提取图片URL
-   async function extractExistingFiles() {
-     const feeds = await db.select().from(schema.feeds);
-     const regex = /!\[.*?\]\((.*?)\)/g; // Markdown图片语法
-     
-     // 提取所有图片URL
-     const imageUrls = [];
-     for (const feed of feeds) {
-       let match;
-       while ((match = regex.exec(feed.content)) !== null) {
-         imageUrls.push({
-           url: match[1],
-           feedId: feed.id
-         });
-       }
-     }
-     return imageUrls;
-   }
-创建文件记录:
-   // 为提取的URL创建文件记录
-   async function migrateExistingFiles(imageUrls) {
-     for (const item of imageUrls) {
-       // 从URL解析文件信息
-       const fileName = getFileNameFromUrl(item.url);
-       const mimeType = getMimeTypeFromFileName(fileName);
-       const hash = getHashFromUrl(item.url);
-       
-       // 插入files记录
-       const fileId = await db
-         .insert(schema.files)
-         .values({
-           path: item.url,
-           name: fileName,
-           mime_type: mimeType,
-           user_id: getFileOwner(item.feedId),
-           hash: hash,
-           // 其他必要字段
-         })
-         .returning({ id: schema.files.id });
-       
-       // 创建feed_files关联
-       await db.insert(schema.feed_files).values({
-         feed_id: item.feedId,
-         file_id: fileId,
-         relation_type: 'embed'
-       });
-     }
-   }
 关键优化点:
 使用正则表达式扫描现有内容
 保留URL不变，确保兼容性
 分批处理，避免内存溢出
 使用事务确保数据一致性
 4. 前端文件管理器基础实现 (3-4天)
-组件结构设计:
-client/src/components/file_manager/
-  ├── FileManager.tsx        # 主容器组件
-  ├── FileList.tsx           # 列表视图
-  ├── FileGrid.tsx           # 网格视图
-  ├── FileItem.tsx           # 单个文件项
-  ├── FileBreadcrumb.tsx     # 路径导航
-  ├── FileOperations.tsx     # 操作工具栏
-  ├── FileUploader.tsx       # 上传组件
-  └── FilePreview.tsx        # 简单预览
-组件实现优先级:
-FileManager: 容器组件，处理状态管理和API调用
-FileList/Grid: 基础视图组件
-FileUploader: 重用现有上传功能
-FileOperations: 基本文件操作UI
-FilePreview: 简单文件预览(优先支持图片)
+
 关键优化点:
 利用现有的上传代码，避免重复实现
 实现虚拟滚动，处理大量文件
@@ -368,25 +304,7 @@ async function deduplicateFile(file) {
     return createNewFile(file, hash);
   }
 }
-3. 权限控制简化
-采用简化的三级权限模型:
-public: 所有人可访问
-private: 仅所有者可访问
-restricted: 特定用户组可访问
-4. 前端组件复用
-最大化利用现有组件和样式:
-// 重用现有Dialog组件
-function FileSelectDialog({ onSelect, onClose }) {
-  return (
-    <Dialog
-      title={t('file.select')}
-      onClose={onClose}
-      className="file-select-dialog"
-    >
-      <FileManager onFileSelect={onSelect} />
-    </Dialog>
-  );
-}
+
 附加优化建议
 性能优化:
 文件列表分页加载，避免一次加载过多

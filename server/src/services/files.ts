@@ -550,7 +550,6 @@ export function FileService() {
                     }
 
                     const db = getDB();
-                    
                     if (!db) {
                         set.status = 500;
                         return { error: 'Database connection not available' };
@@ -564,7 +563,6 @@ export function FileService() {
 
                     try {
                         const fileId = Number(params.id);
-                        
                         // 获取文件信息
                         const fileInfo = await db
                             .select()
@@ -575,13 +573,63 @@ export function FileService() {
                                     eq(files.userId, uid)
                                 )
                             );
-
                         if (fileInfo.length === 0) {
                             set.status = 404;
                             return { error: 'File not found' };
                         }
-
-                        // 准备更新数据
+                        const file = fileInfo[0];
+                        // 目录重命名逻辑
+                        if (file.isFolder && name && name !== file.name) {
+                            const oldPath = file.path;
+                            const newPath = file.parentPath === '/' ? `/${name}` : `${file.parentPath}/${name}`;
+                            // 查找所有以 oldPath 为前缀的文件/文件夹
+                            const children = await db.select().from(files).where(like(files.path, `${oldPath}/%`));
+                            // R2对象批量移动
+                            const env = getEnv();
+                            const s3 = createS3Client();
+                            const bucket = env.S3_BUCKET;
+                            // 先移动 .keep 文件（即使没有子文件也要移动）
+                            const oldKeepKey = oldPath.replace(/^\//, '').replace(/\/+$/, '') + '/.keep';
+                            const newKeepKey = newPath.replace(/^\//, '').replace(/\/+$/, '') + '/.keep';
+                            try {
+                                const keepObj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldKeepKey }));
+                                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: newKeepKey, Body: keepObj.Body, ContentType: 'text/plain' }));
+                                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldKeepKey }));
+                            } catch (e) {
+                                // .keep 不存在时忽略
+                            }
+                            for (const child of children) {
+                                const relative = child.path.slice(oldPath.length);
+                                const oldR2Key = child.path.replace(/^\//, '');
+                                const newR2Key = (newPath + relative).replace(/^\//, '');
+                                try {
+                                    const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldR2Key }));
+                                    await s3.send(new PutObjectCommand({
+                                        Bucket: bucket,
+                                        Key: newR2Key,
+                                        Body: obj.Body,
+                                        ContentType: child.mimeType || 'application/octet-stream',
+                                    }));
+                                    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldR2Key }));
+                                } catch (e) {
+                                    return { error: `R2对象移动失败: ${oldR2Key} -> ${newR2Key}, ${String(e)}` };
+                                }
+                                // 更新数据库路径
+                                await db.update(files).set({
+                                    path: newPath + relative,
+                                    parentPath: (child.parentPath === oldPath ? newPath : (child.parentPath ? child.parentPath.replace(oldPath, newPath) : child.parentPath)),
+                                    modifiedAt: new Date(),
+                                }).where(eq(files.id, child.id));
+                            }
+                            // 更新当前目录自身
+                            await db.update(files).set({
+                                name,
+                                path: newPath,
+                                modifiedAt: new Date(),
+                            }).where(eq(files.id, fileId));
+                            return { success: true, renamed: true };
+                        }
+                        // 普通文件/文件夹属性更新
                         const updateData: {
                             name?: string;
                             accessLevel?: string;
@@ -589,17 +637,13 @@ export function FileService() {
                         } = {
                             modifiedAt: new Date(),
                         };
-
                         if (name) updateData.name = name;
                         if (accessLevel) updateData.accessLevel = accessLevel;
-
-                        // 更新文件记录
                         const result = await db
                             .update(files)
                             .set(updateData)
                             .where(eq(files.id, fileId))
                             .returning();
-
                         return result[0];
                     } catch (error: any) {
                         console.error(error);

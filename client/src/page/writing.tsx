@@ -1120,29 +1120,41 @@ async function update({
 async function uploadImage(file: File, onSuccess: (url: string) => void, showAlert: ShowAlertType) {
   const t = i18n.t;
   try {
-    const response = await client.storage.index.post(
+    const response = await client.files.index.post(
       {
-        key: file.name,
-        file: file,
+        file,
+        name: file.name,
+        parentPath: '/images', // 文章图片统一放在 images 目录
       },
       {
         headers: headersWithAuth(),
       }
     );
-    
     if (response.error) {
       showAlert(t("upload.failed", { error: response.error.value }));
       return;
     }
-    
-    if (response.data) {
-      // 确保data是字符串
-      const imageUrl = String(response.data);
-      onSuccess(imageUrl);
+    // 兼容不同返回格式
+    let imageUrl = '';
+    if (response.data && typeof response.data === 'object') {
+      imageUrl = response.data.url || response.data.path || '';
+    }
+    if (!imageUrl && typeof response.data === 'string') {
+      imageUrl = response.data;
+    }
+    if (imageUrl) {
+      // 若为 path，需拼接 S3 访问域名
+      const s3Host = (window as any).S3_ACCESS_HOST;
+      if (!/^https?:\/\//.test(imageUrl) && s3Host) {
+        imageUrl = s3Host.replace(/\/+$/, '') + '/' + imageUrl.replace(/^\/+/, '');
       }
+      onSuccess(imageUrl);
+    } else {
+      showAlert(t("upload.failed", { error: 'No url returned' }));
+    }
   } catch (e: any) {
-      console.error(e);
-      showAlert(t("upload.failed", { error: e.message }));
+    console.error(e);
+    showAlert(t("upload.failed", { error: e.message }));
   }
 }
 

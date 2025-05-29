@@ -153,7 +153,13 @@
     "r2sync": "全量同步R2",
     "r2sync_confirm": "确定要全量同步R2存储桶所有文件到数据库吗？",
     "r2sync_success": "R2同步完成：共{{total}}项，新增{{inserted}}，跳过{{skipped}}，失败{{failed}}。",
-    "r2sync_failed": "R2同步失败：{{error}}"
+    "r2sync_failed": "R2同步失败：{{error}}",
+    "rename_success": "重命名成功",
+    "rename_failed": "重命名失败: {{error}}",
+    "upload_success": "上传成功",
+    "upload_failed": "上传失败: {{error}}",
+    "delete_success": "删除成功",
+    "delete_failed": "删除失败: {{error}}"
   },
   "footer": {
     "rss": "RSS 订阅链接"
