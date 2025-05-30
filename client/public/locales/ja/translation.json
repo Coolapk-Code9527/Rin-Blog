@@ -149,7 +149,14 @@
     "move": "移動",
     "per_page": "/ページ",
     "page_size": "ページ数",
-    "drag_to_upload": "ドロップしてファイルをアップロード"
+    "drag_to_upload": "ドロップしてファイルをアップロード",
+    "move_target_required": "移動先フォルダを入力してください",
+    "move_failed": "移動に失敗しました：{{error}}",
+    "move_success": "移動に成功しました",
+    "delete_success_batch": "{{count}} 個のファイルを削除しました",
+    "delete_skipped_batch": "{{count}} 個をスキップ（古いデータまたはパス不正）",
+    "delete_failed_batch": "{{count}} 個の削除に失敗しました",
+    "delete_none": "ファイルが削除されませんでした。古いデータまたはパス不正の可能性があります"
   },
   "footer": {
     "rss": "RSS 購読リンク"

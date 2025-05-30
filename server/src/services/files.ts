@@ -53,6 +53,11 @@ function getMimeTypeFromFileName(fileName: string): string {
     return mimeTypes[extension] || 'application/octet-stream';
 }
 
+// 工具函数：判断字符串是否为hash
+function isHash(str: string) {
+  return /^[a-f0-9]{32,}$/.test(str);
+}
+
 export function FileService() {
     const env = getEnv();
     const endpoint = env.S3_ENDPOINT;
@@ -318,11 +323,9 @@ export function FileService() {
                         return { error: 'S3 configuration not found' };
                     }
                     let { file, name, parentPath = '/' } = body;
-                    // 修复parentPath为空或''时强制为'/'
                     parentPath = (!parentPath || parentPath === '') ? '/' : parentPath.replace(/\/+$/, '').replace(/^([^/])/, '/$1');
                     const env = getEnv();
-                    // 允许 parentPath 为 S3_FOLDER/S3_CACHE_FOLDER
-                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+|\/+$/g, ''));
+                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+/g, ''));
                     let folderName = '';
                     if (s3Folders.includes(parentPath)) {
                         folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
@@ -332,32 +335,24 @@ export function FileService() {
                         folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
                     }
                     try {
-                        // 计算文件哈希
                         const hashArray = await crypto.subtle.digest(
                             { name: 'SHA-1' },
                             await file.arrayBuffer()
                         );
                         const hash = buf2hex(hashArray);
-                        // 生成S3存储路径
-                        const fileName = name || file.name;
                         let s3Key = folderName ? folderName + '/' + hash : hash;
-                        // 日志输出关键参数
-                        console.info('[文件上传]', { parentPath, folderName, s3Key, fileName, size: file.size, type: file.type });
-                        // 上传到S3
                         await s3.send(new PutObjectCommand({
                             Bucket: bucket,
                             Key: s3Key,
                             Body: file,
-                            ContentType: file.type || getMimeTypeFromFileName(fileName),
+                            ContentType: file.type || getMimeTypeFromFileName(name || file.name),
                         }));
-                        // 创建文件路径
-                        const filePath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`;
-                        // 保存文件记录
+                        const filePath = parentPath === '/' ? `/${hash}` : `${parentPath}/${hash}`;
                         const result = await db.insert(files).values({
-                            path: s3Key,
-                            name: fileName,
+                            path: filePath,
+                            name: name || file.name,
                             size: file.size,
-                            mimeType: file.type || getMimeTypeFromFileName(fileName),
+                            mimeType: file.type || getMimeTypeFromFileName(name || file.name),
                             userId: uid,
                             hash: hash,
                             parentPath,
@@ -366,16 +361,13 @@ export function FileService() {
                             id: result[0].id,
                             path: filePath,
                             url: `${accessHost}/${s3Key}`,
-                            name: fileName,
+                            name: name || file.name,
                             size: file.size,
-                            mimeType: file.type || getMimeTypeFromFileName(fileName),
+                            mimeType: file.type || getMimeTypeFromFileName(name || file.name),
                             hash,
                             isFolder: false,
                         };
                     } catch (error: any) {
-                        // catch作用域内重新声明日志变量（不输出hash/s3Key）
-                        const logVars = { parentPath, folderName, fileName: name || (file && file.name) || '', size: file?.size, type: file?.type, error };
-                        console.error('[文件上传异常]', logVars);
                         set.status = 500;
                         return { error: error.message };
                     }
@@ -555,8 +547,8 @@ export function FileService() {
                         return { error: 'Database connection not available' };
                     }
 
-                    const { name, accessLevel } = body;
-                    if (!name && !accessLevel) {
+                    const { name, accessLevel, parentPath } = body;
+                    if (!name && !accessLevel && !parentPath) {
                         set.status = 400;
                         return { error: 'No fields to update' };
                     }
@@ -578,47 +570,84 @@ export function FileService() {
                             return { error: 'File not found' };
                         }
                         const file = fileInfo[0];
-                        // 目录重命名逻辑
-                        if (file.isFolder && name && name !== file.name) {
-                            const oldPath = file.path;
-                            const newPath = file.parentPath === '/' ? `/${name}` : `${file.parentPath}/${name}`;
-                            // 查找所有以 oldPath 为前缀的文件/文件夹（包括多级子文件夹和文件）
-                            const children = await db.select().from(files).where(like(files.path, `${oldPath}/%`));
-                            // R2对象批量移动
+                        // 移动逻辑：parentPath 变更
+                        if (parentPath && parentPath !== file.parentPath) {
+                            // 不能移动到自身或子目录
+                            if (parentPath === file.path || (file.isFolder && parentPath.startsWith(file.path))) {
+                                set.status = 422;
+                                return { error: 'Cannot move to self or subfolder' };
+                            }
+                            // 检查目标目录是否存在（根目录/虚拟目录除外）
+                            if (parentPath !== '/') {
+                                const targetFolder = await db.select().from(files).where(and(eq(files.path, parentPath), eq(files.isFolder, 1)));
+                                if (targetFolder.length === 0) {
+                                    set.status = 422;
+                                    return { error: 'Target folder does not exist' };
+                                }
+                            }
+                            // 计算新路径（hash规范）
+                            const hash = file.hash;
+                            if (!isHash(hash)) {
+                                set.status = 422;
+                                return { error: 'File hash invalid, cannot move non-hash file' };
+                            }
+                            const newPath = parentPath === '/' ? `/${hash}` : `${parentPath}/${hash}`;
+                            // R2对象同步移动（hash规范）
                             const env = getEnv();
                             const s3 = createS3Client();
                             const bucket = env.S3_BUCKET;
-                            // 先移动 .keep 文件（即使没有子文件也要移动）
-                            const oldKeepKey = oldPath.replace(/^\//, '').replace(/\/+$/, '') + '/.keep';
-                            const newKeepKey = newPath.replace(/^\//, '').replace(/\/+$/, '') + '/.keep';
+                            const oldR2Key = file.path.replace(/^\//, '');
+                            const newR2Key = newPath.replace(/^\//, '');
                             try {
-                                const keepObj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldKeepKey }));
-                                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: newKeepKey, Body: keepObj.Body, ContentType: 'text/plain' }));
-                                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldKeepKey }));
-                            } catch (e) {
-                                // .keep 不存在时忽略
-                            }
-                            for (const child of children) {
-                                const relative = child.path.slice(oldPath.length);
-                                const oldR2Key = child.path.replace(/^\//, '');
-                                const newR2Key = (newPath + relative).replace(/^\//, '');
+                                const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldR2Key }));
+                                await s3.send(new PutObjectCommand({
+                                    Bucket: bucket,
+                                    Key: newR2Key,
+                                    Body: obj.Body,
+                                    ContentType: file.mimeType || 'application/octet-stream',
+                                }));
+                                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldR2Key }));
+                            } catch (e) {}
+                            // 更新自身 path 和 parentPath
+                            await db.update(files).set({
+                                path: newPath,
+                                parentPath,
+                                modifiedAt: new Date(),
+                            }).where(eq(files.id, fileId));
+                            return { success: true, moved: true };
+                        }
+                        // 目录重命名逻辑
+                        if (file.isFolder && name && name !== file.name) {
+                            const oldPath = file.path.replace(/^\//, '');
+                            const newPath = file.parentPath === '/' ? `/${name}` : `${file.parentPath}/${name}`;
+                            const newPathKey = newPath.replace(/^\//, '');
+                            // 查找所有以 oldPath/ 为前缀的R2对象
+                            const allR2Files = await listAllR2Files();
+                            const folderPrefix = oldPath.endsWith('/') ? oldPath : oldPath + '/';
+                            for (const r2File of allR2Files) {
+                                if (r2File.startsWith('/' + folderPrefix)) {
+                                    const relative = r2File.slice(('/' + oldPath).length);
+                                    const newR2Key = newPathKey + relative;
+                                    const oldR2Key = r2File.replace(/^\//, '');
                                 try {
                                     const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldR2Key }));
                                     await s3.send(new PutObjectCommand({
                                         Bucket: bucket,
                                         Key: newR2Key,
                                         Body: obj.Body,
-                                        ContentType: child.mimeType || 'application/octet-stream',
+                                            ContentType: obj.ContentType || 'application/octet-stream',
                                     }));
                                     await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldR2Key }));
-                                } catch (e) {
-                                    // 如果对象不存在，跳过
-                                    continue;
+                                    } catch (e) { continue; }
                                 }
-                                // 更新数据库路径和parentPath（多级子文件夹也要递归替换parentPath）
+                                }
+                            // 查找所有以 oldPath 为前缀的文件/文件夹（包括多级子文件夹和文件）
+                            const children = await db.select().from(files).where(like(files.path, `${'/' + oldPath}/%`));
+                            for (const child of children) {
+                                const relative = child.path.slice(file.path.length);
                                 let newParentPath = child.parentPath;
-                                if (child.parentPath && child.parentPath.startsWith(oldPath)) {
-                                    newParentPath = child.parentPath.replace(oldPath, newPath);
+                                if (child.parentPath && child.parentPath.startsWith(file.path)) {
+                                    newParentPath = child.parentPath.replace(file.path, newPath);
                                 }
                                 await db.update(files).set({
                                     path: newPath + relative,
@@ -659,6 +688,7 @@ export function FileService() {
                     body: t.Object({
                         name: t.Optional(t.String()),
                         accessLevel: t.Optional(t.String()),
+                        parentPath: t.Optional(t.String()),
                     }),
                 })
 
@@ -764,6 +794,45 @@ export function FileService() {
                         total++;
                     }
                     return { total, inserted, skipped, failed, failedList };
+                })
+
+                // 新增批量删除接口
+                .delete('/batch', async ({ body, uid, set }) => {
+                    if (!uid) {
+                        set.status = 401;
+                        return { error: 'Unauthorized' };
+                    }
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+                    const env = getEnv();
+                    const s3 = createS3Client();
+                    const bucket = env.S3_BUCKET;
+                    const { ids } = body; // 传入待删除文件id数组
+                    if (!Array.isArray(ids) || ids.length === 0) {
+                        set.status = 400;
+                        return { error: 'No files to delete' };
+                    }
+                    let deleted = 0, skipped = 0, errors = [];
+                    for (const fileId of ids) {
+                        try {
+                            const fileInfo = await db.select().from(files).where(and(eq(files.id, fileId), eq(files.userId, uid)));
+                            if (!fileInfo.length) { skipped++; continue; }
+                            const file = fileInfo[0];
+                            if (!isHash(file.hash)) { skipped++; continue; }
+                            const r2Key = file.path.replace(/^\//, '');
+                            try {
+                                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
+                            } catch (e) { errors.push({ id: fileId, error: String(e) }); }
+                            await db.delete(files).where(eq(files.id, fileId));
+                            deleted++;
+                        } catch (e) { errors.push({ id: fileId, error: String(e) }); }
+                    }
+                    return { deleted, skipped, errors };
+                }, {
+                    body: t.Object({ ids: t.Array(t.Numeric()) })
                 })
         );
 } 

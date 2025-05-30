@@ -159,7 +159,14 @@
     "move": "Move",
     "per_page": "/page",
     "page_size": "Page Size",
-    "drag_to_upload": "Drop to upload files"
+    "drag_to_upload": "Drop to upload files",
+    "move_target_required": "Target folder cannot be empty",
+    "move_failed": "Move failed: {{error}}",
+    "move_success": "Move succeeded",
+    "delete_success_batch": "Successfully deleted {{count}} files",
+    "delete_skipped_batch": "Skipped {{count}} (legacy data or invalid path)",
+    "delete_failed_batch": "Failed to delete {{count}}",
+    "delete_none": "No files deleted, possibly legacy data or invalid path"
   },
   "footer": {
     "rss": "RSS Subscription Link"

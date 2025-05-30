@@ -149,7 +149,14 @@
     "move": "移動",
     "per_page": "/頁",
     "page_size": "每頁數量",
-    "drag_to_upload": "鬆開以上傳檔案"
+    "drag_to_upload": "鬆開以上傳檔案",
+    "move_target_required": "目標目錄不能為空",
+    "move_failed": "移動失敗：{{error}}",
+    "move_success": "移動成功",
+    "delete_success_batch": "成功刪除 {{count}} 個檔案",
+    "delete_skipped_batch": "跳過 {{count}} 個（歷史資料或路徑不規範）",
+    "delete_failed_batch": "刪除失敗 {{count}} 個",
+    "delete_none": "未刪除任何檔案，可能為歷史資料或路徑不規範"
   },
   "footer": {
     "rss": "RSS 訂閱連結"

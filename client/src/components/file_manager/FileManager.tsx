@@ -421,48 +421,48 @@ export function FileManager({
       t('files.confirm_delete', { name: file.name }),
       '',
       async () => {
-        try {
-          // 直接用fetch发送DELETE请求，确保header带上
-          const res = await fetch(`${endpoint}/files/${file.id}`, {
-            method: 'DELETE',
-            headers: headersWithAuth(),
-          });
-          const data = await res.json();
-          if (res.status === 409 && data.error) {
-            // 冲突，尝试获取引用详情
-            const refRes = await fetch(`${endpoint}/files/${file.id}`, { headers: headersWithAuth() });
-            const refData = await refRes.json();
-            if (refRes.ok && refData.references && refData.references.length > 0) {
+    try {
+      // 直接用fetch发送DELETE请求，确保header带上
+      const res = await fetch(`${endpoint}/files/${file.id}`, {
+        method: 'DELETE',
+        headers: headersWithAuth(),
+      });
+      const data = await res.json();
+      if (res.status === 409 && data.error) {
+        // 冲突，尝试获取引用详情
+        const refRes = await fetch(`${endpoint}/files/${file.id}`, { headers: headersWithAuth() });
+        const refData = await refRes.json();
+        if (refRes.ok && refData.references && refData.references.length > 0) {
               showConfirm(
                 t('files.delete_error', { error: data.error }) + '\n' + t('files.ref_detail') + '\n' + refData.references.map((r:any) => `${r.title || t('files.ref_no_title')}`).join('\n') + '\n' + t('files.force_delete_confirm'),
                 '',
                 async () => {
-                  const forceRes = await fetch(`${endpoint}/files/${file.id}`, {
-                    method: 'DELETE',
-                    headers: headersWithAuth(),
-                  });
-                  const forceData = await forceRes.json();
-                  if (!forceRes.ok || forceData.error) {
+            const forceRes = await fetch(`${endpoint}/files/${file.id}`, {
+              method: 'DELETE',
+              headers: headersWithAuth(),
+            });
+            const forceData = await forceRes.json();
+            if (!forceRes.ok || forceData.error) {
                     showToast(t('files.delete_error', { error: forceData.error || forceRes.status }), 'error');
-                  } else {
-                    setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
-                    loadFiles();
-                  }
-                }
-              );
             } else {
-              showToast(t('files.delete_error', { error: data.error }), 'error');
+              setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
+              loadFiles();
             }
-          } else if (!res.ok || data.error) {
-            showToast(t('files.delete_error', { error: data.error || res.status }), 'error');
-          } else {
-            setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
-            showToast(t('files.delete_success'), 'info');
-            loadFiles();
           }
-        } catch (error: any) {
-          showToast(t('files.delete_failed', { error: error.message }), 'error');
+              );
+        } else {
+              showToast(t('files.delete_error', { error: data.error }), 'error');
         }
+      } else if (!res.ok || data.error) {
+            showToast(t('files.delete_error', { error: data.error || res.status }), 'error');
+      } else {
+        setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
+            showToast(t('files.delete_success'), 'info');
+        loadFiles();
+      }
+    } catch (error: any) {
+          showToast(t('files.delete_failed', { error: error.message }), 'error');
+    }
       }
     );
   };
@@ -611,11 +611,29 @@ export function FileManager({
       t('files.confirm_delete', { name: t('files.selected', { count: selectedFiles.length }) }),
       '',
       async () => {
-        for (const file of selectedFiles) {
-          await handleDeleteFile(file);
+        try {
+          const ids = selectedFiles.map(f => f.id);
+          const res = await fetch(`${endpoint}/files/batch`, {
+            method: 'DELETE',
+            headers: { ...headersWithAuth(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+          });
+          const data = await res.json();
+          if (!res.ok || data.error) {
+            showToast(t('files.delete_failed', { error: data.error || res.status }), 'error');
+            return;
+          }
+          let msg = '';
+          if (data.deleted > 0) msg += t('files.delete_success_batch', { count: data.deleted });
+          if (data.skipped > 0) msg += (msg ? '，' : '') + t('files.delete_skipped_batch', { count: data.skipped });
+          if (data.errors && data.errors.length > 0) msg += (msg ? '，' : '') + t('files.delete_failed_batch', { count: data.errors.length });
+          if (!msg) msg = t('files.delete_none');
+          showToast(msg, data.deleted > 0 ? 'info' : 'error');
+    setSelectedFiles([]);
+    loadFiles();
+        } catch (error: any) {
+          showToast(t('files.delete_failed', { error: error.message }), 'error');
         }
-        setSelectedFiles([]);
-        loadFiles();
       }
     );
   };
@@ -628,23 +646,40 @@ export function FileManager({
     setShowMoveDialog(true);
   };
   const confirmBatchMove = async () => {
+    if (!moveTargetPath || moveTargetPath.trim() === '') {
+      showToast(t('files.move_target_required', { defaultValue: '目标目录不能为空' }), 'error');
+      return;
+    }
     setMoving(true);
+    let hasError = false;
     for (const file of selectedFiles) {
       if (file.parentPath === moveTargetPath) continue;
-      await fetch(`${endpoint}/files/${file.id}`, {
+      try {
+        const res = await fetch(`${endpoint}/files/${file.id}`, {
         method: 'PATCH',
         headers: { ...headersWithAuth(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // 文件夹移动用重命名逻辑
           name: file.name,
           parentPath: moveTargetPath
         })
       });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          showToast(t('files.move_failed', { error: data.error || res.status }), 'error');
+          hasError = true;
+        }
+      } catch (e: any) {
+        showToast(t('files.move_failed', { error: e.message }), 'error');
+        hasError = true;
+      }
     }
     setMoving(false);
     setShowMoveDialog(false);
     setSelectedFiles([]);
     loadFiles();
+    if (!hasError) {
+      showToast(t('files.move_success', { defaultValue: '移动成功' }), 'success');
+    }
   };
 
   // 拖拽上传事件处理
@@ -718,7 +753,7 @@ export function FileManager({
               {/* 移动按钮 */}
               <button
                 className="text-purple-500 hover:text-purple-700 p-1"
-                title={t('move')}
+                title={t('files.move')}
                 onClick={e => {e.stopPropagation(); setSelectedFiles([file]); setShowMoveDialog(true);}}
               >
                 <i className="ri-folder-transfer-line"></i>
@@ -882,7 +917,7 @@ export function FileManager({
                   {/* 移动按钮 */}
                   <button
                     className="text-purple-500 hover:text-purple-700 p-1"
-                    title={t('move')}
+                    title={t('files.move')}
                     onClick={e => {e.stopPropagation(); setSelectedFiles([file]); setShowMoveDialog(true);}}
                   >
                     <i className="ri-folder-transfer-line"></i>
@@ -1034,17 +1069,17 @@ export function FileManager({
         {/* 右侧：每页数量+按钮组，整体右对齐 */}
         <div className="flex flex-row flex-wrap items-center gap-2 justify-end min-w-0">
           <div className="flex items-center h-10">
-            <select
-              value={itemsPerPage}
-              onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+          <select
+            value={itemsPerPage}
+            onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
               className="h-10 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[70px] flex items-center"
-              style={{ minWidth: 70, maxWidth: 100 }}
-              title={t('files.page_size') || '每页数量'}
-            >
-              {pageSizeOptions.map(opt => (
-                <option key={opt} value={opt}>{opt + t('files.per_page', { defaultValue: '/页' })}</option>
-              ))}
-            </select>
+            style={{ minWidth: 70, maxWidth: 100 }}
+            title={t('files.page_size') || '每页数量'}
+          >
+            {pageSizeOptions.map(opt => (
+              <option key={opt} value={opt}>{opt + t('files.per_page', { defaultValue: '/页' })}</option>
+            ))}
+          </select>
           </div>
           <div className="flex flex-row flex-wrap gap-2 min-w-0">
             {/* 视图切换按钮 */}
@@ -1260,7 +1295,7 @@ export function FileManager({
             />
             <div className="flex justify-end space-x-2">
               <Button onClick={() => setShowMoveDialog(false)} title={t('cancel')} secondary />
-              <Button onClick={confirmBatchMove} title={moving ? t('files.moving') : t('move')} />
+              <Button onClick={confirmBatchMove} title={moving ? t('files.moving') : t('files.move')} />
             </div>
           </div>
         </div>
