@@ -762,8 +762,10 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
       .map(ref => normalizePath(ref))
       .filter(x => s3Folders.some(folder => x.startsWith(folder)) && !x.startsWith('http://') && !x.startsWith('https://'));
     if (filteredRefs.length === 0) return;
-    // 查询已存在的files（只查标准化后的路径）
-    const allPaths = filteredRefs.filter(p => typeof p === 'string' && p.length > 8 && !p.includes(' '));
+    // 查询已存在的files（只查标准化后的路径，兼容带斜杠和不带斜杠）
+    const allPaths = filteredRefs
+      .filter(p => typeof p === 'string' && p.length > 8 && !p.includes(' '))
+      .flatMap(p => [p, '/' + p]);
     let filesInDb = [];
     try {
       filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(inArray(filesTable.path, allPaths));
@@ -771,8 +773,14 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
       filesInDb = [];
     }
     if (!Array.isArray(filesInDb)) filesInDb = [];
-    const validFilesInDb = filesInDb.filter(f => f && typeof f.id === 'number' && typeof f.path === 'string');
-    const pathToId = new Map<string, number>(validFilesInDb.map(f => [f.path, f.id]));
+    // 兼容带斜杠和不带斜杠的路径
+    const pathToId = new Map<string, number>();
+    for (const f of filesInDb) {
+      if (typeof f.path === 'string') {
+        pathToId.set(f.path.replace(/^\/+/, ''), f.id); // 不带斜杠
+        pathToId.set(f.path.startsWith('/') ? f.path : '/' + f.path, f.id); // 带斜杠
+      }
+    }
     // 自动补录缺失文件，已存在则update原始名
     for (const path of filteredRefs) {
       if (!path || typeof path !== 'string') continue;
