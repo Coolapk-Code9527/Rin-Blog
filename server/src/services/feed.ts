@@ -757,10 +757,8 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
     const env = getEnv();
     const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+/g, '') + '/');
     let refs = extractFileReferences(content).filter(Boolean);
-    // 只处理有效图片路径，去除域名，标准化为 images/xxx.png 或 cache/xxx.png
-    let filteredRefs = refs
-      .map(ref => normalizePath(ref))
-      .filter(x => s3Folders.some(folder => x.startsWith(folder)) && !x.startsWith('http://') && !x.startsWith('https://'));
+    // 只要 normalizePath 后在 files 表存在就认为是有效引用，不再依赖 S3_FOLDER/S3_CACHE_FOLDER
+    let filteredRefs = refs.map(ref => normalizePath(ref)).filter(x => x && !x.startsWith('http://') && !x.startsWith('https://'));
     if (filteredRefs.length === 0) return;
     // 查询已存在的files（只查标准化后的路径，兼容带斜杠和不带斜杠）
     const allPaths = filteredRefs
