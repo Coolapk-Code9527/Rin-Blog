@@ -1135,34 +1135,39 @@ export function FileManager({
             {/* 全量同步R2按钮（仅icon） */}
             <button
               onClick={async () => {
-                if (!window.confirm(t('files.r2sync_confirm') || '确定要全量同步R2存储桶所有文件到数据库吗？')) return;
-                setIsSyncing(true);
-                setSyncResult(null);
-                setSyncDetailList([]);
-                try {
-                  const res = await fetch(`${endpoint}/files/r2sync`, {
-                    method: 'POST',
-                    headers: headersWithAuth(),
-                  });
-                  const data = await res.json();
-                  if (res.ok) {
-                    setSyncResult(t('files.r2sync_success', { total: data.total, inserted: data.inserted, skipped: data.skipped, failed: data.failed }));
-                    if (data.failedList && data.failedList.length > 0) {
-                      setSyncDetailList(data.failedList);
-                      setSyncDetailOpen(true);
-                    } else {
+                showConfirm(
+                  t('files.r2sync_confirm') || '确定要全量同步R2存储桶所有文件到数据库吗？',
+                  '',
+                  async () => {
+                    setIsSyncing(true);
+                    setSyncResult(null);
+                    setSyncDetailList([]);
+                    try {
+                      const res = await fetch(`${endpoint}/files/r2sync`, {
+                        method: 'POST',
+                        headers: headersWithAuth(),
+                      });
+                      const data = await res.json();
+                      if (res.ok) {
+                        setSyncResult(t('files.r2sync_success', { total: data.total, inserted: data.inserted, skipped: data.skipped, failed: data.failed }));
+                        if (data.failedList && data.failedList.length > 0) {
+                          setSyncDetailList(data.failedList);
+                          setSyncDetailOpen(true);
+                        } else {
+                          setSyncDetailOpen(true);
+                        }
+                        loadFiles(true);
+                      } else {
+                        setSyncResult(t('files.r2sync_failed', { error: data.error || res.status }));
+                        setSyncDetailOpen(true);
+                      }
+                    } catch (e: any) {
+                      setSyncResult(t('files.r2sync_failed', { error: e.message }));
                       setSyncDetailOpen(true);
                     }
-                    loadFiles(true);
-                  } else {
-                    setSyncResult(t('files.r2sync_failed', { error: data.error || res.status }));
-                    setSyncDetailOpen(true);
+                    setIsSyncing(false);
                   }
-                } catch (e: any) {
-                  setSyncResult(t('files.r2sync_failed', { error: e.message }));
-                  setSyncDetailOpen(true);
-                }
-                setIsSyncing(false);
+                );
               }}
               className="px-3 py-2 h-10 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               disabled={isSyncing}
@@ -1316,6 +1321,30 @@ export function FileManager({
             <div className="flex justify-end space-x-2">
               <Button onClick={() => setShowRenameDialog(false)} title={t('cancel')} secondary />
               <Button onClick={confirmRename} title={t('confirm')} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* R2同步结果弹窗 */}
+      {syncDetailOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[11000]">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-lg font-medium mb-4">{t('files.r2sync_result', { defaultValue: 'R2同步结果' })}</h3>
+            <div className="mb-4 text-gray-700 dark:text-gray-200 whitespace-pre-line break-all">
+              {syncResult}
+            </div>
+            {syncDetailList && syncDetailList.length > 0 && (
+              <div className="mb-4 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs text-gray-600 dark:text-gray-300">
+                <ul className="list-disc pl-5">
+                  {syncDetailList.map((item, idx) => (
+                    <li key={idx}>{typeof item === 'string' ? item : JSON.stringify(item)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="flex justify-end mt-4">
+              <Button onClick={() => setSyncDetailOpen(false)} title={t('close')} />
             </div>
           </div>
         </div>
