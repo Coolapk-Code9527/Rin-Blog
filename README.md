@@ -44,6 +44,7 @@ Rin is a blog based on Cloudflare Pages + Workers + D1 + R2. It does not require
 20. Rich content metadata with helpful indicators for article freshness, status, and importance
 21. Mobile-optimized UI with compact design and adaptive elements
 22. For more features, please refer to https://xeu.life
+- After publishing/updating an article, the file manager will automatically refresh file reference counts, no manual refresh needed.
 
 # User Interface
 - **Responsive Navigation**: Adapts seamlessly to different screen sizes with optimized layouts for desktop, tablet, and mobile devices

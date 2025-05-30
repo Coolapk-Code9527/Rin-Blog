@@ -1044,6 +1044,9 @@ async function publish({
     }
   );
   if (onCompleted) {
+    if (window.dispatchEvent) {
+      window.dispatchEvent(new CustomEvent('file-upload-success'));
+    }
     onCompleted();
   }
   if (error) {
@@ -1057,6 +1060,9 @@ async function publish({
     // 使用replace方法替换当前页面，避免返回按钮返回到编辑页
     // @ts-ignore - 忽略insertedId类型错误
     window.location.replace("/feed/" + data.insertedId);
+    if (window.dispatchEvent) {
+      window.dispatchEvent(new CustomEvent('file-upload-success'));
+    }
   }
 }
 
@@ -1101,6 +1107,9 @@ async function update({
     }
   );
   if (onCompleted) {
+    if (window.dispatchEvent) {
+      window.dispatchEvent(new CustomEvent('file-upload-success'));
+    }
     onCompleted();
   }
   if (error) {
@@ -1115,6 +1124,9 @@ async function update({
       Cache.with(id).clear();
   // 使用replace方法替换当前页面，避免返回按钮返回到编辑页
   window.location.replace("/feed/" + id);
+  if (window.dispatchEvent) {
+    window.dispatchEvent(new CustomEvent('file-upload-success'));
+  }
   }
 
 // 修改uploadImage函数，处理API响应类型
@@ -1566,7 +1578,7 @@ export function WritingPage({ id }: { id?: number }) {
         .split("#")
         .filter((tag: string) => tag !== "")
         .map((tag: string) => tag.trim()) || [];
-    if (id !== undefined) {
+    if (typeof id === 'number' && id > 0) {
       setPublishing(true)
       setIsPublishing(true); // 设置发布状态为true
       update({
@@ -1835,9 +1847,12 @@ export function WritingPage({ id }: { id?: number }) {
                       setUploading(true)
                       uploadImage(file, (url) => {
                         setUploading(false)
+                        const currentValue = editor.getModel()?.getValue();
+                        const imageMarkdown = `![${file.name}](${url})`;
+                        if (currentValue && currentValue.includes(imageMarkdown)) return;
                         editor.executeEdits(undefined, [{
                           range: selection,
-                          text: `![${file.name}](${url})\n`,
+                          text: imageMarkdown + '\n',
                         }]);
                       }, showAlert);
                     }
@@ -1851,9 +1866,12 @@ export function WritingPage({ id }: { id?: number }) {
                       if (!editor) return;
                       const selection = editor.getSelection();
                       if (!selection) return;
+                      const currentValue = editor.getModel()?.getValue();
+                      const imageMarkdown = `![${filename}](${url})`;
+                      if (currentValue && currentValue.includes(imageMarkdown)) return; // 已有则不插入
                       editor.executeEdits(undefined, [{
                         range: selection,
-                        text: `![${filename}](${url})\n`,
+                        text: imageMarkdown + '\n',
                       }]);
                     }} />
                   </div>
