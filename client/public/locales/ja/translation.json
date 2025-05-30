@@ -146,7 +146,10 @@
     "multi_select": "複数選択モード",
     "download": "ダウンロード",
     "delete": "削除",
-    "move": "移動"
+    "move": "移動",
+    "per_page": "/ページ",
+    "page_size": "ページ数",
+    "drag_to_upload": "ドロップしてファイルをアップロード"
   },
   "footer": {
     "rss": "RSS 購読リンク"

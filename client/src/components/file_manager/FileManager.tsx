@@ -8,6 +8,8 @@ import { ShowAlertType } from '../../hooks/useAlert';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Pagination } from '../pagination';
+import { useToast } from '../../hooks/useToast';
+import { useConfirm } from '../dialog';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
@@ -57,10 +59,12 @@ export function FileManager({
   showSelector?: boolean;
 }) {
   const { t } = useTranslation();
+  const { showToast } = useToast();
+  const { showConfirm, ConfirmUI } = useConfirm();
   
   // 创建自己的简易alert函数作为替代
   const showAlert: ShowAlertType = (msg, onConfirm) => {
-    alert(msg);
+    showToast(msg, 'info');
     if (onConfirm) onConfirm();
   };
   
@@ -125,6 +129,21 @@ export function FileManager({
   const [itemsPerPage, setItemsPerPage] = useState<number>(15);
   const pageSizeOptions = [5, 10, 15, 20, 30, 50];
 
+  // 新增拖拽上传状态
+  const [dragActive, setDragActive] = useState(false);
+
+  // 上传进度条优化
+  const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
+  const [uploadingIndex, setUploadingIndex] = useState(0);
+  const [uploadingPercent, setUploadingPercent] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // 新增重命名弹窗状态
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<FileItem | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+
   // 加载文件列表
   const loadFiles = async (reload = false) => {
     try {
@@ -161,7 +180,7 @@ export function FileManager({
           console.error('Error parsing error response:', e);
         }
         if (response.status === 401 || response.status === 403) {
-          alert(t('login.required'));
+          showToast(t('login.required'), 'error');
           window.location.href = '/login';
           return;
         }
@@ -280,7 +299,7 @@ export function FileManager({
   // 处理确认选择
   const handleConfirmSelection = () => {
     if (selectedFiles.length === 0) {
-      showAlert(t('files.no_selection'));
+      showToast(t('files.no_selection'), 'info');
       return;
     }
 
@@ -295,7 +314,7 @@ export function FileManager({
   const handleCreateFolder = async () => {
     const folderName = folderNameInputRef.current?.value;
     if (!folderName || folderName.trim() === '') {
-      showAlert(t('files.folder_name_required'));
+      showToast(t('files.folder_name_required'), 'error');
       return;
     }
     // 判断当前目录是否为虚拟一级目录
@@ -312,28 +331,29 @@ export function FileManager({
         headers: headersWithAuth()
       });
       if (response.error) {
-        showAlert(t('files.folder_create_error', { error: response.error.value }));
+        showToast(t('files.folder_create_error', { error: response.error.value }), 'error');
       } else {
         setShowNewFolderDialog(false);
         loadFiles();
       }
     } catch (error: any) {
-      showAlert(t('files.folder_create_error', { error: error.message }));
+      showToast(t('files.folder_create_error', { error: error.message }), 'error');
     }
   };
 
   // 处理文件上传
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: any) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
-
-    setIsUploading(true);
-    setUploadProgress(0);
-
+    setUploadingFiles(Array.from(files));
+    setUploadingIndex(0);
+    setUploadingPercent(0);
+    setUploading(true);
+    setUploadError(null);
     for (let i = 0; i < files.length; i++) {
+      setUploadingIndex(i + 1);
+      setUploadingPercent(Math.round(((i) / files.length) * 100));
       const file = files[i];
-      setUploadProgress(prevProgress => Math.round((i / files.length) * 100));
-
       try {
         const response = await client.files.index.post({
           file,
@@ -342,9 +362,7 @@ export function FileManager({
         }, {
           headers: headersWithAuth()
         });
-
         if (response.error) {
-          // 兼容 value/message 嵌套
           let msg = '';
           if (typeof response.error === 'object') {
             if ('message' in response.error && typeof (response.error as any).message === 'string') {
@@ -364,24 +382,28 @@ export function FileManager({
           } else {
             msg = response.error;
           }
-          showAlert(msg);
+          setUploadError(msg);
+          showToast(msg, 'error');
           continue;
         } else if ((response as any).reusedMsg) {
-          showAlert((response as any).reusedMsg);
+          showToast((response as any).reusedMsg, 'info');
         } else {
-          showAlert(t('files.upload_success'));
+          showToast(t('files.upload_success'), 'info');
         }
         loadFiles();
       } catch (error: any) {
-        showAlert(t('files.upload_failed', { error: error.message }));
+        setUploadError(error.message);
+        showToast(t('files.upload_failed', { error: error.message }), 'error');
       }
     }
-
-    // 完成上传
-    setIsUploading(false);
-    setUploadProgress(100);
-    
-    // 重置文件输入
+    setUploadingPercent(100);
+    setUploading(false);
+    setTimeout(() => {
+      setUploadingFiles([]);
+      setUploadingIndex(0);
+      setUploadingPercent(0);
+      setUploadError(null);
+    }, 1200);
     if (uploadInputRef.current) {
       uploadInputRef.current.value = '';
     }
@@ -392,51 +414,57 @@ export function FileManager({
     // 禁止删除虚拟一级目录
     const virtualFolders = ["/images", "/cache"];
     if (virtualFolders.includes(file.path)) {
-      showAlert(t('delete_error', { error: t('files.delete_error') + ' (不能删除系统目录)' }));
+      showToast(t('delete_error', { error: t('files.delete_error') + ' (不能删除系统目录)' }), 'error');
       return;
     }
-    if (!confirm(t('files.confirm_delete', { name: file.name }))) {
-      return;
-    }
-    try {
-      // 直接用fetch发送DELETE请求，确保header带上
-      const res = await fetch(`${endpoint}/files/${file.id}`, {
-        method: 'DELETE',
-        headers: headersWithAuth(),
-      });
-      const data = await res.json();
-      if (res.status === 409 && data.error) {
-        // 冲突，尝试获取引用详情
-        const refRes = await fetch(`${endpoint}/files/${file.id}`, { headers: headersWithAuth() });
-        const refData = await refRes.json();
-        if (refRes.ok && refData.references && refData.references.length > 0) {
-          if (window.confirm(t('files.delete_error', { error: data.error }) + '\n' + t('files.ref_detail') + '\n' + refData.references.map((r:any) => `${r.title || t('files.ref_no_title')}`).join('\n') + '\n' + t('files.force_delete_confirm'))) {
-            // 用户确认强制删除，再次发起删除
-            const forceRes = await fetch(`${endpoint}/files/${file.id}`, {
-              method: 'DELETE',
-              headers: headersWithAuth(),
-            });
-            const forceData = await forceRes.json();
-            if (!forceRes.ok || forceData.error) {
-              showAlert(t('files.delete_error', { error: forceData.error || forceRes.status }));
+    showConfirm(
+      t('files.confirm_delete', { name: file.name }),
+      '',
+      async () => {
+        try {
+          // 直接用fetch发送DELETE请求，确保header带上
+          const res = await fetch(`${endpoint}/files/${file.id}`, {
+            method: 'DELETE',
+            headers: headersWithAuth(),
+          });
+          const data = await res.json();
+          if (res.status === 409 && data.error) {
+            // 冲突，尝试获取引用详情
+            const refRes = await fetch(`${endpoint}/files/${file.id}`, { headers: headersWithAuth() });
+            const refData = await refRes.json();
+            if (refRes.ok && refData.references && refData.references.length > 0) {
+              showConfirm(
+                t('files.delete_error', { error: data.error }) + '\n' + t('files.ref_detail') + '\n' + refData.references.map((r:any) => `${r.title || t('files.ref_no_title')}`).join('\n') + '\n' + t('files.force_delete_confirm'),
+                '',
+                async () => {
+                  const forceRes = await fetch(`${endpoint}/files/${file.id}`, {
+                    method: 'DELETE',
+                    headers: headersWithAuth(),
+                  });
+                  const forceData = await forceRes.json();
+                  if (!forceRes.ok || forceData.error) {
+                    showToast(t('files.delete_error', { error: forceData.error || forceRes.status }), 'error');
+                  } else {
+                    setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
+                    loadFiles();
+                  }
+                }
+              );
             } else {
-              setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
-              loadFiles();
+              showToast(t('files.delete_error', { error: data.error }), 'error');
             }
+          } else if (!res.ok || data.error) {
+            showToast(t('files.delete_error', { error: data.error || res.status }), 'error');
+          } else {
+            setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
+            showToast(t('files.delete_success'), 'info');
+            loadFiles();
           }
-        } else {
-          showAlert(t('files.delete_error', { error: data.error }));
+        } catch (error: any) {
+          showToast(t('files.delete_failed', { error: error.message }), 'error');
         }
-      } else if (!res.ok || data.error) {
-        showAlert(t('files.delete_error', { error: data.error || res.status }));
-      } else {
-        setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
-        showAlert(t('files.delete_success'));
-        loadFiles();
       }
-    } catch (error: any) {
-      showAlert(t('files.delete_failed', { error: error.message }));
-    }
+    );
   };
 
   // 处理排序变化
@@ -503,31 +531,42 @@ export function FileManager({
   };
 
   // 新增重命名逻辑
-  const handleRenameFile = async (file: FileItem) => {
-    const newName = prompt(t('files.rename_prompt') || '请输入新文件名', file.name);
-    if (!newName || newName === file.name) return;
+  const handleRenameFile = (file: FileItem) => {
+    setRenameTarget(file);
+    setRenameValue(file.name);
+    setShowRenameDialog(true);
+  };
+
+  const confirmRename = async () => {
+    if (!renameTarget || !renameValue || renameValue === renameTarget.name) {
+      setShowRenameDialog(false);
+      return;
+    }
     try {
-      const res = await fetch(`${endpoint}/files/${file.id}`, {
+      const res = await fetch(`${endpoint}/files/${renameTarget.id}`, {
         method: 'PATCH',
         headers: { ...headersWithAuth(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName })
+        body: JSON.stringify({ name: renameValue })
       });
       if (res.ok) {
-        showAlert(t('files.rename_success'));
+        showToast(t('files.rename_success'), 'info');
         loadFiles();
       } else {
         const data = await res.json().catch(() => ({}));
-        showAlert(t('files.rename_failed', { error: data.error || res.status }));
+        showToast(t('files.rename_failed', { error: data.error || res.status }), 'error');
       }
     } catch (e: any) {
-      showAlert(t('files.rename_failed', { error: e.message }));
+      showToast(t('files.rename_failed', { error: e.message }), 'error');
     }
+    setShowRenameDialog(false);
+    setRenameTarget(null);
+    setRenameValue('');
   };
 
   // 1. 单文件下载
   const handleDownloadFile = async (file: FileItem) => {
     if (file.isFolder) {
-      showAlert(t('files.download_folder_not_supported') || '暂不支持直接下载整个文件夹');
+      showToast(t('files.download_folder_not_supported') || '暂不支持直接下载整个文件夹', 'info');
       return;
     }
     try {
@@ -537,7 +576,7 @@ export function FileManager({
       const blob = await response.blob();
       saveAs(blob, file.name);
     } catch (e: any) {
-      showAlert(t('files.download_failed', { error: e.message }));
+      showToast(t('files.download_failed', { error: e.message }), 'error');
     }
   };
 
@@ -558,7 +597,7 @@ export function FileManager({
       } catch {}
     }
     if (count === 0) {
-      showAlert(t('files.download_failed', { error: t('files.no_selection') }));
+      showToast(t('files.download_failed', { error: t('files.no_selection') }), 'error');
       return;
     }
     const content = await zip.generateAsync({ type: 'blob' });
@@ -568,12 +607,17 @@ export function FileManager({
   // 3. 批量删除
   const handleBatchDelete = async () => {
     if (selectedFiles.length === 0) return;
-    if (!window.confirm(t('files.confirm_delete', { name: t('files.selected', { count: selectedFiles.length }) }))) return;
-    for (const file of selectedFiles) {
-      await handleDeleteFile(file);
-    }
-    setSelectedFiles([]);
-    loadFiles();
+    showConfirm(
+      t('files.confirm_delete', { name: t('files.selected', { count: selectedFiles.length }) }),
+      '',
+      async () => {
+        for (const file of selectedFiles) {
+          await handleDeleteFile(file);
+        }
+        setSelectedFiles([]);
+        loadFiles();
+      }
+    );
   };
 
   // 4. 批量移动/移动文件夹
@@ -601,6 +645,33 @@ export function FileManager({
     setShowMoveDialog(false);
     setSelectedFiles([]);
     loadFiles();
+  };
+
+  // 拖拽上传事件处理
+  const handleDragEnter = (e: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+  const handleDragOver = (e: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+  const handleDragLeave = (e: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+  const handleDrop = async (e: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    // 复用上传逻辑
+    const fakeEvent = { target: { files } } as any;
+    await handleFileUpload(fakeEvent);
   };
 
   // 渲染网格视图
@@ -900,37 +971,81 @@ export function FileManager({
   }, [showNewFolderDialog, errorMessage, refDialogOpen, showMoveDialog]);
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full">
+    <div
+      className={
+        "relative bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full" +
+        (dragActive ? " ring-4 ring-pink-400/60 ring-inset" : "")
+      }
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      style={{ transition: 'box-shadow 0.2s, border-color 0.2s' }}
+    >
+      {/* 上传进度条 */}
+      {uploading && (
+        <div className="fixed top-0 left-0 w-full z-[12001] flex flex-col items-center pointer-events-none select-none">
+          {/* 渐变主题色进度条 */}
+          <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full shadow-md overflow-hidden mt-2 mx-auto max-w-2xl">
+            <div
+              className="h-1.5 rounded-full bg-gradient-to-r from-pink-400 via-pink-500 to-pink-600 transition-all duration-500 shadow-lg"
+              style={{ width: `${uploadingPercent}%` }}
+            ></div>
+          </div>
+          {/* 卡片式进度信息 */}
+          <div className="mt-3 px-4 py-2 rounded-xl shadow-lg border border-pink-200 dark:border-pink-700 bg-white/90 dark:bg-gray-900/90 flex flex-row items-center gap-2 text-xs text-gray-700 dark:text-gray-100 font-medium animate-fadeIn" style={{minWidth:220, maxWidth:360}}>
+            <i className="ri-upload-cloud-2-line text-pink-500 text-base mr-1"></i>
+            <span className="text-pink-500 font-semibold">{t('files.upload', { defaultValue: '上传' })}</span>
+            {uploadingFiles.length > 1 && (
+              <span className="ml-1 text-gray-400">{uploadingIndex}/{uploadingFiles.length}</span>
+            )}
+            {uploadingFiles[uploadingIndex - 1]?.name && (
+              <span className="truncate max-w-[120px] ml-2 text-gray-600 dark:text-gray-200">{uploadingFiles[uploadingIndex - 1].name}</span>
+            )}
+            <span className="ml-2 text-pink-500 font-bold">{uploadingPercent}%</span>
+            {uploadError && <span className="ml-2 text-red-400">{t('files.upload_failed', { error: uploadError })}</span>}
+          </div>
+        </div>
+      )}
+      {dragActive && (
+        <div className="absolute inset-0 z-[12000] bg-black/30 flex items-center justify-center pointer-events-none select-none rounded-lg">
+          <div className="text-2xl text-white font-bold drop-shadow-lg animate-pulse">
+            {t('files.drag_to_upload', { defaultValue: '松开上传文件' })}
+          </div>
+        </div>
+      )}
       {/* 工具栏 */}
       <div className="border-b border-gray-200 dark:border-gray-700 p-2 flex flex-col sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0 space-y-2">
         {/* 左侧：面包屑+搜索框 */}
         <div className="flex flex-1 min-w-0 items-center gap-2">
           <div className="flex-shrink-0 min-w-0">{renderBreadcrumbs()}</div>
-          <div className="relative max-w-xs w-full min-w-[120px] flex-shrink-0">
-            <i className="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          <div className="relative w-full min-w-[120px] max-w-xs flex-shrink flex-grow">
+            <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('files.search_placeholder')}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent text-sm"
-              style={{ minWidth: 120, maxWidth: 240 }}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent text-sm transition-all min-w-[120px] max-w-full sm:max-w-xs"
+              style={{ minWidth: 0 }}
             />
           </div>
         </div>
         {/* 右侧：每页数量+按钮组，整体右对齐 */}
         <div className="flex flex-row flex-wrap items-center gap-2 justify-end min-w-0">
-          <select
-            value={itemsPerPage}
-            onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-            className="h-10 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[70px]"
-            style={{ minWidth: 70, maxWidth: 100 }}
-            title={t('files.page_size') || '每页数量'}
-          >
-            {pageSizeOptions.map(opt => (
-              <option key={opt} value={opt}>{opt + t('files.per_page', { defaultValue: '/页' })}</option>
-            ))}
-          </select>
+          <div className="flex items-center h-10">
+            <select
+              value={itemsPerPage}
+              onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+              className="h-10 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[70px] flex items-center"
+              style={{ minWidth: 70, maxWidth: 100 }}
+              title={t('files.page_size') || '每页数量'}
+            >
+              {pageSizeOptions.map(opt => (
+                <option key={opt} value={opt}>{opt + t('files.per_page', { defaultValue: '/页' })}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex flex-row flex-wrap gap-2 min-w-0">
             {/* 视图切换按钮 */}
             <div className="flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden">
@@ -1093,27 +1208,9 @@ export function FileManager({
             <h3 className="text-lg font-medium text-red-600 mb-4">{t('alert')}</h3>
             <p className="mb-6">{t('files.load_error', { error: errorMessage })}</p>
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => loadFiles(true)}
-                className="px-4 py-2 bg-theme hover:bg-theme-hover text-white rounded-md transition-colors"
-              >
-                {t('reload')}
-              </button>
-              <button
-                onClick={closeErrorDialog}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
-              >
-                {t('close')}
-              </button>
-              <button
-                onClick={() => {
-                  closeErrorDialog();
-                  window.location.href = '/'; // 添加返回主页选项
-                }}
-                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors"
-              >
-                {t('index.back')}
-              </button>
+              <Button onClick={() => loadFiles(true)} title={t('reload')} />
+              <Button onClick={closeErrorDialog} title={t('close')} secondary />
+              <Button onClick={() => { closeErrorDialog(); window.location.href = '/'; }} title={t('index.back')} secondary />
             </div>
           </div>
         </div>
@@ -1142,7 +1239,7 @@ export function FileManager({
               </ul>
             )}
             <div className="flex justify-end mt-6">
-              <button onClick={() => setRefDialogOpen(false)} className="px-4 py-2 bg-theme text-white rounded-md">{t('close')}</button>
+              <Button onClick={() => setRefDialogOpen(false)} title={t('close')} />
             </div>
           </div>
         </div>
@@ -1162,17 +1259,33 @@ export function FileManager({
               autoFocus
             />
             <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowMoveDialog(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                {t('cancel')}
-              </button>
+              <Button onClick={() => setShowMoveDialog(false)} title={t('cancel')} secondary />
               <Button onClick={confirmBatchMove} title={moving ? t('files.moving') : t('move')} />
             </div>
           </div>
         </div>
       )}
+
+      {/* 重命名弹窗 */}
+      {showRenameDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[11000]">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-lg font-medium mb-4">{t('files.rename_prompt') || '请输入新文件名'}</h3>
+            <input
+              type="text"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent mb-4"
+              value={renameValue}
+              onChange={e => setRenameValue(e.target.value)}
+              autoFocus
+            />
+            <div className="flex justify-end space-x-2">
+              <Button onClick={() => setShowRenameDialog(false)} title={t('cancel')} secondary />
+              <Button onClick={confirmRename} title={t('confirm')} />
+            </div>
+          </div>
+        </div>
+      )}
+      <ConfirmUI />
     </div>
   );
 } 

@@ -25,6 +25,7 @@ import { SearchPage } from './page/search.tsx'
 import { Tips, TipsPage } from './components/tips.tsx'
 import { useTranslation } from 'react-i18next'
 import { NotFoundPage } from './page/not-found.tsx'
+import { ToastProvider } from './components/toast/Toast'
 
 // 返回顶部按钮组件
 function BackToTop() {
@@ -104,7 +105,7 @@ function App() {
   }, [])
   const favicon = `${process.env.API_URL}/favicon`;
   return (
-    <>
+    <ToastProvider>
       {/* @ts-ignore - 忽略Provider的类型检查 */}
       <ClientConfigContext.Provider value={config}>
         {/* @ts-ignore - 忽略Provider的类型检查 */}  
@@ -224,7 +225,7 @@ function App() {
         </ProfileContext.Provider>
       </ClientConfigContext.Provider>
       <BackToTop />
-    </>
+    </ToastProvider>
   )
 }
 

@@ -24,6 +24,7 @@ import { useEditorHistory, HistoryItem } from "../utils/history";
 import {DraftDialog} from "../components/draft_dialog";
 import {useDraftManager, Draft} from "../utils/draft";
 import type { Feed } from '../types/api';  // 根据实际路径调整
+import { useToast } from '../hooks/useToast';
 
 // 处理process.env问题
 declare const process: {
@@ -1357,6 +1358,7 @@ export function WritingPage({ id }: { id?: number }) {
   const [editorScrolling, setEditorScrolling] = useState(false);
   const [previewScrolling, setPreviewScrolling] = useState(false);
   const { showAlert, AlertUI } = useAlert()
+  const { showToast } = useToast();
   
   // 历史记录状态
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);

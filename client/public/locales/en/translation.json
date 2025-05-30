@@ -156,7 +156,10 @@
     "multi_select": "Multi Select",
     "download": "Download",
     "delete": "Delete",
-    "move": "Move"
+    "move": "Move",
+    "per_page": "/page",
+    "page_size": "Page Size",
+    "drag_to_upload": "Drop to upload files"
   },
   "footer": {
     "rss": "RSS Subscription Link"

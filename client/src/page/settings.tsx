@@ -17,6 +17,7 @@ import {
 } from "../state/config.tsx";
 import {headersWithAuth} from "../utils/auth.ts";
 import '../utils/thumb.css';
+import { useToast } from '../hooks/useToast';
 
 
 export function Settings() {
@@ -30,6 +31,7 @@ export function Settings() {
     const [serverConfig, setServerConfig] = useState<ConfigWrapper>(defaultServerConfigWrapper);
     const ref = useRef(false);
     const { showAlert, AlertUI } = useAlert();
+    const { showToast } = useToast();
 
 
     useEffect(() => {
@@ -45,7 +47,7 @@ export function Settings() {
                 setClientConfig(config)
             }
         }).catch((err: any) => {
-            showAlert(t('settings.get_config_failed$message', { message: err.message }))
+            showToast(t('settings.get_config_failed$message', { message: err.message }))
         }).finally(() => {
             setClientLoading(false);
         })
@@ -59,7 +61,7 @@ export function Settings() {
                 setServerConfig(config)
             }
         }).catch((err) => {
-            showAlert(t('settings.get_config_failed$message', { message: err.message }))
+            showToast(t('settings.get_config_failed$message', { message: err.message }))
         }).finally(() => {
             setServerLoading(false);
         })
@@ -71,7 +73,7 @@ export function Settings() {
         if (file) {
             const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
             if (file.size > MAX_FILE_SIZE) {
-                showAlert(
+                showToast(
                     t("upload.failed$size", {
                         size: MAX_FILE_SIZE / 1024 / 1024,
                     }),
@@ -89,11 +91,11 @@ export function Settings() {
                 )
                 .then(({ data }) => {
                     if (data && typeof data !== "string") {
-                        showAlert(t("settings.favicon.update.success"));
+                        showToast(t("settings.favicon.update.success"));
                     }
                 })
                 .catch((err) => {
-                    showAlert(
+                    showToast(
                         t("settings.favicon.update.failed$message", {
                             message: err.message,
                         }),
@@ -116,7 +118,7 @@ export function Settings() {
                     setIsOpen(true);
                 }
             }).catch((err) => {
-                showAlert(t('settings.import_failed$message', { message: err.message }))
+                showToast(t('settings.import_failed$message', { message: err.message }))
             })
         }
     }
@@ -158,7 +160,7 @@ export function Settings() {
                                 })
                                     .then((response) => {
                                         if (response.error) {
-                                            showAlert(t('settings.cache.clear_failed$message', { message: String(response.error.value) }))
+                                            showToast(t('settings.cache.clear_failed$message', { message: String(response.error.value) }))
                                         }
                                     })
                             }} alertTitle={t('settings.cache.clear.confirm.title')} alertDescription={t('settings.cache.clear.confirm.desc')} />
@@ -242,6 +244,7 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
     const [loading, setLoading] = useState(false);
     const { showAlert, AlertUI } = useAlert();
     const { t } = useTranslation();
+    const { showToast } = useToast();
     
     useEffect(() => {
         const value = config?.get<boolean>(configKey);
@@ -264,7 +267,7 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
         }).then((response) => {
             if (response.error) {
                 setChecked(currentChecked);
-                showAlert(t('settings.update_failed$message', { message: String(response.error.value) }));
+                showToast(t('settings.update_failed$message', { message: String(response.error.value) }));
             } else {
                 if (type === 'client') {
                     const config = sessionStorage.getItem('config')
@@ -277,7 +280,7 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
             }
             setLoading(false);
         }).catch((err) => {
-            showAlert(t('settings.update_failed$message', { message: err.message }));
+            showToast(t('settings.update_failed$message', { message: err.message }));
             setChecked(currentChecked);
             setLoading(false);
         });
@@ -314,10 +317,10 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
     const [value, setValue] = useState("");
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-
     const { showAlert, AlertUI } = useAlert();
-
     const { t } = useTranslation();
+    const { showToast } = useToast();
+
     useEffect(() => {
         const value = config?.get<string>(configKey);
         if (value !== undefined) {
@@ -336,7 +339,7 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
         }).then((response) => {
             // 检查错误
             if (response.error) {
-                showAlert(t('settings.update_failed$message', { message: String(response.error.value) }));
+                showToast(t('settings.update_failed$message', { message: String(response.error.value) }));
                 setValue(config?.get<string>(configKey) || "");
             } else {
                 // 成功处理
@@ -351,7 +354,7 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
             }
             setLoading(false);
         }).catch((err) => {
-            showAlert(t('settings.update_failed$message', { message: err.message }));
+            showToast(t('settings.update_failed$message', { message: err.message }));
             setValue(config?.get<string>(configKey) || "");
             setLoading(false);
         });
