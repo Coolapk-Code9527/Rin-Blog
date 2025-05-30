@@ -1125,7 +1125,7 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
       {
         file,
         name: file.name,
-        parentPath: '/images', // 文章图片统一放在 images 目录
+        parentPath: '/images',
       },
       {
         headers: headersWithAuth(),
@@ -1135,7 +1135,6 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
       showAlert(t("upload.failed", { error: response.error.value }));
       return;
     }
-    // 兼容不同返回格式
     let imageUrl = '';
     if (response.data && typeof response.data === 'object') {
       imageUrl = response.data.url || response.data.path || '';
@@ -1144,18 +1143,21 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
       imageUrl = response.data;
     }
     if (imageUrl) {
-      // 若为 path，需拼接 S3 访问域名
       const s3Host = (window as any).S3_ACCESS_HOST;
       if (!/^https?:\/\//.test(imageUrl) && s3Host) {
         imageUrl = s3Host.replace(/\/+$/, '') + '/' + imageUrl.replace(/^\/+/, '');
       }
       onSuccess(imageUrl);
+      // 上传成功后刷新文件管理（如有）
+      if (window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('file-upload-success'));
+      }
     } else {
       showAlert(t("upload.failed", { error: 'No url returned' }));
-      }
+    }
   } catch (e: any) {
-      console.error(e);
-      showAlert(t("upload.failed", { error: e.message }));
+    console.error(e);
+    showAlert(t("upload.failed", { error: e.message || 'Server error' }));
   }
 }
 

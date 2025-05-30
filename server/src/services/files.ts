@@ -323,7 +323,7 @@ export function FileService() {
                         return { error: 'S3 configuration not found' };
                     }
                     let { file, name, parentPath = '/' } = body;
-                    parentPath = (!parentPath || parentPath === '') ? '/' : parentPath.replace(/\/+$/, '').replace(/^([^/])/, '/$1');
+                    parentPath = (!parentPath || parentPath === '') ? '/' : parentPath.replace(/\/+$|^([^/])/, '/$1');
                     const env = getEnv();
                     const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+/g, ''));
                     let folderName = '';
@@ -348,15 +348,31 @@ export function FileService() {
                             ContentType: file.type || getMimeTypeFromFileName(name || file.name),
                         }));
                         const filePath = parentPath === '/' ? `/${hash}` : `${parentPath}/${hash}`;
-                        const result = await db.insert(files).values({
-                            path: filePath,
-                            name: name || file.name,
-                            size: file.size,
-                            mimeType: file.type || getMimeTypeFromFileName(name || file.name),
-                            userId: uid,
-                            hash: hash,
-                            parentPath,
-                        }).returning({ id: files.id });
+                        // 先查是否已存在
+                        const exist = await db.select().from(files).where(eq(files.path, filePath));
+                        let result;
+                        if (exist && exist.length > 0) {
+                            // 已有则update原始名/大小/mimeType
+                            result = await db.update(files).set({
+                                name: name || file.name,
+                                size: file.size,
+                                mimeType: file.type || getMimeTypeFromFileName(name || file.name),
+                                userId: uid,
+                                hash: hash,
+                                parentPath,
+                                modifiedAt: new Date(),
+                            }).where(eq(files.path, filePath)).returning({ id: files.id });
+                        } else {
+                            result = await db.insert(files).values({
+                                path: filePath,
+                                name: name || file.name,
+                                size: file.size,
+                                mimeType: file.type || getMimeTypeFromFileName(name || file.name),
+                                userId: uid,
+                                hash: hash,
+                                parentPath,
+                            }).returning({ id: files.id });
+                        }
                         return {
                             id: result[0].id,
                             path: filePath,
@@ -463,15 +479,12 @@ export function FileService() {
                     try {
                         const fileId = Number(params.id);
                         // 获取文件信息
-                        const fileInfo = await db
-                            .select()
-                            .from(files)
-                            .where(
-                                and(
-                                    eq(files.id, fileId),
-                                    eq(files.userId, uid)
-                                )
-                            );
+                        const fileInfo = await db.select().from(files).where(
+                            and(
+                                eq(files.id, fileId),
+                                eq(files.userId, uid)
+                            )
+                        );
                         if (fileInfo.length === 0) {
                             set.status = 404;
                             return { error: 'File not found' };
@@ -480,50 +493,13 @@ export function FileService() {
                         const env = getEnv();
                         const s3 = createS3Client();
                         const bucket = env.S3_BUCKET;
-                        // 如果是文件夹，检查是否为空
-                        if (file.isFolder) {
-                            const childFiles = await db
-                                .select({ count: sql<number>`count(*)` })
-                                .from(files)
-                                .where(eq(files.parentPath, file.path));
-                            if (childFiles[0].count > 0) {
-                                set.status = 409;
-                                return { error: 'Folder is not empty' };
-                            }
-                            // 删除R2存储桶下的 .keep 空对象
-                            let r2Key = file.path.replace(/^\//, '').replace(/\/+$/, '') + '/.keep';
-                            try {
-                                // 检查R2对象是否存在
-                                const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: r2Key }));
-                                if (head) {
-                                    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
-                                }
-                            } catch (e) {
-                                // 忽略R2删除异常
-                            }
-                        } else {
-                            // 检查R2对象是否存在
-                            try {
-                                const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: file.path }));
-                                if (head) {
-                                    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: file.path }));
-                                }
-                            } catch (e) {
-                                // 忽略R2删除异常
-                            }
-                        }
+                        // 删除R2对象（无论D1有无其他引用）
+                        try {
+                            const r2Key = file.path.replace(/^\//, '');
+                            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
+                        } catch (e) { /* 忽略R2删除异常 */ }
                         // 删除 feedFiles 关联
                         await db.delete(feedFiles).where(eq(feedFiles.fileId, fileId));
-                        // 检查是否有其他文件记录引用相同的存储路径
-                        const samePathFiles = await db
-                            .select({ count: sql<number>`count(*)` })
-                            .from(files)
-                            .where(
-                                and(
-                                    eq(files.path, file.path),
-                                    sql`id != ${fileId}`
-                                )
-                            );
                         // 删除文件记录
                         await db.delete(files).where(eq(files.id, fileId));
                         return { success: true };
@@ -741,10 +717,12 @@ export function FileService() {
                     }
                     const db = getDB();
                     const env = getEnv();
-                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+|\/+$/g, ''));
+                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+/g, ''));
                     const r2Files = await listAllR2Files();
                     let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
                     for (const path of r2Files) {
+                        let dbPath = path.replace(/^\//, '');
+                        let hashName = path.split('/').pop() || path;
                         try {
                             // 判断属于哪个一级目录
                             const matchedFolder = s3Folders.find(folder => path.startsWith('/' + folder + '/'));
@@ -752,18 +730,14 @@ export function FileService() {
                             if (matchedFolder) {
                                 parentPath = '/' + matchedFolder.replace(/\/+$/, '');
                             } else {
-                                // 根目录下的文件
-                                if (path.split('/').length === 2) { // 形如 /foo.txt
+                                if (path.split('/').length === 2) {
                                     parentPath = '/';
                                 } else {
                                     skipped++; continue;
                                 }
                             }
-                            const dbPath = path.replace(/^\//, '');
                             const exist = await db.select({id: files.id, name: files.name}).from(files).where(eq(files.path, dbPath));
-                            const hashName = path.split('/').pop() || path;
                             if (exist && exist.length > 0) {
-                                // 如果 name 字段为 hash，则自动修正为"hash（无原始名）"
                                 if (/^[a-f0-9]{32,}$/.test(exist[0].name)) {
                                     await db.update(files).set({ name: hashName }).where(eq(files.id, exist[0].id));
                                 }
@@ -788,8 +762,13 @@ export function FileService() {
                             });
                             inserted++;
                         } catch (e) {
-                            failed++;
-                            failedList.push({ path, error: String(e) });
+                            if (String(e).includes('UNIQUE constraint failed')) {
+                                await db.update(files).set({ name: hashName }).where(eq(files.path, dbPath));
+                                skipped++;
+                            } else {
+                                failed++;
+                                failedList.push({ path, error: String(e) });
+                            }
                         }
                         total++;
                     }
@@ -826,6 +805,7 @@ export function FileService() {
                             try {
                                 await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
                             } catch (e) { errors.push({ id: fileId, error: String(e) }); }
+                            await db.delete(feedFiles).where(eq(feedFiles.fileId, fileId));
                             await db.delete(files).where(eq(files.id, fileId));
                             deleted++;
                         } catch (e) { errors.push({ id: fileId, error: String(e) }); }

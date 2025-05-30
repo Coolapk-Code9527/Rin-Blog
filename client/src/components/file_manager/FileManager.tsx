@@ -421,48 +421,47 @@ export function FileManager({
       t('files.confirm_delete', { name: file.name }),
       '',
       async () => {
-    try {
-      // 直接用fetch发送DELETE请求，确保header带上
-      const res = await fetch(`${endpoint}/files/${file.id}`, {
-        method: 'DELETE',
-        headers: headersWithAuth(),
-      });
-      const data = await res.json();
-      if (res.status === 409 && data.error) {
-        // 冲突，尝试获取引用详情
-        const refRes = await fetch(`${endpoint}/files/${file.id}`, { headers: headersWithAuth() });
-        const refData = await refRes.json();
-        if (refRes.ok && refData.references && refData.references.length > 0) {
-              showConfirm(
-                t('files.delete_error', { error: data.error }) + '\n' + t('files.ref_detail') + '\n' + refData.references.map((r:any) => `${r.title || t('files.ref_no_title')}`).join('\n') + '\n' + t('files.force_delete_confirm'),
-                '',
-                async () => {
-            const forceRes = await fetch(`${endpoint}/files/${file.id}`, {
-              method: 'DELETE',
-              headers: headersWithAuth(),
-            });
-            const forceData = await forceRes.json();
-            if (!forceRes.ok || forceData.error) {
-                    showToast(t('files.delete_error', { error: forceData.error || forceRes.status }), 'error');
+        try {
+          const res = await fetch(`${endpoint}/files/${file.id}`, {
+            method: 'DELETE',
+            headers: headersWithAuth(),
+          });
+          const data = await res.json();
+          if (res.status === 409 && data.error) {
+            // 冲突，尝试获取引用详情
+            const refRes = await fetch(`${endpoint}/files/${file.id}`, { headers: headersWithAuth() });
+            const refData = await refRes.json();
+            if (refRes.ok && refData.references && refData.references.length > 0) {
+                  showConfirm(
+                    t('files.delete_error', { error: data.error }) + '\n' + t('files.ref_detail') + '\n' + refData.references.map((r:any) => `${r.title || t('files.ref_no_title')}`).join('\n') + '\n' + t('files.force_delete_confirm'),
+                    '',
+                    async () => {
+                const forceRes = await fetch(`${endpoint}/files/${file.id}`, {
+                  method: 'DELETE',
+                  headers: headersWithAuth(),
+                });
+                const forceData = await forceRes.json();
+                if (!forceRes.ok || forceData.error) {
+                        showToast(t('files.delete_error', { error: forceData.error || forceRes.status }), 'error');
+                } else {
+                  setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
+                  loadFiles(true);
+                }
+              }
+                  );
             } else {
-              setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
-              loadFiles();
+                  showToast(t('files.delete_error', { error: data.error }), 'error');
             }
-          }
-              );
-        } else {
-              showToast(t('files.delete_error', { error: data.error }), 'error');
-        }
-      } else if (!res.ok || data.error) {
+          } else if (!res.ok || data.error) {
             showToast(t('files.delete_error', { error: data.error || res.status }), 'error');
-      } else {
-        setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
+          } else {
+            setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
             showToast(t('files.delete_success'), 'info');
-        loadFiles();
-      }
-    } catch (error: any) {
+            loadFiles(true);
+          }
+        } catch (error: any) {
           showToast(t('files.delete_failed', { error: error.message }), 'error');
-    }
+        }
       }
     );
   };
@@ -629,8 +628,8 @@ export function FileManager({
           if (data.errors && data.errors.length > 0) msg += (msg ? '，' : '') + t('files.delete_failed_batch', { count: data.errors.length });
           if (!msg) msg = t('files.delete_none');
           showToast(msg, data.deleted > 0 ? 'info' : 'error');
-    setSelectedFiles([]);
-    loadFiles();
+          setSelectedFiles([]);
+          loadFiles(true); // 批量删除后自动刷新
         } catch (error: any) {
           showToast(t('files.delete_failed', { error: error.message }), 'error');
         }
@@ -734,9 +733,11 @@ export function FileManager({
             </div>
             {/* 文件名 */}
             <p className={`mt-2 text-sm truncate w-full text-center ${/^[a-f0-9]{16,}$/.test(file.name) ? 'text-gray-400 italic' : ''}`}>
-              {/^[a-f0-9]{32,}$/.test(file.name)
-                ? `${file.name}（无原始名）`
-                : file.name}
+              <span className="truncate">
+                {file.name && !/^[a-f0-9]{32,}$/.test(file.name)
+                  ? file.name
+                  : (/^[a-f0-9]{32,}$/.test(file.name) ? (file.name + '（无原始名）') : file.name)}
+              </span>
             </p>
             {/* 操作按钮区 */}
             <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -892,9 +893,9 @@ export function FileManager({
                 <td className="px-4 py-3 flex items-center">
                   <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType)} mr-2 text-xl`}></i>
                   <span className="truncate">
-                    {/^[a-f0-9]{32,}$/.test(file.name)
-                      ? `${file.name}（无原始名）`
-                      : file.name}
+                    {file.name && !/^[a-f0-9]{32,}$/.test(file.name)
+                      ? file.name
+                      : (/^[a-f0-9]{32,}$/.test(file.name) ? (file.name + '（无原始名）') : file.name)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-500">
@@ -1004,6 +1005,12 @@ export function FileManager({
       window.dispatchEvent(new Event('modal-toggle'));
     };
   }, [showNewFolderDialog, errorMessage, refDialogOpen, showMoveDialog]);
+
+  useEffect(() => {
+    const handler = () => loadFiles(true);
+    window.addEventListener('file-upload-success', handler);
+    return () => window.removeEventListener('file-upload-success', handler);
+  }, [currentPath, search, sortBy, sortOrder, itemsPerPage]);
 
   return (
     <div

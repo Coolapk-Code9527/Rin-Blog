@@ -755,7 +755,7 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
   const feedFilesTable = feedFiles;
   try {
     const env = getEnv();
-    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+|\/+$/g, '') + '/');
+    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+/g, '') + '/');
     let refs = extractFileReferences(content).filter(Boolean);
     // 只处理有效图片路径，去除域名，标准化为 images/xxx.png 或 cache/xxx.png
     let filteredRefs = refs
@@ -773,9 +773,10 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
     if (!Array.isArray(filesInDb)) filesInDb = [];
     const validFilesInDb = filesInDb.filter(f => f && typeof f.id === 'number' && typeof f.path === 'string');
     const pathToId = new Map<string, number>(validFilesInDb.map(f => [f.path, f.id]));
-    // 自动补录缺失文件
+    // 自动补录缺失文件，已存在则update原始名
     for (const path of filteredRefs) {
       if (!path || typeof path !== 'string') continue;
+      const name = path.split('/').pop() || path;
       if (!pathToId.has(path)) {
         try {
           // 从R2获取元信息
@@ -783,7 +784,6 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
           if (!meta || typeof meta !== 'object' || !meta.size || !meta.mimeType) {
             continue;
           }
-          const name = path.split('/').pop() || path;
           const mimeType = meta.mimeType || 'application/octet-stream';
           const size = meta.size || 0;
           const hash = meta.hash || '';
@@ -806,6 +806,9 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
         } catch (e) {
           continue;
         }
+      } else {
+        // 已有则update name
+        await db.update(filesTable).set({ name }).where(eq(filesTable.path, path));
       }
     }
     // 先清空旧关联
