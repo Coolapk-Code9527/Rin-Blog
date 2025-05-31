@@ -49,17 +49,6 @@ function getFileUrl(path: string) {
   return S3_ACCESS_HOST.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
 }
 
-// 新增：缩略图URL生成
-function getThumbUrl(file: FileItem) {
-  if (!file.thumbnailHash) return '';
-  let folderName = '';
-  if (file.parentPath && file.parentPath !== '/') {
-    folderName = file.parentPath.replace(/^\//, '').replace(/\/+$/, '');
-  }
-  const thumbKey = folderName ? folderName + '/thumb_' + file.thumbnailHash : 'thumb_' + file.thumbnailHash;
-  return getFileUrl(thumbKey);
-}
-
 // 文件管理器组件
 export function FileManager({
   onSelect,
@@ -742,14 +731,14 @@ export function FileManager({
             cursor-pointer transition-colors flex flex-col items-center relative group`}
             onClick={() => handleFileClick(file)}
           >
-            {/* 文件图标/缩略图 */}
+            {/* 文件图标 */}
             <div className="w-16 h-16 flex items-center justify-center">
-              {file.thumbnailHash ? (
+              {file.thumbnailHash && !file.isFolder ? (
                 <img
-                  src={getThumbUrl(file)}
+                  src={getFileUrl(`thumb_${file.thumbnailHash}`)}
                   alt={file.name}
-                  className="w-16 h-16 object-cover rounded shadow border border-gray-200 dark:border-gray-700"
                   loading="lazy"
+                  className="w-16 h-16 object-cover rounded shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               ) : (
@@ -916,12 +905,12 @@ export function FileManager({
                   </td>
                 )}
                 <td className="px-4 py-3 flex items-center">
-                  {file.thumbnailHash ? (
+                  {file.thumbnailHash && !file.isFolder ? (
                     <img
-                      src={getThumbUrl(file)}
+                      src={getFileUrl(`thumb_${file.thumbnailHash}`)}
                       alt={file.name}
-                      className="w-8 h-8 object-cover rounded shadow border border-gray-200 dark:border-gray-700 mr-2"
                       loading="lazy"
+                      className="w-8 h-8 object-cover rounded shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 mr-2"
                       onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   ) : (

@@ -556,18 +556,14 @@ export function FileService() {
                         try {
                             const r2Key = file.path.replace(/^\//, '');
                             await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
-                        } catch (e) { /* 忽略R2删除异常 */ }
-                        // 删除缩略图对象
-                        if (file.thumbnailHash) {
-                            try {
-                                let folderName = '';
-                                if (file.parentPath && file.parentPath !== '/') {
-                                    folderName = file.parentPath.replace(/^\//, '').replace(/\/+$/, '');
-                                }
-                                const thumbKey = folderName ? folderName + '/thumb_' + file.thumbnailHash : 'thumb_' + file.thumbnailHash;
+                            // 删除缩略图对象
+                            if (file.thumbnailHash) {
+                                const thumbKey = (file.parentPath && file.parentPath !== '/')
+                                  ? file.parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
+                                  : 'thumb_' + file.thumbnailHash;
                                 await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
-                            } catch (e) { /* 忽略缩略图删除异常 */ }
-                        }
+                            }
+                        } catch (e) { /* 忽略R2删除异常 */ }
                         // 删除 feedFiles 关联
                         await db.delete(feedFiles).where(eq(feedFiles.fileId, fileId));
                         // 删除文件记录
@@ -654,6 +650,25 @@ export function FileService() {
                                 }));
                                 await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldR2Key }));
                             } catch (e) {}
+                            // 同步移动缩略图
+                            if (file.thumbnailHash) {
+                                const oldThumbKey = (file.parentPath && file.parentPath !== '/')
+                                  ? file.parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
+                                  : 'thumb_' + file.thumbnailHash;
+                                const newThumbKey = (parentPath && parentPath !== '/')
+                                  ? parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
+                                  : 'thumb_' + file.thumbnailHash;
+                                try {
+                                    const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
+                                    await s3.send(new PutObjectCommand({
+                                        Bucket: bucket,
+                                        Key: newThumbKey,
+                                        Body: obj.Body,
+                                        ContentType: 'image/webp',
+                                    }));
+                                    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
+                                } catch (e) { /* 忽略异常 */ }
+                            }
                             // 更新自身 path 和 parentPath
                             await db.update(files).set({
                                 path: newPath,
@@ -874,6 +889,13 @@ export function FileService() {
                             const r2Key = file.path.replace(/^\//, '');
                             try {
                                 await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
+                                // 删除缩略图对象
+                                if (file.thumbnailHash) {
+                                    const thumbKey = (file.parentPath && file.parentPath !== '/')
+                                      ? file.parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
+                                      : 'thumb_' + file.thumbnailHash;
+                                    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
+                                }
                             } catch (e) { errors.push({ id: fileId, error: String(e) }); }
                             await db.delete(feedFiles).where(eq(feedFiles.fileId, fileId));
                             await db.delete(files).where(eq(files.id, fileId));
