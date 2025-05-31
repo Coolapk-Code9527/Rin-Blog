@@ -63,6 +63,7 @@
     "@types/lodash": "^4.17.7",
     "@types/react-router-dom": "^5.3.3",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "browser-image-compression": "^2.0.2",
     "date-fns": "^4.1.0",
     "fast-xml-parser": "^4.4.0",
     "file-saver": "^2.0.5",
@@ -85,7 +86,8 @@
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
-    "remark-rehype": "^11.1.0"
+    "remark-rehype": "^11.1.0",
+    "wasm-image-optimization": "^1.2.30"
   },
   "engines": {
     "node": ">=18"

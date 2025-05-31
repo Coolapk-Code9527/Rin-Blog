@@ -9,6 +9,7 @@ import { getEnv, getDB } from "../utils/di";
 import { createS3Client } from "../utils/s3";
 import { syncFeedFileReferences } from './feed';
 import { listAllR2Files, getR2FileMeta } from '../utils/s3';
+import { generateThumbnail } from '../utils/image';
 
 // 定义引用接口
 interface FileReference {
@@ -56,6 +57,11 @@ function getMimeTypeFromFileName(fileName: string): string {
 // 工具函数：判断字符串是否为hash
 function isHash(str: string) {
   return /^[a-f0-9]{32,}$/.test(str);
+}
+
+// 类型守卫：排除 SharedArrayBuffer
+function isRealArrayBuffer(buf: any): buf is ArrayBuffer {
+    return buf instanceof ArrayBuffer && (typeof SharedArrayBuffer === 'undefined' || !(buf instanceof SharedArrayBuffer));
 }
 
 export function FileService() {
@@ -323,9 +329,9 @@ export function FileService() {
                         return { error: 'S3 configuration not found' };
                     }
                     let { file, name, parentPath = '/' } = body;
-                    parentPath = (!parentPath || parentPath === '') ? '/' : parentPath.replace(/\/+$/g, '').replace(/^([^/])/, '/$1');
+                    parentPath = (!parentPath || parentPath === '') ? '/' : parentPath.replace(/\/+/g, '').replace(/^([^/])/, '/$1');
                     const env = getEnv();
-                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+/, ''));
+                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+/g, ''));
                     let folderName = '';
                     if (s3Folders.includes(parentPath)) {
                         folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
@@ -356,6 +362,39 @@ export function FileService() {
                             ContentType: file.type || getMimeTypeFromFileName(name || file.name),
                         }));
                         const filePath = parentPath === '/' ? `/${hash}` : `${parentPath}/${hash}`;
+                        let thumbnailHash: string | undefined = undefined;
+                        // 仅对图片类型生成缩略图
+                        const mimeType = file.type || getMimeTypeFromFileName(name || file.name);
+                        if (mimeType.startsWith('image/')) {
+                            try {
+                                let arrBuf: ArrayBuffer;
+                                if (!isRealArrayBuffer(fileBuffer)) {
+                                    if (fileBuffer instanceof Uint8Array) {
+                                        const tmp = fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength);
+                                        arrBuf = new Uint8Array(tmp).buffer as ArrayBuffer;
+                                    } else {
+                                        throw new Error('不支持的 fileBuffer 类型');
+                                    }
+                                } else {
+                                    arrBuf = fileBuffer as ArrayBuffer;
+                                }
+                                const thumbBuffer = await generateThumbnail(arrBuf, 200, 200, 80, 'webp');
+                                // 计算缩略图 hash
+                                const thumbHashArray = await crypto.subtle.digest({ name: 'SHA-1' }, thumbBuffer);
+                                const thumbHash = buf2hex(thumbHashArray);
+                                let thumbKey = folderName ? folderName + '/thumb_' + thumbHash : 'thumb_' + thumbHash;
+                                await s3.send(new PutObjectCommand({
+                                    Bucket: bucket,
+                                    Key: thumbKey,
+                                    Body: new Uint8Array(thumbBuffer),
+                                    ContentType: 'image/webp',
+                                }));
+                                thumbnailHash = thumbHash;
+                            } catch (e) {
+                                // 缩略图生成失败不影响主流程
+                                console.warn('缩略图生成失败', e);
+                            }
+                        }
                         let result;
                         try {
                             // 优先尝试插入
@@ -363,10 +402,11 @@ export function FileService() {
                                 path: filePath,
                                 name: name || file.name,
                                 size: file.size,
-                                mimeType: file.type || getMimeTypeFromFileName(name || file.name),
+                                mimeType,
                                 userId: uid,
                                 hash: hash,
                                 parentPath,
+                                thumbnailHash,
                             }).returning({ id: files.id });
                         } catch (e: any) {
                             // 如果唯一约束冲突，fallback到update
@@ -374,11 +414,12 @@ export function FileService() {
                                 result = await db.update(files).set({
                                     name: name || file.name,
                                     size: file.size,
-                                    mimeType: file.type || getMimeTypeFromFileName(name || file.name),
+                                    mimeType,
                                     userId: uid,
                                     hash: hash,
                                     parentPath,
                                     modifiedAt: new Date(),
+                                    thumbnailHash,
                                 }).where(eq(files.path, filePath)).returning({ id: files.id });
                             } else {
                                 throw e;
@@ -390,9 +431,10 @@ export function FileService() {
                             url: `${accessHost}/${s3Key}`,
                             name: name || file.name,
                             size: file.size,
-                            mimeType: file.type || getMimeTypeFromFileName(name || file.name),
+                            mimeType,
                             hash,
                             isFolder: false,
+                            thumbnailHash,
                         };
                     } catch (error) {
                         set.status = 500;
@@ -515,6 +557,17 @@ export function FileService() {
                             const r2Key = file.path.replace(/^\//, '');
                             await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
                         } catch (e) { /* 忽略R2删除异常 */ }
+                        // 删除缩略图对象
+                        if (file.thumbnailHash) {
+                            try {
+                                let folderName = '';
+                                if (file.parentPath && file.parentPath !== '/') {
+                                    folderName = file.parentPath.replace(/^\//, '').replace(/\/+$/, '');
+                                }
+                                const thumbKey = folderName ? folderName + '/thumb_' + file.thumbnailHash : 'thumb_' + file.thumbnailHash;
+                                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
+                            } catch (e) { /* 忽略缩略图删除异常 */ }
+                        }
                         // 删除 feedFiles 关联
                         await db.delete(feedFiles).where(eq(feedFiles.fileId, fileId));
                         // 删除文件记录

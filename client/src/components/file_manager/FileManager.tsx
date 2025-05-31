@@ -49,6 +49,17 @@ function getFileUrl(path: string) {
   return S3_ACCESS_HOST.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
 }
 
+// 新增：缩略图URL生成
+function getThumbUrl(file: FileItem) {
+  if (!file.thumbnailHash) return '';
+  let folderName = '';
+  if (file.parentPath && file.parentPath !== '/') {
+    folderName = file.parentPath.replace(/^\//, '').replace(/\/+$/, '');
+  }
+  const thumbKey = folderName ? folderName + '/thumb_' + file.thumbnailHash : 'thumb_' + file.thumbnailHash;
+  return getFileUrl(thumbKey);
+}
+
 // 文件管理器组件
 export function FileManager({
   onSelect,
@@ -731,9 +742,19 @@ export function FileManager({
             cursor-pointer transition-colors flex flex-col items-center relative group`}
             onClick={() => handleFileClick(file)}
           >
-            {/* 文件图标 */}
+            {/* 文件图标/缩略图 */}
             <div className="w-16 h-16 flex items-center justify-center">
-              <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType)} text-4xl`}></i>
+              {file.thumbnailHash ? (
+                <img
+                  src={getThumbUrl(file)}
+                  alt={file.name}
+                  className="w-16 h-16 object-cover rounded shadow border border-gray-200 dark:border-gray-700"
+                  loading="lazy"
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              ) : (
+                <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType)} text-4xl`}></i>
+              )}
             </div>
             {/* 文件名 */}
             <p className={`mt-2 text-sm truncate w-full text-center ${/^[a-f0-9]{16,}$/.test(file.name) ? 'text-gray-400 italic' : ''}`}>
@@ -895,7 +916,17 @@ export function FileManager({
                   </td>
                 )}
                 <td className="px-4 py-3 flex items-center">
-                  <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType)} mr-2 text-xl`}></i>
+                  {file.thumbnailHash ? (
+                    <img
+                      src={getThumbUrl(file)}
+                      alt={file.name}
+                      className="w-8 h-8 object-cover rounded shadow border border-gray-200 dark:border-gray-700 mr-2"
+                      loading="lazy"
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  ) : (
+                    <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType)} mr-2 text-xl`}></i>
+                  )}
                   <span className="truncate">
                     {file.name && !/^[a-f0-9]{32,}$/.test(file.name)
                       ? file.name
