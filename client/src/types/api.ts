@@ -38,6 +38,7 @@ export type FileItem = {
   url?: string;
   references?: Array<{id: number, title: string, type: string}>;
   referencesCount?: number;
+  thumbUrl?: string;
 };
 
 // 文章类型

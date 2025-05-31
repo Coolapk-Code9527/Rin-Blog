@@ -30,23 +30,30 @@ const Button = ({ onClick, title, secondary = false }: { onClick: () => void, ti
   </button>
 );
 
-// 获取S3访问域名（优先window全局变量，其次后端接口/配置）
-let S3_ACCESS_HOST = '';
-if (typeof window !== 'undefined' && (window as any).S3_ACCESS_HOST) {
-  S3_ACCESS_HOST = (window as any).S3_ACCESS_HOST;
-} else if (typeof S3_ACCESS_HOST !== 'undefined' && S3_ACCESS_HOST) {
-  // 构建时注入的全局变量
-  S3_ACCESS_HOST = S3_ACCESS_HOST;
-} else {
-  // 可选：后端接口动态获取，或兜底为空
-  S3_ACCESS_HOST = '';
+// 获取S3访问域名（优先 config.get('S3_ACCESS_HOST')，否则 wrangler.toml 配置）
+function getS3AccessHost(config: any): string {
+  // 1. 优先 context config
+  if (config && typeof config.get === 'function') {
+    const host = config.get('S3_ACCESS_HOST');
+    if (host) return host;
+  }
+  // 2. 其次 sessionStorage config
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const cfg = JSON.parse(window.sessionStorage.getItem('config') || '{}');
+      if (cfg.S3_ACCESS_HOST) return cfg.S3_ACCESS_HOST;
+    } catch {}
+  }
+  // 3. 兜底空字符串（由后端 file.url 字段兜底）
+  return '';
 }
 
 // 文件展示时拼接完整URL
-function getFileUrl(path: string) {
+function getFileUrl(path: string, config?: any) {
   if (!path) return '';
-  if (!S3_ACCESS_HOST) return path; // 若未配置则返回原始路径
-  return S3_ACCESS_HOST.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
+  const host = getS3AccessHost(config);
+  if (!host) return path;
+  return host.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
 }
 
 // 文件管理器组件
@@ -573,7 +580,7 @@ export function FileManager({
       return;
     }
     try {
-      const url = file.url || getFileUrl(file.path);
+      const url = file.url || getFileUrl(file.path, config);
       const response = await fetch(url, { headers: headersWithAuth() });
       if (!response.ok) throw new Error(t('files.download_failed', { error: response.statusText }));
       const blob = await response.blob();
@@ -591,7 +598,7 @@ export function FileManager({
     for (const file of selectedFiles) {
       if (file.isFolder) continue; // 文件夹暂不支持
       try {
-        const url = file.url || getFileUrl(file.path);
+        const url = file.url || getFileUrl(file.path, config);
         const response = await fetch(url, { headers: headersWithAuth() });
         if (!response.ok) continue;
         const blob = await response.blob();
@@ -735,7 +742,7 @@ export function FileManager({
             <div className="w-16 h-16 flex items-center justify-center">
               {file.thumbnailHash && !file.isFolder ? (
                 <img
-                  src={getFileUrl(`thumb_${file.thumbnailHash}`)}
+                  src={file.thumbUrl || getFileUrl(`thumb_${file.thumbnailHash}`, config)}
                   alt={file.name}
                   loading="lazy"
                   className="w-16 h-16 object-cover rounded shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
@@ -907,7 +914,7 @@ export function FileManager({
                 <td className="px-4 py-3 flex items-center">
                   {file.thumbnailHash && !file.isFolder ? (
                     <img
-                      src={getFileUrl(`thumb_${file.thumbnailHash}`)}
+                      src={file.thumbUrl || getFileUrl(`thumb_${file.thumbnailHash}`, config)}
                       alt={file.name}
                       loading="lazy"
                       className="w-8 h-8 object-cover rounded shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 mr-2"

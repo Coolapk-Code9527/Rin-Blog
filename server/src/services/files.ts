@@ -202,7 +202,12 @@ export function FileService() {
                                        Math.floor(file.modifiedAt.getTime() / 1000) : 
                                        file.modifiedAt) : 
                                     Math.floor(Date.now() / 1000),
-                                referencesCount: Number(referencesMap[file.id] || 0)
+                                referencesCount: Number(referencesMap[file.id] || 0),
+                                thumbUrl: file.thumbnailHash
+                                    ? (file.parentPath && file.parentPath !== '/' 
+                                        ? `${accessHost}${file.parentPath}/thumb_${file.thumbnailHash}`
+                                        : `${accessHost}/thumb_${file.thumbnailHash}`)
+                                    : undefined,
                             })),
                             total: count,
                             page,
