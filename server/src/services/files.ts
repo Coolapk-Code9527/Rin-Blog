@@ -323,9 +323,9 @@ export function FileService() {
                         return { error: 'S3 configuration not found' };
                     }
                     let { file, name, parentPath = '/' } = body;
-                    parentPath = (!parentPath || parentPath === '') ? '/' : parentPath.replace(/\/+$|^([^/])/, '/$1');
+                    parentPath = (!parentPath || parentPath === '') ? '/' : parentPath.replace(/\/+$/g, '').replace(/^([^/])/, '/$1');
                     const env = getEnv();
-                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+/g, ''));
+                    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+/, ''));
                     let folderName = '';
                     if (s3Folders.includes(parentPath)) {
                         folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
@@ -335,9 +335,17 @@ export function FileService() {
                         folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
                     }
                     try {
+                        let fileBuffer;
+                        if (file && typeof file.arrayBuffer === 'function') {
+                            fileBuffer = await file.arrayBuffer();
+                        } else if (file instanceof Uint8Array || (typeof Buffer !== 'undefined' && file instanceof Buffer)) {
+                            fileBuffer = file;
+                        } else {
+                            throw new Error('Unsupported file type for hash calculation: ' + Object.prototype.toString.call(file));
+                        }
                         const hashArray = await crypto.subtle.digest(
                             { name: 'SHA-1' },
-                            await file.arrayBuffer()
+                            fileBuffer
                         );
                         const hash = buf2hex(hashArray);
                         let s3Key = folderName ? folderName + '/' + hash : hash;
@@ -348,21 +356,9 @@ export function FileService() {
                             ContentType: file.type || getMimeTypeFromFileName(name || file.name),
                         }));
                         const filePath = parentPath === '/' ? `/${hash}` : `${parentPath}/${hash}`;
-                        // 先查是否已存在
-                        const exist = await db.select().from(files).where(eq(files.path, filePath));
                         let result;
-                        if (exist && exist.length > 0) {
-                            // 已有则update原始名/大小/mimeType
-                            result = await db.update(files).set({
-                                name: name || file.name,
-                                size: file.size,
-                                mimeType: file.type || getMimeTypeFromFileName(name || file.name),
-                                userId: uid,
-                                hash: hash,
-                                parentPath,
-                                modifiedAt: new Date(),
-                            }).where(eq(files.path, filePath)).returning({ id: files.id });
-                        } else {
+                        try {
+                            // 优先尝试插入
                             result = await db.insert(files).values({
                                 path: filePath,
                                 name: name || file.name,
@@ -372,6 +368,21 @@ export function FileService() {
                                 hash: hash,
                                 parentPath,
                             }).returning({ id: files.id });
+                        } catch (e: any) {
+                            // 如果唯一约束冲突，fallback到update
+                            if (String(e).includes('UNIQUE constraint failed')) {
+                                result = await db.update(files).set({
+                                    name: name || file.name,
+                                    size: file.size,
+                                    mimeType: file.type || getMimeTypeFromFileName(name || file.name),
+                                    userId: uid,
+                                    hash: hash,
+                                    parentPath,
+                                    modifiedAt: new Date(),
+                                }).where(eq(files.path, filePath)).returning({ id: files.id });
+                            } else {
+                                throw e;
+                            }
                         }
                         return {
                             id: result[0].id,
@@ -383,9 +394,15 @@ export function FileService() {
                             hash,
                             isFolder: false,
                         };
-                    } catch (error: any) {
+                    } catch (error) {
                         set.status = 500;
-                        return { error: error.message };
+                        let errMsg = '';
+                        if (error && typeof error === 'object' && 'message' in error) {
+                            errMsg = (error as any).message;
+                        } else {
+                            errMsg = String(error);
+                        }
+                        return { error: errMsg, detail: error };
                     }
                 }, {
                     body: t.Object({

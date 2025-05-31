@@ -1146,7 +1146,10 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
       }
     );
     if (response.error) {
-      showAlert(t("upload.failed", { error: response.error.value }));
+      let errMsg = typeof response.error.value === 'object'
+        ? JSON.stringify(response.error.value)
+        : response.error.value;
+      showAlert(t("upload.failed", { error: errMsg }));
       return;
     }
     let imageUrl = '';
@@ -1171,7 +1174,7 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
     }
   } catch (e: any) {
     console.error(e);
-    showAlert(t("upload.failed", { error: e.message || 'Server error' }));
+    showAlert(t("upload.failed", { error: e.message || JSON.stringify(e) || 'Server error' }));
   }
 }
 
