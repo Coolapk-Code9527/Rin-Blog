@@ -203,6 +203,7 @@ export function FileService() {
                                        file.modifiedAt) : 
                                     Math.floor(Date.now() / 1000),
                                 referencesCount: Number(referencesMap[file.id] || 0),
+                                url: file.path ? `${accessHost}${file.path}` : undefined,
                                 thumbUrl: file.thumbnailHash
                                     ? (file.parentPath && file.parentPath !== '/' 
                                         ? `${accessHost}${file.parentPath}/thumb_${file.thumbnailHash}`
@@ -910,6 +911,30 @@ export function FileService() {
                     return { deleted, skipped, errors };
                 }, {
                     body: t.Object({ ids: t.Array(t.Numeric()) })
+                })
+
+                // 新增通用代理接口，解决前端 fetch 跨域问题
+                .get('/proxy', async ({ query, set }) => {
+                    const { url } = query;
+                    if (!url || typeof url !== 'string') {
+                        set.status = 400;
+                        return { error: 'Missing url param' };
+                    }
+                    try {
+                        const resp = await fetch(url);
+                        const contentType = resp.headers.get('content-type') || 'application/octet-stream';
+                        set.headers['Access-Control-Allow-Origin'] = '*';
+                        set.headers['Access-Control-Allow-Methods'] = 'GET,OPTIONS';
+                        set.headers['Access-Control-Allow-Headers'] = '*';
+                        set.headers['Content-Type'] = contentType;
+                        const buf = await resp.arrayBuffer();
+                        return new Response(buf, { headers: set.headers });
+                    } catch (e) {
+                        set.status = 502;
+                        return { error: 'Proxy fetch failed', detail: String(e) };
+                    }
+                }, {
+                    query: t.Object({ url: t.String() })
                 })
         );
 } 

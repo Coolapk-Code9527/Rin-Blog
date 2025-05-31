@@ -106,3 +106,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+- 文件列表接口每个文件项包含：
+  - url：原图访问地址，格式为 `${S3_ACCESS_HOST}${file.path}`，用于图片/文件原图访问与下载
+  - thumbUrl：缩略图访问地址，格式为 `${S3_ACCESS_HOST}${parentPath}/thumb_${thumbnailHash}`，用于图片缩略图懒加载展示
+- 前端 FileManager 组件优先用 thumbUrl 渲染缩略图，点击弹窗 FilePreview 用 url 加载原图，体验与主流云盘一致
+- 文件管理支持图片、视频、音频、PDF、文本等类型的在线预览，点击文件自动弹窗预览，体验与主流云盘一致
+- 文本/代码/Markdown/JSON等文件预览通过后端代理接口 /api/proxy 解决 CORS 问题，无需配置 R2/S3 CORS，安全高效

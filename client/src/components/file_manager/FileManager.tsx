@@ -11,6 +11,7 @@ import { Pagination } from '../pagination';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../dialog';
 import { ClientConfigContext } from '../../state/config';
+import { FilePreview } from './FilePreview';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
@@ -155,6 +156,66 @@ export function FileManager({
   const [renameTarget, setRenameTarget] = useState<FileItem | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
+  // 新增图片预览状态
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
+
+  // 获取当前目录下所有可预览文件（图片、视频、音频、PDF、文本）
+  const previewableFiles = files.filter(f => !f.isFolder && (
+    (f.mimeType && (
+      f.mimeType.startsWith('image/') ||
+      f.mimeType.startsWith('video/') ||
+      f.mimeType.startsWith('audio/') ||
+      f.mimeType === 'application/pdf' ||
+      f.mimeType.startsWith('text/') ||
+      f.mimeType === 'application/json' ||
+      f.mimeType === 'application/markdown'
+    ))
+  ));
+
+  // 处理可预览文件点击
+  const handlePreviewClick = (file: FileItem) => {
+    const idx = previewableFiles.findIndex(f => f.id === file.id);
+    if (idx !== -1) {
+      setPreviewIndex(idx);
+      setPreviewOpen(true);
+    }
+  };
+
+  // 修改图片点击、文件点击逻辑
+  const handleFileClick = (file: FileItem) => {
+    if (isLoading) return;
+    if (file.isFolder) {
+      setCurrentPath(file.path);
+      setCurrentPage(1);
+      setSelectedFiles([]);
+    } else if (
+      file.mimeType && (
+        file.mimeType.startsWith('image/') ||
+        file.mimeType.startsWith('video/') ||
+        file.mimeType.startsWith('audio/') ||
+        file.mimeType === 'application/pdf' ||
+        file.mimeType.startsWith('text/') ||
+        file.mimeType === 'application/json' ||
+        file.mimeType === 'application/markdown'
+      )
+    ) {
+      handlePreviewClick(file);
+    } else if (showSelector) {
+      if (multiple) {
+        setSelectedFiles(prev => {
+          const exists = prev.some(f => f.id === file.id);
+          return exists 
+            ? prev.filter(f => f.id !== file.id)
+            : [...prev, file];
+        });
+      } else {
+        setSelectedFiles([file]);
+        onSelect?.(file);
+      }
+    }
+  };
+
   // 加载文件列表
   const loadFiles = async (reload = false) => {
     try {
@@ -280,32 +341,6 @@ export function FileManager({
     
     setBreadcrumbs(crumbs);
   }, [currentPath, t]);
-
-  // 处理文件选择
-  const handleFileClick = (file: FileItem) => {
-    if (isLoading) return; // 如果正在加载，忽略点击事件
-
-    if (file.isFolder) {
-      // 导航到文件夹
-      setCurrentPath(file.path);
-      setCurrentPage(1);
-      setSelectedFiles([]);
-    } else if (showSelector) {
-      if (multiple) {
-        // 在多选模式下切换选择状态
-        setSelectedFiles(prev => {
-          const exists = prev.some(f => f.id === file.id);
-          return exists 
-            ? prev.filter(f => f.id !== file.id)
-            : [...prev, file];
-        });
-      } else {
-        // 单选模式直接选择文件
-        setSelectedFiles([file]);
-        onSelect?.(file);
-      }
-    }
-  };
 
   // 处理确认选择
   const handleConfirmSelection = () => {
@@ -739,7 +774,7 @@ export function FileManager({
             onClick={() => handleFileClick(file)}
           >
             {/* 文件图标 */}
-            <div className="w-16 h-16 flex items-center justify-center">
+            <div className="w-16 h-16 flex items-center justify-center" onClick={file.thumbnailHash && !file.isFolder && file.mimeType && file.mimeType.startsWith('image/') ? (e) => { e.stopPropagation(); handlePreviewClick(file); } : undefined}>
               {file.thumbnailHash && !file.isFolder ? (
                 <img
                   src={file.thumbUrl || getFileUrl(`thumb_${file.thumbnailHash}`, config)}
@@ -911,7 +946,7 @@ export function FileManager({
                     />
                   </td>
                 )}
-                <td className="px-4 py-3 flex items-center">
+                <td className="px-4 py-3 flex items-center" onClick={file.thumbnailHash && !file.isFolder && file.mimeType && file.mimeType.startsWith('image/') ? (e) => { e.stopPropagation(); handlePreviewClick(file); } : undefined}>
                   {file.thumbnailHash && !file.isFolder ? (
                     <img
                       src={file.thumbUrl || getFileUrl(`thumb_${file.thumbnailHash}`, config)}
@@ -1387,6 +1422,12 @@ export function FileManager({
           </div>
         </div>
       )}
+
+      {/* 图片预览弹窗 */}
+      {previewOpen && (
+        <FilePreview files={previewableFiles} current={previewIndex} onClose={() => setPreviewOpen(false)} />
+      )}
+
       <ConfirmUI />
     </div>
   );
