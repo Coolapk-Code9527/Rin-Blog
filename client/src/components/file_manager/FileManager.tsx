@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
@@ -10,6 +10,7 @@ import { saveAs } from 'file-saver';
 import { Pagination } from '../pagination';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../dialog';
+import { ClientConfigContext } from '../../state/config';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
@@ -61,6 +62,9 @@ export function FileManager({
   const { t } = useTranslation();
   const { showToast } = useToast();
   const { showConfirm, ConfirmUI } = useConfirm();
+  const config = useContext(ClientConfigContext);
+  const S3_FOLDER = config?.get<string>('S3_FOLDER') || 'images';
+  const S3_CACHE_FOLDER = config?.get<string>('S3_CACHE_FOLDER') || 'cache';
   
   // 创建自己的简易alert函数作为替代
   const showAlert: ShowAlertType = (msg, onConfirm) => {
@@ -318,7 +322,7 @@ export function FileManager({
       return;
     }
     // 判断当前目录是否为虚拟一级目录
-    const virtualFolders = ["/images", "/cache"];
+    const virtualFolders = ["/" + S3_FOLDER, "/" + S3_CACHE_FOLDER];
     let createPath = currentPath;
     if (virtualFolders.includes(currentPath)) {
       createPath = currentPath;
@@ -412,7 +416,7 @@ export function FileManager({
   // 删除文件处理
   const handleDeleteFile = async (file: FileItem) => {
     // 禁止删除虚拟一级目录
-    const virtualFolders = ["/images", "/cache"];
+    const virtualFolders = ["/" + S3_FOLDER, "/" + S3_CACHE_FOLDER];
     if (virtualFolders.includes(file.path)) {
       showToast(t('delete_error', { error: t('files.delete_error') + ' (不能删除系统目录)' }), 'error');
       return;

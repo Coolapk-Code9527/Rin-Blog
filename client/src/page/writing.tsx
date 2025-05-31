@@ -1133,11 +1133,13 @@ async function update({
 async function uploadImage(file: File, onSuccess: (url: string) => void, showAlert: ShowAlertType) {
   const t = i18n.t;
   try {
+    const config = JSON.parse(sessionStorage.getItem('config') || '{}');
+    const S3_FOLDER = config.S3_FOLDER || 'images';
     const response = await client.files.index.post(
       {
         file,
         name: file.name,
-        parentPath: '/images',
+        parentPath: '/' + S3_FOLDER,
       },
       {
         headers: headersWithAuth(),
