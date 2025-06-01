@@ -47,10 +47,10 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
     if (isText && files[index].url) {
       setTextLoading(true);
       setTextError(false);
-      // 通过后端代理解决 CORS
-      const proxyUrl = `/api/proxy?url=${encodeURIComponent(files[index].url)}`;
-      fetch(proxyUrl)
+      // 优先直接 fetch R2 公网直链
+      fetch(files[index].url)
         .then(async r => {
+          if (!r.ok) throw new Error('fetch failed');
           const txt = await r.text();
           // 只要内容里包含 <!DOCTYPE html>，才判定为错误页面
           if (/<!DOCTYPE html>/i.test(txt)) {
@@ -61,7 +61,22 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
           }
           setTextLoading(false);
         })
-        .catch(() => { setTextError(true); setTextLoading(false); });
+        .catch(() => {
+          // fallback 到后端代理
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(files[index].url)}`;
+          fetch(proxyUrl)
+            .then(async r => {
+              const txt = await r.text();
+              if (/<!DOCTYPE html>/i.test(txt)) {
+                setTextError(true);
+                setTextContent('文件不存在或无权限，或 R2 返回了错误页面。');
+              } else {
+                setTextContent(txt);
+              }
+              setTextLoading(false);
+            })
+            .catch(() => { setTextError(true); setTextLoading(false); });
+        });
     }
   }, [index, files, isText]);
 
