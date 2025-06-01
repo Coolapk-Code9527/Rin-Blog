@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { FileItem } from '../../types/api';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import * as XLSX from 'xlsx';
+import mammoth from 'mammoth';
+import JSZip from 'jszip';
+// @ts-ignore
+import ePub from 'epubjs';
 
 interface FilePreviewProps {
   files: FileItem[];
@@ -14,17 +21,117 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
   const [showOrig, setShowOrig] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // 类型判断
-  const isImage = files[index].mimeType.startsWith('image/');
-  const isVideo = files[index].mimeType.startsWith('video/');
-  const isAudio = files[index].mimeType.startsWith('audio/');
-  const isPDF = files[index].mimeType === 'application/pdf';
-  const isText = files[index].mimeType.startsWith('text/') || files[index].mimeType === 'application/json' || files[index].mimeType === 'application/markdown';
+  // 统一声明file变量
+  const file = files[index];
+  if (!file) return (
+    <div className="fixed inset-0 z-[12010] flex items-center justify-center bg-gradient-to-br from-black/80 via-black/70 to-gray-900/90 animate-fadeIn" onClick={onClose}>
+      <div className="relative max-w-full max-h-full flex flex-col items-center justify-center select-none" onClick={e => e.stopPropagation()}>
+        <div className="flex flex-col items-center justify-center w-[min(60vw,400px)] h-[min(40vh,200px)] text-gray-400">
+          <i className="ri-file-3-line text-6xl mb-4"></i>
+          <div className="mb-2">文件不存在或索引错误</div>
+          <button className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors text-white" onClick={onClose} title="关闭">关闭</button>
+        </div>
+      </div>
+    </div>
+  );
+  const isImage = file.mimeType.startsWith('image/');
+  const isVideo = file.mimeType.startsWith('video/');
+  const isAudio = file.mimeType.startsWith('audio/');
+  const isPDF = file.mimeType === 'application/pdf';
+  // 支持更多文本/配置/代码类型
+  const isText = file.mimeType.startsWith('text/') || file.mimeType === 'application/json' || file.mimeType === 'application/markdown' || /\.(md|markdown|yaml|yml|toml|ini|conf|txt)$/i.test(file.name);
+  const isExcel = /^(application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|application\/vnd\.ms-excel|text\/csv|text\/tsv)$/.test(file.mimeType) || /\.(xlsx|xls|csv|tsv)$/i.test(file.name);
+  const isDocx = file.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.mimeType === 'application/msword' || /\.(docx|doc)$/i.test(file.name);
+  const isPPT = file.mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || file.mimeType === 'application/vnd.ms-powerpoint' || /\.(pptx|ppt)$/i.test(file.name);
+  const isEPUB = file.mimeType === 'application/epub+zip' || /\.epub$/i.test(file.name);
+  const isCode = (file.mimeType.startsWith('text/') || /\.(md|markdown|yaml|yml|toml|ini|conf|js|ts|tsx|jsx|py|java|c|cpp|go|sh|json|css|scss|html)$/i.test(file.name)) && /\.(js|ts|tsx|jsx|py|java|c|cpp|go|sh|json|css|scss|html|md|yaml|yml|toml|ini|conf)$/i.test(file.name);
+  const isHTML = file.mimeType === 'text/html' || /\.html?$/i.test(file.name);
+  const isZip = file.mimeType === 'application/zip' || /\.zip$/i.test(file.name);
 
   // 文本内容状态
   const [textContent, setTextContent] = useState<string>('');
   const [textLoading, setTextLoading] = useState(false);
   const [textError, setTextError] = useState(false);
+
+  // 表格预览
+  const [sheetData, setSheetData] = useState<any[][] | null>(null);
+  useEffect(() => {
+    if (isExcel && file.url) {
+      fetch(file.url)
+        .then(r => r.arrayBuffer())
+        .then(buf => {
+          const wb = XLSX.read(buf, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+          setSheetData(data as any[][]);
+        })
+        .catch(() => setSheetData(null));
+    } else {
+      setSheetData(null);
+    }
+    // eslint-disable-next-line
+  }, [index, files, isExcel]);
+
+  // docx预览
+  const [docxHtml, setDocxHtml] = useState<string>('');
+  useEffect(() => {
+    if (isDocx && file.url) {
+      fetch(file.url)
+        .then(r => r.arrayBuffer())
+        .then(buf => mammoth.convertToHtml({ arrayBuffer: buf }))
+        .then(res => setDocxHtml(res.value))
+        .catch(() => setDocxHtml(''));
+    } else {
+      setDocxHtml('');
+    }
+    // eslint-disable-next-line
+  }, [index, files, isDocx]);
+
+  // epub预览
+  const epubContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isEPUB && file.url && epubContainerRef.current) {
+      epubContainerRef.current.innerHTML = '';
+      const book = ePub(file.url);
+      book.renderTo(epubContainerRef.current, { width: '100%', height: 500 });
+    }
+    // eslint-disable-next-line
+  }, [index, files, isEPUB]);
+
+  // zip预览
+  const [zipFiles, setZipFiles] = useState<{name: string, blob: Blob}[] | null>(null);
+  useEffect(() => {
+    if (isZip && file.url) {
+      fetch(file.url)
+        .then(r => r.blob())
+        .then(JSZip.loadAsync)
+        .then(zip => Promise.all(
+          Object.keys(zip.files).map(async name => {
+            const file = zip.files[name];
+            if (!file.dir) {
+              const blob = await file.async('blob');
+              return { name, blob };
+            }
+            return null;
+          })
+        ))
+        .then(list => setZipFiles(list.filter(Boolean) as {name: string, blob: Blob}[]))
+        .catch(() => setZipFiles(null));
+    } else {
+      setZipFiles(null);
+    }
+    // eslint-disable-next-line
+  }, [index, files, isZip]);
+
+  // 代码高亮主题
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const codeTheme = prefersDark ? oneDark : oneLight;
+
+  // HTML安全渲染
+  function safeHTML(html: string) {
+    // 简单过滤script标签
+    return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
+  }
 
   useEffect(() => {
     setIndex(current);
@@ -44,16 +151,19 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
   });
 
   useEffect(() => {
-    if (isText && files[index].url) {
+    if (isText && file.url) {
       setTextLoading(true);
       setTextError(false);
-      // 优先直接 fetch R2 公网直链
-      fetch(files[index].url)
+      const file = files[index];
+      fetch(file.url)
         .then(async r => {
           if (!r.ok) throw new Error('fetch failed');
           const txt = await r.text();
-          // 只要内容里包含 <!DOCTYPE html>，才判定为错误页面
-          if (/<!DOCTYPE html>/i.test(txt)) {
+          // 仅非 html 类型才用 doctype 检查
+          if (
+            file.mimeType !== 'text/html' &&
+            /<!DOCTYPE html>/i.test(txt)
+          ) {
             setTextError(true);
             setTextContent('文件不存在或无权限，或 R2 返回了错误页面。');
           } else {
@@ -63,11 +173,14 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
         })
         .catch(() => {
           // fallback 到后端代理
-          const proxyUrl = `/api/proxy?url=${encodeURIComponent(files[index].url)}`;
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(file.url)}`;
           fetch(proxyUrl)
             .then(async r => {
               const txt = await r.text();
-              if (/<!DOCTYPE html>/i.test(txt)) {
+              if (
+                file.mimeType !== 'text/html' &&
+                /<!DOCTYPE html>/i.test(txt)
+              ) {
                 setTextError(true);
                 setTextContent('文件不存在或无权限，或 R2 返回了错误页面。');
               } else {
@@ -93,8 +206,6 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
     setShowOrig(false);
   };
 
-  const file = files[index];
-  if (!file) return null;
   const thumb = file.thumbUrl || '';
   const orig = file.url || '';
 
@@ -200,6 +311,98 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
               style={{ minHeight: 300 }}
             />
           )}
+          {/* 表格 */}
+          {isExcel && sheetData && (
+            <div className="overflow-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 p-4 max-w-[90vw] max-h-[70vh]">
+              <table className="min-w-full text-xs">
+                <tbody>
+                  {sheetData.map((row, i) => (
+                    <tr key={i}>
+                      {row.map((cell, j) => <td key={j} className="border px-2 py-1">{cell as any}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {/* docx/doc */}
+          {isDocx && (
+            docxHtml ? (
+              <div className="overflow-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 p-4 max-w-[90vw] max-h-[70vh] prose dark:prose-invert" dangerouslySetInnerHTML={{ __html: safeHTML(docxHtml) }} />
+            ) : (
+              <div className="flex flex-col items-center justify-center w-[min(60vw,400px)] h-[min(40vh,200px)] text-gray-400">
+                <i className="ri-file-word-2-line text-6xl mb-4"></i>
+                <div className="mb-2">Word文档（doc/docx）暂仅支持docx在线预览，doc可下载或用文本方式查看</div>
+                <button className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors text-white" onClick={handleDownload} title="下载文件">
+                  <i className="ri-download-2-line"></i> 下载
+                </button>
+                {isText && textContent && (
+                  <div className="mt-2 w-full max-w-[90vw] max-h-[40vh] overflow-auto bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs text-gray-600 dark:text-gray-300">
+                    <pre>{textContent.slice(0, 2000)}{textContent.length > 2000 ? '...（仅显示部分）' : ''}</pre>
+                  </div>
+                )}
+              </div>
+            )
+          )}
+          {/* pptx/ppt */}
+          {isPPT && (
+            <div className="flex flex-col items-center justify-center w-[min(60vw,400px)] h-[min(40vh,200px)] text-gray-400">
+              <i className="ri-file-ppt-2-line text-6xl mb-4"></i>
+              <div className="mb-2">PPT（ppt/pptx）暂不支持在线预览，可下载后用本地软件打开</div>
+              <button className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors text-white" onClick={handleDownload} title="下载文件">
+                <i className="ri-download-2-line"></i> 下载
+              </button>
+            </div>
+          )}
+          {/* epub */}
+          {isEPUB && (
+            <div ref={epubContainerRef} className="w-[min(90vw,800px)] h-[min(80vh,600px)] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 overflow-auto" />
+          )}
+          {/* zip */}
+          {isZip && (
+            zipFiles === null ? (
+              <div className="flex flex-col items-center justify-center w-[min(60vw,400px)] h-[min(40vh,200px)] text-gray-400">
+                <i className="ri-archive-line text-6xl mb-4"></i>
+                <div className="mb-2">压缩包加载中或解析失败</div>
+              </div>
+            ) : zipFiles.length === 0 ? (
+              <div className="flex flex-col items-center justify-center w-[min(60vw,400px)] h-[min(40vh,200px)] text-gray-400">
+                <i className="ri-archive-line text-6xl mb-4"></i>
+                <div className="mb-2">压缩包内无可预览文件</div>
+              </div>
+            ) : (
+              <div className="overflow-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 p-4 max-w-[90vw] max-h-[70vh]">
+                <div className="font-bold mb-2">压缩包内容：</div>
+                <ul className="list-disc pl-5">
+                  {zipFiles.map(f => (
+                    <li key={f.name} className="mb-1 flex items-center justify-between">
+                      <span className="truncate max-w-[60vw]">{f.name}</span>
+                      <button className="ml-2 px-2 py-0.5 rounded bg-pink-500 text-white text-xs" onClick={() => {
+                        const url = URL.createObjectURL(f.blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = f.name;
+                        a.click();
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                      }}>下载</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )
+          )}
+          {/* 代码高亮 */}
+          {isCode && textContent && (
+            <div className="w-[min(90vw,800px)] h-[min(80vh,600px)] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 overflow-auto p-4 text-sm">
+              <SyntaxHighlighter language={file.name.split('.').pop()} style={codeTheme} showLineNumbers>
+                {textContent}
+              </SyntaxHighlighter>
+            </div>
+          )}
+          {/* HTML富文本 */}
+          {isHTML && textContent && (
+            <div className="overflow-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 p-4 max-w-[90vw] max-h-[70vh] prose dark:prose-invert" dangerouslySetInnerHTML={{ __html: safeHTML(textContent) }} />
+          )}
           {/* 文本 */}
           {isText && (
             <div className="w-[min(90vw,800px)] h-[min(80vh,600px)] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 overflow-auto p-4 text-sm font-mono whitespace-pre-wrap">
@@ -213,10 +416,11 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
             </div>
           )}
           {/* 其他类型 fallback */}
-          {!isImage && !isVideo && !isAudio && !isPDF && !isText && (
+          {!isImage && !isVideo && !isAudio && !isPDF && !isText && !isExcel && !isDocx && !isPPT && !isEPUB && !isZip && !isCode && !isHTML && (
             <div className="flex flex-col items-center justify-center w-[min(60vw,400px)] h-[min(40vh,200px)] text-gray-400">
               <i className="ri-file-3-line text-6xl mb-4"></i>
               <div className="mb-2">暂不支持预览此类型</div>
+              <div className="mb-2 text-xs text-gray-500">{file.name}</div>
               <button className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors text-white" onClick={handleDownload} title="下载文件">
                 <i className="ri-download-2-line"></i> 下载
               </button>

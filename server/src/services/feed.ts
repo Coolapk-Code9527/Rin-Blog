@@ -12,6 +12,7 @@ import {markdownToPlainText} from "../utils/markdown";
 import {bindTagToPost} from "./tag";
 import { getR2FileMeta } from '../utils/s3';
 import { getEnv } from '../utils/di';
+import { normalizePath } from '../utils/s3';
 
 export function FeedService() {
     return new Elysia({ aot: false })
@@ -735,16 +736,6 @@ function extractFileReferences(content: string): string[] {
   return references;
 }
 
-// 辅助函数：标准化路径，去除域名和多余/
-function normalizePath(path: string): string {
-  if (!path) return '';
-  // 去除域名
-  path = path.replace(/^https?:\/\/(?:[\w.-]+)\/?/, '');
-  // 去除多余前缀/
-  path = path.replace(/^\/+/, '');
-  return path;
-}
-
 // 辅助函数：同步文件引用到files/feed_files
 async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
   if (!feedId || typeof feedId !== 'number' || !Number.isFinite(feedId)) {
@@ -757,13 +748,12 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
     const env = getEnv();
     const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+/g, '') + '/');
     let refs = extractFileReferences(content).filter(Boolean);
-    // 只要 normalizePath 后在 files 表存在就认为是有效引用，不再依赖 S3_FOLDER/S3_CACHE_FOLDER
     let filteredRefs = refs.map(ref => normalizePath(ref)).filter(x => x && !x.startsWith('http://') && !x.startsWith('https://'));
+    // 跳过缩略图对象
+    filteredRefs = filteredRefs.filter(x => !x.split('/').pop()?.startsWith('thumb_'));
     if (filteredRefs.length === 0) return;
-    // 查询已存在的files（只查标准化后的路径，兼容带斜杠和不带斜杠）
-    const allPaths = filteredRefs
-      .filter(p => typeof p === 'string' && p.length > 8 && !p.includes(' '))
-      .flatMap(p => [p, '/' + p]);
+    // 查询已存在的files（只查标准化后的路径）
+    const allPaths = filteredRefs;
     let filesInDb = [];
     try {
       filesInDb = await db.select({id: filesTable.id, path: filesTable.path}).from(filesTable).where(inArray(filesTable.path, allPaths));
@@ -771,49 +761,58 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
       filesInDb = [];
     }
     if (!Array.isArray(filesInDb)) filesInDb = [];
-    // 兼容带斜杠和不带斜杠的路径
     const pathToId = new Map<string, number>();
     for (const f of filesInDb) {
       if (typeof f.path === 'string') {
-        pathToId.set(f.path.replace(/^\/+/, ''), f.id); // 不带斜杠
-        pathToId.set(f.path.startsWith('/') ? f.path : '/' + f.path, f.id); // 带斜杠
+        pathToId.set(normalizePath(f.path), f.id);
       }
     }
-    // 自动补录缺失文件，已存在则update原始名
     for (const path of filteredRefs) {
       if (!path || typeof path !== 'string') continue;
       const name = path.split('/').pop() || path;
       if (!pathToId.has(path)) {
         try {
-          // 从R2获取元信息
-          const meta = await getR2FileMeta('/' + path);
+          const meta = await getR2FileMeta(path);
           if (!meta || typeof meta !== 'object' || !meta.size || !meta.mimeType) {
             continue;
           }
           const mimeType = meta.mimeType || 'application/octet-stream';
           const size = meta.size || 0;
           const hash = meta.hash || '';
-          // parentPath 设为一级目录
-          const parentPath = '/' + path.split('/')[0];
-          const insertRes = await db.insert(filesTable).values({
-            path,
-            name,
-            size,
-            mimeType,
-            userId: 1, // 统一用管理员ID兜底
-            parentPath,
-            hash
-          }).returning({id: filesTable.id});
-          if (insertRes && Array.isArray(insertRes) && insertRes[0] && typeof insertRes[0].id === 'number') {
-            pathToId.set(path, insertRes[0].id);
+          const parentPath = '/' + path.split('/')[1];
+          // 查重
+          let exist = await db.select({id: filesTable.id}).from(filesTable).where(eq(filesTable.path, path));
+          if (exist && exist.length > 0) {
+            await db.update(filesTable).set({
+              name,
+              size,
+              mimeType,
+              userId: 1,
+              hash,
+              parentPath,
+              modifiedAt: new Date(),
+            }).where(eq(filesTable.path, path));
+            pathToId.set(path, exist[0].id);
           } else {
-            continue;
+            const insertRes = await db.insert(filesTable).values({
+              path,
+              name,
+              size,
+              mimeType,
+              userId: 1,
+              parentPath,
+              hash
+            }).returning({id: filesTable.id});
+            if (insertRes && Array.isArray(insertRes) && insertRes[0] && typeof insertRes[0].id === 'number') {
+              pathToId.set(path, insertRes[0].id);
+            } else {
+              continue;
+            }
           }
         } catch (e) {
           continue;
         }
       } else {
-        // 已有则update name
         await db.update(filesTable).set({ name }).where(eq(filesTable.path, path));
       }
     }

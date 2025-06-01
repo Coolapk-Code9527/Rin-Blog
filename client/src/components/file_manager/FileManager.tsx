@@ -57,6 +57,37 @@ function getFileUrl(path: string, config?: any) {
   return host.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
 }
 
+// 判断文件是否可预览（与FilePreview类型保持一致）
+function isPreviewable(file: FileItem): boolean {
+  if (file.isFolder) return false;
+  if (!file.mimeType && !file.name) return false;
+  const mime = file.mimeType || '';
+  const name = file.name || '';
+  return (
+    mime.startsWith('image/') ||
+    mime.startsWith('video/') ||
+    mime.startsWith('audio/') ||
+    mime === 'application/pdf' ||
+    mime.startsWith('text/') ||
+    mime === 'application/json' ||
+    mime === 'application/markdown' ||
+    /\.(md|markdown|yaml|yml|toml|ini|conf|txt)$/i.test(name) ||
+    // Excel
+    /^(application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|application\/vnd\.ms-excel|text\/csv|text\/tsv)$/.test(mime) || /\.(xlsx|xls|csv|tsv)$/i.test(name) ||
+    // Word
+    mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || mime === 'application/msword' || /\.(docx|doc)$/i.test(name) ||
+    // PowerPoint
+    mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || mime === 'application/vnd.ms-powerpoint' || /\.(pptx|ppt)$/i.test(name) ||
+    // EPUB
+    mime === 'application/epub+zip' || /\.epub$/i.test(name) ||
+    // 代码/文本
+    (mime.startsWith('text/') || /\.(md|markdown|yaml|yml|toml|ini|conf|js|ts|tsx|jsx|py|java|c|cpp|go|sh|json|css|scss|html)$/i.test(name)) && /\.(js|ts|tsx|jsx|py|java|c|cpp|go|sh|json|css|scss|html|md|yaml|yml|toml|ini|conf)$/i.test(name) ||
+    mime === 'text/html' || /\.html?$/i.test(name) ||
+    // zip
+    mime === 'application/zip' || /\.zip$/i.test(name)
+  );
+}
+
 // 文件管理器组件
 export function FileManager({
   onSelect,
@@ -160,18 +191,8 @@ export function FileManager({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
 
-  // 获取当前目录下所有可预览文件（图片、视频、音频、PDF、文本）
-  const previewableFiles = files.filter(f => !f.isFolder && (
-    (f.mimeType && (
-      f.mimeType.startsWith('image/') ||
-      f.mimeType.startsWith('video/') ||
-      f.mimeType.startsWith('audio/') ||
-      f.mimeType === 'application/pdf' ||
-      f.mimeType.startsWith('text/') ||
-      f.mimeType === 'application/json' ||
-      f.mimeType === 'application/markdown'
-    ))
-  ));
+  // 获取当前目录下所有可预览文件（类型与isPreviewable保持一致）
+  const previewableFiles = files.filter(isPreviewable);
 
   // 处理可预览文件点击
   const handlePreviewClick = (file: FileItem) => {
@@ -189,19 +210,11 @@ export function FileManager({
       setCurrentPath(file.path);
       setCurrentPage(1);
       setSelectedFiles([]);
-    } else if (
-      file.mimeType && (
-        file.mimeType.startsWith('image/') ||
-        file.mimeType.startsWith('video/') ||
-        file.mimeType.startsWith('audio/') ||
-        file.mimeType === 'application/pdf' ||
-        file.mimeType.startsWith('text/') ||
-        file.mimeType === 'application/json' ||
-        file.mimeType === 'application/markdown'
-      )
-    ) {
+    } else if (!showSelector && isPreviewable(file)) {
+      // 非选择模式下，点击直接预览
       handlePreviewClick(file);
     } else if (showSelector) {
+      // 选择模式下，点击只做选择
       if (multiple) {
         setSelectedFiles(prev => {
           const exists = prev.some(f => f.id === file.id);
@@ -774,7 +787,10 @@ export function FileManager({
             onClick={() => handleFileClick(file)}
           >
             {/* 文件图标 */}
-            <div className="w-16 h-16 flex items-center justify-center" onClick={file.thumbnailHash && !file.isFolder && file.mimeType && file.mimeType.startsWith('image/') ? (e) => { e.stopPropagation(); handlePreviewClick(file); } : undefined}>
+            <div className="w-16 h-16 flex items-center justify-center"
+              onClick={isPreviewable(file) ? (e) => { e.stopPropagation(); handlePreviewClick(file); } : undefined}
+              style={{ cursor: isPreviewable(file) ? 'pointer' : 'default' }}
+            >
               {file.thumbnailHash && !file.isFolder ? (
                 <img
                   src={file.thumbUrl || getFileUrl(`thumb_${file.thumbnailHash}`, config)}
@@ -784,7 +800,7 @@ export function FileManager({
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               ) : (
-                <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType)} text-4xl`}></i>
+                <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType || file.name)} text-4xl`}></i>
               )}
             </div>
             {/* 文件名 */}
@@ -831,6 +847,16 @@ export function FileManager({
               >
                 <i className="ri-delete-bin-line"></i>
               </button>
+              {/* 预览按钮 */}
+              {isPreviewable(file) && (
+                <button
+                  className="text-pink-500 hover:text-pink-700 p-1"
+                  title={t('files.preview') || '预览'}
+                  onClick={e => {e.stopPropagation(); handlePreviewClick(file);}}
+                >
+                  <i className="ri-eye-line"></i>
+                </button>
+              )}
             </div>
             {/* 文件大小 */}
             <p className="text-xs text-gray-500 mt-1">
@@ -946,7 +972,10 @@ export function FileManager({
                     />
                   </td>
                 )}
-                <td className="px-4 py-3 flex items-center" onClick={file.thumbnailHash && !file.isFolder && file.mimeType && file.mimeType.startsWith('image/') ? (e) => { e.stopPropagation(); handlePreviewClick(file); } : undefined}>
+                <td className="px-4 py-3 flex items-center"
+                  onClick={isPreviewable(file) ? (e) => { e.stopPropagation(); handlePreviewClick(file); } : undefined}
+                  style={{ cursor: isPreviewable(file) ? 'pointer' : 'default' }}
+                >
                   {file.thumbnailHash && !file.isFolder ? (
                     <img
                       src={file.thumbUrl || getFileUrl(`thumb_${file.thumbnailHash}`, config)}
@@ -956,7 +985,7 @@ export function FileManager({
                       onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   ) : (
-                    <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType)} mr-2 text-xl`}></i>
+                    <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType || file.name)} mr-2 text-xl`}></i>
                   )}
                   <span className="truncate">
                     {file.name && !/^[a-f0-9]{32,}$/.test(file.name)
@@ -1011,6 +1040,16 @@ export function FileManager({
                   >
                     <i className="ri-delete-bin-line"></i>
                   </button>
+                  {/* 预览按钮 */}
+                  {isPreviewable(file) && (
+                    <button
+                      className="text-pink-500 hover:text-pink-700 p-1"
+                      title={t('files.preview') || '预览'}
+                      onClick={e => {e.stopPropagation(); handlePreviewClick(file);}}
+                    >
+                      <i className="ri-eye-line"></i>
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

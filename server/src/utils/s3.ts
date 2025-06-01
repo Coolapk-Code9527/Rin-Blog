@@ -39,16 +39,21 @@ export async function listAllR2Files(): Promise<string[]> {
     return files.filter(Boolean);
 }
 
-export function normalizeR2Path(path: string): string {
+// 统一路径标准化函数，所有文件相关操作必须调用，避免/与无/混用导致重复
+export function normalizePath(path: string): string {
     if (!path) return '';
+    // 去除域名
     path = path.replace(/^https?:\/\/(?:[\w.-]+)\/?/, '');
-    path = path.replace(/^\/+/, '');
+    // 去除多余前缀/
+    path = path.replace(/^\/+/g, '');
+    // 保证所有路径前面都有一个/
+    if (!path.startsWith('/')) path = '/' + path;
     return path;
 }
 
 export async function getR2FileMeta(path: string): Promise<{size?: number, mimeType?: string, hash?: string} | null> {
     try {
-        path = normalizeR2Path(path);
+        path = normalizePath(path);
         const env: Env = getEnv();
         const s3 = createS3Client();
         const bucket = env.S3_BUCKET;

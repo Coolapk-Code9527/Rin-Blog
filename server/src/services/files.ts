@@ -8,7 +8,7 @@ import { setup } from "../setup";
 import { getEnv, getDB } from "../utils/di";
 import { createS3Client } from "../utils/s3";
 import { syncFeedFileReferences } from './feed';
-import { listAllR2Files, getR2FileMeta } from '../utils/s3';
+import { listAllR2Files, getR2FileMeta, normalizePath } from '../utils/s3';
 import { generateThumbnail } from '../utils/image';
 
 // 定义引用接口
@@ -116,7 +116,8 @@ export function FileService() {
                             }).from(files).where(
                                 and(
                                     ...(userFilter ? [userFilter] : []),
-                                    or(eq(files.parentPath, '/'), eq(files.parentPath, ''))
+                                    or(eq(files.parentPath, '/'), eq(files.parentPath, '')),
+                                    sql`not (${files.name} like 'thumb_%')`
                                 )
                             );
                             const dbFolderNames = dbItems.filter(f => f.isFolder).map(f => f.name);
@@ -158,6 +159,7 @@ export function FileService() {
                                 and(
                                     ...(userFilter ? [userFilter] : []),
                                     eq(files.parentPath, path),
+                                    sql`not (${files.name} like 'thumb_%')`,
                                     ...(type ? [like(files.mimeType, `${type}/%`)] : []),
                                     ...(search ? [like(files.name, `%${search}%`)] : [])
                                 )
@@ -178,6 +180,7 @@ export function FileService() {
                                 and(
                                     ...(userFilter ? [userFilter] : []),
                                     eq(files.parentPath, path),
+                                    sql`not (${files.name} like 'thumb_%')`,
                                     ...(type ? [like(files.mimeType, `${type}/%`)] : []),
                                     ...(search ? [like(files.name, `%${search}%`)] : [])
                                 )
@@ -335,7 +338,7 @@ export function FileService() {
                         return { error: 'S3 configuration not found' };
                     }
                     let { file, name, parentPath = '/' } = body;
-                    parentPath = (!parentPath || parentPath === '') ? '/' : parentPath.replace(/\/+/g, '').replace(/^([^/])/, '/$1');
+                    parentPath = normalizePath(parentPath);
                     const env = getEnv();
                     const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+/g, ''));
                     let folderName = '';
@@ -360,7 +363,7 @@ export function FileService() {
                             fileBuffer
                         );
                         const hash = buf2hex(hashArray);
-                        let s3Key = folderName ? folderName + '/' + hash : hash;
+                        let s3Key = (parentPath === '/' ? '' : parentPath.replace(/^\//, '') + '/') + hash;
                         // 修复：文本类型Content-Type加charset，防止中文乱码
                         let uploadMimeType = file.type || getMimeTypeFromFileName(name || file.name);
                         let contentType = uploadMimeType;
@@ -377,7 +380,7 @@ export function FileService() {
                             Body: file,
                             ContentType: contentType,
                         }));
-                        const filePath = parentPath === '/' ? `/${hash}` : `${parentPath}/${hash}`;
+                        const filePath = normalizePath((parentPath === '/' ? '' : parentPath) + '/' + hash);
                         let thumbnailHash: string | undefined = undefined;
                         // 仅对图片类型生成缩略图
                         const mimeType = file.type || getMimeTypeFromFileName(name || file.name);
@@ -398,48 +401,45 @@ export function FileService() {
                                 // 计算缩略图 hash
                                 const thumbHashArray = await crypto.subtle.digest({ name: 'SHA-1' }, thumbBuffer);
                                 const thumbHash = buf2hex(thumbHashArray);
-                                let thumbKey = folderName ? folderName + '/thumb_' + thumbHash : 'thumb_' + thumbHash;
+                                let thumbKey = (parentPath === '/' ? '' : parentPath.replace(/^\//, '') + '/') + 'thumb_' + thumbHash;
                                 await s3.send(new PutObjectCommand({
                                     Bucket: bucket,
                                     Key: thumbKey,
                                     Body: new Uint8Array(thumbBuffer),
                                     ContentType: 'image/webp',
                                 }));
+                                // 不再插入files表，只记录hash
                                 thumbnailHash = thumbHash;
                             } catch (e) {
                                 // 缩略图生成失败不影响主流程
                                 console.warn('缩略图生成失败', e);
                             }
                         }
+                        // 主文件插入前查重
                         let result;
-                        try {
-                            // 优先尝试插入
+                        let exist = await db.select({id: files.id}).from(files).where(eq(files.path, filePath));
+                        if (exist && exist.length > 0) {
+                            result = await db.update(files).set({
+                                name: name || file.name,
+                                size: file.size,
+                                mimeType,
+                                userId: 1,
+                                hash: hash,
+                                parentPath,
+                                modifiedAt: new Date(),
+                                thumbnailHash,
+                            }).where(eq(files.path, filePath)).returning({ id: files.id });
+                        } else {
                             result = await db.insert(files).values({
                                 path: filePath,
                                 name: name || file.name,
                                 size: file.size,
                                 mimeType,
-                                userId: uid,
+                                userId: 1,
                                 hash: hash,
                                 parentPath,
                                 thumbnailHash,
                             }).returning({ id: files.id });
-                        } catch (e: any) {
-                            // 如果唯一约束冲突，fallback到update
-                            if (String(e).includes('UNIQUE constraint failed')) {
-                                result = await db.update(files).set({
-                                    name: name || file.name,
-                                    size: file.size,
-                                    mimeType,
-                                    userId: uid,
-                                    hash: hash,
-                                    parentPath,
-                                    modifiedAt: new Date(),
-                                    thumbnailHash,
-                                }).where(eq(files.path, filePath)).returning({ id: files.id });
-                            } else {
-                                throw e;
-                            }
                         }
                         return {
                             id: result[0].id,
@@ -495,7 +495,8 @@ export function FileService() {
                                     or(
                                         eq(files.userId, uid),
                                         eq(files.accessLevel, 'public')
-                                    )
+                                    ),
+                                    sql`not (${files.name} like 'thumb_%')`
                                 )
                             );
 
@@ -796,7 +797,6 @@ export function FileService() {
                             } else {
                               errObj = { message: String(e), stack: '' };
                             }
-                            // 兜底所有字段
                             failedDetails.push({
                                 feedId: typeof feed.id !== 'undefined' ? feed.id : -1,
                                 userId: 1,
@@ -822,54 +822,58 @@ export function FileService() {
                     const r2Files = await listAllR2Files();
                     let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
                     for (const path of r2Files) {
-                        let dbPath = path.replace(/^\//, '');
-                        let hashName = path.split('/').pop() || path;
+                        let dbPath = normalizePath(path);
+                        let hashName = dbPath.split('/').pop() || dbPath;
+                        // 跳过缩略图对象
+                        if (hashName.startsWith('thumb_')) { skipped++; continue; }
                         try {
                             // 判断属于哪个一级目录
-                            const matchedFolder = s3Folders.find(folder => path.startsWith('/' + folder + '/'));
+                            const matchedFolder = s3Folders.find(folder => dbPath.startsWith('/' + folder + '/'));
                             let parentPath = '/';
                             if (matchedFolder) {
                                 parentPath = '/' + matchedFolder.replace(/\/+$/, '');
                             } else {
-                                if (path.split('/').length === 2) {
+                                if (dbPath.split('/').length === 2) {
                                     parentPath = '/';
                                 } else {
                                     skipped++; continue;
                                 }
                             }
+                            // 查重
                             const exist = await db.select({id: files.id, name: files.name}).from(files).where(eq(files.path, dbPath));
-                            if (exist && exist.length > 0) {
-                                if (/^[a-f0-9]{32,}$/.test(exist[0].name)) {
-                                    await db.update(files).set({ name: hashName }).where(eq(files.id, exist[0].id));
-                                }
-                                skipped++;
-                                continue;
-                            }
-                            const meta = await getR2FileMeta(path);
+                            const meta = await getR2FileMeta(dbPath);
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
                             let name = hashName;
                             const mimeType = meta.mimeType || 'application/octet-stream';
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
+                            if (exist && exist.length > 0) {
+                                await db.update(files).set({
+                                    name,
+                                    size,
+                                    mimeType,
+                                    userId: 1,
+                                    parentPath,
+                                    hash,
+                                    modifiedAt: new Date(),
+                                }).where(eq(files.id, exist[0].id));
+                                skipped++;
+                                continue;
+                            }
                             await db.insert(files).values({
                                 path: dbPath,
                                 name,
                                 size,
                                 mimeType,
-                                userId: uid || 1,
+                                userId: 1,
                                 parentPath,
                                 hash,
                                 isFolder: 0
                             });
                             inserted++;
                         } catch (e) {
-                            if (String(e).includes('UNIQUE constraint failed')) {
-                                await db.update(files).set({ name: hashName }).where(eq(files.path, dbPath));
-                                skipped++;
-                            } else {
-                                failed++;
-                                failedList.push({ path, error: String(e) });
-                            }
+                            failed++;
+                            failedList.push({ path, error: String(e) });
                         }
                         total++;
                     }
@@ -898,11 +902,11 @@ export function FileService() {
                     let deleted = 0, skipped = 0, errors = [];
                     for (const fileId of ids) {
                         try {
-                            const fileInfo = await db.select().from(files).where(and(eq(files.id, fileId), eq(files.userId, uid)));
+                            const fileInfo = await db.select().from(files).where(and(eq(files.id, fileId), eq(files.userId, uid), sql`not (${files.name} like 'thumb_%')`));
                             if (!fileInfo.length) { skipped++; continue; }
                             const file = fileInfo[0];
                             if (!isHash(file.hash)) { skipped++; continue; }
-                            const r2Key = file.path.replace(/^\//, '');
+                            const r2Key = file.path.replace(/^ /, '');
                             try {
                                 await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
                                 // 删除缩略图对象
