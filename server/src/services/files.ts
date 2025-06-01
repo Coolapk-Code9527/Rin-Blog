@@ -922,7 +922,15 @@ export function FileService() {
                     }
                     try {
                         const resp = await fetch(url);
-                        const contentType = resp.headers.get('content-type') || 'application/octet-stream';
+                        let contentType = resp.headers.get('content-type') || 'application/octet-stream';
+                        // 判断是否为文本类型，强制为 text/plain
+                        if (
+                          contentType.startsWith('text/') ||
+                          contentType === 'application/json' ||
+                          contentType === 'application/markdown'
+                        ) {
+                          contentType = 'text/plain; charset=utf-8';
+                        }
                         set.headers['Access-Control-Allow-Origin'] = '*';
                         set.headers['Access-Control-Allow-Methods'] = 'GET,OPTIONS';
                         set.headers['Access-Control-Allow-Headers'] = '*';
