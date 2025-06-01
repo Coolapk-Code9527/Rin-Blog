@@ -44,17 +44,32 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
   });
 
   useEffect(() => {
-    if (isText && files[index].url) {
+    if (isText && files[index].id) {
       setTextLoading(true);
       setTextError(false);
-      // 通过后端代理解决 CORS
-      const proxyUrl = `/api/proxy?url=${encodeURIComponent(files[index].url)}`;
-      fetch(proxyUrl)
-        .then(r => r.text())
-        .then(txt => { setTextContent(txt); setTextLoading(false); })
+      // 统一通过 Worker 内容出口接口获取内容
+      const contentUrl = `/api/files/${files[index].id}/content`;
+      fetch(contentUrl)
+        .then(async r => {
+          const txt = await r.text();
+          // 只要内容里包含 <!DOCTYPE html>，才判定为错误页面
+          if (/<!DOCTYPE html>/i.test(txt)) {
+            setTextError(true);
+            setTextContent('文件不存在或无权限，或 R2 返回了错误页面。');
+          } else {
+            setTextContent(txt);
+          }
+          setTextLoading(false);
+        })
         .catch(() => { setTextError(true); setTextLoading(false); });
     }
   }, [index, files, isText]);
+
+  useEffect(() => {
+    setTextContent('');
+    setTextLoading(false);
+    setTextError(false);
+  }, [index]);
 
   const prev = () => {
     setIndex(i => (i - 1 + files.length) % files.length);
@@ -71,14 +86,15 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
 
   const file = files[index];
   if (!file) return null;
+  // 统一内容出口 URL
+  const contentUrl = `/api/files/${file.id}/content`;
   const thumb = file.thumbUrl || '';
-  const orig = file.url || '';
 
   // 下载原图
   const handleDownload = () => {
-    if (!orig) return;
+    if (!contentUrl) return;
     const a = document.createElement('a');
-    a.href = orig;
+    a.href = contentUrl;
     a.download = file.name;
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
@@ -87,8 +103,8 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
 
   // 新窗口打开
   const handleOpenNew = () => {
-    if (!orig) return;
-    window.open(orig, '_blank', 'noopener');
+    if (!contentUrl) return;
+    window.open(contentUrl, '_blank', 'noopener');
   };
 
   return (
@@ -134,7 +150,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
               )}
               <img
                 ref={imgRef}
-                src={orig}
+                src={contentUrl}
                 alt={file.name}
                 className={`max-w-[96vw] max-h-[80vh] rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 bg-white dark:bg-gray-900 transition-all duration-300 ${loading || error ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 onLoad={() => { setLoading(false); setShowOrig(true); }}
@@ -147,7 +163,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
           {/* 视频 */}
           {isVideo && (
             <video
-              src={orig}
+              src={contentUrl}
               controls
               autoPlay
               className="max-w-[96vw] max-h-[80vh] rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 bg-black"
@@ -159,7 +175,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
           {/* 音频 */}
           {isAudio && (
             <audio
-              src={orig}
+              src={contentUrl}
               controls
               autoPlay
               className="w-full max-w-[80vw] mt-10"
@@ -170,7 +186,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
           {/* PDF */}
           {isPDF && (
             <iframe
-              src={orig}
+              src={contentUrl}
               title={file.name}
               className="w-[min(90vw,800px)] h-[min(80vh,600px)] rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 bg-white dark:bg-gray-900"
               style={{ minHeight: 300 }}
@@ -179,8 +195,12 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
           {/* 文本 */}
           {isText && (
             <div className="w-[min(90vw,800px)] h-[min(80vh,600px)] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 overflow-auto p-4 text-sm font-mono whitespace-pre-wrap">
+              {/* html 文件源码预览提示 */}
+              {file.mimeType === 'text/html' && !textLoading && !textError && (
+                <div className="mb-2 text-xs text-orange-500 font-bold">HTML源码预览</div>
+              )}
               {textLoading && <div className="text-gray-400 animate-pulse">加载中...</div>}
-              {textError && <div className="text-red-400">加载失败</div>}
+              {textError && <div className="text-red-400">{textContent || '加载失败'}</div>}
               {!textLoading && !textError && <pre>{textContent}</pre>}
             </div>
           )}

@@ -103,3 +103,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## File Manager Text/HTML File Preview Exception Handling
+
+- When previewing txt, md, html and other text files, if R2 returns an HTML error page (such as 404/forbidden), a friendly message will be shown: "File not found or no permission, or R2 returned an error page."
+- When previewing HTML file source code, a clear "HTML Source Preview" tip will be shown at the top to avoid user confusion.

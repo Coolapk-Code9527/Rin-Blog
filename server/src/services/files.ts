@@ -361,11 +361,21 @@ export function FileService() {
                         );
                         const hash = buf2hex(hashArray);
                         let s3Key = folderName ? folderName + '/' + hash : hash;
+                        // 修复：文本类型Content-Type加charset，防止中文乱码
+                        let uploadMimeType = file.type || getMimeTypeFromFileName(name || file.name);
+                        let contentType = uploadMimeType;
+                        if (
+                          uploadMimeType === 'text/plain' ||
+                          uploadMimeType === 'text/markdown' ||
+                          uploadMimeType === 'application/json'
+                        ) {
+                          contentType = uploadMimeType + '; charset=utf-8';
+                        }
                         await s3.send(new PutObjectCommand({
                             Bucket: bucket,
                             Key: s3Key,
                             Body: file,
-                            ContentType: file.type || getMimeTypeFromFileName(name || file.name),
+                            ContentType: contentType,
                         }));
                         const filePath = parentPath === '/' ? `/${hash}` : `${parentPath}/${hash}`;
                         let thumbnailHash: string | undefined = undefined;
@@ -525,6 +535,72 @@ export function FileService() {
                         };
                     } catch (error: any) {
                         console.error(error);
+                        set.status = 500;
+                        return { error: error.message };
+                    }
+                })
+
+                // 获取文件内容（统一出口）
+                .get('/:id/content', async ({ params, set }) => {
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+                    try {
+                        const fileId = Number(params.id);
+                        const result = await db
+                            .select()
+                            .from(files)
+                            .where(eq(files.id, fileId));
+                        if (result.length === 0) {
+                            set.status = 404;
+                            return { error: 'File not found' };
+                        }
+                        const file = result[0];
+                        if (file.isFolder) {
+                            set.status = 400;
+                            return { error: 'Cannot preview folder' };
+                        }
+                        const s3 = createS3Client();
+                        const bucket = env.S3_BUCKET;
+                        const r2Key = file.path.replace(/^\//, '');
+                        // 读取R2内容
+                        const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: r2Key }));
+                        // S3 SDK v3 返回的 obj.Body 是 ReadableStream/Readable，需转为 ArrayBuffer
+                        let buffer;
+                        const body: any = obj.Body;
+                        if (body && typeof body.transformToWebStream === 'function') {
+                            // Cloudflare Worker 环境
+                            buffer = await new Response(body.transformToWebStream()).arrayBuffer();
+                        } else if (body && typeof body[Symbol.asyncIterator] === 'function') {
+                            // Node.js 环境 fallback
+                            let chunks = [];
+                            for await (const chunk of body) {
+                                chunks.push(chunk);
+                            }
+                            buffer = Buffer.concat(chunks);
+                        } else {
+                            set.status = 500;
+                            return { error: 'Unsupported S3 Body type' };
+                        }
+                        let contentType = file.mimeType || 'application/octet-stream';
+                        if (
+                          contentType.startsWith('text/') ||
+                          contentType.includes('json') ||
+                          contentType.includes('markdown') ||
+                          contentType.includes('xml')
+                        ) {
+                          if (!/charset=/.test(contentType)) {
+                            contentType = contentType.replace(/;?$/, '; charset=utf-8');
+                          }
+                        }
+                        set.headers['Access-Control-Allow-Origin'] = '*';
+                        set.headers['Access-Control-Allow-Methods'] = 'GET,OPTIONS';
+                        set.headers['Access-Control-Allow-Headers'] = '*';
+                        set.headers['Content-Type'] = contentType;
+                        return new Response(buffer, { headers: set.headers });
+                    } catch (error: any) {
                         set.status = 500;
                         return { error: error.message };
                     }
@@ -922,14 +998,25 @@ export function FileService() {
                     }
                     try {
                         const resp = await fetch(url);
-                        let contentType = resp.headers.get('content-type') || 'application/octet-stream';
-                        // 判断是否为文本类型，强制为 text/plain
+                        let contentType = resp.headers.get('content-type') || '';
+                        // 补充 charset
                         if (
-                          contentType.startsWith('text/') ||
-                          contentType === 'application/json' ||
-                          contentType === 'application/markdown'
+                            /^text\//.test(contentType) ||
+                            /json|markdown|xml/.test(contentType)
                         ) {
-                          contentType = 'text/plain; charset=utf-8';
+                            if (!/charset=/.test(contentType)) {
+                                contentType = contentType.replace(/;?$/, '; charset=utf-8');
+                            }
+                        }
+                        // 若 content-type 不准确，尝试用文件名后缀推断
+                        if (!contentType || contentType === 'application/octet-stream') {
+                            const fileName = decodeURIComponent(url.split('/').pop() || '');
+                            const guessed = getMimeTypeFromFileName(fileName);
+                            if (/^text\//.test(guessed) || /json|markdown|xml/.test(guessed)) {
+                                contentType = guessed + '; charset=utf-8';
+                            } else {
+                                contentType = guessed;
+                            }
                         }
                         set.headers['Access-Control-Allow-Origin'] = '*';
                         set.headers['Access-Control-Allow-Methods'] = 'GET,OPTIONS';
