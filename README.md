@@ -108,3 +108,19 @@ SOFTWARE.
 
 - When previewing txt, md, html and other text files, if R2 returns an HTML error page (such as 404/forbidden), a friendly message will be shown: "File not found or no permission, or R2 returned an error page."
 - When previewing HTML file source code, a clear "HTML Source Preview" tip will be shown at the top to avoid user confusion.
+
+## File Manager Utilities (client/src/components/file_manager/utils.ts)
+
+This file provides common utilities for file management:
+
+- `formatFileSize(bytes: number): string`: Format file size and return a string with unit.
+- `getFileTypeIcon(mimeTypeOrName: string): string`: Get Remix icon class name by MIME type or file name.
+- `EXT_ICON_MAP`: Mapping table for file extension to icon.
+- `MIME_ICON_MAP`: Mapping table for common MIME types to icon.
+
+All functions and constants are documented in both Chinese and English for multilingual development and maintenance.
+
+## 2024-xx-xx FileManager Pagination Optimization
+- Removed front-end slice logic, pagination is now fully backend-driven.
+- Only renders current page data from backend, preventing lag with large file sets.
+- Users can customize page size for a smoother experience.

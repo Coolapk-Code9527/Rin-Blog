@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback, useContext } from 'rea
 import { useTranslation } from 'react-i18next';
 import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
-import { formatFileSize, getFileTypeIcon } from './utils';
 import ReactLoading from "react-loading";
 import { ShowAlertType } from '../../hooks/useAlert';
 import JSZip from 'jszip';
@@ -12,9 +11,19 @@ import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../dialog';
 import { ClientConfigContext } from '../../state/config';
 import { FilePreview } from './FilePreview';
+import { FileTypeSvgIcon } from './FileTypeSvgIcon';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
+
+// 文件大小格式化工具
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
 // 使用ReactLoading作为Loading组件
 const Loading = ({ type, height, width, color = "#FC466B" }: { type: any, height: number, width: number, color?: string }) => (
@@ -773,21 +782,18 @@ export function FileManager({
     const folders = files.filter(file => file.isFolder);
     const normalFiles = files.filter(file => !file.isFolder);
     const displayFiles = [...folders, ...normalFiles];
-    // 分页：只显示当前页的数据
-    const startIdx = (currentPage - 1) * itemsPerPage;
-    const endIdx = startIdx + itemsPerPage;
-    const pagedFiles = displayFiles.slice(startIdx, endIdx);
+    // 优化卡片布局和交互
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
-        {pagedFiles.map(file => (
-          <div 
+      <div className="grid gap-x-6 gap-y-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 p-4">
+        {displayFiles.map(file => (
+          <div
             key={file.id}
-            className={`p-3 rounded-lg border ${selectedFiles.some(f => f.id === file.id) ? 'border-theme bg-pink-50 dark:bg-pink-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50'} 
-            cursor-pointer transition-colors flex flex-col items-center relative group`}
+            className={`group relative flex flex-col items-center p-4 rounded-xl border bg-white dark:bg-gray-900 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 ${selectedFiles.some(f => f.id === file.id) ? 'border-theme ring-2 ring-theme/30 bg-pink-50 dark:bg-pink-900/20' : 'border-gray-200 dark:border-gray-700'}`}
+            style={{ minWidth: 0 }}
             onClick={() => handleFileClick(file)}
           >
-            {/* 文件图标 */}
-            <div className="w-16 h-16 flex items-center justify-center"
+            {/* 文件图标/缩略图，大小统一 */}
+            <div className="w-24 h-24 relative flex items-center justify-center mb-2"
               onClick={isPreviewable(file) ? (e) => { e.stopPropagation(); handlePreviewClick(file); } : undefined}
               style={{ cursor: isPreviewable(file) ? 'pointer' : 'default' }}
             >
@@ -796,23 +802,31 @@ export function FileManager({
                   src={file.thumbUrl || getFileUrl(`thumb_${file.thumbnailHash}`, config)}
                   alt={file.name}
                   loading="lazy"
-                  className="w-16 h-16 object-cover rounded shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                  className="w-24 h-24 object-cover rounded shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               ) : (
-                <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType || file.name)} text-4xl`}></i>
+                <FileTypeSvgIcon type={file.mimeType || file.name} className="w-24 h-24" />
               )}
             </div>
-            {/* 文件名 */}
-            <p className={`mt-2 text-sm truncate w-full text-center ${/^[a-f0-9]{16,}$/.test(file.name) ? 'text-gray-400 italic' : ''}`}>
+            {/* 文件名，省略并加tooltip */}
+            <p className="mt-2 text-sm truncate w-full text-center" title={file.name}>
               <span className="truncate">
                 {file.name && !/^[a-f0-9]{32,}$/.test(file.name)
                   ? file.name
                   : (/^[a-f0-9]{32,}$/.test(file.name) ? (file.name + '（无原始名）') : file.name)}
               </span>
             </p>
-            {/* 操作按钮区 */}
-            <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* 文件大小/类型 */}
+            <p className="text-xs text-gray-500 mt-1 mb-2">
+              {file.isFolder ? t('files.folder', { defaultValue: '文件夹' }) : formatFileSize(file.size)}
+            </p>
+            {/* 新增：文件日期显示 */}
+            <p className="text-xs text-gray-400 mb-2">
+              {file.modifiedAt ? new Date(file.modifiedAt * 1000).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }) : ''}
+            </p>
+            {/* 操作按钮区，悬浮显示，半透明背景 */}
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 dark:bg-gray-900/80 rounded-lg p-1 shadow z-10">
               {/* 下载按钮 */}
               {!file.isFolder && (
                 <button 
@@ -858,19 +872,15 @@ export function FileManager({
                 </button>
               )}
             </div>
-            {/* 文件大小 */}
-            <p className="text-xs text-gray-500 mt-1">
-              {file.isFolder ? '' : formatFileSize(file.size)}
-            </p>
-            {/* 引用计数按钮 */}
+            {/* 引用计数按钮，固定右下角绝对定位，不占主内容空间 */}
             {!file.isFolder && (
               <span
-                className={`text-xs mr-2 rounded px-2 py-0.5 flex items-center gap-1
+                className={`text-xs rounded px-2 py-0.5 flex items-center gap-1
                   ${file.referencesCount > 0
                     ? 'text-blue-500 bg-gray-100 dark:bg-gray-800'
                     : 'text-gray-400 bg-gray-100 dark:bg-gray-800'}`}
                 title={file.referencesCount > 0 ? t('files.references') : t('files.ref_none')}
-                style={{ minWidth: 24, justifyContent: 'center', cursor: file.referencesCount > 0 ? 'pointer' : 'default' }}
+                style={{ minWidth: 24, justifyContent: 'center', cursor: file.referencesCount > 0 ? 'pointer' : 'default', position: 'absolute', right: 12, bottom: 12, zIndex: 20 }}
                 onClick={file.referencesCount > 0 ? (e) => { e.stopPropagation(); handleShowReferences(file); } : undefined}
               >
                 <i className={file.referencesCount > 0 ? 'ri-link' : 'ri-link-unlink'} />
@@ -879,7 +889,7 @@ export function FileManager({
             )}
           </div>
         ))}
-        {pagedFiles.length === 0 && !isLoading && (
+        {displayFiles.length === 0 && !isLoading && (
           <div className="col-span-full flex flex-col items-center justify-center py-10">
             <i className="ri-inbox-line text-4xl text-gray-400"></i>
             <p className="mt-2 text-gray-500">{t('files.empty')}</p>
@@ -895,10 +905,7 @@ export function FileManager({
     const folders = files.filter(file => file.isFolder);
     const normalFiles = files.filter(file => !file.isFolder);
     const displayFiles = [...folders, ...normalFiles];
-    // 分页：只显示当前页的数据
-    const startIdx = (currentPage - 1) * itemsPerPage;
-    const endIdx = startIdx + itemsPerPage;
-    const pagedFiles = displayFiles.slice(startIdx, endIdx);
+    // 直接渲染后端分页数据，无需slice
     return (
       <div className="overflow-x-auto w-full">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -947,7 +954,7 @@ export function FileManager({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
-            {pagedFiles.map(file => (
+            {displayFiles.map(file => (
               <tr 
                 key={file.id}
                 className={`${selectedFiles.some(f => f.id === file.id) ? 'bg-pink-50 dark:bg-pink-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'} cursor-pointer transition-colors`}
@@ -985,7 +992,7 @@ export function FileManager({
                       onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   ) : (
-                    <i className={`ri-${file.isFolder ? 'folder-fill text-yellow-500' : getFileTypeIcon(file.mimeType || file.name)} mr-2 text-xl`}></i>
+                    <FileTypeSvgIcon type={file.mimeType || file.name} className="w-24 h-24" />
                   )}
                   <span className="truncate">
                     {file.name && !/^[a-f0-9]{32,}$/.test(file.name)
@@ -1053,7 +1060,7 @@ export function FileManager({
                 </td>
               </tr>
             ))}
-            {pagedFiles.length === 0 && !isLoading && (
+            {displayFiles.length === 0 && !isLoading && (
               <tr>
                 <td colSpan={showSelector && multiple ? 5 : 4} className="py-8 text-center">
                   <div className="flex flex-col items-center justify-center">
@@ -1180,18 +1187,18 @@ export function FileManager({
         </div>
         {/* 右侧：每页数量+按钮组，整体右对齐 */}
         <div className="flex flex-row flex-wrap items-center gap-2 justify-end min-w-0">
-          <div className="flex items-center h-10">
-          <select
-            value={itemsPerPage}
-            onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-              className="h-10 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[70px] flex items-center"
-            style={{ minWidth: 70, maxWidth: 100 }}
-            title={t('files.page_size') || '每页数量'}
-          >
-            {pageSizeOptions.map(opt => (
-              <option key={opt} value={opt}>{opt + t('files.per_page', { defaultValue: '/页' })}</option>
-            ))}
-          </select>
+          <div className="flex items-center h-10 gap-2">
+            <select
+              value={itemsPerPage}
+              onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+              className="h-10 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-theme focus:border-transparent text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[70px] align-middle"
+              style={{ minWidth: 70, maxWidth: 100 }}
+              title={t('files.page_size') || '每页数量'}
+            >
+              {pageSizeOptions.map(opt => (
+                <option key={opt} value={opt}>{opt + t('files.per_page', { defaultValue: '/页' })}</option>
+              ))}
+            </select>
           </div>
           <div className="flex flex-row flex-wrap gap-2 min-w-0">
             {/* 视图切换按钮 */}

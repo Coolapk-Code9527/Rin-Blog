@@ -127,3 +127,19 @@ SOFTWARE.
 - 删除、批量删除、移动、重命名主文件时，只处理R2缩略图对象，files表不再有缩略图记录。
 - 仅支持管理员userId。
 - 这样可彻底解决根目录多文件、files表重复、同步冗余、缩略图混乱等问题。
+
+## 文件管理工具（client/src/components/file_manager/utils.ts）
+
+该文件包含文件管理相关的常用工具函数：
+
+- `formatFileSize(bytes: number): string`：格式化文件大小，返回带单位的字符串。
+- `getFileTypeIcon(mimeTypeOrName: string): string`：根据MIME类型或文件名获取Remix图标类名。
+- `EXT_ICON_MAP`：文件扩展名与图标的映射表。
+- `MIME_ICON_MAP`：常见MIME类型与图标的映射表。
+
+所有函数和常量均有中英文注释，便于多语言开发和维护。
+
+## 2024-xx-xx 文件管理分页机制优化
+- 前端分页slice逻辑已移除，分页完全由后端API控制。
+- 保证每次只渲染后端返回的当前页数据，避免大文件量时页面卡顿。
+- 用户可通过每页数量下拉选择自定义分页，体验更流畅。
