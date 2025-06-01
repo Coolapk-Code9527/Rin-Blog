@@ -44,12 +44,12 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
   });
 
   useEffect(() => {
-    if (isText && files[index].id) {
+    if (isText && files[index].url) {
       setTextLoading(true);
       setTextError(false);
-      // 统一通过 Worker 内容出口接口获取内容
-      const contentUrl = `/api/files/${files[index].id}/content`;
-      fetch(contentUrl)
+      // 通过后端代理解决 CORS
+      const proxyUrl = `/api/proxy?url=${encodeURIComponent(files[index].url)}`;
+      fetch(proxyUrl)
         .then(async r => {
           const txt = await r.text();
           // 只要内容里包含 <!DOCTYPE html>，才判定为错误页面
@@ -64,12 +64,6 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
         .catch(() => { setTextError(true); setTextLoading(false); });
     }
   }, [index, files, isText]);
-
-  useEffect(() => {
-    setTextContent('');
-    setTextLoading(false);
-    setTextError(false);
-  }, [index]);
 
   const prev = () => {
     setIndex(i => (i - 1 + files.length) % files.length);
@@ -86,15 +80,14 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
 
   const file = files[index];
   if (!file) return null;
-  // 统一内容出口 URL
-  const contentUrl = `/api/files/${file.id}/content`;
   const thumb = file.thumbUrl || '';
+  const orig = file.url || '';
 
   // 下载原图
   const handleDownload = () => {
-    if (!contentUrl) return;
+    if (!orig) return;
     const a = document.createElement('a');
-    a.href = contentUrl;
+    a.href = orig;
     a.download = file.name;
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
@@ -103,8 +96,8 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
 
   // 新窗口打开
   const handleOpenNew = () => {
-    if (!contentUrl) return;
-    window.open(contentUrl, '_blank', 'noopener');
+    if (!orig) return;
+    window.open(orig, '_blank', 'noopener');
   };
 
   return (
@@ -150,7 +143,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
               )}
               <img
                 ref={imgRef}
-                src={contentUrl}
+                src={orig}
                 alt={file.name}
                 className={`max-w-[96vw] max-h-[80vh] rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 bg-white dark:bg-gray-900 transition-all duration-300 ${loading || error ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 onLoad={() => { setLoading(false); setShowOrig(true); }}
@@ -163,7 +156,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
           {/* 视频 */}
           {isVideo && (
             <video
-              src={contentUrl}
+              src={orig}
               controls
               autoPlay
               className="max-w-[96vw] max-h-[80vh] rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 bg-black"
@@ -175,7 +168,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
           {/* 音频 */}
           {isAudio && (
             <audio
-              src={contentUrl}
+              src={orig}
               controls
               autoPlay
               className="w-full max-w-[80vw] mt-10"
@@ -186,7 +179,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
           {/* PDF */}
           {isPDF && (
             <iframe
-              src={contentUrl}
+              src={orig}
               title={file.name}
               className="w-[min(90vw,800px)] h-[min(80vh,600px)] rounded-xl shadow-2xl border-2 border-white/10 dark:border-gray-800 bg-white dark:bg-gray-900"
               style={{ minHeight: 300 }}
