@@ -5,6 +5,7 @@ import { FileManager } from '../components/file_manager/FileManager';
 import { PageContainer } from '../components/container';
 // @ts-ignore - 忽略类型错误
 import { useDocumentTitle } from '../utils/documentTitle';
+import { CapacityInfo } from '../components/CapacityInfo';
 
 /**
  * 文件管理页面
@@ -17,14 +18,12 @@ export function FilesPage() {
 
   return (
     <PageContainer wide>
-      <div className="mb-6">
+      <div className="mb-2">
         <h1 className="text-2xl font-bold">{pageTitle}</h1>
-        <p className="text-gray-500 mt-1">{t('files.page_description')}</p>
+        <CapacityInfo />
       </div>
 
-      <div className="w-full">
-        <FileManager />
-      </div>
+      <FileManager />
     </PageContainer>
   );
 } 

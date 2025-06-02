@@ -156,7 +156,9 @@
     "delete_success_batch": "成功刪除 {{count}} 個檔案",
     "delete_skipped_batch": "跳過 {{count}} 個（歷史資料或路徑不規範）",
     "delete_failed_batch": "刪除失敗 {{count}} 個",
-    "delete_none": "未刪除任何檔案，可能為歷史資料或路徑不規範"
+    "delete_none": "未刪除任何檔案，可能為歷史資料或路徑不規範",
+    "r2_usage": "R2已用容量：{{used}}",
+    "d1_usage": "D1已用容量：{{used}}"
   },
   "footer": {
     "rss": "RSS 訂閱連結"

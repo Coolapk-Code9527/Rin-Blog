@@ -178,7 +178,9 @@
     "sync_result": "同步结果",
     "per_page": "/页",
     "page_size": "每页数量",
-    "drag_to_upload": "松开上传文件"
+    "drag_to_upload": "松开上传文件",
+    "r2_usage": "R2已用容量：{{used}}",
+    "d1_usage": "D1已用容量：{{used}}"
   },
   "footer": {
     "rss": "RSS 订阅链接"

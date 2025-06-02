@@ -1,4 +1,5 @@
 import React from 'react';
+import { Padding } from './padding';
 
 type PageContainerProps = {
   children: React.ReactNode;
@@ -15,8 +16,10 @@ type PageContainerProps = {
  */
 export function PageContainer({ children, wide = false, className = '' }: PageContainerProps) {
   return (
-    <main className={`max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 ${wide ? 'xl:max-w-screen-2xl' : 'lg:max-w-4xl'} ${className}`}>
-      {children}
-    </main>
+    <Padding className={wide ? '' : 'lg:max-w-4xl mx-auto'}>
+      <main className={`w-full ${wide ? 'xl:max-w-screen-2xl max-w-screen-xl mx-auto' : ''} ${className}`}>
+        {children}
+      </main>
+    </Padding>
   );
 } 

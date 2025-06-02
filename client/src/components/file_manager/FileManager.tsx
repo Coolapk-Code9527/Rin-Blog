@@ -776,6 +776,22 @@ export function FileManager({
     await handleFileUpload(fakeEvent);
   };
 
+  // 新增：R2与D1容量状态
+  const [r2Usage, setR2Usage] = useState<number | null>(null);
+  const [d1Usage, setD1Usage] = useState<number | null>(null);
+  useEffect(() => {
+    // 仅管理员请求
+    if (!isAdmin) return;
+    fetch(`${endpoint}/files/stat`, {
+      headers: headersWithAuth(),
+    })
+      .then(res => res.json())
+      .then((data: any) => {
+        if (data && data.r2 && typeof data.r2.used === 'number') setR2Usage(data.r2.used);
+        if (data && data.d1 && typeof data.d1.used === 'number') setD1Usage(data.d1.used);
+      });
+  }, [isAdmin]);
+
   // 渲染网格视图
   const renderGridView = () => {
     // 文件夹优先，文件后面
@@ -1127,7 +1143,7 @@ export function FileManager({
   return (
     <div
       className={
-        "relative bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full" +
+        "w-full relative bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700" +
         (dragActive ? " ring-4 ring-pink-400/60 ring-inset" : "")
       }
       onDragEnter={handleDragEnter}

@@ -6,6 +6,7 @@ import {client} from "../main"
 import {headersWithAuth} from "../utils/auth"
 import {siteName} from "../utils/constants"
 import {useTranslation} from "react-i18next";
+import { PageContainer } from '../components/container';
 
 
 export function TimelinePage() {
@@ -62,42 +63,40 @@ export function TimelinePage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <Waiting for={feeds}>
-                <main className="w-full flex flex-col justify-center items-center mb-8 ani-show">
-                    <div className="wauto text-start text-black dark:text-white py-4 text-4xl font-bold">
-                        <p>
-                            {t('timeline')}
+                <PageContainer wide>
+                    <p className="text-start text-black dark:text-white text-4xl font-bold">
+                        {t('timeline')}
+                    </p>
+                    <div className="flex flex-row justify-between">
+                        <p className="text-sm mt-4 text-neutral-500 font-normal">
+                            {t('article.total$count', { count: length })}
                         </p>
-                        <div className="flex flex-row justify-between">
-                            <p className="text-sm mt-4 text-neutral-500 font-normal">
-                                {t('article.total$count', { count: length })}
-                            </p>
-                        </div>
-                        {error && (
-                          <div className="mt-2 mb-4 flex flex-col items-start">
-                            <span className="text-red-500 text-sm mb-2">{error}</span>
-                            <button 
-                              onClick={fetchFeeds} 
-                              className="px-4 py-2 bg-theme text-white rounded hover:bg-theme-dark dark:bg-theme-dark dark:hover:bg-theme-light focus:outline-none focus:ring-2 focus:ring-theme-focus"
-                              aria-label={t('reload') || "Reload"}
-                              disabled={loading}
-                            >
-                              {loading ? 
-                                <span className="flex items-center">
-                                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                  {t('loading')}
-                                </span> : 
-                                t('reload')
-                              }
-                            </button>
-                          </div>
-                        )}
                     </div>
+                    {error && (
+                      <div className="mt-2 mb-4 flex flex-col items-start">
+                        <span className="text-red-500 text-sm mb-2">{error}</span>
+                        <button 
+                          onClick={fetchFeeds} 
+                          className="px-4 py-2 bg-theme text-white rounded hover:bg-theme-dark dark:bg-theme-dark dark:hover:bg-theme-light focus:outline-none focus:ring-2 focus:ring-theme-focus"
+                          aria-label={t('reload') || "Reload"}
+                          disabled={loading}
+                        >
+                          {loading ? 
+                            <span className="flex items-center">
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              {t('loading')}
+                            </span> : 
+                            t('reload')
+                          }
+                        </button>
+                      </div>
+                    )}
                     {feeds && Object.keys(feeds).length > 0 ? (
                       Object.keys(feeds).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
-                        <div key={year} className="wauto flex flex-col justify-center items-start">
+                        <div key={year} className="flex flex-col justify-center items-start">
                           <h1 className="flex flex-row items-center space-x-2">
                             <span className="text-2xl font-bold t-primary ">
                               {t('year$year', { year: year })}
@@ -123,7 +122,7 @@ export function TimelinePage() {
                         </h3>
                       </div>
                     )}
-                </main>
+                </PageContainer>
             </Waiting>
         </>
     )

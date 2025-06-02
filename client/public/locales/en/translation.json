@@ -166,7 +166,9 @@
     "delete_success_batch": "Successfully deleted {{count}} files",
     "delete_skipped_batch": "Skipped {{count}} (legacy data or invalid path)",
     "delete_failed_batch": "Failed to delete {{count}}",
-    "delete_none": "No files deleted, possibly legacy data or invalid path"
+    "delete_none": "No files deleted, possibly legacy data or invalid path",
+    "r2_usage": "R2 Used: {{used}}",
+    "d1_usage": "D1 Used: {{used}}"
   },
   "footer": {
     "rss": "RSS Subscription Link"

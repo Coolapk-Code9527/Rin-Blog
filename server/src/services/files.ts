@@ -969,5 +969,37 @@ export function FileService() {
                 }, {
                     query: t.Object({ url: t.String() })
                 })
+
+                // 统计R2与D1容量
+                .get('/stat', async ({ admin, set }) => {
+                    if (!admin) {
+                        set.status = 403;
+                        return { error: 'Permission denied' };
+                    }
+                    // 统计R2
+                    let r2Used = 0;
+                    try {
+                        const r2Files = await listAllR2Files();
+                        for (const path of r2Files) {
+                            const name = path.split('/').pop() || '';
+                            if (name.startsWith('thumb_')) continue;
+                            const meta = await getR2FileMeta(path);
+                            if (meta && meta.size) r2Used += meta.size;
+                        }
+                    } catch (e) {}
+                    // 统计D1（直接统计files表所有文件size总和，排除文件夹和缩略图）
+                    let d1Used = 0;
+                    try {
+                        const db = getDB();
+                        const res = await db.select({ total: sql<number>`sum(size)` })
+                            .from(files)
+                            .where(and(
+                                eq(files.isFolder, 0),
+                                sql`not (${files.name} like 'thumb_%')`
+                            ));
+                        d1Used = res[0]?.total || 0;
+                    } catch (e) {}
+                    return { r2: { used: r2Used }, d1: { used: d1Used } };
+                })
         );
 } 

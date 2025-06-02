@@ -156,7 +156,9 @@
     "delete_success_batch": "{{count}} 個のファイルを削除しました",
     "delete_skipped_batch": "{{count}} 個をスキップ（古いデータまたはパス不正）",
     "delete_failed_batch": "{{count}} 個の削除に失敗しました",
-    "delete_none": "ファイルが削除されませんでした。古いデータまたはパス不正の可能性があります"
+    "delete_none": "ファイルが削除されませんでした。古いデータまたはパス不正の可能性があります",
+    "r2_usage": "R2使用済み：{{used}}",
+    "d1_usage": "D1使用済み：{{used}}"
   },
   "footer": {
     "rss": "RSS 購読リンク"

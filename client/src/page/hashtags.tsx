@@ -6,6 +6,7 @@ import { HashTag } from "../components/hashtag";
 import { Waiting } from "../components/loading";
 import { client } from "../main";
 import { siteName } from "../utils/constants";
+import { PageContainer } from '../components/container';
 
 type Hashtag = {
     id: number;
@@ -39,14 +40,12 @@ export function HashtagsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <Waiting for={hashtags}>
-                <main className="w-full flex flex-col justify-center items-center mb-8 ani-show">
-                    <div className="wauto text-start text-black dark:text-white py-4 text-4xl font-bold">
-                        <p>
-                            {t('hashtags')}
-                        </p>
-                    </div>
+                <PageContainer wide>
+                    <p className="text-start text-black dark:text-white text-4xl font-bold">
+                        {t('hashtags')}
+                    </p>
 
-                    <div className="wauto flex flex-col flex-wrap items-start justify-start">
+                    <div className="flex flex-col flex-wrap items-start justify-start">
                         {hashtags?.filter(({ feeds }) => feeds > 0).map((hashtag, index) => {
                             return (
                                 <div key={index} className="w-full flex flex-row">
@@ -63,7 +62,7 @@ export function HashtagsPage() {
                             )
                         })}
                     </div>
-                </main>
+                </PageContainer>
             </Waiting>
         </>
     )
