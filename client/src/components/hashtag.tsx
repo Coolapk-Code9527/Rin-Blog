@@ -56,13 +56,6 @@ export function HashTag({ name }: { name: string }) {
     // 标签名过长时截断显示
     const displayName = name.length > 12 ? `${name.substring(0, 10)}...` : name;
     
-    // 触觉反馈 - 在移动设备上支持
-    const onTouchStart = () => {
-        if ('vibrate' in navigator) {
-            navigator.vibrate(5); // 轻微振动5毫秒
-        }
-    };
-    
     return (
         <button 
             onClick={handleClick}
@@ -70,7 +63,7 @@ export function HashTag({ name }: { name: string }) {
             onMouseLeave={() => setIsHovered(false)}
             onFocus={() => setIsHovered(true)}
             onBlur={() => setIsHovered(false)}
-            onTouchStart={onTouchStart}
+            // onTouchStart={onTouchStart}
             className={`text-base text-pretty overflow-hidden px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full transition-all duration-200 border border-transparent transform 
                 ${isHovered ? '-translate-y-0.5 shadow-md' : 'shadow-sm'} 
                 ${tagColor} 

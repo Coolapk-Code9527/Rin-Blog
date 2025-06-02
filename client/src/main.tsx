@@ -54,17 +54,18 @@ const i18n = i18next;
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
+    fallbackLng: ['zh-CN', 'en'], // 优先使用zh-CN
+    supportedLngs: ['en', 'zh-CN', 'zh-TW', 'ja'],
+    load: 'currentOnly', // 避免自动降级到zh
     backend: {
-      loadPath: '/locales/{{lng}}/{{ns}}.json',
+      loadPath: '/locales/{{lng}}/translation.json',
     },
-    fallbackLng: "en",
-    debug: isDev, // 开发环境下开启调试模式
-    defaultNS: 'translation', 
-    ns: ['translation'],
-    keySeparator: '.', // 使用.作为嵌套键的分隔符
     interpolation: {
-      escapeValue: false // react already safes from xss => https://www.i18next.com/translation-function/interpolation#unescape
-    }
+      escapeValue: false,
+    },
+    react: {
+      useSuspense: false,
+    },
   })
   .then(() => {
     console.log('i18n 初始化完成，当前语言:', (i18n as any).language);

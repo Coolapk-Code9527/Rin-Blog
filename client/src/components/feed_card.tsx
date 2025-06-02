@@ -45,13 +45,6 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         document.head.appendChild(link);
     };
     
-    // 触觉反馈支持 - 用于移动设备
-    const handleTouchStart = () => {
-        if ('vibrate' in navigator) {
-            navigator.vibrate(5); // 轻微振动5毫秒
-        }
-    };
-    
     // 为文章生成基于标题的稳定渐变背景
     const generateGradient = React.useMemo(() => {
         // 根据文章ID和标题生成一致的颜色
@@ -100,7 +93,6 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
             aria-labelledby={`article-title-${id}`}
             onMouseEnter={prefetchArticle}
-            onTouchStart={handleTouchStart}
             style={cardStyle}
             replace={false}
         >
