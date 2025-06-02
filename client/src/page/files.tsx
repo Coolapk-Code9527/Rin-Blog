@@ -23,7 +23,9 @@ export function FilesPage() {
         <CapacityInfo />
       </div>
 
-      <FileManager />
+      <div className="w-full">
+        <FileManager />
+      </div>
     </PageContainer>
   );
 } 

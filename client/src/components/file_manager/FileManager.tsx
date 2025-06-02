@@ -1143,7 +1143,7 @@ export function FileManager({
   return (
     <div
       className={
-        "w-full relative bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700" +
+        "relative bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full" +
         (dragActive ? " ring-4 ring-pink-400/60 ring-inset" : "")
       }
       onDragEnter={handleDragEnter}

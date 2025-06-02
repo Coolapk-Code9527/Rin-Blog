@@ -6,7 +6,6 @@ import { Waiting } from "../components/loading"
 import { client } from "../main"
 import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
-import { PageContainer } from '../components/container'
 
 type FeedsData = {
     name: string;
@@ -65,23 +64,25 @@ export function HashtagPage({ name }: { name: string }) {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <Waiting for={hashtag || status === 'idle'}>
-                <PageContainer wide>
-                    <p className="text-start text-black dark:text-white text-4xl font-bold">
-                        {hashtag?.name}
-                    </p>
-                    <div className="flex flex-row justify-between">
-                        <p className="text-sm mt-4 text-neutral-500 font-normal">
-                            {t('article.total$count', { count: hashtag?.feeds?.length })}
+                <main className="w-full flex flex-col justify-center items-center mb-8">
+                    <div className="wauto text-start text-black dark:text-white py-4 text-4xl font-bold">
+                        <p>
+                            {hashtag?.name}
                         </p>
+                        <div className="flex flex-row justify-between">
+                            <p className="text-sm mt-4 text-neutral-500 font-normal">
+                                {t('article.total$count', { count: hashtag?.feeds?.length })}
+                            </p>
+                        </div>
                     </div>
                     <Waiting for={status === 'idle'}>
-                        <div className="flex flex-col">
+                        <div className="wauto flex flex-col">
                             {hashtag?.feeds?.map(({ id, ...feed }: any) => (
                                 <FeedCard key={id} id={id} {...feed} />
                             ))}
                         </div>
                     </Waiting>
-                </PageContainer>
+                </main>
             </Waiting>
         </>
     )

@@ -22,7 +22,6 @@ import {AdjacentSection} from "../components/adjacent_feed.tsx";
 import {formatDistance} from "date-fns";
 import { Pagination } from "../components/pagination";
 import { RecentPosts } from "../components/recent_posts";
-import { PageContainer } from '../components/container';
 
 type Feed = {
   id: number;
@@ -191,7 +190,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <PageContainer wide>
+      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
         {error && (
           <>
             <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
@@ -344,7 +343,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
             </aside>
           </>
         )}
-      </PageContainer>
+      </div>
       <AlertUI />
       <ConfirmUI />
     </Waiting>

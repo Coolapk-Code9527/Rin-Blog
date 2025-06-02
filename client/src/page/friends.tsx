@@ -13,7 +13,6 @@ import { ProfileContext } from "../state/profile";
 import { shuffleArray } from "../utils/array";
 import { headersWithAuth } from "../utils/auth";
 import { siteName } from "../utils/constants";
-import { PageContainer } from '../components/container';
 
 
 type FriendItem = {
@@ -100,7 +99,7 @@ export function FriendsPage() {
             <meta property="og:url" content={document.URL} />
         </Helmet>
         <Waiting for={friendsAvailable.length !== 0 || friendsUnavailable.length !== 0 || status === "idle"}>
-            <PageContainer wide>
+            <main className="w-full flex flex-col justify-center items-center mb-8 t-primary ani-show">
                 <FriendList title={t('friends.title')} show={friendsAvailable.length > 0} friends={friendsAvailable} />
                 <FriendList title={t('friends.left')} show={friendsUnavailable.length > 0} friends={friendsUnavailable} />
                 <FriendList title={t('friends.review.waiting')} show={waitList.length > 0} friends={waitList} />
@@ -124,7 +123,7 @@ export function FriendsPage() {
                         </div>
                     </div>
                 }
-            </PageContainer>
+            </main>
         </Waiting>
         <AlertUI />
     </>)
@@ -134,10 +133,12 @@ function FriendList({ title, show, friends }: { title: string, show: boolean, fr
     return (<>
         {
             show && <>
-                <p className="text-start text-sm mt-4 text-neutral-500 font-normal">
-                    {title}
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="wauto text-start py-4">
+                    <p className="text-sm mt-4 text-neutral-500 font-normal">
+                        {title}
+                    </p>
+                </div>
+                <div className="wauto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {friends.map((friend) => (
                         <Friend key={friend.id} friend={friend} />
                     ))}
