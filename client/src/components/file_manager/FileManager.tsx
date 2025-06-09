@@ -101,11 +101,13 @@ function isPreviewable(file: FileItem): boolean {
 export function FileManager({
   onSelect,
   allowedTypes,
-  showSelector = true
+  showSelector = true,
+  multiple = true
 }: {
   onSelect?: (files: FileItem | FileItem[]) => void;
   allowedTypes?: string[];
   showSelector?: boolean;
+  multiple?: boolean;
 }) {
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -172,7 +174,8 @@ export function FileManager({
   }
 
   // 新增多选/单选切换
-  const [multiple, setMultiple] = useState(true);
+  const [multipleState, setMultiple] = useState(multiple);
+  useEffect(() => { setMultiple(multiple); }, [multiple]);
 
   // 新增同步菜单状态
   const [showSyncMenu, setShowSyncMenu] = useState(false);
@@ -224,7 +227,7 @@ export function FileManager({
       handlePreviewClick(file);
     } else if (showSelector) {
       // 选择模式下，点击只做选择
-      if (multiple) {
+      if (multipleState) {
         setSelectedFiles(prev => {
           const exists = prev.some(f => f.id === file.id);
           return exists 
@@ -371,7 +374,7 @@ export function FileManager({
       return;
     }
 
-    if (multiple) {
+    if (multipleState) {
       onSelect?.(selectedFiles);
     } else {
       onSelect?.(selectedFiles[0]);
@@ -925,7 +928,7 @@ export function FileManager({
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              {showSelector && multiple && (
+              {showSelector && multipleState && (
                 <th scope="col" className="px-4 py-3 w-10"></th>
               )}
               <th 
@@ -974,7 +977,7 @@ export function FileManager({
                 className={`${selectedFiles.some(f => f.id === file.id) ? 'bg-pink-50 dark:bg-pink-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'} cursor-pointer transition-colors`}
                 onClick={() => handleFileClick(file)}
               >
-                {showSelector && multiple && (
+                {showSelector && multipleState && (
                   <td className="px-4 py-3">
                     <input 
                       type="checkbox" 
@@ -1076,7 +1079,7 @@ export function FileManager({
             ))}
             {displayFiles.length === 0 && !isLoading && (
               <tr>
-                <td colSpan={showSelector && multiple ? 5 : 4} className="py-8 text-center">
+                <td colSpan={showSelector && multipleState ? 5 : 4} className="py-8 text-center">
                   <div className="flex flex-col items-center justify-center">
                     <i className="ri-inbox-line text-4xl text-gray-400"></i>
                     <p className="mt-2 text-gray-500">{t('files.empty')}</p>
@@ -1236,9 +1239,9 @@ export function FileManager({
             <button
               onClick={() => setMultiple(m => !m)}
               className="px-3 py-2 h-10 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              title={multiple ? t('files.single_select') : t('files.multi_select')}
+              title={multipleState ? t('files.single_select') : t('files.multi_select')}
             >
-              <i className={`ri-checkbox-${multiple ? 'multiple' : 'blank'}-line`}></i>
+              <i className={`ri-checkbox-${multipleState ? 'multiple' : 'blank'}-line`}></i>
             </button>
             {/* 新建文件夹按钮 */}
             <button
@@ -1340,7 +1343,7 @@ export function FileManager({
       )}
       
       {/* 选择操作栏 - 多选模式 */}
-      {showSelector && multiple && selectedFiles.length > 0 && (
+      {showSelector && multipleState && selectedFiles.length > 0 && (
         <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between gap-2">
           <div className="text-sm">
             {selectedFiles.length > 0 ? t('files.selected', { count: selectedFiles.length }) : ''}

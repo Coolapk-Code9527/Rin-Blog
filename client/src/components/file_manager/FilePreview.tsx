@@ -147,7 +147,11 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
   }
 
   useEffect(() => {
-    setIndex(current);
+    if (files.length === 0) return;
+    let safeIndex = current;
+    if (safeIndex >= files.length) safeIndex = files.length - 1;
+    if (safeIndex < 0) safeIndex = 0;
+    setIndex(safeIndex);
     setLoading(true);
     setError(false);
     setShowOrig(false);

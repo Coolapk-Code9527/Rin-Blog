@@ -25,6 +25,8 @@ import {DraftDialog} from "../components/draft_dialog";
 import {useDraftManager, Draft} from "../utils/draft";
 import type { Feed } from '../types/api';  // 根据实际路径调整
 import { useToast } from '../hooks/useToast';
+import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialog';
+import type { FileItem } from '../types/api';
 
 // 处理process.env问题
 declare const process: {
@@ -330,12 +332,14 @@ const MarkdownToolbar = React.memo(({
   editor, 
   setDraftDialogOpen, 
   setHistoryDialogOpen, 
-  manualSaveHistory 
+  manualSaveHistory, 
+  setFileSelectorOpen // 新增
 }: { 
   editor?: editor.IStandaloneCodeEditor,
   setDraftDialogOpen: (open: boolean) => void,
   setHistoryDialogOpen: (open: boolean) => void,
-  manualSaveHistory: () => void
+  manualSaveHistory: () => void,
+  setFileSelectorOpen: (open: boolean) => void // 新增
 }) => {
   const { t } = useTranslation();
   
@@ -449,6 +453,14 @@ const MarkdownToolbar = React.memo(({
           <span className="text-sm hidden sm:inline">{t('history.save_snapshot')}</span>
         </button>
       </div>
+      {/* 插入文件按钮 */}
+      <button
+        onClick={() => setFileSelectorOpen(true)}
+        className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700"
+        title={t('markdown.insert_file') || '插入文件'}
+      >
+        <i className="ri-attachment-2 text-base" />
+      </button>
     </div>
   );
 });
@@ -463,7 +475,8 @@ const MobileToolbar = React.memo(({
   setScrollSync,
   setDraftDialogOpen,
   setHistoryDialogOpen,
-  manualSaveHistory
+  manualSaveHistory,
+  setFileSelectorOpen // 新增
 }: { 
   onPublish: () => void, 
   publishing: boolean,
@@ -471,7 +484,8 @@ const MobileToolbar = React.memo(({
   setScrollSync: (value: boolean) => void,
   setDraftDialogOpen: (value: boolean) => void,
   setHistoryDialogOpen: (value: boolean) => void,
-  manualSaveHistory: () => void
+  manualSaveHistory: () => void,
+  setFileSelectorOpen: (open: boolean) => void // 新增
 }) => {
   const { t } = useTranslation();
   const { showAlert } = useAlert();
@@ -578,6 +592,14 @@ const MobileToolbar = React.memo(({
         ) : (
           <i className="ri-send-plane-fill text-lg" />
         )}
+      </button>
+      {/* 插入文件按钮 */}
+      <button
+        className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center w-10 h-10 shadow-sm"
+        onClick={() => setFileSelectorOpen(true)}
+        title={"插入文件"}
+      >
+        <i className="ri-attachment-2 text-lg" />
       </button>
     </div>
       
@@ -1403,6 +1425,11 @@ export function WritingPage({ id }: { id?: number }) {
   // 添加一个发布状态标记
   const [isPublishing, setIsPublishing] = useState(false);
 
+  // 文件选择弹窗状态
+  const [fileSelectorOpen, setFileSelectorOpen] = useState(false);
+  // 记录选择的文件（后续插入用）
+  const [selectedFiles, setSelectedFiles] = useState<FileItem | FileItem[] | null>(null);
+
   const autoSave = useCallback(() => {
     if (cache.get("content") !== content) {
       cache.set("content", content);
@@ -1687,6 +1714,44 @@ export function WritingPage({ id }: { id?: number }) {
   useEffect(() => {
     debouncedUpdate();
   }, [content, debouncedUpdate]);
+
+  // 文件插入逻辑
+  useEffect(() => {
+    if (!selectedFiles || !editorRef.current) return;
+    const files = Array.isArray(selectedFiles) ? selectedFiles : [selectedFiles];
+    const editor = editorRef.current;
+    const selection = editor.getSelection();
+    if (!selection) return;
+    let insertText = '';
+    files.forEach((file, idx) => {
+      if (!file.url) return;
+      // 每个文件引用前后都加一个空行，避免多文件插入时换行混乱
+      let block = '';
+      if (file.mimeType.startsWith('image/')) {
+        block = `![${file.name}](${file.url})`;
+      } else if (file.mimeType.startsWith('audio/')) {
+        block = `<audio src=\"${file.url}\" controls></audio>`;
+      } else if (file.mimeType.startsWith('video/')) {
+        block = `<video src=\"${file.url}\" controls></video>`;
+      } else {
+        block = `[${file.name}](${file.url})`;
+      }
+      // 保证首尾都有空行，且多文件插入时不会产生多余空行
+      if (idx === 0) {
+        insertText += `\n${block}\n\n`;
+      } else {
+        insertText += `${block}\n\n`;
+      }
+    });
+    // 合并多余空行
+    insertText = insertText.replace(/\n{3,}/g, '\n\n');
+    if (insertText) {
+      editor.executeEdits('', [{ range: selection, text: insertText }]);
+      editor.focus();
+    }
+    setSelectedFiles(null);
+  }, [selectedFiles]);
+
   function MetaInput({ className }: { className?: string }) {
     return (
       <>
@@ -1841,7 +1906,7 @@ export function WritingPage({ id }: { id?: number }) {
               <div className={`w-full h-full ${preview === 'comparison' ? "flex flex-row space-x-4" : ""}`}>
                 <div
                   className={`flex flex-col ${preview === 'preview' ? "hidden" : ""} ${preview === 'comparison' ? "w-1/2" : "w-full"} editor-container custom-scrollbar`}
-                  onDrop={(e: DragDropEvent) => {
+                  onDrop={(e: DragEvent) => {
                     e.preventDefault();
                     const editor = editorRef.current;
                     if (!editor) return;
@@ -1849,16 +1914,22 @@ export function WritingPage({ id }: { id?: number }) {
                       const selection = editor.getSelection();
                       if (!selection) return;
                       const file = e.dataTransfer.files[i];
-                      setUploading(true)
+                      setUploading(true);
                       uploadImage(file, (url) => {
-                        setUploading(false)
+                        setUploading(false);
                         const currentValue = editor.getModel()?.getValue();
-                        const imageMarkdown = `![${file.name}](${url})`;
-                        if (currentValue && currentValue.includes(imageMarkdown)) return;
-                        editor.executeEdits(undefined, [{
-                          range: selection,
-                          text: imageMarkdown + '\n',
-                        }]);
+                        let insertText = '';
+                        if (file.type.startsWith('image/')) {
+                          insertText = `![${file.name}](${url})\n`;
+                        } else if (file.type.startsWith('audio/')) {
+                          insertText = `<audio src=\"${url}\" controls></audio>\n`;
+                        } else if (file.type.startsWith('video/')) {
+                          insertText = `<video src=\"${url}\" controls></video>\n`;
+                        } else {
+                          insertText = `[${file.name}](${url})\n`;
+                        }
+                        if (currentValue && currentValue.includes(insertText.trim())) return;
+                        editor.executeEdits(undefined, [{ range: selection, text: insertText }]);
                       }, showAlert);
                     }
                   }}
@@ -1887,6 +1958,7 @@ export function WritingPage({ id }: { id?: number }) {
                     setDraftDialogOpen={setDraftDialogOpen} 
                     setHistoryDialogOpen={setHistoryDialogOpen} 
                     manualSaveHistory={manualSaveHistory}
+                    setFileSelectorOpen={setFileSelectorOpen}
                   />
                   
                   <div className="flex-grow relative h-0">
@@ -1981,7 +2053,16 @@ export function WritingPage({ id }: { id?: number }) {
       </div>
       <AlertUI />
       {/* @ts-ignore - 忽略MobileToolbar组件类型问题 */}
-      <MobileToolbar onPublish={publishButton} publishing={publishing} scrollSync={scrollSync} setScrollSync={setScrollSync} setDraftDialogOpen={setDraftDialogOpen} setHistoryDialogOpen={setHistoryDialogOpen} manualSaveHistory={manualSaveHistory} />
+      <MobileToolbar 
+        onPublish={publishButton} 
+        publishing={publishing} 
+        scrollSync={scrollSync} 
+        setScrollSync={setScrollSync} 
+        setDraftDialogOpen={setDraftDialogOpen} 
+        setHistoryDialogOpen={setHistoryDialogOpen} 
+        manualSaveHistory={manualSaveHistory}
+        setFileSelectorOpen={setFileSelectorOpen}
+      />
       
       {/* 历史记录对话框 */}
       <HistoryDialog 
@@ -2002,6 +2083,14 @@ export function WritingPage({ id }: { id?: number }) {
         onDelete={deleteDraft}
         onClear={clearAllDrafts}
         onSaveCurrent={saveCurrentAsDraft}
+      />
+      {/* 文件选择弹窗 */}
+      <FileSelectorDialog
+        isOpen={fileSelectorOpen}
+        onClose={() => setFileSelectorOpen(false)}
+        onSelect={(files) => setSelectedFiles(files)}
+        allowedTypes={undefined} // 后续可根据需要传递类型
+        title="选择要插入的文件"
       />
     </>
   );

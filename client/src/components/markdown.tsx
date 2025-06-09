@@ -507,21 +507,25 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             </h6>
           );
         },
-        p({ children, node, ...props }) {
-          // 检查是否为图片后的描述文本
-          // @ts-ignore - 忽略node类型检查
-          const isImageCaption = 
-            node?.children?.length === 1 && 
-            // @ts-ignore - 忽略type类型检查
-            node?.children[0]?.type === "emphasis" && 
-            // @ts-ignore - 忽略prev属性缺失的问题
-            node?.prev?.children?.some(child => child.type === "image");
-          
-          return (
-            <p className={`${isImageCaption ? "text-center text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-4" : "mt-2 py-1"}`} {...props}>
-              {children}
-            </p>
-          );
+        p({ children, ...props }) {
+          // 递归检查 children 是否包含 div/video/audio
+          function containsBlock(child: any): boolean {
+            if (!child) return false;
+            if (Array.isArray(child)) return child.some(containsBlock);
+            if (React.isValidElement(child)) {
+              const type = (child.type as any)?.toString?.() || child.type;
+              if (["div", "video", "audio"].includes(type)) return true;
+              const props = (child as any).props;
+              if (props && props.children) {
+                return containsBlock(props.children);
+              }
+            }
+            return false;
+          }
+          if (containsBlock(children)) {
+            return <>{children}</>;
+          }
+          return <p {...props}>{children}</p>;
         },
         hr({ children, ...props }) {
           return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" {...props} />;
@@ -634,6 +638,33 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         },
         div({ children, node, ...props }) {
           return <div {...props}>{children}</div>;
+        },
+        // 新增：自定义 video/audio 渲染，居中自适应
+        video({ src, children, ...props }) {
+          return (
+            <video
+              src={src}
+              controls
+              className="max-w-full md:max-w-2xl w-full h-auto rounded-xl shadow-md bg-black"
+              style={{ minWidth: '220px', minHeight: '160px', maxHeight: '60vh', background: '#000', display: 'block', margin: '2rem auto' }}
+              {...props}
+            >
+              {children}
+            </video>
+          );
+        },
+        audio({ src, children, ...props }) {
+          return (
+            <audio
+              src={src}
+              controls
+              className="w-full md:max-w-2xl"
+              style={{ minWidth: '220px', display: 'block', margin: '2rem auto' }}
+              {...props}
+            >
+              {children}
+            </audio>
+          );
         },
       }}
     />
