@@ -7,9 +7,21 @@ import {headersWithAuth} from "../utils/auth"
 import {siteName} from "../utils/constants"
 import {useTranslation} from "react-i18next";
 
+// Object.groupBy polyfill（如原生不支持则自动挂载）
+if (!Object.groupBy) {
+    Object.groupBy = function <T, K extends PropertyKey>(array: Iterable<T>, keySelector: (item: T, index: number, array?: Iterable<T>) => K): Partial<Record<K, T[]>> {
+        const result: Partial<Record<K, T[]>> = {};
+        let idx = 0;
+        for (const item of array) {
+            const key = keySelector(item, idx++, array);
+            (result[key] = result[key] || []).push(item);
+        }
+        return result;
+    } as any;
+}
 
 export function TimelinePage() {
-    const [feeds, setFeeds] = useState<Partial<Record<number, { id: number; title: string | null; createdAt: Date; }[]>>>()
+    const [feeds, setFeeds] = useState<Partial<Record<number, { id: number; title: string | null; createdAt: number; }[]>>>()
     const [length, setLength] = useState(0)
     const { t } = useTranslation()
     const [location] = useLocation();
@@ -31,7 +43,10 @@ export function TimelinePage() {
             
             if (data && typeof data !== 'string') {
                 setLength(data.length)
-                const groups = Object.groupBy(data, ({ createdAt }) => new Date(createdAt).getFullYear())
+                const groups = (Object.groupBy as any)(
+                  data,
+                  (item: any, idx: number, array: any) => new Date(item.createdAt).getFullYear()
+                );
                 setFeeds(groups)
                 setError(null);
             } else if (data === null || (typeof data === 'object' && Object.keys(data).length === 0)) {
@@ -107,8 +122,8 @@ export function TimelinePage() {
                             </span>
                           </h1>
                           <div className="w-full flex flex-col justify-center items-start my-4">
-                            {feeds[+year]?.map(({ id, title, createdAt }) => (
-                              <FeedItem key={id} id={id.toString()} title={title || t('unlisted')} createdAt={new Date(createdAt)} />
+                            {feeds[+year]?.map((feed) => (
+                              <FeedItem key={feed.id} id={feed.id.toString()} title={feed.title || t('unlisted')} createdAt={feed.createdAt} />
                             ))}
                           </div>
                         </div>
@@ -129,12 +144,12 @@ export function TimelinePage() {
     )
 }
 
-export function FeedItem({ id, title, createdAt, key }: { id: string, title: string, createdAt: Date, key?: number | string }) {
+export function FeedItem({ id, title, createdAt, ...rest }: { id: string, title: string, createdAt: number } & Record<string, any>) {
     const { t } = useTranslation();
     const locale = t('date_format.month_day', { returnObjects: true });
     const formatter = new Intl.DateTimeFormat(undefined, { day: '2-digit', month: '2-digit', year: undefined });
     return (
-        <div className="flex flex-row pl-8">
+        <div className="flex flex-row pl-8" {...rest}>
             <div className="flex flex-row items-center">
                 <div className="w-2 h-2 bg-theme rounded-full"></div>
             </div>

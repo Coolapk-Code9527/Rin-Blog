@@ -15,8 +15,7 @@ export interface FileItem {
   thumbUrl?: string; // 缩略图访问地址
 }
 
-// R2与D1容量统计接口返回类型
-type StorageStat = {
+// R2容量统计接口返回类型
+export type StorageStat = {
   r2: { used: number };
-  d1: { used: number };
 }; 

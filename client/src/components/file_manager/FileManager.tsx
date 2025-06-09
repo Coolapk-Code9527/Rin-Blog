@@ -776,9 +776,8 @@ export function FileManager({
     await handleFileUpload(fakeEvent);
   };
 
-  // 新增：R2与D1容量状态
+  // 新增：R2容量状态
   const [r2Usage, setR2Usage] = useState<number | null>(null);
-  const [d1Usage, setD1Usage] = useState<number | null>(null);
   useEffect(() => {
     // 仅管理员请求
     if (!isAdmin) return;
@@ -788,7 +787,6 @@ export function FileManager({
       .then(res => res.json())
       .then((data: any) => {
         if (data && data.r2 && typeof data.r2.used === 'number') setR2Usage(data.r2.used);
-        if (data && data.d1 && typeof data.d1.used === 'number') setD1Usage(data.d1.used);
       });
   }, [isAdmin]);
 

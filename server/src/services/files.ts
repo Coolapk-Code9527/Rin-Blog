@@ -976,7 +976,7 @@ export function FileService() {
                         set.status = 403;
                         return { error: 'Permission denied' };
                     }
-                    // 统计R2
+                    // 仅统计R2容量
                     let r2Used = 0;
                     try {
                         const r2Files = await listAllR2Files();
@@ -987,19 +987,7 @@ export function FileService() {
                             if (meta && meta.size) r2Used += meta.size;
                         }
                     } catch (e) {}
-                    // 统计D1（直接统计files表所有文件size总和，排除文件夹和缩略图）
-                    let d1Used = 0;
-                    try {
-                        const db = getDB();
-                        const res = await db.select({ total: sql<number>`sum(size)` })
-                            .from(files)
-                            .where(and(
-                                eq(files.isFolder, 0),
-                                sql`not (${files.name} like 'thumb_%')`
-                            ));
-                        d1Used = res[0]?.total || 0;
-                    } catch (e) {}
-                    return { r2: { used: r2Used }, d1: { used: d1Used } };
+                    return { r2: { used: r2Used } };
                 })
         );
 } 

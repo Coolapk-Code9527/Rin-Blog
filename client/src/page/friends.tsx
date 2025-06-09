@@ -30,6 +30,18 @@ type FriendItem = {
 
 async function publish({ name, avatar, desc, url, showAlert }: { name: string, avatar: string, desc: string, url: string, showAlert: ShowAlertType }) {
     const t = i18next.t
+    name = name.trim();
+    desc = desc.trim();
+    avatar = avatar.trim();
+    url = url.trim();
+    if (!name || !desc || !avatar || !url) {
+        showAlert(t('input_required', { defaultValue: '所有字段均不能为空' }))
+        return;
+    }
+    if (name.length > 20 || desc.length > 100 || avatar.length > 100 || url.length > 100) {
+        showAlert(t('input_too_long', { defaultValue: '字段长度超出限制' }))
+        return;
+    }
     const { error } = await client.friend.index.post({
         avatar,
         name,
@@ -139,8 +151,8 @@ function FriendList({ title, show, friends }: { title: string, show: boolean, fr
                     </p>
                 </div>
                 <div className="wauto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {friends.map((friend) => (
-                        <Friend key={friend.id} friend={friend} />
+                    {friends.map(friend => (
+                        <Friend key={friend.id} {...friend} />
                     ))}
                 </div>
             </>
@@ -148,17 +160,18 @@ function FriendList({ title, show, friends }: { title: string, show: boolean, fr
     </>)
 }
 
-function Friend({ friend, key }: { friend: FriendItem; key?: number | string }) {
+function Friend(props: any) {
     const { t } = useTranslation()
     const profile = useContext(ProfileContext)
-    const [avatar, setAvatar] = useState(friend.avatar)
-    const [name, setName] = useState(friend.name)
-    const [desc, setDesc] = useState(friend.desc || "")
-    const [url, setUrl] = useState(friend.url)
-    const [status, setStatus] = useState(friend.accepted)
+    const [avatar, setAvatar] = useState(props.avatar)
+    const [name, setName] = useState(props.name)
+    const [desc, setDesc] = useState(props.desc || "")
+    const [url, setUrl] = useState(props.url)
+    const [status, setStatus] = useState(props.accepted)
     const [modalIsOpen, setIsOpen] = useState(false);
     const { showConfirm, ConfirmUI } = useConfirm()
     const { showAlert, AlertUI } = useAlert()
+    const friend = props;
 
     const deleteFriend = useCallback(() => {
         showConfirm(
@@ -313,4 +326,10 @@ function errorHumanize(error: string) {
         return "无法访问"
     }
     return error
+}
+
+// 工具函数：去除 key 字段
+function omitKey<T extends object>(obj: T): Omit<T, 'key'> {
+    const { key, ...rest } = obj as any;
+    return rest;
 }

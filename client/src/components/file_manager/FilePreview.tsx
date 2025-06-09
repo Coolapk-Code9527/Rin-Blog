@@ -23,6 +23,19 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
 
   // 统一声明file变量
   const file = files[index];
+  const thumb = file?.thumbUrl || '';
+  const orig = file?.url || '';
+
+  // 复制链接相关state和格式
+  const [copyMenuOpen, setCopyMenuOpen] = useState(false);
+  const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
+  const copyFormats = [
+    { key: 'url', label: '原始链接', value: orig },
+    { key: 'markdown', label: 'Markdown', value: `[${file?.name || ''}](${orig})` },
+    { key: 'html', label: 'HTML', value: `<a href=\"${orig}\">${file?.name || ''}</a>` },
+    { key: 'bbcode', label: 'BBCode', value: `[url=${orig}]${file?.name || ''}[/url]` },
+  ];
+
   if (!file) return (
     <div className="fixed inset-0 z-[12010] flex items-center justify-center bg-gradient-to-br from-black/80 via-black/70 to-gray-900/90 animate-fadeIn" onClick={onClose}>
       <div className="relative max-w-full max-h-full flex flex-col items-center justify-center select-none" onClick={e => e.stopPropagation()}>
@@ -206,9 +219,6 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
     setShowOrig(false);
   };
 
-  const thumb = file.thumbUrl || '';
-  const orig = file.url || '';
-
   // 下载原图
   const handleDownload = () => {
     if (!orig) return;
@@ -224,6 +234,20 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
   const handleOpenNew = () => {
     if (!orig) return;
     window.open(orig, '_blank', 'noopener');
+  };
+
+  const handleCopy = async (format: string) => {
+    const fmt = copyFormats.find(f => f.key === format);
+    if (!fmt) return;
+    try {
+      await navigator.clipboard.writeText(fmt.value);
+      setCopiedFormat(format);
+      setTimeout(() => setCopiedFormat(null), 2000);
+    } catch {
+      setCopiedFormat('error');
+      setTimeout(() => setCopiedFormat(null), 2000);
+    }
+    setCopyMenuOpen(false);
   };
 
   return (
@@ -437,6 +461,36 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
           <button className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors" onClick={handleOpenNew} title="新窗口打开">
             <i className="ri-external-link-line"></i>
           </button>
+          {/* 复制链接按钮及菜单 */}
+          <div className="relative">
+            <button
+              className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-1"
+              onClick={() => setCopyMenuOpen(v => !v)}
+              title="复制链接"
+            >
+              <i className="ri-file-copy-line"></i>
+              <span>复制链接</span>
+            </button>
+            {copyMenuOpen && (
+              <div className="absolute bottom-full right-0 mb-2 bg-black/90 text-white rounded shadow-lg z-30 min-w-[120px]">
+                {copyFormats.map(f => (
+                  <button
+                    key={f.key}
+                    className="w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-sm"
+                    onClick={() => handleCopy(f.key)}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* 复制反馈 */}
+            {copiedFormat && (
+              <div className="absolute bottom-full right-0 mb-2 bg-green-600 text-white rounded px-3 py-1 text-xs shadow-lg z-40 animate-fadeIn">
+                {copiedFormat === 'error' ? '复制失败' : '已复制'}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
