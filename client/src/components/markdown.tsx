@@ -1,5 +1,5 @@
 import "katex/dist/katex.min.css";
-import React, { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { cloneElement, isValidElement, useEffect, useMemo, useRef, useState, useContext } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
@@ -20,6 +20,7 @@ import "yet-another-react-lightbox/styles.css";
 import { useColorMode } from "../utils/darkModeUtils";
 import { useTranslation } from "react-i18next";
 import Loading from 'react-loading';
+import { ClientConfigContext } from "../state/config";
 
 // 图片加载状态接口
 interface ImageState {
@@ -156,8 +157,58 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
   return false;
 };
 
+// 判断是否为本站文件链接
+function isInternalFileLink(url: string, config: any): boolean {
+  if (!url) return false;
+  try {
+    // 1. 获取 S3/R2 域名，支持多种格式
+    let host = '';
+    if (config && typeof config.get === 'function') {
+      host = config.get('S3_ACCESS_HOST') || '';
+    } else if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        const cfg = JSON.parse(window.sessionStorage.getItem('config') || '{}');
+        if (cfg.S3_ACCESS_HOST) host = cfg.S3_ACCESS_HOST;
+      } catch {}
+    }
+    // 兜底：如host仍为空，直接返回false并输出警告，避免硬编码
+    if (!host) {
+      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+        console.warn('S3_ACCESS_HOST 未注入，无法识别站内文件链接，请检查后端 /config/client 配置和前端注入逻辑');
+      }
+      return false;
+    }
+    // 2. 判断url是否为本站文件
+    // 2.1 相对路径
+    if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../')) return true;
+    // 2.2 绝对路径但无host
+    if (/^([a-zA-Z0-9_\-]+)?\/?[\w\-/]+\.[\w]+$/.test(url)) return true;
+    // 2.3 host匹配（增强：忽略协议、端口、末尾/等）
+    if (host) {
+      try {
+        const u = new URL(url, window.location.origin);
+        const hostUrl = new URL(host, window.location.origin);
+        // 忽略协议、端口、末尾/
+        const normalize = (h: string) => h.replace(/^https?:\/\//, '').replace(/[:/]+$/, '');
+        if (normalize(u.host) === normalize(hostUrl.host)) return true;
+        // 兼容部分S3自定义域名（如子域、CNAME等）
+        if (normalize(u.hostname) === normalize(hostUrl.hostname)) return true;
+      } catch {}
+    }
+    // 2.4 当前站点host
+    try {
+      const u = new URL(url, window.location.origin);
+      if (u.host === window.location.host) return true;
+    } catch {}
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
   const colorMode = useColorMode();
+  const config = useContext(ClientConfigContext); // 注入config
   const [index, setIndex] = React.useState(-1);
   const slides = useRef<SlideImage[]>();
   const { t } = useTranslation();
@@ -225,6 +276,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
         img({ node, src, ...props }) {
+          // 如需扩展图片的下载按钮或特殊样式，可用isInternalFileLink(src, config)判断
           const offset = node!.position!.start.offset!;
           const previousContent = content.slice(0, offset);
           const newlinesBefore = countNewlinesBeforeNode(
@@ -431,15 +483,41 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             </li>
           );
         },
-        a({ children, ...props }) {
-          return (
-            <a
-              className="text-blue-600 dark:text-blue-400 font-medium relative hover:text-blue-800 dark:hover:text-blue-300"
-              {...props}
-            >
-              {children}
-            </a>
-          );
+        a({ children, href = '', ...props }) {
+          // 判断是否为本站文件
+          const isInternal = isInternalFileLink(href, config);
+          if (isInternal) {
+            return (
+              <span className="inline-flex items-center gap-1">
+                <a
+                  href={href}
+                  download
+                  className="text-green-600 dark:text-green-400 font-medium hover:underline hover:text-green-800 dark:hover:text-green-300"
+                  {...props}
+                  aria-label={t('files.download_file', { defaultValue: '下载本站文件' })}
+                  title={t('files.download_file', { defaultValue: '下载本站文件' })}
+                >
+                  {children}
+                  <i className="ri-download-2-line ml-1 align-middle" />
+                </a>
+              </span>
+            );
+          } else {
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 font-medium relative hover:text-blue-800 dark:hover:text-blue-300"
+                {...props}
+                aria-label={t('files.external_link', { defaultValue: '外部链接' })}
+                title={t('files.external_link', { defaultValue: '外部链接' })}
+              >
+                {children}
+                <i className="ri-external-link-line ml-1 align-middle" />
+              </a>
+            );
+          }
         },
         h1({ children, ...props }) {
           return (
@@ -641,6 +719,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         },
         // 新增：自定义 video/audio 渲染，居中自适应
         video({ src, children, ...props }) {
+          // 如需扩展视频的下载按钮或特殊样式，可用isInternalFileLink(src, config)判断
           return (
             <video
               src={src}
@@ -654,6 +733,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           );
         },
         audio({ src, children, ...props }) {
+          // 如需扩展音频的下载按钮或特殊样式，可用isInternalFileLink(src, config)判断
           return (
             <audio
               src={src}

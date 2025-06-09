@@ -100,3 +100,26 @@ if (isDev) {
     <StagewiseToolbar config={toolbarConfig} />
   );
 }
+
+// 自动注入 S3_ACCESS_HOST 到 sessionStorage，确保站内文件识别
+(async () => {
+  try {
+    const res = await fetch('/config/client');
+    if (res.ok) {
+      const config = await res.json();
+      if (config.S3_ACCESS_HOST) {
+        const old = JSON.parse(window.sessionStorage.getItem('config') || '{}');
+        old.S3_ACCESS_HOST = config.S3_ACCESS_HOST;
+        window.sessionStorage.setItem('config', JSON.stringify(old));
+      }
+    }
+  } catch {}
+  // 兜底：如果没有S3_ACCESS_HOST，不再写入默认值，输出警告
+  const cfg = JSON.parse(window.sessionStorage.getItem('config') || '{}');
+  if (!cfg.S3_ACCESS_HOST) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('S3_ACCESS_HOST 未注入，无法识别站内文件链接，请检查后端 /config/client 配置和前端注入逻辑');
+    }
+    // 不写入默认值，保持 config 为空
+  }
+})();

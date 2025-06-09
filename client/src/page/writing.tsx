@@ -1717,6 +1717,7 @@ export function WritingPage({ id }: { id?: number }) {
 
   // 文件插入逻辑
   useEffect(() => {
+    // 说明：插入文件时始终使用完整URL，渲染时由isInternalFileLink判断是否为站内文件
     if (!selectedFiles || !editorRef.current) return;
     const files = Array.isArray(selectedFiles) ? selectedFiles : [selectedFiles];
     const editor = editorRef.current;
@@ -1907,6 +1908,7 @@ export function WritingPage({ id }: { id?: number }) {
                 <div
                   className={`flex flex-col ${preview === 'preview' ? "hidden" : ""} ${preview === 'comparison' ? "w-1/2" : "w-full"} editor-container custom-scrollbar`}
                   onDrop={(e: DragEvent) => {
+                    // 说明：拖拽插入时也始终插入完整URL，渲染时判断站内/外部
                     e.preventDefault();
                     const editor = editorRef.current;
                     if (!editor) return;

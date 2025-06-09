@@ -60,6 +60,7 @@ function getS3AccessHost(config: any): string {
 
 // 文件展示时拼接完整URL
 function getFileUrl(path: string, config?: any) {
+  // 说明：所有file.url始终为完整URL，插入时无需裁剪，渲染时判断站内/外部
   if (!path) return '';
   const host = getS3AccessHost(config);
   if (!host) return path;
