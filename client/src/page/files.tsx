@@ -6,6 +6,7 @@ import { PageContainer } from '../components/container';
 // @ts-ignore - 忽略类型错误
 import { useDocumentTitle } from '../utils/documentTitle';
 import { CapacityInfo } from '../components/CapacityInfo';
+import { isInternalFileLink, getS3AccessHost, getFileUrl } from '../utils/file';
 
 /**
  * 文件管理页面

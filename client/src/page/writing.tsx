@@ -27,6 +27,7 @@ import type { Feed } from '../types/api';  // 根据实际路径调整
 import { useToast } from '../hooks/useToast';
 import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialog';
 import type { FileItem } from '../types/api';
+import { isInternalFileLink, getS3AccessHost, getFileUrl } from '../utils/file';
 
 // 处理process.env问题
 declare const process: {

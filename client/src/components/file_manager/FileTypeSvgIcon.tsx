@@ -1,4 +1,5 @@
 import React from 'react';
+import { isInternalFileLink, getS3AccessHost, getFileUrl } from '../../utils/file';
 
 interface FileTypeSvgIconProps {
   type: string;

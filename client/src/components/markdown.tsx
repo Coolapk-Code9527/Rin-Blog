@@ -21,6 +21,7 @@ import { useColorMode } from "../utils/darkModeUtils";
 import { useTranslation } from "react-i18next";
 import Loading from 'react-loading';
 import { ClientConfigContext } from "../state/config";
+import { isInternalFileLink } from '../utils/file';
 
 // 图片加载状态接口
 interface ImageState {
@@ -156,55 +157,6 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
 
   return false;
 };
-
-// 判断是否为本站文件链接
-function isInternalFileLink(url: string, config: any): boolean {
-  if (!url) return false;
-  try {
-    // 1. 获取 S3/R2 域名，支持多种格式
-    let host = '';
-    if (config && typeof config.get === 'function') {
-      host = config.get('S3_ACCESS_HOST') || '';
-    } else if (typeof window !== 'undefined' && window.sessionStorage) {
-      try {
-        const cfg = JSON.parse(window.sessionStorage.getItem('config') || '{}');
-        if (cfg.S3_ACCESS_HOST) host = cfg.S3_ACCESS_HOST;
-      } catch {}
-    }
-    // 兜底：如host仍为空，直接返回false并输出警告，避免硬编码
-    if (!host) {
-      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-        console.warn('S3_ACCESS_HOST 未注入，无法识别站内文件链接，请检查后端 /config/client 配置和前端注入逻辑');
-      }
-      return false;
-    }
-    // 2. 判断url是否为本站文件
-    // 2.1 相对路径
-    if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../')) return true;
-    // 2.2 绝对路径但无host
-    if (/^([a-zA-Z0-9_\-]+)?\/?[\w\-/]+\.[\w]+$/.test(url)) return true;
-    // 2.3 host匹配（增强：忽略协议、端口、末尾/等）
-    if (host) {
-      try {
-        const u = new URL(url, window.location.origin);
-        const hostUrl = new URL(host, window.location.origin);
-        // 忽略协议、端口、末尾/
-        const normalize = (h: string) => h.replace(/^https?:\/\//, '').replace(/[:/]+$/, '');
-        if (normalize(u.host) === normalize(hostUrl.host)) return true;
-        // 兼容部分S3自定义域名（如子域、CNAME等）
-        if (normalize(u.hostname) === normalize(hostUrl.hostname)) return true;
-      } catch {}
-    }
-    // 2.4 当前站点host
-    try {
-      const u = new URL(url, window.location.origin);
-      if (u.host === window.location.host) return true;
-    } catch {}
-    return false;
-  } catch {
-    return false;
-  }
-}
 
 export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
   const colorMode = useColorMode();
