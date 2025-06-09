@@ -18,7 +18,13 @@ export function ConfigService() {
                     }
                     const config = type === 'server' ? ServerConfig() : ClientConfig();
                     const all = await config.all();
-                    return Object.fromEntries(all);
+                    const result = Object.fromEntries(all);
+                    if (type === 'client') {
+                      // 自动注入 S3_ACCESS_HOST
+                      const env = require('../utils/di').getEnv();
+                      if (env.S3_ACCESS_HOST) result.S3_ACCESS_HOST = env.S3_ACCESS_HOST;
+                    }
+                    return result;
                 })
                 .post('/:type', async ({ set, admin, body, params: { type } }) => {
                     if (type !== 'server' && type !== 'client') {
