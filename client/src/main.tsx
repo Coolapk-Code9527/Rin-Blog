@@ -76,33 +76,8 @@ const i18n = i18next;
 
 const helmetContext = {};
 
-// 修复React.StrictMode组件问题
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  // @ts-ignore - 忽略React.StrictMode的类型检查
-  <React.StrictMode>
-    <HelmetProvider context={helmetContext}>
-      <App />
-    </HelmetProvider>
-  </React.StrictMode>
-)
-Modal.setAppElement('#root');
-
-// 开发环境下挂载stagewise工具栏
-if (isDev) {
-  const toolbarConfig = { plugins: [] };
-  let toolbarRoot = document.getElementById('stagewise-toolbar-root');
-  if (!toolbarRoot) {
-    toolbarRoot = document.createElement('div');
-    toolbarRoot.id = 'stagewise-toolbar-root';
-    document.body.appendChild(toolbarRoot);
-  }
-  ReactDOM.createRoot(toolbarRoot).render(
-    <StagewiseToolbar config={toolbarConfig} />
-  );
-}
-
 // 自动注入 S3_ACCESS_HOST 到 sessionStorage，确保站内文件识别
-(async () => {
+async function ensureConfigReady() {
   try {
     const res = await fetch('/config/client');
     if (res.ok) {
@@ -122,4 +97,31 @@ if (isDev) {
     }
     // 不写入默认值，保持 config 为空
   }
-})();
+}
+
+// 等待配置注入后再挂载 React 应用
+ensureConfigReady().then(() => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    // @ts-ignore - 忽略React.StrictMode的类型检查
+    <React.StrictMode>
+      <HelmetProvider context={helmetContext}>
+        <App />
+      </HelmetProvider>
+    </React.StrictMode>
+  );
+  Modal.setAppElement('#root');
+});
+
+// 开发环境下挂载stagewise工具栏
+if (isDev) {
+  const toolbarConfig = { plugins: [] };
+  let toolbarRoot = document.getElementById('stagewise-toolbar-root');
+  if (!toolbarRoot) {
+    toolbarRoot = document.createElement('div');
+    toolbarRoot.id = 'stagewise-toolbar-root';
+    document.body.appendChild(toolbarRoot);
+  }
+  ReactDOM.createRoot(toolbarRoot).render(
+    <StagewiseToolbar config={toolbarConfig} />
+  );
+}
