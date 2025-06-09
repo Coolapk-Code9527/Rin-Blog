@@ -26,6 +26,16 @@ export default {
             Container.set("server.config", new CacheImpl("server.config"));
             Container.set("client.config", new CacheImpl("client.config"));
         }
+        // 自动注入 S3_ACCESS_HOST 到 client.config，确保前端能获取
+        const clientConfig = Container.get<CacheImpl>("client.config");
+        if (clientConfig && clientConfig.env && clientConfig.env.S3_ACCESS_HOST) {
+            // 若 client.config 里没有 S3_ACCESS_HOST，则写入
+            clientConfig.set && clientConfig.get && clientConfig.get("S3_ACCESS_HOST").then((val: any) => {
+                if (!val) {
+                    clientConfig.set("S3_ACCESS_HOST", clientConfig.env.S3_ACCESS_HOST, false);
+                }
+            });
+        }
 
         return await new Elysia({ aot: false })
             .use(app())
@@ -45,6 +55,15 @@ export default {
             Container.set("cache", new CacheImpl());
             Container.set("server.config", new CacheImpl("server.config"));
             Container.set("client.config", new CacheImpl("client.config"));
+        }
+        // 自动注入 S3_ACCESS_HOST 到 client.config，确保前端能获取
+        const clientConfig2 = Container.get<CacheImpl>("client.config");
+        if (clientConfig2 && clientConfig2.env && clientConfig2.env.S3_ACCESS_HOST) {
+            clientConfig2.set && clientConfig2.get && clientConfig2.get("S3_ACCESS_HOST").then((val: any) => {
+                if (!val) {
+                    clientConfig2.set("S3_ACCESS_HOST", clientConfig2.env.S3_ACCESS_HOST, false);
+                }
+            });
         }
 
         await friendCrontab(env, ctx)

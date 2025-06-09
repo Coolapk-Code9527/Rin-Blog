@@ -17,15 +17,8 @@ export function ConfigService() {
                         return 'Unauthorized';
                     }
                     const config = type === 'server' ? ServerConfig() : ClientConfig();
-                    const all = Object.fromEntries(await config.all());
-                    if (type === 'client') {
-                        const { getEnv } = await import('../utils/di');
-                        const env = getEnv();
-                        if (env.S3_ACCESS_HOST) {
-                            all.S3_ACCESS_HOST = env.S3_ACCESS_HOST;
-                        }
-                    }
-                    return all;
+                    const all = await config.all();
+                    return Object.fromEntries(all);
                 })
                 .post('/:type', async ({ set, admin, body, params: { type } }) => {
                     if (type !== 'server' && type !== 'client') {
