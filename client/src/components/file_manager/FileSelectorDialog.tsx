@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import Modal from 'react-modal';
 import { FileManager } from './FileManager';
 import type { FileItem } from '../../types/api';
-import { isInternalFileLink, getS3AccessHost, getFileUrl } from '../../utils/file';
 
 interface FileSelectorDialogProps {
   isOpen: boolean;

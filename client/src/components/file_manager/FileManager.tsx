@@ -12,7 +12,6 @@ import { useConfirm } from '../dialog';
 import { ClientConfigContext } from '../../state/config';
 import { FilePreview } from './FilePreview';
 import { FileTypeSvgIcon } from './FileTypeSvgIcon';
-import { getS3AccessHost, getFileUrl } from '../../utils/file';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
@@ -40,6 +39,32 @@ const Button = ({ onClick, title, secondary = false }: { onClick: () => void, ti
     <span>{title}</span>
   </button>
 );
+
+// 获取S3访问域名（优先 config.get('S3_ACCESS_HOST')，否则 wrangler.toml 配置）
+function getS3AccessHost(config: any): string {
+  // 1. 优先 context config
+  if (config && typeof config.get === 'function') {
+    const host = config.get('S3_ACCESS_HOST');
+    if (host) return host;
+  }
+  // 2. 其次 sessionStorage config
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const cfg = JSON.parse(window.sessionStorage.getItem('config') || '{}');
+      if (cfg.S3_ACCESS_HOST) return cfg.S3_ACCESS_HOST;
+    } catch {}
+  }
+  // 3. 兜底空字符串（由后端 file.url 字段兜底）
+  return '';
+}
+
+// 文件展示时拼接完整URL
+function getFileUrl(path: string, config?: any) {
+  if (!path) return '';
+  const host = getS3AccessHost(config);
+  if (!host) return path;
+  return host.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
+}
 
 // 判断文件是否可预览（与FilePreview类型保持一致）
 function isPreviewable(file: FileItem): boolean {

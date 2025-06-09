@@ -7,7 +7,6 @@ import mammoth from 'mammoth';
 import JSZip from 'jszip';
 // @ts-ignore
 import ePub from 'epubjs';
-import { isInternalFileLink, getS3AccessHost, getFileUrl } from '../../utils/file';
 
 interface FilePreviewProps {
   files: FileItem[];

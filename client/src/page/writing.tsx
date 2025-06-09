@@ -27,7 +27,6 @@ import type { Feed } from '../types/api';  // 根据实际路径调整
 import { useToast } from '../hooks/useToast';
 import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialog';
 import type { FileItem } from '../types/api';
-import { isInternalFileLink, getS3AccessHost, getFileUrl } from '../utils/file';
 
 // 处理process.env问题
 declare const process: {
@@ -508,14 +507,12 @@ const MobileToolbar = React.memo(({
   
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files?.[0]) return;
-    
     const file = event.target.files[0];
     if (file.size > 20 * 1024000) {
       showAlert(t("upload.failed$size", { size: 20 }));
       uploadRef.current!.value = "";
       return;
     }
-    
     uploadImage(file, (url) => {
       if (!editorRef.current) return;
       const selection = editorRef.current.getSelection();
@@ -939,92 +936,33 @@ ImageDropzone.displayName = 'ImageDropzone';
 function handlePaste(event: React.ClipboardEvent<HTMLDivElement>, editorRef: React.RefObject<editor.IStandaloneCodeEditor>, setUploading: (value: boolean) => void, showAlert: ShowAlertType) {
   const clipboardData = event.clipboardData;
   const t = i18n.t;
-  
-  // 检查是否包含图片文件
   if (clipboardData.files.length === 1 && clipboardData.files[0].type.startsWith('image/')) {
-    event.preventDefault(); // 阻止默认粘贴行为
-    
+    event.preventDefault();
     const editor = editorRef.current;
     if (!editor) return;
-    
-    // 撤销默认粘贴操作
     editor.trigger(undefined, "undo", undefined);
-    
     const file = clipboardData.files[0] as File;
-    
-    // 检查文件大小
     if (file.size > 20 * 1024000) {
       showAlert(t("upload.failed$size", { size: 20 }));
       return;
     }
-    
     setUploading(true);
-    
-    // 创建临时预览并插入编辑器
-    const reader = new FileReader();
-    let tempMarkerId: string | undefined;
-    
-    reader.onload = (e) => {
-      const imageUrl = e.target?.result as string;
-      const selection = editor.getSelection();
-      if (!selection) return;
-      
-      // 在编辑器中插入临时预览，使用t函数翻译"上传中..."
-      const tempMarker = `![${file.name} (${t('uploading')})](${imageUrl})\n`;
-      editor.executeEdits(undefined, [{
-        range: selection,
-        text: tempMarker,
-      }]);
-      
-      // 添加临时装饰
+    uploadImage(file, (url) => {
+      setUploading(false);
       const model = editor.getModel();
       if (model) {
-        const position = editor.getPosition();
-        if (position) {
-          tempMarkerId = editor.deltaDecorations([], [
-            {
-              range: new monaco.Range(position.lineNumber, 1, position.lineNumber, tempMarker.length),
-              options: {
-                isWholeLine: true,
-                className: 'uploading-image-line',
-                inlineClassName: 'uploading-image-text'
-              }
-            }
-          ])[0];
-        }
-      }
-      
-      // 上传图片
-      uploadImage(file, (url) => {
-        setUploading(false);
-        
-        // 用实际URL替换临时预览
-        const model = editor.getModel();
-        if (model) {
-          // 查找临时预览的行
-          const lineCount = model.getLineCount();
-          for (let i = 1; i <= lineCount; i++) {
-            const lineContent = model.getLineContent(i);
-            if (lineContent.includes(`${file.name} (${t('uploading')})`)) {
-              const finalText = `![${file.name}](${url})\n`;
-              const range = new monaco.Range(i, 1, i, lineContent.length + 1);
-              editor.executeEdits(undefined, [{
-                range,
-                text: finalText,
-              }]);
-              break;
-            }
+        const lineCount = model.getLineCount();
+        for (let i = 1; i <= lineCount; i++) {
+          const lineContent = model.getLineContent(i);
+          if (lineContent.includes(`${file.name} (${t('uploading')})`)) {
+            const finalText = `![${file.name}](${url})\n`;
+            const range = new monaco.Range(i, 1, i, lineContent.length + 1);
+            editor.executeEdits(undefined, [{ range, text: finalText }]);
+            break;
           }
         }
-        
-        // 移除临时装饰
-        if (tempMarkerId) {
-          editor.deltaDecorations([tempMarkerId], []);
-        }
-      }, showAlert);
-    };
-    
-    reader.readAsDataURL(file);
+      }
+    }, showAlert);
   }
 }
 
@@ -1716,9 +1654,8 @@ export function WritingPage({ id }: { id?: number }) {
     debouncedUpdate();
   }, [content, debouncedUpdate]);
 
-  // 文件插入逻辑
+  // 文件插入逻辑（只插入 file.url，不插入 path）
   useEffect(() => {
-    // 说明：插入文件时始终使用完整URL，渲染时由isInternalFileLink判断是否为站内文件
     if (!selectedFiles || !editorRef.current) return;
     const files = Array.isArray(selectedFiles) ? selectedFiles : [selectedFiles];
     const editor = editorRef.current;
@@ -1727,7 +1664,6 @@ export function WritingPage({ id }: { id?: number }) {
     let insertText = '';
     files.forEach((file, idx) => {
       if (!file.url) return;
-      // 每个文件引用前后都加一个空行，避免多文件插入时换行混乱
       let block = '';
       if (file.mimeType.startsWith('image/')) {
         block = `![${file.name}](${file.url})`;
@@ -1738,14 +1674,12 @@ export function WritingPage({ id }: { id?: number }) {
       } else {
         block = `[${file.name}](${file.url})`;
       }
-      // 保证首尾都有空行，且多文件插入时不会产生多余空行
       if (idx === 0) {
         insertText += `\n${block}\n\n`;
       } else {
         insertText += `${block}\n\n`;
       }
     });
-    // 合并多余空行
     insertText = insertText.replace(/\n{3,}/g, '\n\n');
     if (insertText) {
       editor.executeEdits('', [{ range: selection, text: insertText }]);
@@ -1909,7 +1843,6 @@ export function WritingPage({ id }: { id?: number }) {
                 <div
                   className={`flex flex-col ${preview === 'preview' ? "hidden" : ""} ${preview === 'comparison' ? "w-1/2" : "w-full"} editor-container custom-scrollbar`}
                   onDrop={(e: DragEvent) => {
-                    // 说明：拖拽插入时也始终插入完整URL，渲染时判断站内/外部
                     e.preventDefault();
                     const editor = editorRef.current;
                     if (!editor) return;
