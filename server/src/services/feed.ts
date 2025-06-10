@@ -10,7 +10,7 @@ import {getDB} from "../utils/di";
 import {extractImage} from "../utils/image";
 import {markdownToPlainText} from "../utils/markdown";
 import {bindTagToPost} from "./tag";
-import { getR2FileMeta } from '../utils/s3';
+import { getR2FileMeta, setR2FileMeta } from '../utils/s3';
 import { getEnv } from '../utils/di';
 import { normalizePath } from '../utils/s3';
 
@@ -780,6 +780,7 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
           const size = meta.size || 0;
           const hash = meta.hash || '';
           const parentPath = '/' + path.split('/')[1];
+          const name = meta.filename || path.split('/').pop() || path;
           // 查重
           let exist = await db.select({id: filesTable.id}).from(filesTable).where(eq(filesTable.path, path));
           if (exist && exist.length > 0) {

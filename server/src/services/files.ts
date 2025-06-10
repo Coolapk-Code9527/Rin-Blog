@@ -8,7 +8,7 @@ import { setup } from "../setup";
 import { getEnv, getDB } from "../utils/di";
 import { createS3Client } from "../utils/s3";
 import { syncFeedFileReferences } from './feed';
-import { listAllR2Files, getR2FileMeta, normalizePath } from '../utils/s3';
+import { listAllR2Files, getR2FileMeta, normalizePath, setR2FileMeta } from '../utils/s3';
 import { generateThumbnail } from '../utils/image';
 
 // 定义引用接口
@@ -379,6 +379,7 @@ export function FileService() {
                             Key: s3Key,
                             Body: file,
                             ContentType: contentType,
+                            ContentDisposition: `attachment; filename=\"${name || file.name}\"`
                         }));
                         const filePath = normalizePath((parentPath === '/' ? '' : parentPath) + '/' + hash);
                         let thumbnailHash: string | undefined = undefined;
@@ -751,6 +752,10 @@ export function FileService() {
                         };
                         if (name) updateData.name = name;
                         if (accessLevel) updateData.accessLevel = accessLevel;
+                        // 普通文件/文件夹属性更新前，若name变更且为文件，自动同步R2 Content-Disposition
+                        if (typeof name === 'string' && name !== file.name && !file.isFolder) {
+                            await setR2FileMeta(file.path, { filename: name });
+                        }
                         const result = await db
                             .update(files)
                             .set(updateData)
@@ -843,11 +848,16 @@ export function FileService() {
                             const exist = await db.select({id: files.id, name: files.name}).from(files).where(eq(files.path, dbPath));
                             const meta = await getR2FileMeta(dbPath);
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
-                            let name = hashName;
+                            let name = meta.filename || hashName;
                             const mimeType = meta.mimeType || 'application/octet-stream';
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
                             if (exist && exist.length > 0) {
+                                // 新增：若数据库name为hash但R2元数据有filename，则修正为filename
+                                let dbName = exist[0].name;
+                                if (meta.filename && dbName === hashName && meta.filename !== hashName) {
+                                    name = meta.filename;
+                                }
                                 await db.update(files).set({
                                     name,
                                     size,

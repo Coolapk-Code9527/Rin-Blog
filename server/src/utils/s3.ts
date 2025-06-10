@@ -1,4 +1,4 @@
-import { S3Client, ListObjectsV2Command, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command, HeadObjectCommand, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import type { Env } from "../db/db";
 import { getEnv } from "./di";
 
@@ -51,7 +51,7 @@ export function normalizePath(path: string): string {
     return path;
 }
 
-export async function getR2FileMeta(path: string): Promise<{size?: number, mimeType?: string, hash?: string} | null> {
+export async function getR2FileMeta(path: string): Promise<{size?: number, mimeType?: string, hash?: string, filename?: string} | null> {
     try {
         path = normalizePath(path);
         const env: Env = getEnv();
@@ -59,12 +59,48 @@ export async function getR2FileMeta(path: string): Promise<{size?: number, mimeT
         const bucket = env.S3_BUCKET;
         const key = path.startsWith('/') ? path.slice(1) : path;
         const res: any = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+        let filename = undefined;
+        if (res.ContentDisposition) {
+            // 解析Content-Disposition中的filename
+            const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(res.ContentDisposition);
+            if (match) {
+                filename = decodeURIComponent(match[1] || match[2] || '');
+            }
+        }
         return {
             size: res.ContentLength,
             mimeType: res.ContentType,
-            hash: res.ETag?.replace(/"/g, '')
+            hash: res.ETag?.replace(/"/g, ''),
+            filename
         };
     } catch (e) {
         return null;
+    }
+}
+
+export async function setR2FileMeta(path: string, meta: { filename?: string }): Promise<boolean> {
+    try {
+        path = normalizePath(path);
+        const env: Env = getEnv();
+        const s3 = createS3Client();
+        const bucket = env.S3_BUCKET;
+        const key = path.startsWith('/') ? path.slice(1) : path;
+        // 只支持更新filename（Content-Disposition）
+        if (typeof meta.filename === 'string' && meta.filename) {
+            const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+            const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+            await s3.send(new PutObjectCommand({
+                Bucket: bucket,
+                Key: key,
+                Body: obj.Body,
+                ContentType: head.ContentType || 'application/octet-stream',
+                ContentDisposition: `attachment; filename=\"${meta.filename}\"`
+            }));
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.warn('setR2FileMeta失败', e);
+        return false;
     }
 }
