@@ -1,4 +1,5 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import Elysia from "elysia";
@@ -157,17 +158,16 @@ export async function rssCrontab(env: Env) {
     const s3 = createS3Client();
     async function save(name: string, data: string) {
         const hashkey = path.join(folder, name);
-        try {
-            await s3.send(
-                new PutObjectCommand({
-                    Bucket: bucket,
-                    Key: hashkey,
-                    Body: data,
-                }),
-            );
-        } catch (e: any) {
-            console.error(e.message);
-        }
+        const upload = new Upload({
+            client: s3,
+            params: {
+                Bucket: bucket,
+                Key: hashkey,
+                Body: data,
+                ContentType: name === 'rss.xml' ? 'application/rss+xml; charset=UTF-8' : name === 'atom.xml' ? 'application/atom+xml; charset=UTF-8' : 'application/feed+json; charset=UTF-8'
+            }
+        });
+        await upload.done();
     }
     await save("rss.xml", feed.rss2());
     console.log("Saved atom.xml to s3");

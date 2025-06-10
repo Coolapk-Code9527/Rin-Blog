@@ -1,4 +1,5 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import path from "node:path";
 import Container, { Service } from "typedi";
 import type { DB } from "../_worker";
@@ -149,16 +150,17 @@ export class CacheImpl {
 
     async save() {
         const cacheKey = path.join(this.env.S3_CACHE_FOLDER, `${this.type}.json`);
-        await this.s3.send(new PutObjectCommand({
-            Bucket: this.env.S3_BUCKET,
-            Key: cacheKey,
-            Body: JSON.stringify(Object.fromEntries(this.cache))
-        })).then(() => {
-            console.log('Cache saved');
-        }).catch((e: any) => {
-            console.error('Cache save failed')
-            console.error(e.message);
+        const upload = new Upload({
+            client: this.s3,
+            params: {
+                Bucket: this.env.S3_BUCKET,
+                Key: cacheKey,
+                Body: JSON.stringify(Object.fromEntries(this.cache)),
+                ContentType: 'application/json'
+            }
         });
+        await upload.done();
+        console.log('Cache saved');
     }
 }
 
