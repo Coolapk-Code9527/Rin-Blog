@@ -819,8 +819,8 @@ export function FileService() {
                     return { total, success, failed, failedDetails };
                 })
 
-                // R2同步
-                .post('/r2sync', async ({ uid, admin, set }) => {
+                // r2sync接口分页重构（limit最大10，默认5）
+                .post('/r2sync', async ({ uid, admin, set, query }) => {
                     if (!admin) {
                         set.status = 403;
                         return { error: 'Permission denied' };
@@ -829,14 +829,17 @@ export function FileService() {
                     const env = getEnv();
                     const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+/g, ''));
                     const r2Files = await listAllR2Files();
-                    let total = 0, inserted = 0, skipped = 0, failed = 0, failedList = [];
-                    for (const path of r2Files) {
+                    // 分页参数
+                    let limit = Number(query?.limit) || 5;
+                    if (limit > 10) limit = 10;
+                    const cursor = Number(query?.cursor) || 0;
+                    const filesSlice = r2Files.slice(cursor, cursor + limit);
+                    let total = r2Files.length, inserted = 0, skipped = 0, failed = 0, failedList = [];
+                    for (const path of filesSlice) {
                         let dbPath = normalizePath(path);
                         let hashName = dbPath.split('/').pop() || dbPath;
-                        // 跳过缩略图对象
                         if (hashName.startsWith('thumb_')) { skipped++; continue; }
                         try {
-                            // 判断属于哪个一级目录
                             const matchedFolder = s3Folders.find(folder => dbPath.startsWith('/' + folder + '/'));
                             let parentPath = '/';
                             if (matchedFolder) {
@@ -848,7 +851,6 @@ export function FileService() {
                                     skipped++; continue;
                                 }
                             }
-                            // 查重
                             const exist = await db.select({id: files.id, name: files.name}).from(files).where(eq(files.path, dbPath));
                             const meta = await getR2FileMeta(dbPath);
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
@@ -891,9 +893,14 @@ export function FileService() {
                             failed++;
                             failedList.push({ path, error: String(e) });
                         }
-                        total++;
                     }
-                    return { total, inserted, skipped, failed, failedList };
+                    const nextCursor = cursor + limit < total ? cursor + limit : null;
+                    return { total, inserted, skipped, failed, failedList, nextCursor };
+                }, {
+                    query: t.Object({
+                        limit: t.Optional(t.Numeric()),
+                        cursor: t.Optional(t.Numeric())
+                    })
                 })
 
                 // 新增批量删除接口
@@ -986,24 +993,31 @@ export function FileService() {
                     query: t.Object({ url: t.String() })
                 })
 
-                // 统计R2与D1容量
-                .get('/stat', async ({ admin, set }) => {
+                // stat接口分页重构（limit最大10，默认5）
+                .get('/stat', async ({ admin, set, query }) => {
                     if (!admin) {
                         set.status = 403;
                         return { error: 'Permission denied' };
                     }
-                    // 仅统计R2容量
+                    let limit = Number(query?.limit) || 5;
+                    if (limit > 10) limit = 10;
+                    const cursor = Number(query?.cursor) || 0;
                     let r2Used = 0;
-                    try {
-                        const r2Files = await listAllR2Files();
-                        for (const path of r2Files) {
-                            const name = path.split('/').pop() || '';
-                            if (name.startsWith('thumb_')) continue;
-                            const meta = await getR2FileMeta(path);
-                            if (meta && meta.size) r2Used += meta.size;
-                        }
-                    } catch (e) {}
-                    return { r2: { used: r2Used } };
+                    const r2Files = await listAllR2Files();
+                    const filesSlice = r2Files.slice(cursor, cursor + limit);
+                    for (const path of filesSlice) {
+                        const name = path.split('/').pop() || '';
+                        if (name.startsWith('thumb_')) continue;
+                        const meta = await getR2FileMeta(path);
+                        if (meta && meta.size) r2Used += meta.size;
+                    }
+                    const nextCursor = cursor + limit < r2Files.length ? cursor + limit : null;
+                    return { r2: { used: r2Used }, nextCursor, total: r2Files.length };
+                }, {
+                    query: t.Object({
+                        limit: t.Optional(t.Numeric()),
+                        cursor: t.Optional(t.Numeric())
+                    })
                 })
         );
 } 
