@@ -60,7 +60,6 @@
     "wrangler": "4"
   },
   "dependencies": {
-    "@aws-sdk/lib-storage": "^3.826.0",
     "@types/lodash": "^4.17.7",
     "@types/react-router-dom": "^5.3.3",
     "@types/react-syntax-highlighter": "^15.5.13",

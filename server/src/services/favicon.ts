@@ -1,6 +1,5 @@
 import Elysia, { t } from "elysia";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { Upload } from "@aws-sdk/lib-storage";
 import { getEnv } from "../utils/di";
 import { setup } from "../setup";
 import { createS3Client } from "../utils/s3";
@@ -107,16 +106,13 @@ export function FaviconService() {
                         `originFavicon${FAVICON_ALLOWED_TYPES[file.type]}`,
                     );
 
-                    const upload = new Upload({
-                        client: s3,
-                        params: {
+                    await s3.send(
+                        new PutObjectCommand({
                             Bucket: bucket,
                             Key: originFaviconKey,
                             Body: file,
-                            ContentType: file.type
-                        }
-                    });
-                    await upload.done();
+                        }),
+                    );
 
                     const imageRequest = new Request(
                         `${accessHost}/${originFaviconKey}`,
@@ -145,15 +141,13 @@ export function FaviconService() {
                     const arrayBuffer = await response.arrayBuffer();
                     const buffer = Buffer.from(arrayBuffer);
 
-                    const upload2 = new Upload({
-                        client: s3,
-                        params: {
+                    await s3.send(
+                        new PutObjectCommand({
                             Bucket: bucket,
                             Key: faviconKey,
                             Body: buffer,
-                        }
-                    });
-                    await upload2.done();
+                        }),
+                    );
 
                     return {
                         url: `${accessHost}/${faviconKey}`,

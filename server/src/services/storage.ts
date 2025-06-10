@@ -1,5 +1,4 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { Upload } from "@aws-sdk/lib-storage";
 import Elysia, { t } from "elysia";
 import path from "node:path";
 import type { Env } from "../db/db";
@@ -56,21 +55,8 @@ export function StorageService() {
                     const hash = buf2hex(hashArray)
                     const hashkey = path.join(folder, hash + "." + suffix);
                     try {
-                        // 判断大文件分片上传（如>2MB）
-                        if (file.size && file.size > 2 * 1024 * 1024) {
-                            const upload = new Upload({
-                                client: s3,
-                                params: {
-                                    Bucket: bucket,
-                                    Key: hashkey,
-                                    Body: file,
-                                    ContentType: file.type
-                                }
-                            });
-                            await upload.done();
-                        } else {
-                            await s3.send(new PutObjectCommand({ Bucket: bucket, Key: hashkey, Body: file, ContentType: file.type }));
-                        }
+                        const response = await s3.send(new PutObjectCommand({ Bucket: bucket, Key: hashkey, Body: file, ContentType: file.type }))
+                        console.info(response);
                         return `${accessHost}/${hashkey}`
                     } catch (e: any) {
                         set.status = 400;

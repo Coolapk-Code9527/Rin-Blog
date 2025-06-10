@@ -71,76 +71,6 @@ function isPreviewable(file: FileItem): boolean {
   );
 }
 
-// 分片上传核心函数
-async function uploadFileInChunks({ file, name, parentPath, onProgress, onSuccess, onError }: {
-  file: File,
-  name: string,
-  parentPath: string,
-  onProgress: (percent: number) => void,
-  onSuccess: (result: any) => void,
-  onError: (err: any) => void
-}) {
-  const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB
-  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-  let uploadedChunks = 0;
-  let hash = '';
-  // 计算文件hash（可选，提升断点续传体验）
-  // 这里只用文件名+size+lastModified简单hash，生产可用spark-md5等
-  hash = `${name}_${file.size}_${file.lastModified}`;
-  // 断点续传：本地存储已上传分片
-  let uploadedMap: Record<number, boolean> = {};
-  try {
-    const saved = localStorage.getItem(`upload_${hash}`);
-    if (saved) uploadedMap = JSON.parse(saved);
-  } catch {}
-  for (let i = 0; i < totalChunks; i++) {
-    if (uploadedMap[i]) {
-      uploadedChunks++;
-      onProgress(Math.round((uploadedChunks / totalChunks) * 100));
-      continue;
-    }
-    const start = i * CHUNK_SIZE;
-    const end = Math.min(file.size, start + CHUNK_SIZE);
-    const chunk = file.slice(start, end);
-    const formData = new FormData();
-    formData.append('hash', hash);
-    formData.append('chunkIndex', i.toString());
-    formData.append('totalChunks', totalChunks.toString());
-    formData.append('fileName', name);
-    formData.append('parentPath', parentPath);
-    formData.append('chunk', chunk);
-    try {
-      const res = await fetch(`${endpoint}/files/chunk`, {
-        method: 'POST',
-        headers: headersWithAuth(),
-        body: formData
-      });
-      if (!res.ok) throw new Error(await res.text());
-      uploadedMap[i] = true;
-      localStorage.setItem(`upload_${hash}`, JSON.stringify(uploadedMap));
-      uploadedChunks++;
-      onProgress(Math.round((uploadedChunks / totalChunks) * 100));
-    } catch (e) {
-      onError(e);
-      return;
-    }
-  }
-  // 分片全部上传后，通知后端合并
-  try {
-    const res = await fetch(`${endpoint}/files/chunk/merge`, {
-      method: 'POST',
-      headers: { ...headersWithAuth(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hash, totalChunks, fileName: name, parentPath })
-    });
-    if (!res.ok) throw new Error(await res.text());
-    localStorage.removeItem(`upload_${hash}`);
-    const result = await res.json();
-    onSuccess(result);
-  } catch (e) {
-    onError(e);
-  }
-}
-
 // 文件管理器组件
 export function FileManager({
   onSelect,
@@ -456,7 +386,7 @@ export function FileManager({
     }
   };
 
-  // 修改handleFileUpload，自动判断大文件走分片上传
+  // 处理文件上传
   const handleFileUpload = async (event: any) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -469,29 +399,6 @@ export function FileManager({
       setUploadingIndex(i + 1);
       setUploadingPercent(Math.round(((i) / files.length) * 100));
       const file = files[i];
-      // 判断是否大文件（如>2MB）
-      if (file.size > 2 * 1024 * 1024) {
-        await new Promise((resolve) => {
-          uploadFileInChunks({
-            file,
-            name: file.name,
-            parentPath: currentPath || '/',
-            onProgress: (percent) => {
-              setUploadingPercent(Math.round(((i + percent / 100) / files.length) * 100));
-            },
-            onSuccess: (result) => {
-              showToast(t('files.upload_success'), 'info');
-              loadFiles();
-              resolve(true);
-            },
-            onError: (err) => {
-              setUploadError(err.message || String(err));
-              showToast(t('files.upload_failed', { error: err.message }), 'error');
-              resolve(false);
-            }
-          });
-        });
-      } else {
       try {
         const response = await client.files.index.post({
           file,
@@ -532,7 +439,6 @@ export function FileManager({
       } catch (error: any) {
         setUploadError(error.message);
         showToast(t('files.upload_failed', { error: error.message }), 'error');
-        }
       }
     }
     setUploadingPercent(100);

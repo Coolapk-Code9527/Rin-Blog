@@ -10,7 +10,6 @@ import { createS3Client } from "../utils/s3";
 import { syncFeedFileReferences } from './feed';
 import { listAllR2Files, getR2FileMeta, normalizePath, setR2FileMeta } from '../utils/s3';
 import { generateThumbnail } from '../utils/image';
-import { Upload } from "@aws-sdk/lib-storage";
 
 // 定义引用接口
 interface FileReference {
@@ -286,16 +285,12 @@ export function FileService() {
                         const env = getEnv();
                         const s3 = createS3Client();
                         let r2Key = folderPath.replace(/^\//, '').replace(/\/+$/, '') + '/.keep';
-                        const upload = new Upload({
-                            client: s3,
-                            params: {
-                                Bucket: env.S3_BUCKET,
-                                Key: r2Key,
-                                Body: '',
-                                ContentType: 'text/plain',
-                            }
-                        });
-                        await upload.done();
+                        await s3.send(new PutObjectCommand({
+                            Bucket: env.S3_BUCKET,
+                            Key: r2Key,
+                            Body: '',
+                            ContentType: 'text/plain',
+                        }));
                         // 创建文件夹记录
                         const result = await db.insert(files).values({
                             path: folderPath,
@@ -379,33 +374,13 @@ export function FileService() {
                         ) {
                           contentType = uploadMimeType + '; charset=utf-8';
                         }
-                        // 判断大文件分片上传（如>2MB）
-                        const useMultipart = (file.size && file.size > 2 * 1024 * 1024);
-                        if (useMultipart) {
-                            const upload = new Upload({
-                                client: s3,
-                                params: {
-                                    Bucket: bucket,
-                                    Key: s3Key,
-                                    Body: file,
-                                    ContentType: contentType,
-                                    ContentDisposition: `attachment; filename=\"${name || file.name}\"`
-                                }
-                            });
-                            await upload.done();
-                        } else {
-                            const upload = new Upload({
-                                client: s3,
-                                params: {
-                                    Bucket: bucket,
-                                    Key: s3Key,
-                                    Body: file,
-                                    ContentType: contentType,
-                                    ContentDisposition: `attachment; filename=\"${name || file.name}\"`
-                                }
-                            });
-                            await upload.done();
-                        }
+                        await s3.send(new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: s3Key,
+                            Body: file,
+                            ContentType: contentType,
+                            ContentDisposition: `attachment; filename=\"${name || file.name}\"`
+                        }));
                         const filePath = normalizePath((parentPath === '/' ? '' : parentPath) + '/' + hash);
                         let thumbnailHash: string | undefined = undefined;
                         // 仅对图片类型生成缩略图
@@ -428,16 +403,12 @@ export function FileService() {
                                 const thumbHashArray = await crypto.subtle.digest({ name: 'SHA-1' }, thumbBuffer);
                                 const thumbHash = buf2hex(thumbHashArray);
                                 let thumbKey = (parentPath === '/' ? '' : parentPath.replace(/^\//, '') + '/') + 'thumb_' + thumbHash;
-                                const upload = new Upload({
-                                    client: s3,
-                                    params: {
-                                        Bucket: bucket,
-                                        Key: thumbKey,
-                                        Body: new Uint8Array(thumbBuffer),
-                                        ContentType: 'image/webp',
-                                    }
-                                });
-                                await upload.done();
+                                await s3.send(new PutObjectCommand({
+                                    Bucket: bucket,
+                                    Key: thumbKey,
+                                    Body: new Uint8Array(thumbBuffer),
+                                    ContentType: 'image/webp',
+                                }));
                                 // 不再插入files表，只记录hash
                                 thumbnailHash = thumbHash;
                             } catch (e) {
@@ -688,6 +659,13 @@ export function FileService() {
                             const oldR2Key = file.path.replace(/^\//, '');
                             const newR2Key = newPath.replace(/^\//, '');
                             try {
+                                const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldR2Key }));
+                                await s3.send(new PutObjectCommand({
+                                    Bucket: bucket,
+                                    Key: newR2Key,
+                                    Body: obj.Body,
+                                    ContentType: file.mimeType || 'application/octet-stream',
+                                }));
                                 await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldR2Key }));
                             } catch (e) {}
                             // 同步移动缩略图
@@ -699,6 +677,13 @@ export function FileService() {
                                   ? parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
                                   : 'thumb_' + file.thumbnailHash;
                                 try {
+                                    const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
+                                    await s3.send(new PutObjectCommand({
+                                        Bucket: bucket,
+                                        Key: newThumbKey,
+                                        Body: obj.Body,
+                                        ContentType: 'image/webp',
+                                    }));
                                     await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
                                 } catch (e) { /* 忽略异常 */ }
                             }
@@ -728,6 +713,13 @@ export function FileService() {
                                     const newR2Key = newPathKey + relative;
                                     const oldR2Key = r2File.replace(/^\//, '');
                                 try {
+                                    const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldR2Key }));
+                                    await s3.send(new PutObjectCommand({
+                                        Bucket: bucket,
+                                        Key: newR2Key,
+                                        Body: obj.Body,
+                                            ContentType: obj.ContentType || 'application/octet-stream',
+                                    }));
                                     await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldR2Key }));
                                     } catch (e) { continue; }
                                 }
@@ -1025,149 +1017,6 @@ export function FileService() {
                     query: t.Object({
                         limit: t.Optional(t.Numeric()),
                         cursor: t.Optional(t.Numeric())
-                    })
-                })
-
-                // 分片上传接口
-                .post('/chunk', async ({ body, uid, set }) => {
-                    if (!uid) {
-                        set.status = 401;
-                        return { error: 'Unauthorized' };
-                    }
-                    const { hash, chunkIndex, totalChunks, fileName, parentPath } = body;
-                    const chunk = body.chunk;
-                    if (!hash || chunkIndex === undefined || !chunk || !fileName) {
-                        set.status = 400;
-                        return { error: 'Missing params' };
-                    }
-                    const env = getEnv();
-                    const s3 = createS3Client();
-                    const bucket = env.S3_BUCKET;
-                    const chunkKey = `chunks/${hash}/${chunkIndex}`;
-                    try {
-                        const upload = new Upload({
-                            client: s3,
-                            params: {
-                                Bucket: bucket,
-                                Key: chunkKey,
-                                Body: chunk,
-                                ContentType: 'application/octet-stream',
-                            }
-                        });
-                        await upload.done();
-                        return { success: true };
-                    } catch (e) {
-                        set.status = 500;
-                        return { error: String(e) };
-                    }
-                }, {
-                    body: t.Object({
-                        hash: t.String(),
-                        chunkIndex: t.Numeric(),
-                        totalChunks: t.Numeric(),
-                        fileName: t.String(),
-                        parentPath: t.String(),
-                        chunk: t.File(),
-                    })
-                })
-
-                // 分片合并接口
-                .post('/chunk/merge', async ({ body, uid, set }) => {
-                    if (!uid) {
-                        set.status = 401;
-                        return { error: 'Unauthorized' };
-                    }
-                    const { hash, totalChunks, fileName, parentPath } = body;
-                    if (!hash || !totalChunks || !fileName) {
-                        set.status = 400;
-                        return { error: 'Missing params' };
-                    }
-                    const env = getEnv();
-                    const s3 = createS3Client();
-                    const bucket = env.S3_BUCKET;
-                    const folder = parentPath === '/' ? '' : parentPath.replace(/^\//, '') + '/';
-                    const fileKey = `${folder}${hash}`;
-                    // 合并所有分片
-                    try {
-                        let buffers: Uint8Array[] = [];
-                        for (let i = 0; i < totalChunks; i++) {
-                            const chunkKey = `chunks/${hash}/${i}`;
-                            const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: chunkKey }));
-                            if (!obj.Body) throw new Error('Chunk body missing');
-                            const arrBuf = await obj.Body.transformToByteArray();
-                            buffers.push(new Uint8Array(arrBuf));
-                        }
-                        // 合并buffer
-                        const totalSize = buffers.reduce((sum, b) => sum + b.length, 0);
-                        const merged = new Uint8Array(totalSize);
-                        let offset = 0;
-                        for (const b of buffers) {
-                            merged.set(b, offset);
-                            offset += b.length;
-                        }
-                        // 上传合并后的文件
-                        const upload = new Upload({
-                            client: s3,
-                            params: {
-                                Bucket: bucket,
-                                Key: fileKey,
-                                Body: merged,
-                                ContentType: getMimeTypeFromFileName(fileName),
-                                ContentDisposition: `attachment; filename=\"${fileName}\"`
-                            }
-                        });
-                        await upload.done();
-                        // 删除分片
-                        for (let i = 0; i < totalChunks; i++) {
-                            const chunkKey = `chunks/${hash}/${i}`;
-                            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: chunkKey }));
-                        }
-                        // 写入数据库记录
-                        const db = getDB();
-                        const filePath = normalizePath((parentPath === '/' ? '' : parentPath) + '/' + hash);
-                        let result;
-                        let exist = await db.select({id: files.id}).from(files).where(eq(files.path, filePath));
-                        if (exist && exist.length > 0) {
-                            result = await db.update(files).set({
-                                name: fileName,
-                                size: merged.length,
-                                mimeType: getMimeTypeFromFileName(fileName),
-                                userId: uid,
-                                hash: hash,
-                                parentPath,
-                                modifiedAt: new Date(),
-                            }).where(eq(files.path, filePath)).returning({ id: files.id });
-                        } else {
-                            result = await db.insert(files).values({
-                                path: filePath,
-                                name: fileName,
-                                size: merged.length,
-                                mimeType: getMimeTypeFromFileName(fileName),
-                                userId: uid,
-                                hash: hash,
-                                parentPath,
-                            }).returning({ id: files.id });
-                        }
-                        return {
-                            id: result[0].id,
-                            path: filePath,
-                            url: `${env.S3_ACCESS_HOST || env.S3_ENDPOINT}/${fileKey}`,
-                            name: fileName,
-                            size: merged.length,
-                            mimeType: getMimeTypeFromFileName(fileName),
-                            hash,
-                            isFolder: false,
-                        };
-                    } catch (e) {
-                        set.status = 500;
-                        return { error: String(e) };
-                    }
-                }, {
-                    body: t.Object({
-                        hash: t.String(),
-                        totalChunks: t.Numeric(),
-                        fileName: t.String(),
-                        parentPath: t.String(),
                     })
                 })
         );

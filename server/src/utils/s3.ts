@@ -1,5 +1,4 @@
 import { S3Client, ListObjectsV2Command, HeadObjectCommand, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { Upload } from "@aws-sdk/lib-storage";
 import type { Env } from "../db/db";
 import { getEnv } from "./di";
 
@@ -90,18 +89,13 @@ export async function setR2FileMeta(path: string, meta: { filename?: string }): 
         if (typeof meta.filename === 'string' && meta.filename) {
             const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
             const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
-            // 直接用Upload分片上传，兼容所有大小
-            const upload = new Upload({
-                client: s3,
-                params: {
-                    Bucket: bucket,
-                    Key: key,
-                    Body: obj.Body,
-                    ContentType: head.ContentType || 'application/octet-stream',
-                    ContentDisposition: `attachment; filename=\"${meta.filename}\"`
-                }
-            });
-            await upload.done();
+            await s3.send(new PutObjectCommand({
+                Bucket: bucket,
+                Key: key,
+                Body: obj.Body,
+                ContentType: head.ContentType || 'application/octet-stream',
+                ContentDisposition: `attachment; filename=\"${meta.filename}\"`
+            }));
             return true;
         }
         return false;
