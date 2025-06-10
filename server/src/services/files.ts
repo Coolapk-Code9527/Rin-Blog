@@ -693,6 +693,10 @@ export function FileService() {
                                 parentPath,
                                 modifiedAt: new Date(),
                             }).where(eq(files.id, fileId));
+                            // R2对象同步移动后，自动同步新路径下的Content-Disposition，写入当前name
+                            if (!file.isFolder && file.name) {
+                                await setR2FileMeta(newPath, { filename: file.name });
+                            }
                             return { success: true, moved: true };
                         }
                         // 目录重命名逻辑
@@ -848,16 +852,18 @@ export function FileService() {
                             const exist = await db.select({id: files.id, name: files.name}).from(files).where(eq(files.path, dbPath));
                             const meta = await getR2FileMeta(dbPath);
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
-                            let name = meta.filename || hashName;
+                            let name = meta.filename;
+                            if (!name) {
+                                if (exist && exist.length > 0 && exist[0].name && !isHash(exist[0].name)) {
+                                    name = exist[0].name;
+                                } else {
+                                    name = hashName;
+                                }
+                            }
                             const mimeType = meta.mimeType || 'application/octet-stream';
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
                             if (exist && exist.length > 0) {
-                                // 新增：若数据库name为hash但R2元数据有filename，则修正为filename
-                                let dbName = exist[0].name;
-                                if (meta.filename && dbName === hashName && meta.filename !== hashName) {
-                                    name = meta.filename;
-                                }
                                 await db.update(files).set({
                                     name,
                                     size,
