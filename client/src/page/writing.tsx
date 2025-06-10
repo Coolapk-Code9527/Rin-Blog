@@ -1999,7 +1999,6 @@ export function WritingPage({ id }: { id?: number }) {
                     ref={previewRef}
                     onScroll={handlePreviewScroll}
                     style={{height: '100%', overflow: 'auto'}} 
-                    className="px-4 py-2 custom-scrollbar"
                   >
                     <Markdown content={content ? content : `> ${t('content.placeholder')}`} />
                   </div>

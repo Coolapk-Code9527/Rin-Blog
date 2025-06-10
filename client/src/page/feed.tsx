@@ -281,11 +281,10 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                     )}
                   </div>
                 </div>
-                <div className="mt-6 prose prose-lg dark:prose-invert max-w-none toc-content">
+                <div className="mt-6">
                 <Markdown 
                   content={feed.content} 
                   onReady={() => {
-                    // Markdown内容渲染完成后设置标记
                     setTimeout(() => setContentReady(true), 100);
                   }}
                 />

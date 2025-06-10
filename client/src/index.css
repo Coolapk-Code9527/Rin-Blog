@@ -802,6 +802,7 @@ i[class^="ri-"]::before, i[class*=" ri-"]::before {
 
 .wmde-markdown pre code, .toc-content pre code, .markdown-body pre code {
   @apply block p-4 overflow-x-auto text-sm bg-transparent border-0 text-gray-800 dark:text-gray-200;
+  color: inherit !important;
 }
 
 .wmde-markdown pre.language-mermaid, .toc-content pre.language-mermaid, .markdown-body pre.language-mermaid {
