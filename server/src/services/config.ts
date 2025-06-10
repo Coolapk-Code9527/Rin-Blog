@@ -1,6 +1,7 @@
 import Elysia, { t } from "elysia";
 import { setup } from "../setup";
 import { ClientConfig, PublicCache, ServerConfig } from "../utils/cache";
+import { getEnv } from '../utils/di';
 
 export function ConfigService() {
     return new Elysia({ aot: false })
@@ -20,7 +21,7 @@ export function ConfigService() {
                     const all = await config.all();
                     const result = Object.fromEntries(all);
                     if (type === 'client') {
-                        const { S3_ACCESS_HOST } = require('../utils/di').getEnv();
+                        const { S3_ACCESS_HOST } = getEnv();
                         result['S3_ACCESS_HOST'] = S3_ACCESS_HOST;
                     }
                     return result;
