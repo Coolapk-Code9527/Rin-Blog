@@ -68,6 +68,18 @@ export function Settings() {
         ref.current = true;
     }, []);
 
+    useEffect(() => {
+        const config = sessionStorage.getItem('config');
+        if (config) {
+            try {
+                const cfg = JSON.parse(config);
+                if (cfg.S3_ACCESS_HOST) {
+                    window.S3_ACCESS_HOST = cfg.S3_ACCESS_HOST;
+                }
+            } catch {}
+        }
+    }, [clientConfig]);
+
     async function handleFaviconChange(e: ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (file) {

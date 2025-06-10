@@ -1157,6 +1157,7 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
   try {
     const config = JSON.parse(sessionStorage.getItem('config') || '{}');
     const S3_FOLDER = config.S3_FOLDER || 'images';
+    const S3_ACCESS_HOST = config.S3_ACCESS_HOST || '';
     const response = await client.files.index.post(
       {
         file,
@@ -1182,9 +1183,9 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
       imageUrl = response.data;
     }
     if (imageUrl) {
-      const s3Host = (window as any).S3_ACCESS_HOST;
-      if (!/^https?:\/\//.test(imageUrl) && s3Host) {
-        imageUrl = s3Host.replace(/\/+$/, '') + '/' + imageUrl.replace(/^\/+/, '');
+      // 只在url不是http(s)开头时拼接S3_ACCESS_HOST
+      if (!/^https?:\/\//.test(imageUrl) && S3_ACCESS_HOST) {
+        imageUrl = S3_ACCESS_HOST.replace(/\/+$/, '') + '/' + imageUrl.replace(/^\/+/, '');
       }
       onSuccess(imageUrl);
       // 上传成功后刷新文件管理（如有）

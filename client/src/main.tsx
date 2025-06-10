@@ -36,6 +36,19 @@ if (!isDev && !endpoint) {
   console.log('请在Cloudflare Pages中设置API_URL环境变量，指向您的API服务器地址');
 }
 
+// 注入 S3_ACCESS_HOST 到 window（兜底方案）
+declare global {
+  interface Window {
+    S3_ACCESS_HOST?: string;
+  }
+}
+try {
+  const config = JSON.parse(sessionStorage.getItem('config') || '{}');
+  if (config.S3_ACCESS_HOST) {
+    window.S3_ACCESS_HOST = config.S3_ACCESS_HOST;
+  }
+} catch {}
+
 // OAuth URL同样从API端点派生
 export const oauth_url = endpoint + '/user/github';
 export const client = treaty<ServerType>(endpoint) as unknown as ApiClient;

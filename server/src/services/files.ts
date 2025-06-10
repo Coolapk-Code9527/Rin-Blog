@@ -197,6 +197,7 @@ export function FileService() {
                                 .groupBy(feedFiles.fileId);
                             refs.forEach((r: any) => { referencesMap[r.fileId] = r.count; });
                         }
+                        const protocol = accessHost.startsWith('http://') || accessHost.startsWith('https://') ? '' : 'https://';
                         return {
                             files: resultData.map((file: any) => ({
                                 ...file,
@@ -206,11 +207,11 @@ export function FileService() {
                                        file.modifiedAt) : 
                                     Math.floor(Date.now() / 1000),
                                 referencesCount: Number(referencesMap[file.id] || 0),
-                                url: file.path ? `${accessHost}${file.path}` : undefined,
+                                url: file.isFolder ? undefined : (file.path ? `${protocol}${accessHost}${file.path}` : undefined),
                                 thumbUrl: file.thumbnailHash
                                     ? (file.parentPath && file.parentPath !== '/' 
-                                        ? `${accessHost}${file.parentPath}/thumb_${file.thumbnailHash}`
-                                        : `${accessHost}/thumb_${file.thumbnailHash}`)
+                                        ? `${protocol}${accessHost}${file.parentPath}/thumb_${file.thumbnailHash}`
+                                        : `${protocol}${accessHost}/thumb_${file.thumbnailHash}`)
                                     : undefined,
                             })),
                             total: count,
@@ -441,10 +442,11 @@ export function FileService() {
                                 thumbnailHash,
                             }).returning({ id: files.id });
                         }
+                        const protocol = accessHost.startsWith('http://') || accessHost.startsWith('https://') ? '' : 'https://';
                         return {
                             id: result[0].id,
                             path: filePath,
-                            url: `${accessHost}/${s3Key}`,
+                            url: `${protocol}${accessHost}/${s3Key}`,
                             name: name || file.name,
                             size: file.size,
                             mimeType,

@@ -172,11 +172,8 @@ function isInternalFileLink(url: string, config: any): boolean {
       } catch {}
     }
     // 2. 判断url是否为本站文件
-    // 2.1 相对路径
     if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../')) return true;
-    // 2.2 绝对路径但无host
     if (/^([a-zA-Z0-9_\-]+)?\/?[\w\-/]+\.[\w]+$/.test(url)) return true;
-    // 2.3 host匹配
     if (host) {
       try {
         const u = new URL(url, window.location.origin);
@@ -184,7 +181,6 @@ function isInternalFileLink(url: string, config: any): boolean {
         if (u.host === hostUrl.host) return true;
       } catch {}
     }
-    // 2.4 当前站点host
     try {
       const u = new URL(url, window.location.origin);
       if (u.host === window.location.host) return true;

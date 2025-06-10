@@ -92,12 +92,18 @@ function App() {
       const configObj = JSON.parse(config)
       const configWrapper = new ConfigWrapper(configObj, defaultClientConfig)
       setConfig(configWrapper)
+      if (configObj.S3_ACCESS_HOST) {
+        window.S3_ACCESS_HOST = configObj.S3_ACCESS_HOST;
+      }
     } else {
       client.config({ type: "client" }).get().then(({ data }) => {
         if (data && typeof data !== 'string') {
           sessionStorage.setItem('config', JSON.stringify(data))
           const config = new ConfigWrapper(data, defaultClientConfig)
           setConfig(config)
+          if (data.S3_ACCESS_HOST) {
+            window.S3_ACCESS_HOST = data.S3_ACCESS_HOST;
+          }
         }
       })
     }
