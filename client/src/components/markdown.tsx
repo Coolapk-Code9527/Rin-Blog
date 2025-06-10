@@ -302,8 +302,11 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             );
           }
         },
+        // --- 代码块渲染：Mac风格顶部栏、圆角阴影、复制按钮 ---
         code(props) {
           const [copied, setCopied] = React.useState(false);
+          const [collapsed, setCollapsed] = React.useState(true);
+          const codeRef = React.useRef<HTMLDivElement>(null);
           const { children, className, node, ...rest } = props;
           const match = /language-(\w+)/.exec(className || "");
 
@@ -325,68 +328,33 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
 
           const language = match ? match[1] : "";
 
+          // 折叠逻辑：超高时显示折叠按钮
+          const [shouldCollapse, setShouldCollapse] = React.useState(false);
+          React.useEffect(() => {
+            if (codeRef.current) {
+              setShouldCollapse(codeRef.current.scrollHeight > 320);
+            }
+          }, [children]);
+
           if (isCodeBlock) {
             return (
-              <div className="relative group my-6">
-                <SyntaxHighlighter
-                  PreTag="div"
-                  className="rounded-lg"
-                  language={language}
-                  style={
-                    colorMode === "dark"
-                      ? oneDarkStyle
-                      : oneLightStyle
-                  }
-                  wrapLongLines={true}
-                  showLineNumbers={true}
-                  lineNumberStyle={{ 
-                    minWidth: '2.5em', 
-                    paddingRight: '1em', 
-                    color: colorMode === 'dark' ? '#606366' : '#a5a5a5',
-                    textAlign: 'right',
-                    userSelect: 'none'
-                  }}
-                  customStyle={{
-                    margin: '0', 
-                    padding: '1.25em',
-                    borderRadius: '0',
-                    borderBottomLeftRadius: '0.75rem',
-                    borderBottomRightRadius: '0.75rem',
-                    fontSize: '14px',
-                    lineHeight: '1.6',
-                    boxShadow: 'none',
-                    borderTop: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
-                    borderLeft: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
-                    borderRight: colorMode === 'dark' ? '1px solid #3f3f3f' : '1px solid #e5e7eb',
-                    borderBottom: 'none',
-                    background: colorMode === 'dark' 
-                      ? '#1e1e2e' 
-                      : '#f8f9fc',
-                    overflow: 'auto', 
-                    maxHeight: '600px'
-                  }}
-                  codeTagProps={{ 
-                    style: {
-                      ...codeBlockStyle,
-                      fontWeight: 500
-                    } 
-                  }}
-                >
-                  {String(children).replace(/\n$/, "")}
-                </SyntaxHighlighter>
-                <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {language && (
-                    <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs text-gray-600 dark:text-gray-300 select-none shadow-sm">
-                      {language}
+              <div className="my-0 shadow-lg bg-[#23272f] overflow-hidden">
+                {/* Mac风格顶部栏 */}
+                <div className="flex items-center h-8 px-4 rounded-t-xl bg-[#23272f] border-b border-gray-700 select-none">
+                  <span className="flex space-x-2 mr-3">
+                    <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                    <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
+                    <span className="w-3 h-3 rounded-full bg-green-500"></span>
                     </span>
-                  )}
+                  <span className="text-xs text-gray-300 font-mono tracking-widest uppercase">{language || 'CODE'}</span>
                   <button 
-                    className="px-2 py-1 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-md text-xs flex items-center gap-1 shadow-sm hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
+                    className="ml-auto px-2 py-1 bg-gray-700/60 hover:bg-gray-600/80 text-gray-200 rounded text-xs flex items-center gap-1 shadow-sm transition-colors"
                     onClick={() => {
                       navigator.clipboard.writeText(String(children));
                       setCopied(true);
                       setTimeout(() => setCopied(false), 2000);
                     }}
+                    title={copied ? t('code.copied') : t('code.copy')}
                   >
                     {copied ? (
                       <>
@@ -401,6 +369,62 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                     )}
                   </button>
                 </div>
+                {/* 代码高亮区 */}
+                <div
+                  ref={codeRef}
+                  className="rounded-b-xl"
+                  style={{
+                    maxHeight: shouldCollapse && collapsed ? 320 : 'none',
+                    overflow: shouldCollapse && collapsed ? 'hidden' : 'auto',
+                    transition: 'max-height 0.3s',
+                  }}
+                >
+                  <SyntaxHighlighter
+                    PreTag="div"
+                    language={language}
+                    style={colorMode === "dark" ? oneDarkStyle : oneLightStyle}
+                    wrapLongLines={true}
+                    showLineNumbers={true}
+                    lineNumberStyle={{ 
+                      minWidth: '2.5em', 
+                      paddingRight: '1em', 
+                      color: colorMode === 'dark' ? '#606366' : '#a5a5a5',
+                      textAlign: 'right',
+                      userSelect: 'none'
+                    }}
+                    customStyle={{
+                      margin: '0', 
+                      padding: '0.75em',
+                      borderRadius: '0',
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      boxShadow: 'none',
+                      background: 'transparent',
+                      overflow: 'visible',
+                      maxHeight: 'none',
+                      color: '#e5e7eb',
+                    }}
+                    codeTagProps={{ 
+                      style: {
+                        ...codeBlockStyle,
+                        fontWeight: 500
+                      } 
+                    }}
+                  >
+                    {String(children).replace(/\n$/, "")}
+                  </SyntaxHighlighter>
+                </div>
+                {/* 折叠/展开按钮 */}
+                {shouldCollapse && (
+                  <div className="flex justify-center bg-[#23272f] border-t border-gray-700">
+                    <button
+                      className="text-xs text-blue-400 py-2 hover:underline focus:outline-none"
+                      onClick={() => setCollapsed(v => !v)}
+                    >
+                      {collapsed ? t('code.expand', { defaultValue: '展开全部' }) : t('code.collapse', { defaultValue: '收起' })}
+                    </button>
+                  </div>
+                )}
               </div>
             );
           } else {
@@ -415,15 +439,57 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             );
           }
         },
+        // --- 表格渲染：横向滚动、圆角阴影、表头加粗 ---
+        table({ children, ...props }) {
+          return (
+            <div className="overflow-x-auto my-6 rounded-xl shadow-md bg-white dark:bg-gray-900">
+              <table className="min-w-full text-sm border-collapse">
+                {children}
+              </table>
+            </div>
+          );
+        },
+        thead({ children, ...props }) {
+          return (
+            <thead className="bg-gray-100 dark:bg-gray-800">
+              {children}
+            </thead>
+          );
+        },
+        th({ children, ...props }) {
+          return (
+            <th className="px-4 py-3 font-bold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap" {...props}>
+              {children}
+            </th>
+          );
+        },
+        tr({ children, ...props }) {
+          return (
+            <tr className="even:bg-gray-50 dark:even:bg-gray-800/50" {...props}>
+              {children}
+            </tr>
+          );
+        },
+        td({ children, ...props }) {
+          return (
+            <td className="px-4 py-3 whitespace-normal break-words border-b border-gray-200 dark:border-gray-700" {...props}>
+              {children}
+            </td>
+          );
+        },
+        // --- 引用块、分隔线等细节美化 ---
         blockquote({ children, ...props }) {
           return (
             <blockquote
-              className="border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 pl-4 py-1 rounded-r-md italic text-gray-700 dark:text-gray-300"
+              className="border-l-4 border-blue-400 dark:border-blue-500 bg-blue-50/60 dark:bg-blue-900/30 pl-5 py-2 my-4 rounded-xl shadow-sm italic text-gray-800 dark:text-gray-200"
               {...props}
             >
               {children}
             </blockquote>
           );
+        },
+        hr({ children, ...props }) {
+          return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent rounded-full" {...props} />;
         },
         em({ children, ...props }) {
           return (
@@ -585,89 +651,6 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             return <>{children}</>;
           }
           return <p {...props}>{children}</p>;
-        },
-        hr({ children, ...props }) {
-          return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" {...props} />;
-        },
-        table: ({ node, ...props }) => {
-          // 检测是否为URL表格
-          let isUrlTable = false;
-          try {
-            // @ts-ignore - 忽略类型检查
-            const headerRow = node?.children?.[0]?.children?.[0];
-            // @ts-ignore - 忽略类型检查
-            const headerCells = headerRow?.children || [];
-            
-            // @ts-ignore - 忽略类型检查
-            const hasUrlHeader = headerCells.some(cell => {
-              // @ts-ignore - 忽略类型检查
-              const cellText = cell?.children?.[0]?.value || '';
-              return /url|link|地址|链接/i.test(cellText);
-            });
-            
-            // @ts-ignore - 忽略类型检查
-            const bodyRows = (node?.children?.[1]?.children || []).slice(0, 3);
-            let urlCount = 0;
-            
-            // @ts-ignore - 忽略类型检查
-            bodyRows.forEach(row => {
-              // @ts-ignore - 忽略类型检查
-              const cells = row?.children || [];
-              if (cells[1]) {
-                // @ts-ignore - 忽略类型检查
-                const cellContent = cells[1]?.children?.[0]?.value || '';
-                if (/https?:\/\/[^\s]+/.test(cellContent)) {
-                  urlCount++;
-                }
-              }
-            });
-            
-            isUrlTable = hasUrlHeader || urlCount >= 2;
-          } catch (e) {
-            // 忽略错误
-          }
-          
-          const tableClass = isUrlTable ? 'table responsive url-table' : 'table responsive';
-          
-          return (
-            <div className="overflow-hidden my-6">
-              <table className={tableClass + " w-full"} {...props} />
-            </div>
-          );
-        },
-        th: ({ node, children, ...props }) => (
-          <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider" {...props}>
-            {children}
-          </th>
-        ),
-        td: ({ node, children, ...props }) => {
-          // 获取表头文本用于响应式显示
-          let headerText = '';
-          try {
-            // @ts-ignore - 忽略类型检查
-            const rowIndex = node?.position?.start?.line;
-            // @ts-ignore - 忽略类型检查
-            const table = node?.parent?.parent;
-            // @ts-ignore - 忽略类型检查
-            const headerRow = table?.children?.[0]?.children?.[0];
-            // @ts-ignore - 忽略类型检查
-            const cellIndex = node?.parent?.children?.findIndex(cell => cell === node);
-            
-            if (headerRow && cellIndex !== undefined && cellIndex >= 0) {
-              // @ts-ignore - 忽略类型检查
-              const headerCell = headerRow?.children?.[cellIndex];
-              // @ts-ignore - 忽略类型检查
-              headerText = headerCell?.children?.[0]?.value || '';
-            }
-          } catch (e) {
-            // 忽略错误，使用默认空字符串
-          }
-          
-          return (
-            <td className="px-4 py-3 whitespace-normal break-words" data-label={headerText} {...props}>
-              {children}
-            </td>
-          );
         },
         sup: ({ children, ...props }) => (
           <sup className="text-xs mr-[4px]" {...props}>
