@@ -157,33 +157,54 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
   return false;
 };
 
-// 判断是否为本站文件链接
+// 判断是否为本站文件链接（支持多host、宽松判断）
+// 用法说明：
+// - 支持 S3_ACCESS_HOST 为字符串或数组，自动兼容历史域名、CDN 域名等
+// - 判断时忽略协议、端口、子域名，提升识别鲁棒性
+// - 推荐内容中插入相对路径（如 /test/xxx），避免硬编码域名，便于迁移
+// - 复制/粘贴外链时也能自动识别为站内文件
 function isInternalFileLink(url: string, config: any): boolean {
   if (!url) return false;
   try {
-    // 1. 获取 S3/R2 域名
-    let host = '';
+    // 1. 获取 S3/R2 域名，支持数组
+    let hosts: string[] = [];
     if (config && typeof config.get === 'function') {
-      host = config.get('S3_ACCESS_HOST') || '';
+      const h = config.get('S3_ACCESS_HOST');
+      if (Array.isArray(h)) hosts = h;
+      else if (typeof h === 'string' && h) hosts = [h];
     } else if (typeof window !== 'undefined' && window.sessionStorage) {
       try {
         const cfg = JSON.parse(window.sessionStorage.getItem('config') || '{}');
-        if (cfg.S3_ACCESS_HOST) host = cfg.S3_ACCESS_HOST;
+        const h = cfg.S3_ACCESS_HOST;
+        if (Array.isArray(h)) hosts = h;
+        else if (typeof h === 'string' && h) hosts = [h];
       } catch {}
     }
     // 2. 判断url是否为本站文件
     if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../')) return true;
     if (/^([a-zA-Z0-9_\-]+)?\/?[\w\-/]+\.[\w]+$/.test(url)) return true;
-    if (host) {
+    // 3. 宽松host判断（忽略协议、端口、子域名）
+    if (hosts.length > 0) {
       try {
         const u = new URL(url, window.location.origin);
-        const hostUrl = new URL(host, window.location.origin);
-        if (u.host === hostUrl.host) return true;
+        for (const host of hosts) {
+          if (!host) continue;
+          const hostUrl = new URL(host, window.location.origin);
+          // 只比对主域名
+          const uHost = u.hostname.replace(/^www\./, '');
+          const hHost = hostUrl.hostname.replace(/^www\./, '');
+          if (uHost === hHost) return true;
+          // 支持主域名包含（如cdn.、img.等子域名）
+          if (uHost.endsWith('.' + hHost) || hHost.endsWith('.' + uHost)) return true;
+        }
       } catch {}
     }
+    // 4. 兜底：和当前站点host一致也算
     try {
       const u = new URL(url, window.location.origin);
-      if (u.host === window.location.host) return true;
+      const curHost = window.location.hostname.replace(/^www\./, '');
+      const uHost = u.hostname.replace(/^www\./, '');
+      if (uHost === curHost) return true;
     } catch {}
     return false;
   } catch {

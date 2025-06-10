@@ -29,11 +29,38 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
   // 复制链接相关state和格式
   const [copyMenuOpen, setCopyMenuOpen] = useState(false);
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
+  // 新增：判断是否为站内文件，生成相对路径
+  function getRelativeUrl(url: string): string {
+    try {
+      // 只处理属于S3_ACCESS_HOST的链接
+      let hosts: string[] = [];
+      const cfg = JSON.parse(window.sessionStorage.getItem('config') || '{}');
+      const h = cfg.S3_ACCESS_HOST;
+      if (Array.isArray(h)) hosts = h;
+      else if (typeof h === 'string' && h) hosts = [h];
+      if (hosts.length > 0) {
+        for (const host of hosts) {
+          if (!host) continue;
+          const hostUrl = new URL(host, window.location.origin);
+          const u = new URL(url, window.location.origin);
+          const uHost = u.hostname.replace(/^www\./, '');
+          const hHost = hostUrl.hostname.replace(/^www\./, '');
+          if (uHost === hHost || uHost.endsWith('.' + hHost) || hHost.endsWith('.' + uHost)) {
+            // 返回相对路径
+            return u.pathname + u.search + u.hash;
+          }
+        }
+      }
+    } catch {}
+    return url;
+  }
+  const relativeUrl = getRelativeUrl(orig);
   const copyFormats = [
     { key: 'url', label: '原始链接', value: orig },
-    { key: 'markdown', label: 'Markdown', value: `[${file?.name || ''}](${orig})` },
-    { key: 'html', label: 'HTML', value: `<a href=\"${orig}\">${file?.name || ''}</a>` },
-    { key: 'bbcode', label: 'BBCode', value: `[url=${orig}]${file?.name || ''}[/url]` },
+    { key: 'relative', label: '相对路径', value: relativeUrl },
+    { key: 'markdown', label: 'Markdown', value: `[${file?.name || ''}](${relativeUrl !== orig ? relativeUrl : orig})` },
+    { key: 'html', label: 'HTML', value: `<a href=\"${relativeUrl !== orig ? relativeUrl : orig}\">${file?.name || ''}</a>` },
+    { key: 'bbcode', label: 'BBCode', value: `[url=${relativeUrl !== orig ? relativeUrl : orig}]${file?.name || ''}[/url]` },
   ];
 
   if (!file) return (

@@ -1151,6 +1151,30 @@ async function update({
   }
   }
 
+// 新增：判断是否为站内文件，生成相对路径
+function getRelativeUrl(url: string): string {
+  try {
+    let hosts: string[] = [];
+    const cfg = JSON.parse(sessionStorage.getItem('config') || '{}');
+    const h = cfg.S3_ACCESS_HOST;
+    if (Array.isArray(h)) hosts = h;
+    else if (typeof h === 'string' && h) hosts = [h];
+    if (hosts.length > 0) {
+      for (const host of hosts) {
+        if (!host) continue;
+        const hostUrl = new URL(host, window.location.origin);
+        const u = new URL(url, window.location.origin);
+        const uHost = u.hostname.replace(/^www\./, '');
+        const hHost = hostUrl.hostname.replace(/^www\./, '');
+        if (uHost === hHost || uHost.endsWith('.' + hHost) || hHost.endsWith('.' + uHost)) {
+          return u.pathname + u.search + u.hash;
+        }
+      }
+    }
+  } catch {}
+  return url;
+}
+
 // 修改uploadImage函数，处理API响应类型
 async function uploadImage(file: File, onSuccess: (url: string) => void, showAlert: ShowAlertType) {
   const t = i18n.t;
@@ -1187,7 +1211,9 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
       if (!/^https?:\/\//.test(imageUrl) && S3_ACCESS_HOST) {
         imageUrl = S3_ACCESS_HOST.replace(/\/+$/, '') + '/' + imageUrl.replace(/^\/+/, '');
       }
-      onSuccess(imageUrl);
+      // 新增：自动转为相对路径
+      const relativeUrl = getRelativeUrl(imageUrl);
+      onSuccess(relativeUrl !== imageUrl ? relativeUrl : imageUrl);
       // 上传成功后刷新文件管理（如有）
       if (window.dispatchEvent) {
         window.dispatchEvent(new CustomEvent('file-upload-success'));
