@@ -27,7 +27,6 @@ import type { Feed } from '../types/api';  // 根据实际路径调整
 import { useToast } from '../hooks/useToast';
 import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialog';
 import type { FileItem } from '../types/api';
-import { isInternalFileLink } from '../components/markdown';
 
 // 处理process.env问题
 declare const process: {
@@ -1183,10 +1182,7 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
       imageUrl = response.data;
     }
     if (imageUrl) {
-      const s3Host = (window as any).S3_ACCESS_HOST;
-      if (!/^https?:\/\//.test(imageUrl) && s3Host) {
-        imageUrl = s3Host.replace(/\/+$/, '') + '/' + imageUrl.replace(/^\/+/, '');
-      }
+      // 只用接口返回的url字段，不再拼接host
       onSuccess(imageUrl);
       // 上传成功后刷新文件管理（如有）
       if (window.dispatchEvent) {
@@ -1724,34 +1720,27 @@ export function WritingPage({ id }: { id?: number }) {
     const selection = editor.getSelection();
     if (!selection) return;
     let insertText = '';
-    // 获取config对象
-    let config: any = {};
-    try {
-      config = JSON.parse(window.sessionStorage.getItem('config') || '{}');
-    } catch {}
     files.forEach((file, idx) => {
-      if (!file.url && !file.path) return;
-      // 优先用path插入（站内文件），否则用url
-      let ref = file.url;
-      if (file.path && isInternalFileLink(file.url || file.path, config)) {
-        ref = file.path;
-      }
+      if (!file.url) return;
+      // 每个文件引用前后都加一个空行，避免多文件插入时换行混乱
       let block = '';
       if (file.mimeType.startsWith('image/')) {
-        block = `![${file.name}](${ref})`;
+        block = `![${file.name}](${file.url})`;
       } else if (file.mimeType.startsWith('audio/')) {
-        block = `<audio src=\"${ref}\" controls></audio>`;
+        block = `<audio src=\"${file.url}\" controls></audio>`;
       } else if (file.mimeType.startsWith('video/')) {
-        block = `<video src=\"${ref}\" controls></video>`;
+        block = `<video src=\"${file.url}\" controls></video>`;
       } else {
-        block = `[${file.name}](${ref})`;
+        block = `[${file.name}](${file.url})`;
       }
+      // 保证首尾都有空行，且多文件插入时不会产生多余空行
       if (idx === 0) {
         insertText += `\n${block}\n\n`;
       } else {
         insertText += `${block}\n\n`;
       }
     });
+    // 合并多余空行
     insertText = insertText.replace(/\n{3,}/g, '\n\n');
     if (insertText) {
       editor.executeEdits('', [{ range: selection, text: insertText }]);

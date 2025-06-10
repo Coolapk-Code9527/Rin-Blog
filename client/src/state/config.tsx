@@ -5,6 +5,7 @@ export const defaultClientConfig = new Map(Object.entries({
     "friend_apply_enable": true,
     "comment.enabled": true,
     "login.enabled": true,
+    "S3_ACCESS_HOST": ""
 }))
 
 export const defaultServerConfig = new Map(Object.entries({

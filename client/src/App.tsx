@@ -90,11 +90,13 @@ function App() {
     const config = sessionStorage.getItem('config')
     if (config) {
       const configObj = JSON.parse(config)
+      if (!('S3_ACCESS_HOST' in configObj)) configObj.S3_ACCESS_HOST = '';
       const configWrapper = new ConfigWrapper(configObj, defaultClientConfig)
       setConfig(configWrapper)
     } else {
       client.config({ type: "client" }).get().then(({ data }) => {
         if (data && typeof data !== 'string') {
+          if (!('S3_ACCESS_HOST' in data)) data.S3_ACCESS_HOST = '';
           sessionStorage.setItem('config', JSON.stringify(data))
           const config = new ConfigWrapper(data, defaultClientConfig)
           setConfig(config)

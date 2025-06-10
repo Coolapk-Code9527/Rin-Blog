@@ -35,10 +35,10 @@ export type FileItem = {
   parentPath: string;
   createdAt: number;
   modifiedAt: number;
-  url?: string;
+  url?: string; // 原图访问地址，后端返回完整链接，前端无需拼接host
   references?: Array<{id: number, title: string, type: string}>;
   referencesCount?: number;
-  thumbUrl?: string;
+  thumbUrl?: string; // 缩略图访问地址，后端返回完整链接，前端无需拼接host
 };
 
 // 文章类型

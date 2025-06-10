@@ -42,7 +42,6 @@ export function Settings() {
             headers: headersWithAuth()
         }).then(({ data }) => {
             if (data && typeof data !== 'string') {
-                sessionStorage.setItem('config', JSON.stringify(data));
                 const config = new ConfigWrapper(data, defaultClientConfig)
                 setClientConfig(config)
             }

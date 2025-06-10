@@ -21,7 +21,6 @@ import { useColorMode } from "../utils/darkModeUtils";
 import { useTranslation } from "react-i18next";
 import Loading from 'react-loading';
 import { ClientConfigContext } from "../state/config";
-import { getFileUrl } from "./file_manager/FileManager";
 
 // 图片加载状态接口
 interface ImageState {
@@ -159,25 +158,18 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
 };
 
 // 判断是否为本站文件链接
-export function isInternalFileLink(url: string, config: any): boolean {
+function isInternalFileLink(url: string, config: any): boolean {
   if (!url) return false;
   try {
     // 1. 获取 S3/R2 域名
     let host = '';
     if (config && typeof config.get === 'function') {
       host = config.get('S3_ACCESS_HOST') || '';
-    } else if (typeof window !== 'undefined' && window.sessionStorage) {
-      try {
-        const cfg = JSON.parse(window.sessionStorage.getItem('config') || '{}');
-        if (cfg.S3_ACCESS_HOST) host = cfg.S3_ACCESS_HOST;
-      } catch {}
     }
     // 2. 判断url是否为本站文件
     // 2.1 相对路径
     if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../')) return true;
-    // 2.2 绝对路径但无host
-    if (/^([a-zA-Z0-9_\-]+)?\/?[\w\-/]+\.[\w]+$/.test(url)) return true;
-    // 2.3 host匹配
+    // 2.2 host匹配
     if (host) {
       try {
         const u = new URL(url, window.location.origin);
@@ -185,7 +177,7 @@ export function isInternalFileLink(url: string, config: any): boolean {
         if (u.host === hostUrl.host) return true;
       } catch {}
     }
-    // 2.4 当前站点host
+    // 2.3 当前站点host
     try {
       const u = new URL(url, window.location.origin);
       if (u.host === window.location.host) return true;
@@ -198,16 +190,7 @@ export function isInternalFileLink(url: string, config: any): boolean {
 
 export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
   const colorMode = useColorMode();
-  const configFromContext = useContext(ClientConfigContext); // 注入config
-  let config: any = configFromContext;
-  if (!config) {
-    try {
-      config = JSON.parse(window.sessionStorage.getItem('config') || '{}');
-    } catch {}
-  }
-  if (!config || Object.keys(config).length === 0) {
-    config = (window as any).config || {};
-  }
+  const config = useContext(ClientConfigContext); // 注入config
   const [index, setIndex] = React.useState(-1);
   const slides = useRef<SlideImage[]>();
   const { t } = useTranslation();
@@ -484,20 +467,11 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         a({ children, href = '', ...props }) {
           // 判断是否为本站文件
           const isInternal = isInternalFileLink(href, config);
-          let finalHref = href;
-          // 仅当为path时才拼接host，绝对url不处理
-          if (isInternal && href && !/^https?:\/\//.test(href)) {
-            finalHref = getFileUrl(href, config);
-            // debug日志
-            if (process.env.NODE_ENV !== 'production') {
-              console.debug('[Markdown] 拼接站内文件host:', { href, finalHref, config });
-            }
-          }
           if (isInternal) {
             return (
               <span className="inline-flex items-center gap-1">
                 <a
-                  href={finalHref}
+                  href={href}
                   download
                   className="text-green-600 dark:text-green-400 font-medium hover:underline hover:text-green-800 dark:hover:text-green-300"
                   {...props}

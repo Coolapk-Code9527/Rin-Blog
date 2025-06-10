@@ -36,8 +36,14 @@ export class CacheImpl {
             for (let key in data) {
                 this.cache.set(key, data[key]);
             }
+            if (!this.cache.has('S3_ACCESS_HOST') && this.env.S3_ACCESS_HOST) {
+                this.cache.set('S3_ACCESS_HOST', this.env.S3_ACCESS_HOST);
+            }
             this.loaded = true;
         } catch (e: any) {
+            if (this.env.S3_ACCESS_HOST) {
+                this.cache.set('S3_ACCESS_HOST', this.env.S3_ACCESS_HOST);
+            }
             console.error('Cache load failed');
             console.error(e.message);
         }
@@ -45,6 +51,9 @@ export class CacheImpl {
     async all() {
         if (!this.loaded) {
             await this.load();
+        }
+        if (!this.cache.has('S3_ACCESS_HOST') && this.env.S3_ACCESS_HOST) {
+            this.cache.set('S3_ACCESS_HOST', this.env.S3_ACCESS_HOST);
         }
         return this.cache;
     }
