@@ -13,7 +13,6 @@ import { createS3Client } from "./s3";
 export class CacheImpl {
     cache: Map<string, any> = new Map<string, any>();
     db: DB;
-    env: Env;
     cacheUrl: string;
     type: string;
     loaded: boolean = false;
@@ -22,13 +21,15 @@ export class CacheImpl {
     constructor(type: string = "cache") {
         this.type = type;
         this.db = getDB();
-        this.env = getEnv();
         this.cache = new Map<string, any>();
-        const slash = this.env.S3_ACCESS_HOST.endsWith('/') ? '' : '/';
-        this.cacheUrl = this.env.S3_ACCESS_HOST + slash + path.join(this.env.S3_CACHE_FOLDER || 'cache', `${type}.json`);
+        const env = getEnv();
+        const slash = env.S3_ACCESS_HOST.endsWith('/') ? '' : '/';
+        this.cacheUrl = env.S3_ACCESS_HOST + slash + path.join(env.S3_CACHE_FOLDER || 'cache', `${type}.json`);
     }
 
     async load() {
+        const env = getEnv();
+        this.cacheUrl = env.S3_ACCESS_HOST + (env.S3_ACCESS_HOST.endsWith('/') ? '' : '/') + path.join(env.S3_CACHE_FOLDER || 'cache', `${this.type}.json`);
         console.log('Cache load', this.cacheUrl);
         try {
             const response = await fetch(new Request(this.cacheUrl))
@@ -139,9 +140,10 @@ export class CacheImpl {
     }
 
     async save() {
-        const cacheKey = path.join(this.env.S3_CACHE_FOLDER, `${this.type}.json`);
+        const env = getEnv();
+        const cacheKey = path.join(env.S3_CACHE_FOLDER, `${this.type}.json`);
         await this.s3.send(new PutObjectCommand({
-            Bucket: this.env.S3_BUCKET,
+            Bucket: env.S3_BUCKET,
             Key: cacheKey,
             Body: JSON.stringify(Object.fromEntries(this.cache))
         })).then(() => {
