@@ -1151,37 +1151,12 @@ async function update({
   }
   }
 
-// 新增：判断是否为站内文件，生成相对路径
-function getRelativeUrl(url: string): string {
-  try {
-    let hosts: string[] = [];
-    const cfg = JSON.parse(sessionStorage.getItem('config') || '{}');
-    const h = cfg.S3_ACCESS_HOST;
-    if (Array.isArray(h)) hosts = h;
-    else if (typeof h === 'string' && h) hosts = [h];
-    if (hosts.length > 0) {
-      for (const host of hosts) {
-        if (!host) continue;
-        const hostUrl = new URL(host, window.location.origin);
-        const u = new URL(url, window.location.origin);
-        const uHost = u.hostname.replace(/^www\./, '');
-        const hHost = hostUrl.hostname.replace(/^www\./, '');
-        if (uHost === hHost || uHost.endsWith('.' + hHost) || hHost.endsWith('.' + uHost)) {
-          return u.pathname + u.search + u.hash;
-        }
-      }
-    }
-  } catch {}
-  return url;
-}
-
 // 修改uploadImage函数，处理API响应类型
 async function uploadImage(file: File, onSuccess: (url: string) => void, showAlert: ShowAlertType) {
   const t = i18n.t;
   try {
     const config = JSON.parse(sessionStorage.getItem('config') || '{}');
     const S3_FOLDER = config.S3_FOLDER || 'images';
-    const S3_ACCESS_HOST = config.S3_ACCESS_HOST || '';
     const response = await client.files.index.post(
       {
         file,
@@ -1207,13 +1182,11 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
       imageUrl = response.data;
     }
     if (imageUrl) {
-      // 只在url不是http(s)开头时拼接S3_ACCESS_HOST
-      if (!/^https?:\/\//.test(imageUrl) && S3_ACCESS_HOST) {
-        imageUrl = S3_ACCESS_HOST.replace(/\/+$/, '') + '/' + imageUrl.replace(/^\/+/, '');
+      const s3Host = (window as any).S3_ACCESS_HOST;
+      if (!/^https?:\/\//.test(imageUrl) && s3Host) {
+        imageUrl = s3Host.replace(/\/+$/, '') + '/' + imageUrl.replace(/^\/+/, '');
       }
-      // 新增：自动转为相对路径
-      const relativeUrl = getRelativeUrl(imageUrl);
-      onSuccess(relativeUrl !== imageUrl ? relativeUrl : imageUrl);
+      onSuccess(imageUrl);
       // 上传成功后刷新文件管理（如有）
       if (window.dispatchEvent) {
         window.dispatchEvent(new CustomEvent('file-upload-success'));
@@ -1751,26 +1724,25 @@ export function WritingPage({ id }: { id?: number }) {
     if (!selection) return;
     let insertText = '';
     files.forEach((file, idx) => {
-      if (!file.url) return;
-      // 每个文件引用前后都加一个空行，避免多文件插入时换行混乱
+      if (!file.id && !file.url) return;
       let block = '';
+      // 优先用id引用，兼容url
+      const ref = file.id ? `@file/${file.id}` : (file.url || '');
       if (file.mimeType.startsWith('image/')) {
-        block = `![${file.name}](${file.url})`;
+        block = `![${file.name}](${ref})`;
       } else if (file.mimeType.startsWith('audio/')) {
-        block = `<audio src=\"${file.url}\" controls></audio>`;
+        block = `<audio src=\"${ref}\" controls></audio>`;
       } else if (file.mimeType.startsWith('video/')) {
-        block = `<video src=\"${file.url}\" controls></video>`;
+        block = `<video src=\"${ref}\" controls></video>`;
       } else {
-        block = `[${file.name}](${file.url})`;
+        block = `[${file.name}](${ref})`;
       }
-      // 保证首尾都有空行，且多文件插入时不会产生多余空行
       if (idx === 0) {
         insertText += `\n${block}\n\n`;
       } else {
         insertText += `${block}\n\n`;
       }
     });
-    // 合并多余空行
     insertText = insertText.replace(/\n{3,}/g, '\n\n');
     if (insertText) {
       editor.executeEdits('', [{ range: selection, text: insertText }]);

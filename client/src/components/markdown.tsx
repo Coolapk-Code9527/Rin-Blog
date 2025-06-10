@@ -157,59 +157,82 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
   return false;
 };
 
-// 判断是否为本站文件链接（支持多host、宽松判断）
-// 用法说明：
-// - 支持 S3_ACCESS_HOST 为字符串或数组，自动兼容历史域名、CDN 域名等
-// - 判断时忽略协议、端口、子域名，提升识别鲁棒性
-// - 推荐内容中插入相对路径（如 /test/xxx），避免硬编码域名，便于迁移
-// - 复制/粘贴外链时也能自动识别为站内文件
+// 判断是否为本站文件链接
 function isInternalFileLink(url: string, config: any): boolean {
   if (!url) return false;
   try {
-    // 1. 获取 S3/R2 域名，支持数组
-    let hosts: string[] = [];
+    // 1. 获取 S3/R2 域名
+    let host = '';
     if (config && typeof config.get === 'function') {
-      const h = config.get('S3_ACCESS_HOST');
-      if (Array.isArray(h)) hosts = h;
-      else if (typeof h === 'string' && h) hosts = [h];
+      host = config.get('S3_ACCESS_HOST') || '';
     } else if (typeof window !== 'undefined' && window.sessionStorage) {
       try {
         const cfg = JSON.parse(window.sessionStorage.getItem('config') || '{}');
-        const h = cfg.S3_ACCESS_HOST;
-        if (Array.isArray(h)) hosts = h;
-        else if (typeof h === 'string' && h) hosts = [h];
+        if (cfg.S3_ACCESS_HOST) host = cfg.S3_ACCESS_HOST;
       } catch {}
     }
     // 2. 判断url是否为本站文件
+    // 2.1 相对路径
     if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../')) return true;
+    // 2.2 绝对路径但无host
     if (/^([a-zA-Z0-9_\-]+)?\/?[\w\-/]+\.[\w]+$/.test(url)) return true;
-    // 3. 宽松host判断（忽略协议、端口、子域名）
-    if (hosts.length > 0) {
+    // 2.3 host匹配
+    if (host) {
       try {
         const u = new URL(url, window.location.origin);
-        for (const host of hosts) {
-          if (!host) continue;
-          const hostUrl = new URL(host, window.location.origin);
-          // 只比对主域名
-          const uHost = u.hostname.replace(/^www\./, '');
-          const hHost = hostUrl.hostname.replace(/^www\./, '');
-          if (uHost === hHost) return true;
-          // 支持主域名包含（如cdn.、img.等子域名）
-          if (uHost.endsWith('.' + hHost) || hHost.endsWith('.' + uHost)) return true;
-        }
+        const hostUrl = new URL(host, window.location.origin);
+        if (u.host === hostUrl.host) return true;
       } catch {}
     }
-    // 4. 兜底：和当前站点host一致也算
+    // 2.4 当前站点host
     try {
       const u = new URL(url, window.location.origin);
-      const curHost = window.location.hostname.replace(/^www\./, '');
-      const uHost = u.hostname.replace(/^www\./, '');
-      if (uHost === curHost) return true;
+      if (u.host === window.location.host) return true;
     } catch {}
     return false;
   } catch {
     return false;
   }
+}
+
+// 1. 新增 useFileIdUrl 钩子，支持异步查找和缓存
+function useFileIdUrl(content: string): [string, boolean] {
+  const [processed, setProcessed] = useState(content);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    let isMounted = true;
+    // 匹配所有@file/{id}
+    const matches = Array.from(content.matchAll(/@file\/(\w[\w\-]*)/g));
+    if (matches.length === 0) {
+      setProcessed(content);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const idSet = new Set(matches.map(m => m[1]));
+    const cache: Record<string, string> = {};
+    let replaced = content;
+    Promise.all(Array.from(idSet).map(async id => {
+      try {
+        const resp = await fetch(`/api/files/id/${id}/download`);
+        const data = await resp.json();
+        if (data && data.url) {
+          cache[id] = data.url;
+        } else {
+          cache[id] = '';
+        }
+      } catch {
+        cache[id] = '';
+      }
+    })).then(() => {
+      if (!isMounted) return;
+      replaced = replaced.replace(/@file\/(\w[\w\-]*)/g, (m, id) => cache[id] || m);
+      setProcessed(replaced);
+      setLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, [content]);
+  return [processed, loading];
 }
 
 export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
@@ -221,20 +244,22 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isReady, setIsReady] = useState(false);
 
+  // 使用异步钩子处理@file/{id}
+  const [processedContent, loadingFileUrl] = useFileIdUrl(content);
+
   useEffect(() => {
     slides.current = undefined;
-    
     // 预提取文档中的所有图片URL
     const imgRegex = /!\[.*?\]\((.*?)\)/g;
     const urls: string[] = [];
     let match;
-    while ((match = imgRegex.exec(content)) !== null) {
+    while ((match = imgRegex.exec(processedContent)) !== null) {
       if (match[1] && !urls.includes(match[1])) {
         urls.push(match[1]);
       }
     }
     setImageUrls(urls);
-  }, [content]);
+  }, [processedContent]);
 
   // 当内容渲染完成后触发onReady回调
   useEffect(() => {
@@ -278,12 +303,12 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
     <ReactMarkdown
       className="toc-content dark:text-neutral-300"
       remarkPlugins={[gfm, remarkMermaid, remarkMath, remarkAlert]}
-      children={content}
+      children={processedContent}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
         img({ node, src, ...props }) {
           const offset = node!.position!.start.offset!;
-          const previousContent = content.slice(0, offset);
+          const previousContent = processedContent.slice(0, offset);
           const newlinesBefore = countNewlinesBeforeNode(
             previousContent,
             offset
@@ -331,7 +356,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           const { children, className, node, ...rest } = props;
           const match = /language-(\w+)/.exec(className || "");
 
-          const curContent = content.slice(node?.position?.start.offset || 0);
+          const curContent = processedContent.slice(node?.position?.start.offset || 0);
           const isCodeBlock = curContent.trimStart().startsWith("```");
 
           const codeBlockStyle = {
@@ -751,7 +776,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         },
       }}
     />
-  ), [content, colorMode, imageUrls]);
+  ), [processedContent, colorMode, imageUrls]);
 
   return (
     <>

@@ -197,7 +197,6 @@ export function FileService() {
                                 .groupBy(feedFiles.fileId);
                             refs.forEach((r: any) => { referencesMap[r.fileId] = r.count; });
                         }
-                        const protocol = accessHost.startsWith('http://') || accessHost.startsWith('https://') ? '' : 'https://';
                         return {
                             files: resultData.map((file: any) => ({
                                 ...file,
@@ -207,11 +206,11 @@ export function FileService() {
                                        file.modifiedAt) : 
                                     Math.floor(Date.now() / 1000),
                                 referencesCount: Number(referencesMap[file.id] || 0),
-                                url: file.isFolder ? undefined : (file.path ? `${protocol}${accessHost}${file.path}` : undefined),
+                                url: file.path ? `${accessHost}${file.path}` : undefined,
                                 thumbUrl: file.thumbnailHash
                                     ? (file.parentPath && file.parentPath !== '/' 
-                                        ? `${protocol}${accessHost}${file.parentPath}/thumb_${file.thumbnailHash}`
-                                        : `${protocol}${accessHost}/thumb_${file.thumbnailHash}`)
+                                        ? `${accessHost}${file.parentPath}/thumb_${file.thumbnailHash}`
+                                        : `${accessHost}/thumb_${file.thumbnailHash}`)
                                     : undefined,
                             })),
                             total: count,
@@ -442,11 +441,10 @@ export function FileService() {
                                 thumbnailHash,
                             }).returning({ id: files.id });
                         }
-                        const protocol = accessHost.startsWith('http://') || accessHost.startsWith('https://') ? '' : 'https://';
                         return {
                             id: result[0].id,
                             path: filePath,
-                            url: `${protocol}${accessHost}/${s3Key}`,
+                            url: `${accessHost}/${s3Key}`,
                             name: name || file.name,
                             size: file.size,
                             mimeType,
@@ -990,6 +988,39 @@ export function FileService() {
                         }
                     } catch (e) {}
                     return { r2: { used: r2Used } };
+                })
+
+                // 获取文件真实下载url（支持@file/{id}语法解析）
+                .get('/id/:id/download', async ({ params, set, uid }) => {
+                    const db = getDB();
+                    if (!db) {
+                        set.status = 500;
+                        return { error: 'Database connection not available' };
+                    }
+                    const fileId = Number(params.id);
+                    if (!fileId) {
+                        set.status = 400;
+                        return { error: 'Invalid file id' };
+                    }
+                    try {
+                        const file = await db.select().from(files).where(eq(files.id, fileId)).then(r => r[0]);
+                        if (!file) {
+                            set.status = 404;
+                            return { error: 'File not found' };
+                        }
+                        // 私有文件需鉴权
+                        if (file.accessLevel !== 'public' && !uid) {
+                            set.status = 401;
+                            return { error: 'Unauthorized' };
+                        }
+                        const env = getEnv();
+                        const accessHost = env.S3_ACCESS_HOST || env.S3_ENDPOINT;
+                        const url = file.path ? `${accessHost}${file.path}` : undefined;
+                        return { url, ...file };
+                    } catch (e) {
+                        set.status = 500;
+                        return { error: String(e) };
+                    }
                 })
         );
 } 

@@ -40,26 +40,27 @@ const Button = ({ onClick, title, secondary = false }: { onClick: () => void, ti
   </button>
 );
 
-// 获取S3访问域名（优先 config.get('S3_ACCESS_HOST')，否则 sessionStorage config）
+// 获取S3访问域名（优先 config.get('S3_ACCESS_HOST')，否则 wrangler.toml 配置）
 function getS3AccessHost(config: any): string {
+  // 1. 优先 context config
   if (config && typeof config.get === 'function') {
     const host = config.get('S3_ACCESS_HOST');
     if (host) return host;
   }
+  // 2. 其次 sessionStorage config
   if (typeof window !== 'undefined' && window.sessionStorage) {
     try {
       const cfg = JSON.parse(window.sessionStorage.getItem('config') || '{}');
       if (cfg.S3_ACCESS_HOST) return cfg.S3_ACCESS_HOST;
     } catch {}
   }
+  // 3. 兜底空字符串（由后端 file.url 字段兜底）
   return '';
 }
 
-// 文件展示时拼接完整URL，优先用后端返回的url字段
-function getFileUrl(file: any, config?: any) {
-  if (!file) return '';
-  if (file.url && /^https?:\/\//.test(file.url)) return file.url;
-  const path = file.path || '';
+// 文件展示时拼接完整URL
+function getFileUrl(path: string, config?: any) {
+  if (!path) return '';
   const host = getS3AccessHost(config);
   if (!host) return path;
   return host.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
@@ -639,7 +640,7 @@ export function FileManager({
       return;
     }
     try {
-      const url = file.url || getFileUrl(file, config);
+      const url = file.url || getFileUrl(file.path, config);
       const response = await fetch(url, { headers: headersWithAuth() });
       if (!response.ok) throw new Error(t('files.download_failed', { error: response.statusText }));
       const blob = await response.blob();
@@ -657,7 +658,7 @@ export function FileManager({
     for (const file of selectedFiles) {
       if (file.isFolder) continue; // 文件夹暂不支持
       try {
-        const url = file.url || getFileUrl(file, config);
+        const url = file.url || getFileUrl(file.path, config);
         const response = await fetch(url, { headers: headersWithAuth() });
         if (!response.ok) continue;
         const blob = await response.blob();
