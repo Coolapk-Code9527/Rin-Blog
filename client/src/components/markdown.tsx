@@ -21,6 +21,7 @@ import { useColorMode } from "../utils/darkModeUtils";
 import { useTranslation } from "react-i18next";
 import Loading from 'react-loading';
 import { ClientConfigContext } from "../state/config";
+import { getFileUrl } from "./file_manager/FileManager";
 
 // 图片加载状态接口
 interface ImageState {
@@ -197,7 +198,16 @@ export function isInternalFileLink(url: string, config: any): boolean {
 
 export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
   const colorMode = useColorMode();
-  const config = useContext(ClientConfigContext); // 注入config
+  const configFromContext = useContext(ClientConfigContext); // 注入config
+  let config: any = configFromContext;
+  if (!config) {
+    try {
+      config = JSON.parse(window.sessionStorage.getItem('config') || '{}');
+    } catch {}
+  }
+  if (!config || Object.keys(config).length === 0) {
+    config = (window as any).config || {};
+  }
   const [index, setIndex] = React.useState(-1);
   const slides = useRef<SlideImage[]>();
   const { t } = useTranslation();
@@ -474,11 +484,20 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         a({ children, href = '', ...props }) {
           // 判断是否为本站文件
           const isInternal = isInternalFileLink(href, config);
+          let finalHref = href;
+          // 仅当为path时才拼接host，绝对url不处理
+          if (isInternal && href && !/^https?:\/\//.test(href)) {
+            finalHref = getFileUrl(href, config);
+            // debug日志
+            if (process.env.NODE_ENV !== 'production') {
+              console.debug('[Markdown] 拼接站内文件host:', { href, finalHref, config });
+            }
+          }
           if (isInternal) {
             return (
               <span className="inline-flex items-center gap-1">
                 <a
-                  href={href}
+                  href={finalHref}
                   download
                   className="text-green-600 dark:text-green-400 font-medium hover:underline hover:text-green-800 dark:hover:text-green-300"
                   {...props}

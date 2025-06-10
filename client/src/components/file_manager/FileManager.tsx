@@ -59,7 +59,7 @@ function getS3AccessHost(config: any): string {
 }
 
 // 文件展示时拼接完整URL
-function getFileUrl(path: string, config?: any) {
+export function getFileUrl(path: string, config?: any) {
   if (!path) return '';
   const host = getS3AccessHost(config);
   if (!host) return path;
