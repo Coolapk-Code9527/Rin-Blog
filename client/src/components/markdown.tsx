@@ -158,7 +158,7 @@ const isMarkdownImageLinkAtEnd = (text: string) => {
 };
 
 // 判断是否为本站文件链接
-function isInternalFileLink(url: string, config: any): boolean {
+export function isInternalFileLink(url: string, config: any): boolean {
   if (!url) return false;
   try {
     // 1. 获取 S3/R2 域名
@@ -195,46 +195,6 @@ function isInternalFileLink(url: string, config: any): boolean {
   }
 }
 
-// 1. 新增 useFileIdUrl 钩子，支持异步查找和缓存
-function useFileIdUrl(content: string): [string, boolean] {
-  const [processed, setProcessed] = useState(content);
-  const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    let isMounted = true;
-    // 匹配所有@file/{id}
-    const matches = Array.from(content.matchAll(/@file\/(\w[\w\-]*)/g));
-    if (matches.length === 0) {
-      setProcessed(content);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const idSet = new Set(matches.map(m => m[1]));
-    const cache: Record<string, string> = {};
-    let replaced = content;
-    Promise.all(Array.from(idSet).map(async id => {
-      try {
-        const resp = await fetch(`/api/files/id/${id}/download`);
-        const data = await resp.json();
-        if (data && data.url) {
-          cache[id] = data.url;
-        } else {
-          cache[id] = '';
-        }
-      } catch {
-        cache[id] = '';
-      }
-    })).then(() => {
-      if (!isMounted) return;
-      replaced = replaced.replace(/@file\/(\w[\w\-]*)/g, (m, id) => cache[id] || m);
-      setProcessed(replaced);
-      setLoading(false);
-    });
-    return () => { isMounted = false; };
-  }, [content]);
-  return [processed, loading];
-}
-
 export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
   const colorMode = useColorMode();
   const config = useContext(ClientConfigContext); // 注入config
@@ -244,22 +204,20 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isReady, setIsReady] = useState(false);
 
-  // 使用异步钩子处理@file/{id}
-  const [processedContent, loadingFileUrl] = useFileIdUrl(content);
-
   useEffect(() => {
     slides.current = undefined;
+    
     // 预提取文档中的所有图片URL
     const imgRegex = /!\[.*?\]\((.*?)\)/g;
     const urls: string[] = [];
     let match;
-    while ((match = imgRegex.exec(processedContent)) !== null) {
+    while ((match = imgRegex.exec(content)) !== null) {
       if (match[1] && !urls.includes(match[1])) {
         urls.push(match[1]);
       }
     }
     setImageUrls(urls);
-  }, [processedContent]);
+  }, [content]);
 
   // 当内容渲染完成后触发onReady回调
   useEffect(() => {
@@ -303,12 +261,12 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
     <ReactMarkdown
       className="toc-content dark:text-neutral-300"
       remarkPlugins={[gfm, remarkMermaid, remarkMath, remarkAlert]}
-      children={processedContent}
+      children={content}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
         img({ node, src, ...props }) {
           const offset = node!.position!.start.offset!;
-          const previousContent = processedContent.slice(0, offset);
+          const previousContent = content.slice(0, offset);
           const newlinesBefore = countNewlinesBeforeNode(
             previousContent,
             offset
@@ -356,7 +314,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           const { children, className, node, ...rest } = props;
           const match = /language-(\w+)/.exec(className || "");
 
-          const curContent = processedContent.slice(node?.position?.start.offset || 0);
+          const curContent = content.slice(node?.position?.start.offset || 0);
           const isCodeBlock = curContent.trimStart().startsWith("```");
 
           const codeBlockStyle = {
@@ -776,7 +734,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         },
       }}
     />
-  ), [processedContent, colorMode, imageUrls]);
+  ), [content, colorMode, imageUrls]);
 
   return (
     <>

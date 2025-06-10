@@ -236,7 +236,7 @@ export function FileManager({
         });
       } else {
         setSelectedFiles([file]);
-        onSelect?.(file);
+        onSelect?.({ ...file, path: file.path, url: file.url });
       }
     }
   };

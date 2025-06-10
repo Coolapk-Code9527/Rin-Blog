@@ -27,6 +27,7 @@ import type { Feed } from '../types/api';  // 根据实际路径调整
 import { useToast } from '../hooks/useToast';
 import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialog';
 import type { FileItem } from '../types/api';
+import { isInternalFileLink } from '../components/markdown';
 
 // 处理process.env问题
 declare const process: {
@@ -1723,11 +1724,19 @@ export function WritingPage({ id }: { id?: number }) {
     const selection = editor.getSelection();
     if (!selection) return;
     let insertText = '';
+    // 获取config对象
+    let config: any = {};
+    try {
+      config = JSON.parse(window.sessionStorage.getItem('config') || '{}');
+    } catch {}
     files.forEach((file, idx) => {
-      if (!file.id && !file.url) return;
+      if (!file.url && !file.path) return;
+      // 优先用path插入（站内文件），否则用url
+      let ref = file.url;
+      if (file.path && isInternalFileLink(file.url || file.path, config)) {
+        ref = file.path;
+      }
       let block = '';
-      // 优先用id引用，兼容url
-      const ref = file.id ? `@file/${file.id}` : (file.url || '');
       if (file.mimeType.startsWith('image/')) {
         block = `![${file.name}](${ref})`;
       } else if (file.mimeType.startsWith('audio/')) {

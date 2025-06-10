@@ -989,38 +989,5 @@ export function FileService() {
                     } catch (e) {}
                     return { r2: { used: r2Used } };
                 })
-
-                // 获取文件真实下载url（支持@file/{id}语法解析）
-                .get('/id/:id/download', async ({ params, set, uid }) => {
-                    const db = getDB();
-                    if (!db) {
-                        set.status = 500;
-                        return { error: 'Database connection not available' };
-                    }
-                    const fileId = Number(params.id);
-                    if (!fileId) {
-                        set.status = 400;
-                        return { error: 'Invalid file id' };
-                    }
-                    try {
-                        const file = await db.select().from(files).where(eq(files.id, fileId)).then(r => r[0]);
-                        if (!file) {
-                            set.status = 404;
-                            return { error: 'File not found' };
-                        }
-                        // 私有文件需鉴权
-                        if (file.accessLevel !== 'public' && !uid) {
-                            set.status = 401;
-                            return { error: 'Unauthorized' };
-                        }
-                        const env = getEnv();
-                        const accessHost = env.S3_ACCESS_HOST || env.S3_ENDPOINT;
-                        const url = file.path ? `${accessHost}${file.path}` : undefined;
-                        return { url, ...file };
-                    } catch (e) {
-                        set.status = 500;
-                        return { error: String(e) };
-                    }
-                })
         );
 } 
