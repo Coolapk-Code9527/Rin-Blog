@@ -42,32 +42,12 @@ export async function listAllR2Files(): Promise<string[]> {
 // 统一路径标准化函数，所有文件相关操作必须调用，避免/与无/混用导致重复
 export function normalizePath(path: string): string {
     if (!path) return '';
-    // 支持多 host，自动从环境变量获取
-    const env: Env = getEnv();
-    const hosts = [
-        env.S3_ACCESS_HOST,
-        env.S3_ENDPOINT,
-    ].filter(Boolean).map(h => {
-        try {
-            return new URL(h).host;
-        } catch {
-            return h?.replace(/^https?:\/\//, '').replace(/\/$/, '');
-        }
-    });
-    try {
-        if (/^https?:\/\//i.test(path)) {
-            const u = new URL(path);
-            if (hosts.includes(u.host)) {
-                path = u.pathname;
-            }
-        }
-    } catch {}
+    // 去除域名
+    path = path.replace(/^https?:\/\/(?:[\w.-]+)\/?/, '');
     // 去除多余前缀/
     path = path.replace(/^\/+/g, '');
     // 保证所有路径前面都有一个/
     if (!path.startsWith('/')) path = '/' + path;
-    // 去除末尾参数和锚点
-    path = path.split('?')[0].split('#')[0];
     return path;
 }
 

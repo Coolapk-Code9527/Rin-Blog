@@ -18,7 +18,12 @@ export function ConfigService() {
                     }
                     const config = type === 'server' ? ServerConfig() : ClientConfig();
                     const all = await config.all();
-                    return Object.fromEntries(all);
+                    const result = Object.fromEntries(all);
+                    if (type === 'client') {
+                        const { S3_ACCESS_HOST } = require('../utils/di').getEnv();
+                        result['S3_ACCESS_HOST'] = S3_ACCESS_HOST;
+                    }
+                    return result;
                 })
                 .post('/:type', async ({ set, admin, body, params: { type } }) => {
                     if (type !== 'server' && type !== 'client') {
