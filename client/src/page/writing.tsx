@@ -1759,6 +1759,7 @@ export function WritingPage({ id }: { id?: number }) {
             setValue={setTitle}
             placeholder={t("title")}
           />
+          <p className="text-xs text-gray-400 mt-1 ml-1">主标题请在此输入，正文无需再写一级标题（# 标题）。</p>
           <Input
             id={id}
             value={summary}

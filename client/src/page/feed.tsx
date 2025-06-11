@@ -214,73 +214,69 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                 className="rounded-2xl bg-w px-4 sm:px-6 md:px-7 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
                 aria-label={feed.title ?? "Unnamed"}
               >
-                <div className="flex justify-between">
-                  <div className="w-full pr-2">
-                    <div className="mt-1 mb-1.5 flex flex-wrap gap-x-3 gap-y-1">
-                      <p
-                        className="text-gray-400 text-[13px] flex items-center"
-                        title={new Date(feed.createdAt).toLocaleString()}
+                <div className="relative mb-3">
+                  <h1 className="text-center text-3xl sm:text-4xl font-extrabold t-primary break-all leading-tight mx-auto max-w-3xl">
+                    {feed.title}
+                  </h1>
+                  {profile?.permission && (
+                    <div className="absolute right-0 top-1 flex gap-2">
+                      <button
+                        aria-label={top > 0 ? t("untop.title") : t("top.title")}
+                        onClick={topFeed}
+                        className={`w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-sm border transition-all duration-200
+                          ${top > 0
+                            ? "bg-blue-50/80 dark:bg-blue-900/40 text-blue-600 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-800"
+                            : "bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"}
+                          hover:scale-105 active:scale-95`}
+                        style={{backdropFilter: 'blur(4px)'}}
                       >
-                        <i className="ri-calendar-line mr-1"></i>
-                        {t("published_at")} {timeago(feed.createdAt)}
-                      </p>
-
+                        <i className="ri-skip-up-line text-lg"></i>
+                      </button>
+                      <Link
+                        aria-label={t("edit")}
+                        href={`/writing/${feed.id}`}
+                        className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-sm border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200"
+                        style={{backdropFilter: 'blur(4px)'}}
+                      >
+                        <i className="ri-edit-2-line text-lg"></i>
+                      </Link>
+                      <button
+                        aria-label={t("delete.title")}
+                        onClick={deleteFeed}
+                        className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-sm border bg-white/80 dark:bg-gray-800/80 text-red-500 border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 active:scale-95 transition-all duration-200"
+                        style={{backdropFilter: 'blur(4px)'}}
+                      >
+                        <i className="ri-delete-bin-7-line text-lg"></i>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-center mb-2">
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-white/80 dark:bg-gray-800/80 shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-[15px] font-medium">
+                      <i className="ri-calendar-line text-blue-500 mr-1"></i>
+                      <span>{t("published_at")} {timeago(feed.createdAt)}</span>
                       {feed.createdAt !== feed.updatedAt && (
-                        <p
-                          className="text-gray-400 text-[13px] flex items-center"
-                          title={new Date(feed.updatedAt).toLocaleString()}
-                        >
-                          <i className="ri-history-line mr-1"></i>
-                          {t("feed_card.updated$time", {
-                            time: timeago(feed.updatedAt),
-                          })}
-                        </p>
+                        <>
+                          <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
+                          <i className="ri-history-line text-purple-400 mr-1"></i>
+                          <span>{t("feed_card.updated$time", { time: timeago(feed.updatedAt) })}</span>
+                        </>
                       )}
-                      
-                      {counterEnabled && <p className='text-[13px] text-gray-400 font-normal flex items-center'>
-                        <i className="ri-eye-line mr-1"></i>
-                      {t("count.pv")} {feed.pv} | {t("count.uv")} {feed.uv}
-                    </p>}
+                      {counterEnabled && (
+                        <>
+                          <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
+                          <i className="ri-eye-line text-green-500 mr-1"></i>
+                          <span>{t("count.pv")} {feed.pv}</span>
+                          <span className="mx-1 text-gray-300 dark:text-gray-600">/</span>
+                          <i className="ri-user-3-line text-pink-400 mr-1"></i>
+                          <span>{t("count.uv")} {feed.uv}</span>
+                        </>
+                      )}
                     </div>
-                    <div className="flex flex-row items-center">
-                      <h1 className="text-2xl sm:text-3xl font-bold t-primary break-all leading-tight">
-                        {feed.title}
-                      </h1>
-                      <div className="flex-1 w-0" />
-                    </div>
-                  </div>
-                  <div className="pt-2 flex-shrink-0">
-                    {profile?.permission && (
-                      <div className="flex gap-2">
-                        <button
-                          aria-label={top > 0 ? t("untop.title") : t("top.title")}
-                          onClick={topFeed}
-                          className={`w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center ${
-                            top > 0 
-                              ? "bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20" 
-                              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
-                          }`}
-                        >
-                          <i className="ri-skip-up-line" />
-                        </button>
-                        <Link
-                          aria-label={t("edit")}
-                          href={`/writing/${feed.id}`}
-                          className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme"
-                        >
-                          <i className="ri-edit-2-line" />
-                        </Link>
-                        <button
-                          aria-label={t("delete.title")}
-                          onClick={deleteFeed}
-                          className="w-8 h-8 rounded-md text-xs font-medium transition-all shadow-sm flex items-center justify-center bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                          <i className="ri-delete-bin-7-line" />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
+                <hr className="my-4 h-1 border-0 rounded-full bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70 animate-fadeIn" />
                 <div className="mt-6">
                 <Markdown 
                   content={feed.content} 
@@ -784,12 +780,13 @@ function Comments({ id }: { id: string }) {
                   
                     <div className="p-4 space-y-4">
                       {currentComments.map((comment, idx) => (
-                      <CommentItem
-                        comment={comment}
-                        onRefresh={loadComments}
-                        key={comment.id || idx}
-                      />
-                    ))}
+                        <div key={comment.id != null ? comment.id : idx}>
+                          <CommentItem
+                            comment={comment}
+                            onRefresh={loadComments}
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
                   
@@ -826,12 +823,10 @@ function Comments({ id }: { id: string }) {
 
 function CommentItem({
   comment,
-  onRefresh,
-  key
+  onRefresh
 }: {
   comment: Comment;
   onRefresh: () => void;
-  key?: number | string;
 }) {
   const { showConfirm, ConfirmUI } = useConfirm();
   const { showAlert, AlertUI } = useAlert();

@@ -127,6 +127,10 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
         }
         setTableOfContents([]); // 重置目录
 
+        // 增加最大重试次数，防止死循环
+        let retryCount = 0;
+        const MAX_RETRY = 10;
+
         // 检查是否已经有内容加载
         const checkContentExistence = () => {
             const contentElement = document.querySelector(selector);
@@ -135,10 +139,16 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
                 // 如果内容元素存在，但没有标题，设置一个更长的延迟
                 const headers = contentElement.querySelectorAll('h1, h2, h3, h4, h5, h6');
                 if (headers.length === 0) {
-                    console.log(`[TOC] 内容元素存在但没有标题，等待Markdown渲染完成...`);
-                    setTimeout(() => {
-                        checkContentExistence();
-                    }, 500);
+                    if (retryCount < MAX_RETRY) {
+                        retryCount++;
+                        console.log(`[TOC] 内容元素存在但没有标题，等待Markdown渲染完成...（第${retryCount}次）`);
+                        setTimeout(() => {
+                            checkContentExistence();
+                        }, 500);
+                    } else {
+                        setTableOfContents([]); // 明确无目录
+                        console.log('[TOC] 内容渲染完毕但无标题，停止检测');
+                    }
                 } else {
                     // 内容和标题都已存在，立即处理
                     setTimeout(() => {

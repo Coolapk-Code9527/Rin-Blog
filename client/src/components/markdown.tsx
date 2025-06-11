@@ -282,18 +282,18 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                     <span className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
                   </span>
                 )}
-                <img
-                  src={src}
-                  alt={props.alt}
-                  onClick={() => show(src)}
+              <img
+              src={src}
+              alt={props.alt}
+              onClick={() => show(src)}
                   className={
                     `${rounded ? "rounded-xl" : ""} ${isSVG ? "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-2 transition-all duration-200 hover:shadow-lg" : ""} transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`
                   }
-                  style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer' }}
                   onLoad={() => setLoaded(true)}
-                />
-              </span>
-            );
+            />
+            </span>
+          );
           };
           if (
             newlinesBefore >= 1 ||
@@ -348,10 +348,9 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           }, [children]);
 
           if (isCodeBlock) {
-            const [fullscreen, setFullscreen] = React.useState(false);
             return (
-              <div className={`my-0 shadow-lg bg-[#23272f] overflow-hidden relative${fullscreen ? ' fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center' : ''}`}
-                style={fullscreen ? {padding: '2vw', margin: 0} : {}}>
+              <div className={`my-0 shadow-lg bg-[#23272f] overflow-hidden relative`}
+                style={{}}>
                 {/* Mac风格顶部栏 */}
                 <div className="flex items-center h-8 px-4 rounded-t-xl bg-gradient-to-r from-[#23272f] via-[#2d3748] to-[#23272f] border-b border-gray-700 select-none shadow-md">
                   <span className="flex space-x-2 mr-3">
@@ -361,7 +360,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                   </span>
                   <span className="text-xs text-gray-300 font-mono tracking-widest uppercase">{language || 'CODE'}</span>
                   <button 
-                    className="ml-auto px-2 py-1 bg-gray-700/60 hover:bg-gray-600/80 text-gray-200 rounded text-xs flex items-center gap-1 shadow-sm transition-colors"
+                    className="code-block-action ml-auto px-2 py-1 bg-gray-700/60 hover:bg-gray-600/80 text-gray-200 rounded text-xs flex items-center gap-1 shadow-sm transition-colors"
                     onClick={() => {
                       navigator.clipboard.writeText(String(children));
                       setCopied(true);
@@ -381,25 +380,15 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                       </>
                     )}
                   </button>
-                  <button
-                    className="ml-2 px-2 py-1 bg-gray-700/60 hover:bg-gray-600/80 text-gray-200 rounded text-xs flex items-center gap-1 shadow-sm transition-colors"
-                    onClick={() => setFullscreen(v => !v)}
-                    title={fullscreen ? t('code.exit_fullscreen', {defaultValue: '退出全屏'}) : t('code.fullscreen', {defaultValue: '全屏查看'})}
-                  >
-                    <i className={fullscreen ? 'ri-contract-left-line' : 'ri-fullscreen-line'} />
-                    <span>{fullscreen ? t('code.exit_fullscreen', {defaultValue: '退出全屏'}) : t('code.fullscreen', {defaultValue: '全屏'})}</span>
-                  </button>
                 </div>
                 {/* 代码高亮区 */}
                 <div
                   ref={codeRef}
                   className="rounded-b-xl"
                   style={{
-                    maxHeight: shouldCollapse && collapsed && !fullscreen ? 320 : 'none',
-                    overflow: shouldCollapse && collapsed && !fullscreen ? 'hidden' : 'auto',
+                    maxHeight: shouldCollapse && collapsed ? 320 : 'none',
+                    overflow: shouldCollapse && collapsed ? 'hidden' : 'auto',
                     transition: 'max-height 0.3s',
-                    minHeight: fullscreen ? '60vh' : undefined,
-                    minWidth: fullscreen ? '60vw' : undefined,
                   }}
                 >
                   <SyntaxHighlighter
@@ -438,7 +427,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                   </SyntaxHighlighter>
                 </div>
                 {/* 折叠/展开按钮 */}
-                {shouldCollapse && !fullscreen && (
+                {shouldCollapse && (
                   <div className="flex justify-center bg-[#23272f] border-t border-gray-700">
                     <button
                       className="text-xs text-blue-400 py-2 hover:underline focus:outline-none"
@@ -447,10 +436,6 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                       {collapsed ? t('code.expand', { defaultValue: '展开全部' }) : t('code.collapse', { defaultValue: '收起' })}
                     </button>
                   </div>
-                )}
-                {/* 全屏遮罩关闭区域 */}
-                {fullscreen && (
-                  <div className="fixed inset-0 z-[9998] bg-black/60" onClick={() => setFullscreen(false)}></div>
                 )}
               </div>
             );
@@ -648,46 +633,60 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           }
         },
         h1({ children, ...props }) {
+          // 自动隐藏正文第一个H1，避免与主标题重复
+          if (!props['data-skip-h1']) {
+            if (typeof window !== 'undefined') {
+              const w = window as any;
+              if (!w.__rin_first_h1_rendered) {
+                w.__rin_first_h1_rendered = true;
+                return null;
+              }
+            }
+          }
+          // 优化：H1左侧彩色竖线装饰，字号最大，字重极粗
           return (
-            <h1 id={children?.toString()} {...props}>{children}</h1>
+            <h1 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '2.25rem', fontWeight: 800, margin: '2.5rem 0 1.5rem 0', display: 'flex', alignItems: 'center' }}>
+              <span className="title-bar mr-3" style={{ display: 'inline-block', width: '0.36em', height: '1em', background: '#3b82f6', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
+              {children}
+            </h1>
           );
         },
         h2({ children, ...props }) {
           return (
-            <h2 id={children?.toString()} {...props} style={{ position: 'relative' }}>
-              <span className="title-bar" aria-hidden="true"></span>
+            <h2 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '1.5rem', fontWeight: 700, margin: '2rem 0 1.2rem 0', display: 'flex', alignItems: 'center' }}>
+              <span className="title-bar mr-2" style={{ display: 'inline-block', width: '0.32em', height: '1em', background: '#22c55e', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h2>
           );
         },
         h3({ children, ...props }) {
           return (
-            <h3 id={children?.toString()} {...props} style={{ position: 'relative' }}>
-              <span className="title-bar" aria-hidden="true"></span>
+            <h3 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '1.25rem', fontWeight: 600, margin: '1.5rem 0 1rem 0', display: 'flex', alignItems: 'center' }}>
+              <span className="title-bar mr-2" style={{ display: 'inline-block', width: '0.28em', height: '1em', background: '#a78bfa', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h3>
           );
         },
         h4({ children, ...props }) {
           return (
-            <h4 id={children?.toString()} {...props} style={{ position: 'relative' }}>
-              <span className="title-bar" aria-hidden="true"></span>
+            <h4 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '1.1rem', fontWeight: 500, margin: '1.2rem 0 0.8rem 0', display: 'flex', alignItems: 'center' }}>
+              <span className="title-bar mr-2" style={{ display: 'inline-block', width: '0.24em', height: '1em', background: '#f59e42', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h4>
           );
         },
         h5({ children, ...props }) {
           return (
-            <h5 id={children?.toString()} {...props} style={{ position: 'relative' }}>
-              <span className="title-bar" aria-hidden="true"></span>
+            <h5 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '1rem', fontWeight: 500, margin: '1rem 0 0.6rem 0', display: 'flex', alignItems: 'center' }}>
+              <span className="title-bar mr-2" style={{ display: 'inline-block', width: '0.2em', height: '1em', background: '#f472b6', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h5>
           );
         },
         h6({ children, ...props }) {
           return (
-            <h6 id={children?.toString()} {...props} style={{ position: 'relative' }}>
-              <span className="title-bar" aria-hidden="true"></span>
+            <h6 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '0.95rem', fontWeight: 400, margin: '0.8rem 0 0.5rem 0', display: 'flex', alignItems: 'center' }}>
+              <span className="title-bar mr-2" style={{ display: 'inline-block', width: '0.16em', height: '1em', background: '#fde047', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h6>
           );
@@ -855,6 +854,41 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         dd({ children, ...props }) {
           return (
             <dd className="ml-6 text-gray-700 dark:text-gray-300 mb-2" {...props}>{children}</dd>
+          );
+        },
+        // --- 表单元素优化 ---
+        input(props: any) {
+          const { type, onChange, ...rest } = props;
+          if (type === 'checkbox' || type === 'radio') {
+            return (
+              <input
+                type={type}
+                className={type === 'checkbox'
+                  ? "form-checkbox accent-blue-500 w-4 h-4 align-middle rounded border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all duration-150 mr-1"
+                  : "form-radio accent-blue-500 w-4 h-4 align-middle rounded-full border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all duration-150 mr-1"}
+                onChange={onChange}
+                readOnly={onChange == null}
+                {...rest}
+              />
+            );
+          }
+          // 文本输入框
+          return (
+            <input
+              type={type}
+              className="form-input w-40 px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all duration-150 mr-2 shadow-sm"
+              {...rest}
+            />
+          );
+        },
+        button({children, ...props}) {
+          return (
+            <button
+              className="inline-flex items-center px-3 py-1.5 rounded-md bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium shadow transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed mr-2"
+              {...props}
+            >
+              {children}
+            </button>
           );
         },
       }}

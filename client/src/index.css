@@ -69,15 +69,29 @@ textarea:focus {
   font-family: var(--font-sans);
   font-weight: 800;
   color: #1a1a1a;
-  border-bottom: 4px solid var(--brand-blue);
-  padding-bottom: 0.3em;
   margin-top: 2.5em;
   margin-bottom: 1.5em;
   line-height: 1.2;
+  position: relative;
+  padding-left: 1.2em;
 }
 .dark .toc-content h1, .dark .markdown-body h1, .dark .wmde-markdown h1 {
   color: #fff;
-  border-bottom: 4px solid #339cff;
+}
+.toc-content h1 .title-bar, .markdown-body h1 .title-bar, .wmde-markdown h1 .title-bar {
+  display: inline-block;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 0.5em;
+  width: 0.36em;
+  height: 1em;
+  background: #3b82f6; /* 蓝色 */
+  transition: background 0.3s;
+}
+.toc-content h1:hover .title-bar, .markdown-body h1:hover .title-bar, .wmde-markdown h1:hover .title-bar {
+  background: #339cff;
 }
 
 .toc-content h2, .markdown-body h2, .wmde-markdown h2 {
@@ -99,8 +113,8 @@ textarea:focus {
   transform: translateY(-50%);
   border-radius: 0.5em;
   width: 0.32em;
-  height: 1.5em;
-  background: var(--brand-blue);
+  height: 1em;
+  background: #22c55e; /* 绿色 */
   transition: background 0.3s;
 }
 .toc-content h2:hover .title-bar, .markdown-body h2:hover .title-bar, .wmde-markdown h2:hover .title-bar {
@@ -132,8 +146,8 @@ textarea:focus {
   transform: translateY(-50%);
   border-radius: 0.5em;
   width: 0.28em;
-  height: 1.2em;
-  background: var(--success-green);
+  height: 1em;
+  background: #a78bfa; /* 紫色 */
   transition: background 0.3s;
 }
 .toc-content h3:hover .title-bar, .markdown-body h3:hover .title-bar, .wmde-markdown h3:hover .title-bar {
@@ -166,7 +180,7 @@ textarea:focus {
   border-radius: 0.5em;
   width: 0.24em;
   height: 1em;
-  background: #a78bfa;
+  background: #f59e42; /* 橙色 */
   transition: background 0.3s;
 }
 .toc-content h4:hover .title-bar, .markdown-body h4:hover .title-bar, .wmde-markdown h4:hover .title-bar {
@@ -198,8 +212,8 @@ textarea:focus {
   transform: translateY(-50%);
   border-radius: 0.5em;
   width: 0.2em;
-  height: 0.8em;
-  background: var(--warning-orange);
+  height: 1em;
+  background: #f472b6; /* 粉色 */
   transition: background 0.3s;
 }
 .toc-content h5:hover .title-bar, .markdown-body h5:hover .title-bar, .wmde-markdown h5:hover .title-bar {
@@ -231,8 +245,8 @@ textarea:focus {
   transform: translateY(-50%);
   border-radius: 0.5em;
   width: 0.16em;
-  height: 0.7em;
-  background: var(--error-red);
+  height: 1em;
+  background: #fde047; /* 黄色 */
   transition: background 0.3s;
 }
 .toc-content h6:hover .title-bar, .markdown-body h6:hover .title-bar, .wmde-markdown h6:hover .title-bar {
@@ -248,7 +262,6 @@ textarea:focus {
 @media (max-width: 640px) {
   .toc-content h1, .markdown-body h1, .wmde-markdown h1 {
     font-size: 1.3rem;
-    padding-bottom: 0.2em;
   }
   .toc-content h2, .markdown-body h2, .wmde-markdown h2 {
     font-size: 1.1rem;
@@ -2375,4 +2388,34 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 }
 .toc-content li.task-list-item::before, .markdown-body li.task-list-item::before, .wmde-markdown li.task-list-item::before {
   display: none !important;
+}
+
+/* 代码块整体hover高亮优化 */
+.wmde-markdown pre, .toc-content pre, .markdown-body pre {
+  transition: background 0.22s, box-shadow 0.22s;
+}
+.wmde-markdown pre:hover, .toc-content pre:hover, .markdown-body pre:hover {
+  background: #e6ecf5 !important; /* 浅色模式下hover背景加深 */
+  box-shadow: 0 4px 24px 0 rgba(59,130,246,0.13);
+}
+.dark .wmde-markdown pre:hover, .dark .toc-content pre:hover, .dark .markdown-body pre:hover {
+  background: #232b36 !important; /* 深色模式下hover背景加亮 */
+  box-shadow: 0 4px 24px 0 rgba(59,130,246,0.18);
+}
+/* 代码块内文字颜色适配hover，排除按钮悬停时 */
+.wmde-markdown pre:hover code, .toc-content pre:hover code, .markdown-body pre:hover code {
+  color: #23272f !important;
+}
+.dark .wmde-markdown pre:hover code, .dark .toc-content pre:hover code, .dark .markdown-body pre:hover code {
+  color: #fbbf24 !important;
+}
+.wmde-markdown pre:hover:has(.code-block-action:hover) code,
+.toc-content pre:hover:has(.code-block-action:hover) code,
+.markdown-body pre:hover:has(.code-block-action:hover) code {
+  color: inherit !important;
+}
+.dark .wmde-markdown pre:hover:has(.code-block-action:hover) code,
+.dark .toc-content pre:hover:has(.code-block-action:hover) code,
+.dark .markdown-body pre:hover:has(.code-block-action:hover) code {
+  color: inherit !important;
 }
