@@ -4,19 +4,24 @@
 /* 优化的字体方案 */
 :root {
   /* 无衬线字体优先级 */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Arial, sans-serif;
   
   /* 衬线字体 */
   --font-serif: 'Noto Serif', Georgia, 'Times New Roman', serif;
   
   /* 等宽字体 */
-  --font-mono: Consolas, 'Fira Code', 'Source Code Pro', SFMono-Regular, Menlo, Monaco, 'Liberation Mono', monospace;
+  --font-mono: SFMono-Regular, Menlo, Monaco, 'Fira Code', monospace;
   
   /* 中文专用字体 */
   --font-cn: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'Noto Sans SC', sans-serif;
   
   /* 日文字体 */
   --font-jp: 'Hiragino Kaku Gothic Pro', 'Hiragino Sans', Meiryo, 'MS PGothic', 'Noto Sans JP', sans-serif;
+
+  --brand-blue: #007AFF;
+  --success-green: #34C759;
+  --warning-orange: #FF9F0A;
+  --error-red: #FF3B30;
 }
 
 body {
@@ -54,32 +59,207 @@ textarea:focus {
   line-height: 1.8;
 }
 
-.wmde-markdown h1, .toc-content h1, .markdown-body h1 {
-  @apply text-3xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white;
+/* 标题系统现代化优化 */
+.toc-content h1, .markdown-body h1, .wmde-markdown h1 {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  color: #1a1a1a;
+  border-bottom: 4px solid var(--brand-blue);
+  padding-bottom: 0.3em;
+  margin-top: 2.5em;
+  margin-bottom: 1.5em;
+  line-height: 1.2;
+}
+.dark .toc-content h1, .dark .markdown-body h1, .dark .wmde-markdown h1 {
+  color: #fff;
+  border-bottom: 4px solid #339cff;
+}
+
+.toc-content h2, .markdown-body h2, .wmde-markdown h2 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: #22223b;
+  font-size: 1.7rem;
+  position: relative;
+  padding-left: 1.2em;
+  margin-top: 2em;
+  margin-bottom: 1.2em;
   line-height: 1.3;
 }
-
-.wmde-markdown h2, .toc-content h2, .markdown-body h2 {
-  @apply text-2xl font-bold mt-6 mb-4 pb-1 text-gray-900 dark:text-white;
-  line-height: 1.4;
+.toc-content h2::before, .markdown-body h2::before, .wmde-markdown h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  width: 0.32em;
+  height: 1.5em;
+  border-radius: 0.5em;
+  background: var(--brand-blue);
+  transition: background 0.3s;
+}
+.toc-content h2:hover::before, .markdown-body h2:hover::before, .wmde-markdown h2:hover::before {
+  background: #339cff;
+}
+.dark .toc-content h2, .dark .markdown-body h2, .dark .wmde-markdown h2 {
+  color: #e0e6f0;
+}
+.dark .toc-content h2::before, .dark .markdown-body h2::before, .dark .wmde-markdown h2::before {
+  background: #339cff;
 }
 
-.wmde-markdown h3, .toc-content h3, .markdown-body h3 {
-  @apply text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white;
-  line-height: 1.4;
+.toc-content h3, .markdown-body h3, .wmde-markdown h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: #2d3748;
+  font-size: 1.3rem;
+  position: relative;
+  padding-left: 1.1em;
+  margin-top: 1.7em;
+  margin-bottom: 1em;
+  line-height: 1.3;
+}
+.toc-content h3::before, .markdown-body h3::before, .wmde-markdown h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.25em;
+  width: 0.28em;
+  height: 1.2em;
+  border-radius: 0.5em;
+  background: var(--success-green);
+  transition: background 0.3s;
+}
+.toc-content h3:hover::before, .markdown-body h3:hover::before, .wmde-markdown h3:hover::before {
+  background: #4cd964;
+}
+.dark .toc-content h3, .dark .markdown-body h3, .dark .wmde-markdown h3 {
+  color: #e0e6f0;
+}
+.dark .toc-content h3::before, .dark .markdown-body h3::before, .dark .wmde-markdown h3::before {
+  background: #4cd964;
 }
 
-.wmde-markdown h4, .toc-content h4, .markdown-body h4 {
-  @apply text-lg font-bold mt-4 mb-3 text-gray-900 dark:text-white;
-  line-height: 1.5;
+.toc-content h4, .markdown-body h4, .wmde-markdown h4 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: #3d405b;
+  font-size: 1.1rem;
+  position: relative;
+  padding-left: 1em;
+  margin-top: 1.4em;
+  margin-bottom: 0.8em;
+  line-height: 1.3;
+}
+.toc-content h4::before, .markdown-body h4::before, .wmde-markdown h4::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.3em;
+  width: 0.24em;
+  height: 1em;
+  border-radius: 0.5em;
+  background: #a78bfa;
+  transition: background 0.3s;
+}
+.toc-content h4:hover::before, .markdown-body h4:hover::before, .wmde-markdown h4:hover::before {
+  background: #b39ddb;
+}
+.dark .toc-content h4, .dark .markdown-body h4, .dark .wmde-markdown h4 {
+  color: #e0e6f0;
+}
+.dark .toc-content h4::before, .dark .markdown-body h4::before, .dark .wmde-markdown h4::before {
+  background: #b39ddb;
 }
 
-.wmde-markdown h5, .toc-content h5, .markdown-body h5 {
-  @apply text-base font-bold mt-4 mb-2 text-gray-900 dark:text-white;
+.toc-content h5, .markdown-body h5, .wmde-markdown h5 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: #5c5470;
+  font-size: 1rem;
+  position: relative;
+  padding-left: 0.9em;
+  margin-top: 1.2em;
+  margin-bottom: 0.7em;
+  line-height: 1.2;
+}
+.toc-content h5::before, .markdown-body h5::before, .wmde-markdown h5::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  width: 0.2em;
+  height: 0.8em;
+  border-radius: 0.5em;
+  background: var(--warning-orange);
+  transition: background 0.3s;
+}
+.toc-content h5:hover::before, .markdown-body h5:hover::before, .wmde-markdown h5:hover::before {
+  background: #ffb340;
+}
+.dark .toc-content h5, .dark .markdown-body h5, .dark .wmde-markdown h5 {
+  color: #e0e6f0;
+}
+.dark .toc-content h5::before, .dark .markdown-body h5::before, .dark .wmde-markdown h5::before {
+  background: #ffb340;
 }
 
-.wmde-markdown h6, .toc-content h6, .markdown-body h6 {
-  @apply text-sm font-bold mt-4 mb-2 text-gray-700 dark:text-gray-300;
+.toc-content h6, .markdown-body h6, .wmde-markdown h6 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: #6c757d;
+  font-size: 0.95rem;
+  position: relative;
+  padding-left: 0.8em;
+  margin-top: 1em;
+  margin-bottom: 0.6em;
+  line-height: 1.2;
+}
+.toc-content h6::before, .markdown-body h6::before, .wmde-markdown h6::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.38em;
+  width: 0.16em;
+  height: 0.7em;
+  border-radius: 0.5em;
+  background: var(--error-red);
+  transition: background 0.3s;
+}
+.toc-content h6:hover::before, .markdown-body h6:hover::before, .wmde-markdown h6:hover::before {
+  background: #ff6f6f;
+}
+.dark .toc-content h6, .dark .markdown-body h6, .dark .wmde-markdown h6 {
+  color: #e0e6f0;
+}
+.dark .toc-content h6::before, .dark .markdown-body h6::before, .dark .wmde-markdown h6::before {
+  background: #ff6f6f;
+}
+
+@media (max-width: 640px) {
+  .toc-content h1, .markdown-body h1, .wmde-markdown h1 {
+    font-size: 1.3rem;
+    padding-bottom: 0.2em;
+  }
+  .toc-content h2, .markdown-body h2, .wmde-markdown h2 {
+    font-size: 1.1rem;
+    padding-left: 0.8em;
+  }
+  .toc-content h3, .markdown-body h3, .wmde-markdown h3 {
+    font-size: 1rem;
+    padding-left: 0.7em;
+  }
+  .toc-content h4, .markdown-body h4, .wmde-markdown h4 {
+    font-size: 0.95rem;
+    padding-left: 0.6em;
+  }
+  .toc-content h5, .markdown-body h5, .wmde-markdown h5 {
+    font-size: 0.9rem;
+    padding-left: 0.5em;
+  }
+  .toc-content h6, .markdown-body h6, .wmde-markdown h6 {
+    font-size: 0.85rem;
+    padding-left: 0.4em;
+  }
 }
 
 .wmde-markdown p, .toc-content p, .markdown-body p {
@@ -1404,5 +1584,550 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   }
   .wmde-markdown audio, .toc-content audio, .markdown-body audio {
     max-width: 100vw;
+  }
+}
+
+/* 标题左侧彩色竖线优化 */
+.toc-content h2, .markdown-body h2, .wmde-markdown h2 {
+  position: relative;
+}
+.toc-content h2 > span, .markdown-body h2 > span, .wmde-markdown h2 > span {
+  left: 0; top: 2px; background: #3b82f6; /* 蓝色 */
+}
+.toc-content h3 > span, .markdown-body h3 > span, .wmde-markdown h3 > span {
+  left: 0; top: 2px; background: #22c55e; /* 绿色 */
+}
+.toc-content h4 > span, .markdown-body h4 > span, .wmde-markdown h4 > span {
+  left: 0; top: 2px; background: #a78bfa; /* 紫色 */
+}
+.toc-content h5 > span, .markdown-body h5 > span, .wmde-markdown h5 > span {
+  left: 0; top: 2px; background: #f472b6; /* 粉色 */
+}
+.toc-content h6 > span, .markdown-body h6 > span, .wmde-markdown h6 > span {
+  left: 0; top: 2px; background: #fde047; /* 黄色 */
+}
+
+/* 列表符号现代化优化 */
+.toc-content ul, .markdown-body ul, .wmde-markdown ul {
+  list-style: none;
+  padding-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.toc-content ul > li, .markdown-body ul > li, .wmde-markdown ul > li {
+  position: relative;
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.toc-content ul > li::before, .markdown-body ul > li::before, .wmde-markdown ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0.1rem;
+  top: 0.7em;
+  width: 0.5em;
+  height: 0.5em;
+  background: linear-gradient(135deg, #3b82f6 60%, #a78bfa 100%);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px 0 rgba(59,130,246,0.08);
+  transition: background 0.3s;
+}
+.toc-content ul > li:hover::before, .markdown-body ul > li:hover::before, .wmde-markdown ul > li:hover::before {
+  background: linear-gradient(135deg, #2563eb 60%, #f472b6 100%);
+}
+.toc-content ol, .markdown-body ol, .wmde-markdown ol {
+  list-style: none;
+  counter-reset: custom-ol;
+  padding-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.toc-content ol > li, .markdown-body ol > li, .wmde-markdown ol > li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+  counter-increment: custom-ol;
+}
+.toc-content ol > li::before, .markdown-body ol > li::before, .wmde-markdown ol > li::before {
+  content: counter(custom-ol) ".";
+  position: absolute;
+  left: 0.1rem;
+  top: 0.7em;
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 1em;
+  transition: color 0.3s;
+}
+.toc-content ol > li:hover::before, .markdown-body ol > li:hover::before, .wmde-markdown ol > li:hover::before {
+  color: #2563eb;
+}
+
+/* 引用块彩色竖线与渐变 */
+.toc-content blockquote, .markdown-body blockquote, .wmde-markdown blockquote {
+  border-left: 6px solid;
+  border-image: linear-gradient(180deg, #3b82f6 0%, #a78bfa 100%) 1;
+  background: linear-gradient(90deg, #f0f6ff 80%, transparent 100%);
+  color: #374151;
+  font-style: italic;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px 0 rgba(59,130,246,0.04);
+  padding-left: 1.5rem;
+  margin: 1.5rem 0;
+  transition: border-color 0.3s;
+}
+.toc-content blockquote:hover, .markdown-body blockquote:hover, .wmde-markdown blockquote:hover {
+  border-image: linear-gradient(180deg, #2563eb 0%, #f472b6 100%) 1;
+}
+
+/* 强调元素优化 */
+.toc-content code, .markdown-body code, .wmde-markdown code {
+  background: #f3f4f6;
+  color: #be185d;
+  border-radius: 0.5em;
+  padding: 0.2em 0.5em;
+  font-weight: 600;
+  box-shadow: 0 1px 4px 0 rgba(59,130,246,0.06);
+  transition: box-shadow 0.2s;
+}
+.toc-content code:hover, .markdown-body code:hover, .wmde-markdown code:hover {
+  box-shadow: 0 2px 8px 0 rgba(59,130,246,0.12);
+}
+.toc-content strong, .markdown-body strong, .wmde-markdown strong {
+  color: #1a1a1a;
+  font-weight: 700;
+}
+.toc-content mark, .markdown-body mark, .wmde-markdown mark {
+  background: linear-gradient(90deg, #FFF3CD 80%, #FFE066 100%);
+  color: #92400e;
+  border-radius: 2px;
+  padding: 0.1em 0.4em;
+  box-shadow: 0 1px 4px 0 rgba(251,191,36,0.08);
+}
+
+/* 链接优化 */
+.toc-content a, .markdown-body a, .wmde-markdown a {
+  color: #2563eb;
+  text-decoration: none;
+  border-bottom: 1.5px solid #2563eb22;
+  transition: color 0.2s, border-color 0.2s;
+  position: relative;
+}
+.toc-content a:hover, .markdown-body a:hover, .wmde-markdown a:hover {
+  color: #1d4ed8;
+  border-bottom: 2px solid #2563eb;
+}
+.toc-content a:visited, .markdown-body a:visited, .wmde-markdown a:visited {
+  color: #64748b;
+  border-bottom: 1.5px solid #64748b44;
+}
+.toc-content a:focus, .markdown-body a:focus, .wmde-markdown a:focus {
+  outline: 2px solid #2563eb88;
+  outline-offset: 2px;
+}
+
+/* 图片优化 */
+.toc-content img, .markdown-body img, .wmde-markdown img {
+  border-radius: 1rem;
+  box-shadow: 0 6px 32px 0 rgba(59,130,246,0.10);
+  transition: box-shadow 0.3s, transform 0.3s;
+  max-width: 100%;
+  height: auto;
+  margin: 2rem auto;
+  display: block;
+}
+.toc-content img:hover, .markdown-body img:hover, .wmde-markdown img:hover {
+  box-shadow: 0 12px 48px 0 rgba(59,130,246,0.18);
+  transform: scale(1.025);
+}
+
+/* 分隔线优化 */
+.toc-content hr, .markdown-body hr, .wmde-markdown hr {
+  height: 2px;
+  border: none;
+  border-radius: 1em;
+  background: linear-gradient(90deg, #e0e7ef 0%, #3b82f6 50%, #e0e7ef 100%);
+  margin: 3rem 0;
+  opacity: 0.8;
+  animation: fadeIn 0.6s;
+}
+
+@media (max-width: 640px) {
+  .toc-content h1, .markdown-body h1, .wmde-markdown h1 {
+    font-size: 1.5rem;
+  }
+  .toc-content h2, .markdown-body h2, .wmde-markdown h2 {
+    font-size: 1.25rem;
+  }
+  .toc-content h3, .markdown-body h3, .wmde-markdown h3 {
+    font-size: 1.1rem;
+  }
+  .toc-content ul, .markdown-body ul, .wmde-markdown ul,
+  .toc-content ol, .markdown-body ol, .wmde-markdown ol {
+    margin-bottom: 1rem;
+    padding-left: 1rem;
+  }
+  .toc-content img, .markdown-body img, .wmde-markdown img {
+    margin: 1rem auto;
+  }
+}
+
+/* 统一交互动画和过渡 */
+.toc-content a, .markdown-body a, .wmde-markdown a,
+.toc-content img, .markdown-body img, .wmde-markdown img,
+.toc-content code, .markdown-body code, .wmde-markdown code,
+.toc-content ul > li, .markdown-body ul > li, .wmde-markdown ul > li,
+.toc-content ol > li, .markdown-body ol > li, .wmde-markdown ol > li,
+.toc-content blockquote, .markdown-body blockquote, .wmde-markdown blockquote {
+  transition: all 0.2s cubic-bezier(0.38, 0.1, 0.36, 0.9);
+}
+
+.toc-content a:focus-visible, .markdown-body a:focus-visible, .wmde-markdown a:focus-visible {
+  outline: 2px solid #2563eb88;
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .toc-content h1, .markdown-body h1, .wmde-markdown h1 {
+    font-size: 1.15rem;
+  }
+  .toc-content h2, .markdown-body h2, .wmde-markdown h2 {
+    font-size: 1rem;
+  }
+  .toc-content h3, .markdown-body h3, .wmde-markdown h3 {
+    font-size: 0.95rem;
+  }
+  .toc-content ul, .markdown-body ul, .wmde-markdown ul,
+  .toc-content ol, .markdown-body ol, .wmde-markdown ol {
+    margin-bottom: 0.5rem;
+    padding-left: 0.7rem;
+  }
+  .toc-content img, .markdown-body img, .wmde-markdown img {
+    margin: 0.5rem auto;
+  }
+}
+
+/* mark 高亮荧光笔风格 */
+.toc-content mark, .markdown-body mark, .wmde-markdown mark {
+  background: linear-gradient(90deg, #FFF3CD 80%, #FFE066 100%);
+  color: #92400e;
+  border-radius: 2px;
+  padding: 0.1em 0.4em;
+  box-shadow: 0 1px 4px 0 rgba(251,191,36,0.08);
+}
+
+/* kbd 键盘按键风格 */
+.toc-content kbd, .markdown-body kbd, .wmde-markdown kbd {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  background: #f6f8fa;
+  color: #333;
+  border-radius: 5px;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.04);
+  padding: 0.1em 0.5em;
+  margin: 0 0.1em;
+  vertical-align: middle;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.dark .toc-content kbd, .dark .markdown-body kbd, .dark .wmde-markdown kbd {
+  background: #23272f;
+  color: #eee;
+  border: 1px solid #444;
+}
+
+/* ins 插入文本绿色下划线 */
+.toc-content ins, .markdown-body ins, .wmde-markdown ins {
+  text-decoration: underline wavy var(--success-green);
+  color: var(--success-green);
+  background: none;
+}
+
+/* var 变量文本 */
+.toc-content var, .markdown-body var, .wmde-markdown var {
+  font-family: var(--font-mono);
+  font-style: italic;
+  color: #007AFF;
+  background: none;
+}
+
+/* abbr 缩写点下划线，悬停全称 */
+.toc-content abbr, .markdown-body abbr, .wmde-markdown abbr {
+  border-bottom: 1px dotted #007AFF;
+  cursor: help;
+  text-decoration: none;
+  position: relative;
+}
+.toc-content abbr[title]:hover::after, .markdown-body abbr[title]:hover::after, .wmde-markdown abbr[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: 0;
+  bottom: 120%;
+  background: #fffbe6;
+  color: #333;
+  font-size: 0.85em;
+  padding: 0.2em 0.6em;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);
+  white-space: nowrap;
+  z-index: 10;
+}
+.dark .toc-content abbr[title]:hover::after, .dark .markdown-body abbr[title]:hover::after, .dark .wmde-markdown abbr[title]:hover::after {
+  background: #23272f;
+  color: #eee;
+}
+
+/* details/summary 折叠详情现代化 */
+.toc-content details, .markdown-body details, .wmde-markdown details {
+  background: #f6f8fa;
+  border-radius: 8px;
+  margin: 1.5em 0;
+  padding: 0.8em 1.2em;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+  transition: box-shadow 0.2s;
+}
+.dark .toc-content details, .dark .markdown-body details, .dark .wmde-markdown details {
+  background: #23272f;
+  border: 1px solid #444;
+}
+.toc-content summary, .markdown-body summary, .wmde-markdown summary {
+  cursor: pointer;
+  font-weight: 600;
+  outline: none;
+  user-select: none;
+  position: relative;
+  padding-left: 1.2em;
+}
+.toc-content summary::before, .markdown-body summary::before, .wmde-markdown summary::before {
+  content: '\25B6';
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+  font-size: 1em;
+  color: #007AFF;
+  transition: transform 0.2s;
+}
+.toc-content details[open] summary::before, .markdown-body details[open] summary::before, .wmde-markdown details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+/* sup/sub 上标下标优化 */
+.toc-content sup, .markdown-body sup, .wmde-markdown sup,
+.toc-content sub, .markdown-body sub, .wmde-markdown sub {
+  font-size: 0.75em;
+  vertical-align: baseline;
+  position: relative;
+  line-height: 1;
+}
+.toc-content sup, .markdown-body sup, .wmde-markdown sup {
+  top: -0.5em;
+}
+.toc-content sub, .markdown-body sub, .wmde-markdown sub {
+  bottom: -0.2em;
+}
+
+/* small 小号文本 */
+.toc-content small, .markdown-body small, .wmde-markdown small {
+  font-size: 0.875em;
+  color: #888;
+}
+.dark .toc-content small, .dark .markdown-body small, .dark .wmde-markdown small {
+  color: #aaa;
+}
+
+/* del 删除线优化 */
+.toc-content del, .markdown-body del, .wmde-markdown del {
+  color: #b91c1c;
+  text-decoration: line-through wavy #b91c1c;
+  opacity: 0.85;
+}
+
+/* u 下划线优化 */
+.toc-content u, .markdown-body u, .wmde-markdown u {
+  text-decoration: underline 1.5px solid #007AFF;
+  text-underline-offset: 2px;
+  color: #007AFF;
+}
+
+/* 兼容深色模式下的高亮、插入、删除等 */
+.dark .toc-content mark, .dark .markdown-body mark, .dark .wmde-markdown mark {
+  background: linear-gradient(90deg, #665c00 80%, #bba800 100%);
+  color: #fffbe6;
+}
+
+/* 定义列表现代化样式 */
+.toc-content dl, .markdown-body dl, .wmde-markdown dl {
+  margin: 1.5em 0;
+  padding: 0;
+}
+.toc-content dt, .markdown-body dt, .wmde-markdown dt {
+  font-weight: bold;
+  color: #1a1a1a;
+  margin-top: 0.8em;
+}
+.toc-content dd, .markdown-body dd, .wmde-markdown dd {
+  margin-left: 1.5em;
+  color: #374151;
+  margin-bottom: 0.5em;
+}
+.dark .toc-content dt, .dark .markdown-body dt, .dark .wmde-markdown dt {
+  color: #fff;
+}
+.dark .toc-content dd, .dark .markdown-body dd, .dark .wmde-markdown dd {
+  color: #bbb;
+}
+
+/* 脚注上标样式与悬停预览 */
+.toc-content sup.footnote-ref, .markdown-body sup.footnote-ref, .wmde-markdown sup.footnote-ref {
+  font-size: 0.75em;
+  vertical-align: super;
+  color: #007AFF;
+  cursor: pointer;
+  text-decoration: underline dotted #007AFF 1.5px;
+  transition: color 0.2s;
+}
+.toc-content sup.footnote-ref:hover, .markdown-body sup.footnote-ref:hover, .wmde-markdown sup.footnote-ref:hover {
+  color: #FF9F0A;
+}
+
+/* ins/var hover动画 */
+.toc-content ins:hover, .markdown-body ins:hover, .wmde-markdown ins:hover {
+  background: #e6fff3;
+  color: #34C759;
+}
+.toc-content var:hover, .markdown-body var:hover, .wmde-markdown var:hover {
+  background: #e6f0ff;
+  color: #0051a8;
+}
+
+.toc-content summary:focus, .markdown-body summary:focus, .wmde-markdown summary:focus {
+  outline: 2px solid #007AFF;
+  outline-offset: 2px;
+  background: #e6f0ff;
+}
+.dark .toc-content summary:focus, .dark .markdown-body summary:focus, .dark .wmde-markdown summary:focus {
+  background: #23272f;
+}
+
+.toc-content kbd, .markdown-body kbd, .wmde-markdown kbd,
+.toc-content mark, .markdown-body mark, .wmde-markdown mark,
+.toc-content ins, .markdown-body ins, .wmde-markdown ins,
+.toc-content var, .markdown-body var, .wmde-markdown var,
+.toc-content abbr, .markdown-body abbr, .wmde-markdown abbr {
+  transition: all 0.2s cubic-bezier(0.38, 0.1, 0.36, 0.9);
+}
+
+/* 列表符号动画和辅助色彩 */
+.toc-content ul > li::before, .markdown-body ul > li::before, .wmde-markdown ul > li::before {
+  animation: listDotIn 0.4s cubic-bezier(0.38, 0.1, 0.36, 0.9);
+  background: linear-gradient(135deg, #3b82f6 60%, #a78bfa 100%);
+  box-shadow: 0 1px 4px 0 rgba(59,130,246,0.12);
+}
+@keyframes listDotIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.toc-content ul > li:hover::before, .markdown-body ul > li:hover::before, .wmde-markdown ul > li:hover::before {
+  background: linear-gradient(135deg, #2563eb 60%, #f472b6 100%);
+  box-shadow: 0 2px 8px 0 rgba(59,130,246,0.18);
+}
+
+/* 引用块竖线渐变动画 */
+.toc-content blockquote, .markdown-body blockquote, .wmde-markdown blockquote {
+  border-left-width: 8px;
+  border-image: linear-gradient(180deg, #3b82f6 0%, #a78bfa 100%) 1;
+  background: linear-gradient(90deg, #f0f6ff 80%, transparent 100%);
+  transition: border-image 0.4s, background 0.3s, box-shadow 0.3s;
+}
+.toc-content blockquote:hover, .markdown-body blockquote:hover, .wmde-markdown blockquote:hover {
+  border-image: linear-gradient(180deg, #2563eb 0%, #f472b6 100%) 1;
+  background: linear-gradient(90deg, #e0e7ef 80%, transparent 100%);
+  box-shadow: 0 4px 16px 0 rgba(59,130,246,0.16);
+}
+
+/* 强调元素阴影和高亮动画 */
+.toc-content code, .markdown-body code, .wmde-markdown code {
+  box-shadow: 0 1px 6px 0 rgba(59,130,246,0.10);
+  transition: box-shadow 0.2s, background 0.2s;
+}
+.toc-content code:hover, .markdown-body code:hover, .wmde-markdown code:hover {
+  box-shadow: 0 2px 12px 0 rgba(59,130,246,0.18);
+  background: #e0e7ef;
+}
+.toc-content mark, .markdown-body mark, .wmde-markdown mark {
+  animation: markHighlight 1.2s cubic-bezier(0.38, 0.1, 0.36, 0.9);
+}
+@keyframes markHighlight {
+  0% { background: #fffbe6; }
+  100% { background: linear-gradient(90deg, #FFF3CD 80%, #FFE066 100%); }
+}
+
+/* 分隔线动画 */
+.toc-content hr, .markdown-body hr, .wmde-markdown hr {
+  animation: fadeIn 0.6s, hrSlideIn 0.8s cubic-bezier(0.38, 0.1, 0.36, 0.9);
+}
+@keyframes hrSlideIn {
+  0% { width: 0; opacity: 0.2; }
+  100% { width: 100%; opacity: 0.8; }
+}
+
+/* 图片阴影和hover动画增强 */
+.toc-content img, .markdown-body img, .wmde-markdown img {
+  box-shadow: 0 6px 32px 0 rgba(59,130,246,0.12);
+  transition: box-shadow 0.3s, transform 0.3s, filter 0.3s;
+  filter: brightness(0.98) saturate(1.08);
+}
+.toc-content img:hover, .markdown-body img:hover, .wmde-markdown img:hover {
+  box-shadow: 0 16px 64px 0 rgba(59,130,246,0.22);
+  transform: scale(1.035) rotate(-0.2deg);
+  filter: brightness(1.01) saturate(1.12);
+}
+
+/* 全局transition统一 */
+.toc-content a, .markdown-body a, .wmde-markdown a,
+.toc-content img, .markdown-body img, .wmde-markdown img,
+.toc-content code, .markdown-body code, .wmde-markdown code,
+.toc-content ul > li, .markdown-body ul > li, .wmde-markdown ul > li,
+.toc-content ol > li, .markdown-body ol > li, .wmde-markdown ol > li,
+.toc-content blockquote, .markdown-body blockquote, .wmde-markdown blockquote {
+  transition: all 0.22s cubic-bezier(0.38, 0.1, 0.36, 0.9);
+}
+
+/* 深色模式辅助色彩 */
+.dark .toc-content ul > li::before, .dark .markdown-body ul > li::before, .dark .wmde-markdown ul > li::before {
+  background: linear-gradient(135deg, #60a5fa 60%, #c4b5fd 100%);
+}
+.dark .toc-content ul > li:hover::before, .dark .markdown-body ul > li:hover::before, .dark .wmde-markdown ul > li:hover::before {
+  background: linear-gradient(135deg, #3b82f6 60%, #f472b6 100%);
+}
+.dark .toc-content blockquote, .dark .markdown-body blockquote, .dark .wmde-markdown blockquote {
+  background: linear-gradient(90deg, #1e293b 80%, transparent 100%);
+  color: #e0e6f0;
+}
+.dark .toc-content code, .dark .markdown-body code, .dark .wmde-markdown code {
+  background: #23272f;
+  color: #fbbf24;
+}
+.dark .toc-content code:hover, .dark .markdown-body code:hover, .dark .wmde-markdown code:hover {
+  background: #334155;
+}
+.dark .toc-content mark, .dark .markdown-body mark, .dark .wmde-markdown mark {
+  background: linear-gradient(90deg, #facc15 80%, #fde68a 100%);
+  color: #78350f;
+}
+
+/* 响应式优化 */
+@media (max-width: 640px) {
+  .toc-content ul > li, .markdown-body ul > li, .wmde-markdown ul > li {
+    padding-left: 0.9rem;
+  }
+  .toc-content ol > li, .markdown-body ol > li, .wmde-markdown ol > li {
+    padding-left: 1.1rem;
+  }
+  .toc-content blockquote, .markdown-body blockquote, .wmde-markdown blockquote {
+    padding-left: 1rem;
+    margin: 1rem 0;
+  }
+  .toc-content img, .markdown-body img, .wmde-markdown img {
+    margin: 0.7rem auto;
   }
 }

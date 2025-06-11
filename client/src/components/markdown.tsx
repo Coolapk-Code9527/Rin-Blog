@@ -431,7 +431,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             return (
               <code
                 {...rest}
-                className={`font-mono text-sm px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700 ${className || ""}`}
+                className={`font-mono text-sm px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700 shadow-md transition-all duration-200 animate-fadeIn ${className || ""}`}
                 style={inlineCodeStyle}
               >
                 {children}
@@ -481,15 +481,15 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         blockquote({ children, ...props }) {
           return (
             <blockquote
-              className="border-l-4 border-blue-400 dark:border-blue-500 bg-blue-50/60 dark:bg-blue-900/30 pl-5 py-2 my-4 rounded-xl shadow-sm italic text-gray-800 dark:text-gray-200"
+              className="italic"
               {...props}
             >
-              {children}
+              <span className="block">{children}</span>
             </blockquote>
           );
         },
         hr({ children, ...props }) {
-          return <hr className="my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent rounded-full" {...props} />;
+          return <hr className="my-8 h-2 border-0 rounded-full bg-gradient-to-r from-gray-200 via-blue-400 to-gray-200 opacity-80 animate-fadeIn" {...props} />;
         },
         em({ children, ...props }) {
           return (
@@ -509,7 +509,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         ul({ children, className, ...props }) {
           const listClass = className?.includes("contains-task-list")
             ? "list-none pl-2 my-4 space-y-1"
-            : "list-disc pl-6 my-4 space-y-1";
+            : "list-none pl-6 my-4 space-y-1";
           return (
             <ul className={listClass} {...props}>
               {children}
@@ -518,15 +518,17 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         },
         ol({ children, ...props }) {
           return (
-            <ol className="list-decimal pl-6 my-4 space-y-1" {...props}>
+            <ol className="list-none pl-6 my-4 space-y-1" {...props}>
               {children}
             </ol>
           );
         },
         li({ children, ...props }) {
+          // 增加辅助span用于动画
           return (
-            <li className="mb-1" {...props}>
-              {children}
+            <li className="mb-1 flex items-start" {...props}>
+              <span className="mr-2" aria-hidden="true"></span>
+              <span className="flex-1">{children}</span>
             </li>
           );
         },
@@ -568,68 +570,32 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         },
         h1({ children, ...props }) {
           return (
-            <h1
-              id={children?.toString()}
-              className="text-3xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
-              {...props}
-            >
-              {children}
-            </h1>
+            <h1 id={children?.toString()} {...props}>{children}</h1>
           );
         },
         h2({ children, ...props }) {
           return (
-            <h2
-              id={children?.toString()}
-              className="text-2xl font-bold mt-6 mb-4 pb-1 text-gray-900 dark:text-white"
-              {...props}
-            >
-              {children}
-            </h2>
+            <h2 id={children?.toString()} {...props}>{children}</h2>
           );
         },
         h3({ children, ...props }) {
           return (
-            <h3
-              id={children?.toString()}
-              className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white"
-              {...props}
-            >
-              {children}
-            </h3>
+            <h3 id={children?.toString()} {...props}>{children}</h3>
           );
         },
         h4({ children, ...props }) {
           return (
-            <h4
-              id={children?.toString()}
-              className="text-lg font-bold mt-4 mb-3 text-gray-900 dark:text-white"
-              {...props}
-            >
-              {children}
-            </h4>
+            <h4 id={children?.toString()} {...props}>{children}</h4>
           );
         },
         h5({ children, ...props }) {
           return (
-            <h5
-              id={children?.toString()}
-              className="text-base font-bold mt-4 mb-2 text-gray-900 dark:text-white"
-              {...props}
-            >
-              {children}
-            </h5>
+            <h5 id={children?.toString()} {...props}>{children}</h5>
           );
         },
         h6({ children, ...props }) {
           return (
-            <h6
-              id={children?.toString()}
-              className="text-sm font-bold mt-4 mb-2 text-gray-700 dark:text-gray-300"
-              {...props}
-            >
-              {children}
-            </h6>
+            <h6 id={children?.toString()} {...props}>{children}</h6>
           );
         },
         p({ children, ...props }) {
@@ -652,11 +618,13 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           }
           return <p {...props}>{children}</p>;
         },
-        sup: ({ children, ...props }) => (
-          <sup className="text-xs mr-[4px]" {...props}>
-            {children}
-          </sup>
-        ),
+        sup({ children, ...props }) {
+          // 判断是否为脚注引用
+          const isFootnote = props.className && props.className.includes('footnote-ref');
+          return (
+            <sup className={isFootnote ? 'footnote-ref' : undefined} {...props}>{children}</sup>
+          );
+        },
         sub: ({ children, ...props }) => (
           <sub className="text-xs mr-[4px]" {...props}>
             {children}
@@ -706,6 +674,71 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             >
               {children}
             </audio>
+          );
+        },
+        mark({ children, ...props }) {
+          return (
+            <mark className="rounded px-1 py-0.5 shadow-sm transition-all duration-200 animate-markHighlight" {...props}>{children}</mark>
+          );
+        },
+        kbd({ children, ...props }) {
+          return (
+            <kbd aria-label={typeof children === 'string' ? children : undefined} {...props}>{children}</kbd>
+          );
+        },
+        ins({ children, ...props }) {
+          return (
+            <ins aria-label="插入文本" {...props}>{children}</ins>
+          );
+        },
+        var({ children, ...props }) {
+          return (
+            <var aria-label="变量" {...props}>{children}</var>
+          );
+        },
+        abbr({ children, title, ...props }) {
+          return (
+            <abbr title={title} aria-label={title} {...props}>{children}</abbr>
+          );
+        },
+        details({ children, ...props }) {
+          return (
+            <details {...props}>{children}</details>
+          );
+        },
+        summary({ children, ...props }) {
+          return (
+            <summary {...props}>{children}</summary>
+          );
+        },
+        small({ children, ...props }) {
+          return (
+            <small {...props}>{children}</small>
+          );
+        },
+        del({ children, ...props }) {
+          return (
+            <del {...props}>{children}</del>
+          );
+        },
+        u({ children, ...props }) {
+          return (
+            <u {...props}>{children}</u>
+          );
+        },
+        dl({ children, ...props }) {
+          return (
+            <dl className="my-4" {...props}>{children}</dl>
+          );
+        },
+        dt({ children, ...props }) {
+          return (
+            <dt className="font-bold text-gray-900 dark:text-white mt-2" {...props}>{children}</dt>
+          );
+        },
+        dd({ children, ...props }) {
+          return (
+            <dd className="ml-6 text-gray-700 dark:text-gray-300 mb-2" {...props}>{children}</dd>
           );
         },
       }}
