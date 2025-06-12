@@ -188,6 +188,27 @@ function isInternalFileLink(url: string, config: any): boolean {
   }
 }
 
+// slugify工具函数
+function slugify(text: string, idMap: Map<string, number>) {
+  let slug = (text || '').trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '');
+  if (!slug) slug = 'heading';
+  let count = idMap.get(slug) || 0;
+  if (count > 0) {
+    slug = `${slug}-${count}`;
+  }
+  idMap.set(slug.replace(/-\d+$/, ''), count + 1);
+  return slug;
+}
+
+// 将text提取逻辑封装，确保只处理字符串和ReactElement
+function extractTextFromChildren(children: React.ReactNode): string {
+  if (typeof children === 'string') return children;
+  if (typeof children === 'number') return children.toString();
+  if (Array.isArray(children)) return children.map(extractTextFromChildren).join('');
+  if (React.isValidElement(children)) return extractTextFromChildren(children.props.children);
+  return '';
+}
+
 export function Markdown({ content, onReady }: { content: string; onReady?: () => void }) {
   const colorMode = useColorMode();
   const config = useContext(ClientConfigContext); // 注入config
@@ -196,6 +217,10 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
   const { t } = useTranslation();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isReady, setIsReady] = useState(false);
+
+  // 在Markdown组件内维护idMap
+  const idMap = React.useRef(new Map<string, number>()).current;
+  React.useEffect(() => { idMap.clear(); }, [content]);
 
   useEffect(() => {
     slides.current = undefined;
@@ -643,49 +668,60 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
               }
             }
           }
-          // 优化：H1左侧彩色竖线装饰，字号最大，字重极粗
+          const text = extractTextFromChildren(children);
+          const id = slugify(text, idMap);
           return (
-            <h1 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '2.25rem', fontWeight: 800, margin: '2.5rem 0 1.5rem 0', display: 'flex', alignItems: 'center' }}>
+            <h1 id={id} {...props} style={{ position: 'relative', fontSize: '2.25rem', fontWeight: 800, margin: '2.5rem 0 1.5rem 0', display: 'flex', alignItems: 'center' }}>
               <span className="title-bar mr-3" style={{ display: 'inline-block', width: '0.36em', height: '1em', background: '#3b82f6', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h1>
           );
         },
         h2({ children, ...props }) {
+          const text = extractTextFromChildren(children);
+          const id = slugify(text, idMap);
           return (
-            <h2 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '1.5rem', fontWeight: 700, margin: '2rem 0 1.2rem 0', display: 'flex', alignItems: 'center' }}>
+            <h2 id={id} {...props} style={{ position: 'relative', fontSize: '1.5rem', fontWeight: 700, margin: '2rem 0 1.2rem 0', display: 'flex', alignItems: 'center' }}>
               <span className="title-bar mr-2" style={{ display: 'inline-block', width: '0.32em', height: '1em', background: '#22c55e', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h2>
           );
         },
         h3({ children, ...props }) {
+          const text = extractTextFromChildren(children);
+          const id = slugify(text, idMap);
           return (
-            <h3 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '1.25rem', fontWeight: 600, margin: '1.5rem 0 1rem 0', display: 'flex', alignItems: 'center' }}>
+            <h3 id={id} {...props} style={{ position: 'relative', fontSize: '1.25rem', fontWeight: 600, margin: '1.5rem 0 1rem 0', display: 'flex', alignItems: 'center' }}>
               <span className="title-bar mr-2" style={{ display: 'inline-block', width: '0.28em', height: '1em', background: '#a78bfa', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h3>
           );
         },
         h4({ children, ...props }) {
+          const text = extractTextFromChildren(children);
+          const id = slugify(text, idMap);
           return (
-            <h4 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '1.1rem', fontWeight: 500, margin: '1.2rem 0 0.8rem 0', display: 'flex', alignItems: 'center' }}>
+            <h4 id={id} {...props} style={{ position: 'relative', fontSize: '1.1rem', fontWeight: 500, margin: '1.2rem 0 0.8rem 0', display: 'flex', alignItems: 'center' }}>
               <span className="title-bar mr-2" style={{ display: 'inline-block', width: '0.24em', height: '1em', background: '#f59e42', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h4>
           );
         },
         h5({ children, ...props }) {
+          const text = extractTextFromChildren(children);
+          const id = slugify(text, idMap);
           return (
-            <h5 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '1rem', fontWeight: 500, margin: '1rem 0 0.6rem 0', display: 'flex', alignItems: 'center' }}>
+            <h5 id={id} {...props} style={{ position: 'relative', fontSize: '1rem', fontWeight: 500, margin: '1rem 0 0.6rem 0', display: 'flex', alignItems: 'center' }}>
               <span className="title-bar mr-2" style={{ display: 'inline-block', width: '0.2em', height: '1em', background: '#f472b6', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h5>
           );
         },
         h6({ children, ...props }) {
+          const text = extractTextFromChildren(children);
+          const id = slugify(text, idMap);
           return (
-            <h6 id={children?.toString()} {...props} style={{ position: 'relative', fontSize: '0.95rem', fontWeight: 400, margin: '0.8rem 0 0.5rem 0', display: 'flex', alignItems: 'center' }}>
+            <h6 id={id} {...props} style={{ position: 'relative', fontSize: '0.95rem', fontWeight: 400, margin: '0.8rem 0 0.5rem 0', display: 'flex', alignItems: 'center' }}>
               <span className="title-bar mr-2" style={{ display: 'inline-block', width: '0.16em', height: '1em', background: '#fde047', borderRadius: '0.5em', verticalAlign: 'middle' }} aria-hidden="true"></span>
               {children}
             </h6>

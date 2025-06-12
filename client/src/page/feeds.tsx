@@ -198,7 +198,7 @@ export function FeedsPage() {
                                 {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                             </h1>
-                            <div className="px-2 py-1 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-800/80 rounded-full text-base text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm">
+                            <div className="py-1 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-800/80 rounded-full text-base text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm">
                                 <i className="ri-article-line mr-1"></i>
                                 {t('article.total$count', { count: feeds[listState]?.size })}
                             </div>

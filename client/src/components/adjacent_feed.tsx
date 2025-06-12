@@ -133,7 +133,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     
     return (
         <div className="w-full mt-3 sm:mt-4 mb-3 sm:mb-4">
-            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700">
+            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-2 gap-x-2 divide-x divide-gray-100 dark:divide-gray-700">
                 <AdjacentCard 
                     data={adjacentFeeds?.previousFeed}
                     type="previous"
@@ -167,58 +167,60 @@ export function AdjacentCard({
     
     if (!data) {
         return (
-            <div className="w-full p-3 sm:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center">
-                <span className="text-sm text-gray-400">{t('no_more')}</span>
+            <div className="w-full p-2 sm:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center min-h-[5.5rem] sm:min-h-[8rem]">
+                <span className="text-xs sm:text-sm text-gray-400">{t('no_more')}</span>
             </div>
         );
     }
     
     return (
-        <Link href={`/feed/${data.id}`} 
-              className={`w-full p-2.5 xs:p-3 sm:p-4 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group`}>
-            <div className={`flex items-center gap-2 sm:gap-3 ${type === "next" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden">
+        <Link href={`/feed/${data.id}`}
+              className={`w-full p-0 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group`}>
+            <div className={`flex flex-row ${type === "next" ? "flex-row-reverse" : "flex-row"} items-stretch w-full h-20 sm:h-32`}>
+                {/* 图片区 */}
+                <div className={`flex-shrink-0 w-16 sm:w-32 h-full overflow-hidden bg-gray-200 dark:bg-gray-700 relative ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>
                     {loading ? (
-                        <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center animate-pulse">
-                            <i className="ri-image-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
+                        <div className="w-full h-full flex items-center justify-center animate-pulse">
+                            <i className="ri-image-line text-gray-400 dark:text-gray-300 text-2xl sm:text-3xl opacity-90"></i>
                         </div>
                     ) : thumbnail ? (
-                        <div className="w-full h-full relative overflow-hidden">
-                            <img 
-                                src={thumbnail} 
-                                alt={data.title || ""} 
-                                className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
-                                loading="lazy"
-                                onError={(e) => {
-                                    const target = e.currentTarget as HTMLImageElement;
-                                    const container = target.parentElement?.parentElement;
-                                    if (container) {
-                                        container.innerHTML = `
-                                            <div class="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                                <i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
-                                            </div>
-                                        `;
-                                    }
-                                }}
-                            />
-                        </div>
+                        <img 
+                            src={thumbnail} 
+                            alt={data.title || ""} 
+                            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 bg-gray-200 dark:bg-gray-700 ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}
+                            loading="lazy"
+                            style={{height:'100%'}}
+                            onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.style.display = 'none';
+                                const container = target.parentElement;
+                                if (container) {
+                                    container.innerHTML = `
+                                        <div class='w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700'>
+                                            <i class='ri-file-text-line text-gray-400 dark:text-gray-300 text-2xl sm:text-3xl opacity-90'></i>
+                                        </div>
+                                    `;
+                                }
+                            }}
+                        />
                     ) : (
-                        <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <i className="ri-file-text-line text-gray-400 dark:text-gray-600 text-base sm:text-lg"></i>
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                            <i className="ri-file-text-line text-gray-400 dark:text-gray-300 text-2xl sm:text-3xl opacity-90"></i>
                         </div>
                     )}
                 </div>
-                <div className={`flex-1 ${direction}`}>
-                    <h2 className={`text-sm sm:text-base font-medium text-gray-700 dark:text-white line-clamp-2 group-hover:text-theme transition-colors`}>
+                {/* 内容区 */}
+                <div className={`flex-1 h-full flex flex-col justify-center min-h-0 overflow-hidden px-2 sm:px-4 ${type === "next" ? "items-end text-end" : "items-start text-start"}`}>
+                    <h2 className="text-xs sm:text-base font-medium text-gray-700 dark:text-white truncate max-w-[90%] group-hover:text-theme transition-colors mb-1 leading-tight">
                         {data.title}
                     </h2>
-                    <div className={`flex items-center text-xs text-gray-400 mt-1.5 ${type === "next" ? "justify-end" : "justify-start"}`}>
+                    <div className={`flex items-center text-[11px] sm:text-sm text-gray-400 w-full min-h-0 overflow-hidden whitespace-nowrap max-w-[80%] ${type === "next" ? "justify-end" : "justify-start"}`}>
                         {type === "previous" ? (
-                            <span className="flex items-center transition-transform group-hover:-translate-x-0.5">
+                            <span className="flex items-center transition-transform group-hover:-translate-x-0.5 whitespace-nowrap truncate">
                                 <i className="ri-arrow-left-line mr-1 text-theme"></i> {t("previous")}
                             </span>
                         ) : (
-                            <span className="flex items-center transition-transform group-hover:translate-x-0.5">
+                            <span className="flex items-center transition-transform group-hover:translate-x-0.5 whitespace-nowrap truncate">
                                 {t("next")} <i className="ri-arrow-right-line ml-1 text-theme"></i>
                             </span>
                         )}

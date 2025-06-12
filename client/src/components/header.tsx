@@ -61,7 +61,7 @@ export function Header({ children }: { children?: React.ReactNode }) {
                 <div className="max-w-full xl:max-w-7xl 2xl:max-w-screen-2xl mx-auto px-2 sm:px-6 flex justify-between items-center py-3">
                     {/* 左侧Logo区域 */}
                     <Link aria-label={t('home')} href="/"
-                        className="flex flex-row items-center hover:opacity-90 transition-all duration-200 transform hover:scale-[0.98] group"
+                        className="flex flex-row items-center hover:opacity-90 transition-all duration-200 transform hover:scale-[0.98] group pl-2"
                     >
                         <img 
                             src={process.env.AVATAR} 

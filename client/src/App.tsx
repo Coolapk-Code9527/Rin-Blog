@@ -71,6 +71,7 @@ function App() {
   const { t } = useTranslation()
   const [profile, setProfile] = useState<Profile | undefined>()
   const [config, setConfig] = useState<ConfigWrapper>(new ConfigWrapper({}, new Map()))
+  const [contentReady, setContentReady] = useState(false);
   useEffect(() => {
     if (ref.current) return
     if (getCookie('token')?.length ?? 0 > 0) {
@@ -181,16 +182,16 @@ function App() {
               <CallbackPage />
             </RouteMe>
 
-            <RouteWithIndex path="/feed/:id">
+            <RouteWithIndex path="/feed/:id" contentReady={contentReady}>
               {(params, TOC) => {
-                return (<FeedPage id={params.id || ""} TOC={TOC} />)
+                return (<FeedPage id={params.id || ""} TOC={TOC} setContentReady={setContentReady} />)
               }}
             </RouteWithIndex>
 
-            <RouteWithIndex path="/:alias">
+            <RouteWithIndex path="/:alias" contentReady={contentReady}>
               {(params, TOC) => {
                 return (
-                  <FeedPage id={params.alias || ""} TOC={TOC} />
+                  <FeedPage id={params.alias || ""} TOC={TOC} setContentReady={setContentReady} />
                 )
               }}
             </RouteWithIndex>
@@ -251,20 +252,17 @@ function RouteMe({ path, children, headerComponent, paddingClassName }:
 }
 
 
-function RouteWithIndex({ path, children }:
-  { path: PathPattern, children: (params: DefaultParams, TOC: () => JSX.Element) => React.ReactNode }) {
+function RouteWithIndex({ path, children, contentReady }:
+  { path: PathPattern, children: (params: DefaultParams, TOC: () => JSX.Element) => React.ReactNode, contentReady?: boolean }) {
   const paramsRef = useRef<DefaultParams | null>(null);
   const [routeMatch, params] = useRoute(path);
   
-  // 当路由参数变化时，更新 paramsRef
   if (routeMatch && (!paramsRef.current || paramsRef.current.id !== params.id)) {
     paramsRef.current = params;
   }
-  
-  // 使用路径参数作为内容就绪信号
-  const { TOC } = useTableOfContents(".toc-content", paramsRef.current?.id);
-  
-  return (<RouteMe path={path} headerComponent={TOCHeader({ TOC: TOC })} paddingClassName='mx-4'>
+  // 以contentReady为依赖，确保目录监听时机正确
+  const { TOC } = useTableOfContents(".toc-content", contentReady);
+  return (<RouteMe path={path} headerComponent={TOCHeader({ TOC: TOC })} paddingClassName=''>
     {params => {
       return children(params, TOC)
     }}

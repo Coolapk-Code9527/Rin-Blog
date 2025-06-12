@@ -91,6 +91,7 @@
     "remark-math": "^6.0.0",
     "remark-rehype": "^11.1.0",
     "remark-toc": "^9.0.0",
+    "slugify": "^1.6.6",
     "wasm-image-optimization": "^1.2.30"
   },
   "engines": {

@@ -17,6 +17,8 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
     const [activeId, setActiveId] = useState<string | null>(null)
     const { t } = useTranslation()
     const io = useRef<IntersectionObserver | null>(null);
+    // 目录高亮项自动滚动到可视区域
+    const tocListRef = useRef<HTMLUListElement>(null);
 
     const ensureValidIds = useCallback((headers: NodeListOf<HTMLElement>) => {
         headers.forEach((header, index) => {
@@ -177,11 +179,21 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
         };
     }, [selector, contentReadySignal, processHeaders]);
 
+    // 目录高亮项自动滚动到可视区域
+    useEffect(() => {
+        if (!activeId || !tocListRef.current) return;
+        // 查找当前高亮li
+        const activeLi = tocListRef.current.querySelector('li.text-theme.font-medium');
+        if (activeLi && typeof activeLi.scrollIntoView === 'function') {
+            activeLi.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }, [activeId]);
+
     return {
         TOC: () => {
             // 递归渲染多级目录
             const renderTocTree = (items: TableOfContent[], level = 0): JSX.Element => (
-                <ul className="max-h-[calc(100vh-10.25rem)] overflow-auto custom-scrollbar mt-0 pl-2" style={{ scrollbarWidth: "none", margin: 0 }}>
+                <ul ref={level === 0 ? tocListRef : undefined} className="max-h-[calc(100vh-10.25rem)] overflow-auto custom-scrollbar mt-0 pl-2" style={{ scrollbarWidth: "none", margin: 0 }}>
                     {items.map((item) => {
                         // 判断自身或子节点是否高亮
                         const isActive = activeId === item.id;

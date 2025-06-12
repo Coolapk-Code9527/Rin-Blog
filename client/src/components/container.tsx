@@ -11,9 +11,9 @@ type PageContainerProps = {
  * @param props.children - 子元素
  * @param props.className - 额外的CSS类名
  */
-export function PageContainer({ children, className = '' }: PageContainerProps) {
+export function PageContainer({ children, className = '', maxWidth = 'max-w-6xl' }: PageContainerProps & { maxWidth?: string }) {
   return (
-    <div className={`max-w-6xl mx-auto w-full ${className}`}>
+    <div className={`${maxWidth} mx-auto w-full px-4 sm:px-6 md:px-8 ${className}`}>
       {children}
     </div>
   );
