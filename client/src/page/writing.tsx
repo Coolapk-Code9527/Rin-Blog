@@ -468,6 +468,312 @@ const MarkdownToolbar = React.memo(({
 // 确保有一个明确的displayName
 MarkdownToolbar.displayName = 'MarkdownToolbar';
 
+// 移动端底部工具栏
+const MobileToolbar = React.memo(({ 
+  onPublish, 
+  publishing, 
+  scrollSync, 
+  setScrollSync,
+  setDraftDialogOpen,
+  setHistoryDialogOpen,
+  manualSaveHistory,
+  setFileSelectorOpen // 新增
+}: { 
+  onPublish: () => void, 
+  publishing: boolean,
+  scrollSync: boolean,
+  setScrollSync: (value: boolean) => void,
+  setDraftDialogOpen: (value: boolean) => void,
+  setHistoryDialogOpen: (value: boolean) => void,
+  manualSaveHistory: () => void,
+  setFileSelectorOpen: (open: boolean) => void // 新增
+}) => {
+  const { t } = useTranslation();
+  const { showAlert } = useAlert();
+  const editorRef = useRef<editor.IStandaloneCodeEditor>();
+  const uploadRef = useRef<HTMLInputElement>(null);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  
+  const insertText = (before: string, after: string = '', defaultText: string = '') => {
+    if (!editorRef.current) return;
+    const selection = editorRef.current.getSelection();
+    if (!selection) return;
+    const selectedText = editorRef.current.getModel()?.getValueInRange(selection) || defaultText;
+    editorRef.current.executeEdits('', [{
+      range: selection,
+      text: before + selectedText + after
+    }]);
+    editorRef.current.focus();
+  };
+  
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files?.[0]) return;
+    
+    const file = event.target.files[0];
+    if (file.size > 20 * 1024000) {
+      showAlert(t("upload.failed$size", { size: 20 }));
+      uploadRef.current!.value = "";
+      return;
+    }
+    
+    uploadImage(file, (url) => {
+      if (!editorRef.current) return;
+      const selection = editorRef.current.getSelection();
+      if (!selection) return;
+      editorRef.current.executeEdits(undefined, [{
+        range: selection,
+        text: `![${file.name}](${url})\n`,
+      }]);
+    }, showAlert);
+  };
+  
+  return (
+    <>
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg border-t border-gray-200 dark:border-gray-700 p-2 flex items-center justify-around md:hidden z-10">
+        <button 
+          className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center w-10 h-10 shadow-sm"
+          onClick={() => setShowMoreOptions(!showMoreOptions)}
+          title={showMoreOptions ? t('close') : t('more_options')}
+        >
+          <i className={`ri-${showMoreOptions ? 'close' : 'more'}-line text-lg`} />
+        </button>
+         
+        {/* 常用格式按钮 */}
+        <div className="flex space-x-1">
+          <button 
+            className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center w-10 h-10 shadow-sm" 
+            onClick={() => insertText('**', '**', '粗体文本')}
+            title={t('markdown.bold')}
+          >
+        <i className="ri-bold text-lg" />
+      </button>
+          <button 
+            className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center w-10 h-10 shadow-sm" 
+            onClick={() => insertText('*', '*', '斜体文本')}
+            title={t('markdown.italic')}
+          >
+        <i className="ri-italic text-lg" />
+      </button>
+        </div>
+         
+        {/* 常用插入按钮 */}
+        <div className="flex space-x-1">
+          <button 
+            className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center w-10 h-10 shadow-sm" 
+            onClick={() => insertText('[', '](url)', '链接文本')}
+            title={t('markdown.link')}
+          >
+        <i className="ri-link text-lg" />
+      </button>
+          <button 
+            className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center w-10 h-10 shadow-sm" 
+            onClick={() => uploadRef.current?.click()}
+            title={t('markdown.image')}
+          >
+        <input
+          ref={uploadRef}
+          onChange={handleImageUpload}
+          className="hidden"
+          type="file"
+              accept="image/jpeg, image/png, image/gif, image/webp, image/avif, image/svg+xml"
+        />
+        <i className="ri-image-add-line text-lg" />
+      </button>
+        </div>
+
+        {/* 发布按钮 */}
+      <button
+        onClick={onPublish}
+        disabled={publishing}
+          className="p-0 rounded-full bg-gradient-to-r from-pink-500 to-theme text-white disabled:opacity-70 flex items-center justify-center w-12 h-12 shadow-md"
+          title={t('publish.title')}
+      >
+        {publishing ? (
+          <Loading type="spin" height={16} width={16} />
+        ) : (
+          <i className="ri-send-plane-fill text-lg" />
+        )}
+      </button>
+      {/* 插入文件按钮 */}
+      <button
+        className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center w-10 h-10 shadow-sm"
+        onClick={() => setFileSelectorOpen(true)}
+        title={"插入文件"}
+      >
+        <i className="ri-attachment-2 text-lg" />
+      </button>
+    </div>
+      
+      {/* 扩展的移动工具栏选项 */}
+      {showMoreOptions && (
+        <div className="fixed bottom-16 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg border-t border-gray-200 dark:border-gray-700 p-4 md:hidden z-10 animate-slide-up max-h-[70vh] overflow-y-auto custom-scrollbar">
+          <div className="w-full flex justify-between items-center mb-3 border-b pb-2 border-gray-200 dark:border-gray-700">
+            <h3 className="font-medium">{t('more_options')}</h3>
+            <button 
+              onClick={() => setShowMoreOptions(false)}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            >
+              <i className="ri-close-line text-lg" />
+            </button>
+          </div>
+          
+          {/* 工具按钮网格布局 */}
+          <div className="grid grid-cols-4 gap-3">
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('# ')}
+              >
+                <i className="ri-heading text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.heading')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('**', '**', '粗体文本')}
+              >
+                <i className="ri-bold text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.bold')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('*', '*', '斜体文本')}
+              >
+                <i className="ri-italic text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.italic')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('~~', '~~', '删除线文本')}
+              >
+                <i className="ri-strikethrough text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.strikethrough')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('==', '==', '高亮文本')}
+              >
+                <i className="ri-mark-pen-line text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.highlight')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('- ')}
+              >
+                <i className="ri-list-unordered text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.unordered_list')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('1. ')}
+              >
+                <i className="ri-list-ordered text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.ordered_list')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('- [ ] ')}
+              >
+                <i className="ri-checkbox-line text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.task_list')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('> ')}
+              >
+                <i className="ri-double-quotes-l text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.quote')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('```\n', '\n```', '代码块')}
+              >
+                <i className="ri-code-s-slash-line text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.code')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => insertText('[', '](url)', '链接文本')}
+              >
+                <i className="ri-link text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.link')}</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <button 
+                className="p-2 rounded-md bg-gray-100 dark:bg-gray-700 w-full flex items-center justify-center shadow-sm" 
+                onClick={() => uploadRef.current?.click()}
+              >
+                <i className="ri-image-add-line text-lg" />
+              </button>
+              <span className="text-xs text-gray-500">{t('markdown.image')}</span>
+            </div>
+          </div>
+
+          {/* 管理工具按钮 */}
+          <div className="flex gap-2 mt-4 border-t border-gray-200 dark:border-gray-700 pt-3">
+            <button
+              onClick={() => setDraftDialogOpen(true)}
+              className="flex-1 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-md flex items-center justify-center py-2 border border-blue-200 dark:border-blue-800"
+            >
+              <i className="ri-draft-line mr-1" />
+              {t('draft_bin')}
+            </button>
+            
+            <button
+              onClick={() => setHistoryDialogOpen(true)}
+              className="flex-1 bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800/40 rounded-md flex items-center justify-center py-2 border border-green-200 dark:border-green-800"
+            >
+              <i className="ri-history-line mr-1" />
+              {t('history.title')}
+            </button>
+            
+            <button
+              onClick={manualSaveHistory}
+              className="flex-1 bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-800/40 rounded-md flex items-center justify-center py-2 border border-purple-200 dark:border-purple-800"
+            >
+              <i className="ri-save-line mr-1" />
+              {t('save')}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+});
+// 确保有一个明确的displayName
+MobileToolbar.displayName = 'MobileToolbar';
+
 // 增强的图片拖放上传区域
 const ImageDropzone = React.memo(({ onImageUploaded }: { onImageUploaded: (url: string, filename: string) => void }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -1528,7 +1834,7 @@ export function WritingPage({ id }: { id?: number }) {
         <meta property="og:url" content={document.URL} />
         <style>{scrollbarStyles}</style>
       </Helmet>
-      <div className="grid grid-cols-1 md:grid-cols-3 t-primary mt-2 md:pb-0">
+      <div className="grid grid-cols-1 md:grid-cols-3 t-primary mt-2 pb-16 md:pb-0">
         <div className="col-span-2 pb-8">
           <div className="bg-w rounded-2xl shadow-xl shadow-light p-4">
             {MetaInput({ className: "visible md:hidden mb-8" })}
@@ -1744,6 +2050,18 @@ export function WritingPage({ id }: { id?: number }) {
         </div>
       </div>
       <AlertUI />
+      {/* @ts-ignore - 忽略MobileToolbar组件类型问题 */}
+      <MobileToolbar 
+        onPublish={publishButton} 
+        publishing={publishing} 
+        scrollSync={scrollSync} 
+        setScrollSync={setScrollSync} 
+        setDraftDialogOpen={setDraftDialogOpen} 
+        setHistoryDialogOpen={setHistoryDialogOpen} 
+        manualSaveHistory={manualSaveHistory}
+        setFileSelectorOpen={setFileSelectorOpen}
+      />
+      
       {/* 历史记录对话框 */}
       <HistoryDialog 
         isOpen={historyDialogOpen}
