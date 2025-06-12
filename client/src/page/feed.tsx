@@ -191,7 +191,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <PageContainer maxWidth="max-w-screen-xl" className="flex flex-row justify-center ani-show gap-5">
+      <PageContainer className="flex flex-row justify-center ani-show gap-5">
         {error && (
           <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
             <h1 className="text-xl font-bold t-primary mt-0">{error}</h1>
@@ -207,7 +207,7 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           </div>
         )}
         {feed && !error && (
-          <main className="flex-[0_1_800px] min-w-0 mt-5">
+          <main className="flex-1 min-w-0 mt-5">
             <article
               className="rounded-2xl bg-w px-2 sm:px-6 md:px-7 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
               aria-label={feed.title ?? "Unnamed"}
