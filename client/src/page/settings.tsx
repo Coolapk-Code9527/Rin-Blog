@@ -18,6 +18,7 @@ import {
 import {headersWithAuth} from "../utils/auth.ts";
 import '../utils/thumb.css';
 import { useToast } from '../hooks/useToast';
+import { PageContainer } from "../components/container";
 
 
 export function Settings() {
@@ -128,7 +129,7 @@ export function Settings() {
             <ServerConfigContext.Provider value={serverConfig}>
                 {/* @ts-ignore - 忽略Provider的类型检查 */}
                 <ClientConfigContext.Provider value={clientConfig}>
-                    <main className="wauto rounded-2xl bg-w m-2 p-6" aria-label={t("main_content")}>
+                    <PageContainer>
                         <div className="flex flex-row items-center space-x-2">
                             <h1 className="text-2xl font-bold t-primary">
                                 {t('settings.title')}
@@ -167,7 +168,7 @@ export function Settings() {
                                 accept="application/xml"
                                 onFileChange={onFileChange} />
                         </div>
-                    </main>
+                    </PageContainer>
                 </ClientConfigContext.Provider>
             </ServerConfigContext.Provider>
             <Modal isOpen={isOpen}

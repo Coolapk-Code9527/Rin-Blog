@@ -1,6 +1,8 @@
+import React from "react";
 import {useEffect} from "react";
 import {setCookie} from "typescript-cookie";
 import {useLocation, useSearch} from "wouter";
+import { PageContainer } from "../components/container";
 
 export function CallbackPage() {
     const searchParams = new URLSearchParams(useSearch());
@@ -13,12 +15,14 @@ export function CallbackPage() {
         }
     }, [searchParams]);
     return (<>
-        <div className="w-screen h-screen flex justify-center items-center">
-            <div className="text-center text-black p-4 text-xl font-bold">
-                <p>
-                    Waiting...
-                </p>
+        <PageContainer>
+            <div className="w-screen h-screen flex justify-center items-center">
+                <div className="text-center text-black p-4 text-xl font-bold">
+                    <p>
+                        Waiting...
+                    </p>
+                </div>
             </div>
-        </div>
+        </PageContainer>
     </>)
 }

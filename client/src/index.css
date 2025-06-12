@@ -2419,3 +2419,26 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 .dark .markdown-body pre:hover:has(.code-block-action:hover) code {
   color: inherit !important;
 }
+
+/* 按钮组增强响应式间距和触控体验 */
+@media (max-width: 640px) {
+  .article-action-group {
+    gap: 1.25rem !important;
+  }
+  .article-action-group button, .article-action-group a {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0.25rem;
+    border-radius: 0.75rem;
+    touch-action: manipulation;
+  }
+}
+.article-action-group button:active, .article-action-group a:active {
+  filter: brightness(0.92);
+  transform: scale(0.96);
+}
+
+/* 保证正文h1和目录h3齐平 */
+main h1, [role="complementary"] h3, aside h3 {
+  margin-top: 0 !important;
+}

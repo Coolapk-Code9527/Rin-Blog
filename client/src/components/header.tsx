@@ -58,52 +58,48 @@ export function Header({ children }: { children?: React.ReactNode }) {
                         : 'bg-white/0 dark:bg-gray-900/0 backdrop-blur-0'
                 }`}
             >
-                <div className="w-screen">
-                    <Padding className="px-4 py-3">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center">
-                            {/* 左侧Logo区域 */}
-                            <Link aria-label={t('home')} href="/"
-                                className="flex flex-row items-center hover:opacity-90 transition-all duration-200 transform hover:scale-[0.98] group"
-                            >
-                                <img 
-                                    src={process.env.AVATAR} 
-                                    alt="Avatar" 
-                                    className="w-10 h-10 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-sm group-hover:shadow-md transition-all duration-200" 
-                                />
-                                <div className="flex flex-col justify-center items-start ml-3">
-                                    <p className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-theme dark:group-hover:text-theme transition-colors duration-200">
-                                        {process.env.NAME}
-                                    </p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
-                                        {process.env.DESCRIPTION}
-                                    </p>
-                                </div>
-                            </Link>
-                            
-                            {/* 中间导航区域 - 仅在较大屏幕可见 */}
-                            <div className="hidden lg:flex items-center space-x-1">
-                                <NavBar menu={false} />
-                                {children}
-                            </div>
-                            
-                            {/* 右侧操作区域 */}
-                            <div className="flex items-center">
-                                <div className="flex items-center space-x-1 sm:space-x-2">
-                                    <SearchButton className="hidden md:block" />
-                                    <LanguageSwitch className="hidden md:block" />
-                                    <UserAvatar profile={profile} />
-                                    
-                                    {/* 折叠式菜单 - 中等屏幕出现，只显示一部分元素 */}
-                                    <div className="hidden md:block lg:hidden relative">
-                                        <CollapsedMenu />
-                                    </div>
-                                    
-                                    {/* 移动端菜单按钮 */}
-                                    <MobileMenu />
-                                </div>
-                            </div>
+                <div className="max-w-full xl:max-w-screen-xl 2xl:max-w-screen-2xl mx-auto px-2 sm:px-6 flex justify-between items-center py-3">
+                    {/* 左侧Logo区域 */}
+                    <Link aria-label={t('home')} href="/"
+                        className="flex flex-row items-center hover:opacity-90 transition-all duration-200 transform hover:scale-[0.98] group"
+                    >
+                        <img 
+                            src={process.env.AVATAR} 
+                            alt="Avatar" 
+                            className="w-10 h-10 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-sm group-hover:shadow-md transition-all duration-200" 
+                        />
+                        <div className="flex flex-col justify-center items-start ml-3">
+                            <p className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-theme dark:group-hover:text-theme transition-colors duration-200">
+                                {process.env.NAME}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
+                                {process.env.DESCRIPTION}
+                            </p>
                         </div>
-                    </Padding>
+                    </Link>
+                    
+                    {/* 中间导航区域 - 仅在较大屏幕可见 */}
+                    <div className="hidden lg:flex items-center space-x-1">
+                        <NavBar menu={false} />
+                        {children}
+                    </div>
+                    
+                    {/* 右侧操作区域 */}
+                    <div className="flex items-center">
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                            <SearchButton className="hidden md:block" />
+                            <LanguageSwitch className="hidden md:block" />
+                            <UserAvatar profile={profile} />
+                            
+                            {/* 折叠式菜单 - 中等屏幕出现，只显示一部分元素 */}
+                            <div className="hidden md:block lg:hidden relative">
+                                <CollapsedMenu />
+                            </div>
+                            
+                            {/* 移动端菜单按钮 */}
+                            <MobileMenu />
+                        </div>
+                    </div>
                 </div>
             </div>
             <div className="h-16"></div>
@@ -141,7 +137,7 @@ function NavItem({ menu, title, selected, href, when = true, onClick }: {
                         ${menu 
                             ? "block w-full relative px-4 py-2.5" 
                             : "inline-flex items-center relative px-3 py-2"} 
-                        text-sm font-medium rounded-lg transition-all duration-300
+                        text-base font-medium rounded-lg transition-all duration-300
                         ${selected 
                             ? menu 
                                 ? "text-theme dark:text-theme bg-theme/5 dark:bg-theme/10 font-semibold" 

@@ -17,7 +17,7 @@ export function FilesPage() {
   useDocumentTitle(pageTitle, '- Rin Blog');
 
   return (
-    <PageContainer wide>
+    <PageContainer>
       <div className="mb-2">
         <h1 className="text-2xl font-bold">{pageTitle}</h1>
         <CapacityInfo />

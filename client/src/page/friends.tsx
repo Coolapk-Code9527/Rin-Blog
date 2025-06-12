@@ -13,6 +13,7 @@ import { ProfileContext } from "../state/profile";
 import { shuffleArray } from "../utils/array";
 import { headersWithAuth } from "../utils/auth";
 import { siteName } from "../utils/constants";
+import { PageContainer } from "../components/container";
 
 
 type FriendItem = {
@@ -111,15 +112,19 @@ export function FriendsPage() {
             <meta property="og:url" content={document.URL} />
         </Helmet>
         <Waiting for={friendsAvailable.length !== 0 || friendsUnavailable.length !== 0 || status === "idle"}>
-            <main className="w-full flex flex-col justify-center items-center mb-8 t-primary ani-show">
+            <PageContainer className="t-primary">
+                <div className="w-full t-primary flex text-start text-2xl font-bold mt-8">
+                    {t('friends.title')}
+                    <span className="ml-3 text-base font-medium t-secondary">{t('friends.total$count', { count: friendsAvailable.length })}</span>
+                </div>
                 <FriendList title={t('friends.title')} show={friendsAvailable.length > 0} friends={friendsAvailable} />
                 <FriendList title={t('friends.left')} show={friendsUnavailable.length > 0} friends={friendsUnavailable} />
                 <FriendList title={t('friends.review.waiting')} show={waitList.length > 0} friends={waitList} />
                 <FriendList title={t('friends.review.rejected')} show={refusedList.length > 0} friends={refusedList} />
                 <FriendList title={t('friends.my_apply')} show={profile?.permission !== true && apply !== undefined} friends={apply ? [apply] : []} />
                 {profile && (profile.permission || config.get("friend_apply_enable")) &&
-                    <div className="wauto t-primary flex text-start text-2xl font-bold mt-8">
-                        <div className="md:basis-1/2 bg-w rounded-xl p-4">
+                    <div className="w-full t-primary flex text-start text-2xl font-bold mt-8">
+                        <div className="w-full md:basis-1/2 bg-w rounded-xl p-4">
                             <p>
                                 {profile.permission ? t('friends.create') : t('friends.apply')}
                             </p>
@@ -135,7 +140,7 @@ export function FriendsPage() {
                         </div>
                     </div>
                 }
-            </main>
+            </PageContainer>
         </Waiting>
         <AlertUI />
     </>)
@@ -145,12 +150,12 @@ function FriendList({ title, show, friends }: { title: string, show: boolean, fr
     return (<>
         {
             show && <>
-                <div className="wauto text-start py-4">
+                <div className="w-full text-start py-4">
                     <p className="text-sm mt-4 text-neutral-500 font-normal">
                         {title}
                     </p>
                 </div>
-                <div className="wauto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {friends.map(friend => (
                         <Friend key={friend.id} {...friend} />
                     ))}
@@ -283,7 +288,7 @@ function Friend(props: any) {
                         {modalIsOpen && <div className="absolute inset-0 rounded-xl bg-black/40 pointer-events-none flex items-center justify-center" style={{zIndex:2}}></div>}
                     </div>
                     {profile?.permission &&
-                        <div className="flex flex-col w-full items-start mt-4 px-4">
+                        <div className="flex flex-col w-full items-start mt-4 px-2 sm:px-6 max-w-6xl mx-auto">
                             <div className="flex flex-row justify-between w-full items-center">
                                 <div className="flex flex-col">
                                     <p className="text-lg dark:text-white">

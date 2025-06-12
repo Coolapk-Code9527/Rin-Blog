@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import { siteName } from "../utils/constants";
+import { PageContainer } from "../components/container";
 
 export function NotFoundPage() {
   const { t } = useTranslation();
@@ -16,7 +17,7 @@ export function NotFoundPage() {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4 py-10 sm:py-16">
+      <PageContainer>
         <div className="text-center max-w-md">
           <div className="mb-6 text-theme text-8xl sm:text-9xl animate-pulse">
             <i className="ri-ghost-line"></i>
@@ -58,7 +59,7 @@ export function NotFoundPage() {
             </button>
           </div>
         </div>
-      </div>
+      </PageContainer>
     </>
   );
 }

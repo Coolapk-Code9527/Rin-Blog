@@ -27,6 +27,7 @@ import type { Feed } from '../types/api';  // 根据实际路径调整
 import { useToast } from '../hooks/useToast';
 import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialog';
 import type { FileItem } from '../types/api';
+import { PageContainer } from "../components/container";
 
 // 处理process.env问题
 declare const process: {
@@ -1837,7 +1838,7 @@ export function WritingPage({ id }: { id?: number }) {
         <div className="col-span-2 pb-8">
           <div className="bg-w rounded-2xl shadow-xl shadow-light p-4">
             {MetaInput({ className: "visible md:hidden mb-8" })}
-            <div className="flex flex-col mx-4 my-2 md:mx-0 md:my-0 gap-2">
+            <PageContainer>
               <div className="flex flex-row space-x-2 border-b border-gray-200 dark:border-gray-700 mb-4">
                 <button 
                   className={`px-4 py-2 font-medium transition-colors border-b-2 ${preview === 'edit' 
@@ -2005,7 +2006,7 @@ export function WritingPage({ id }: { id?: number }) {
                   </div>
                 </div>
               </div>
-            </div>
+            </PageContainer>
           </div>
           <div className="visible md:hidden flex flex-row justify-center mt-8">
             <button
@@ -2027,7 +2028,7 @@ export function WritingPage({ id }: { id?: number }) {
           </div>
         </div>
         <div className="hidden md:visible max-w-96 md:flex flex-col">
-          {MetaInput({ className: "bg-w rounded-2xl shadow-xl shadow-light p-4 mx-8" })}
+          {MetaInput({ className: "bg-w rounded-2xl shadow-xl shadow-light p-4 w-full" })}
           <div className="flex flex-row justify-center mt-8">
             <button
               onClick={publishButton}

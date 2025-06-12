@@ -151,3 +151,13 @@ SOFTWARE.
   - **外部链接**：显示为蓝色外链，带有"外部链接"icon和提示，点击新窗口打开。
 - 本站文件的判断依据为 S3/R2 域名配置，无需硬编码。
 - 所有提示和按钮均支持多语言（简体中文、繁体中文、英文、日文）。
+
+## 正文与目录顶部齐平的实现与排查
+
+- PageContainer 不加 margin-top，main 和 aside 各自加 mt-5，保证齐平。
+- aside 的 sticky top-[5.5rem] 必须与 header 高度一致。
+- 全局重置 main h1、aside h3 的 margin-top，防止浏览器默认样式影响。
+- 如发现不齐平，优先检查 header 实际高度、sticky 的 top 值，以及 main/aside/article/h1 的 margin/padding。
+- 响应式下注意断点样式是否被覆盖。
+
+如需调整齐平，建议用浏览器开发者工具检查 DOM 结构和 box-model。

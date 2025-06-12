@@ -6,6 +6,7 @@ import {client} from "../main"
 import {headersWithAuth} from "../utils/auth"
 import {siteName} from "../utils/constants"
 import {useTranslation} from "react-i18next";
+import { PageContainer } from "../components/container";
 
 // Object.groupBy polyfill（如原生不支持则自动挂载）
 if (!Object.groupBy) {
@@ -78,66 +79,68 @@ export function TimelinePage() {
             </Helmet>
             <Waiting for={feeds}>
                 <main className="w-full flex flex-col justify-center items-center mb-8 ani-show">
-                    <div className="wauto text-start text-black dark:text-white py-4 text-4xl font-bold">
-                        <p>
-                            {t('timeline')}
-                        </p>
-                        <div className="flex flex-row justify-between">
-                            <p className="text-sm mt-4 text-neutral-500 font-normal">
-                                {t('article.total$count', { count: length })}
+                    <PageContainer>
+                        <div className="wauto text-start text-black dark:text-white py-4 text-2xl font-bold">
+                            <p>
+                                {t('timeline')}
                             </p>
+                            <div className="flex flex-row justify-between">
+                                <p className="text-base font-medium t-secondary">
+                                    {t('article.total$count', { count: length })}
+                                </p>
+                            </div>
+                            {error && (
+                              <div className="mt-2 mb-4 flex flex-col items-start">
+                                <span className="text-red-500 text-sm mb-2">{error}</span>
+                                <button 
+                                  onClick={fetchFeeds} 
+                                  className="px-4 py-2 bg-theme text-white rounded hover:bg-theme-dark dark:bg-theme-dark dark:hover:bg-theme-light focus:outline-none focus:ring-2 focus:ring-theme-focus"
+                                  aria-label={t('reload') || "Reload"}
+                                  disabled={loading}
+                                >
+                                  {loading ? 
+                                    <span className="flex items-center">
+                                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                      {t('loading')}
+                                    </span> : 
+                                    t('reload')
+                                  }
+                                </button>
+                              </div>
+                            )}
                         </div>
-                        {error && (
-                          <div className="mt-2 mb-4 flex flex-col items-start">
-                            <span className="text-red-500 text-sm mb-2">{error}</span>
-                            <button 
-                              onClick={fetchFeeds} 
-                              className="px-4 py-2 bg-theme text-white rounded hover:bg-theme-dark dark:bg-theme-dark dark:hover:bg-theme-light focus:outline-none focus:ring-2 focus:ring-theme-focus"
-                              aria-label={t('reload') || "Reload"}
-                              disabled={loading}
-                            >
-                              {loading ? 
-                                <span className="flex items-center">
-                                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                  {t('loading')}
-                                </span> : 
-                                t('reload')
-                              }
-                            </button>
+                        {feeds && Object.keys(feeds).length > 0 ? (
+                          Object.keys(feeds).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
+                            <div key={year} className="wauto flex flex-col justify-center items-start">
+                              <h1 className="flex flex-row items-center space-x-2">
+                                <span className="text-2xl font-bold t-primary ">
+                                  {t('year$year', { year: year })}
+                                </span>
+                                <span className="text-base font-medium t-secondary">
+                                  {t('article.total_short$count', { count: feeds[+year]?.length })}
+                                </span>
+                              </h1>
+                              <div className="w-full flex flex-col justify-center items-start my-4">
+                                {feeds[+year]?.map((feed) => (
+                                  <FeedItem key={feed.id} id={feed.id.toString()} title={feed.title || t('unlisted')} createdAt={feed.createdAt} />
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        ) : !error && (
+                          <div className="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-center">
+                            <div className="w-12 h-12 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
+                              <i className="ri-calendar-line text-xl text-gray-500"></i>
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                              {t('no_more')}
+                            </h3>
                           </div>
                         )}
-                    </div>
-                    {feeds && Object.keys(feeds).length > 0 ? (
-                      Object.keys(feeds).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
-                        <div key={year} className="wauto flex flex-col justify-center items-start">
-                          <h1 className="flex flex-row items-center space-x-2">
-                            <span className="text-2xl font-bold t-primary ">
-                              {t('year$year', { year: year })}
-                            </span>
-                            <span className="text-sm t-secondary">
-                              {t('article.total_short$count', { count: feeds[+year]?.length })}
-                            </span>
-                          </h1>
-                          <div className="w-full flex flex-col justify-center items-start my-4">
-                            {feeds[+year]?.map((feed) => (
-                              <FeedItem key={feed.id} id={feed.id.toString()} title={feed.title || t('unlisted')} createdAt={feed.createdAt} />
-                            ))}
-                          </div>
-                        </div>
-                      ))
-                    ) : !error && (
-                      <div className="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-center">
-                        <div className="w-12 h-12 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
-                          <i className="ri-calendar-line text-xl text-gray-500"></i>
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
-                          {t('no_more')}
-                        </h3>
-                      </div>
-                    )}
+                    </PageContainer>
                 </main>
             </Waiting>
         </>

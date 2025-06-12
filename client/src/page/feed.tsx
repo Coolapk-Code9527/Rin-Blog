@@ -22,6 +22,7 @@ import {AdjacentSection} from "../components/adjacent_feed.tsx";
 import {formatDistance} from "date-fns";
 import { Pagination } from "../components/pagination";
 import { RecentPosts } from "../components/recent_posts";
+import { PageContainer } from "../components/container";
 
 type Feed = {
   id: number;
@@ -190,36 +191,35 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
           />
         </Helmet>
       )}
-      <div className="w-full mx-auto max-w-7xl flex flex-row justify-center ani-show gap-5 px-3 md:px-4 lg:px-5">
+      <PageContainer maxWidth="max-w-screen-xl" className="flex flex-row justify-center ani-show gap-5">
         {error && (
-          <>
-            <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
-              <h1 className="text-xl font-bold t-primary">{error}</h1>
-              {error === "Not found" && id === "about" && (
-                <Tips value={t("about.notfound")} />
-              )}
-              <Button
-                title={t("index.back")}
-                onClick={() => {
-                  window.history.back();
-                }}
-              />
-            </div>
-          </>
+          <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
+            <h1 className="text-xl font-bold t-primary mt-0">{error}</h1>
+            {error === "Not found" && id === "about" && (
+              <Tips value={t("about.notfound")} />
+            )}
+            <Button
+              title={t("index.back")}
+              onClick={() => {
+                window.history.back();
+              }}
+            />
+          </div>
         )}
         {feed && !error && (
-          <>
-            <main className="flex-1 min-w-0 max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-6xl xl:max-w-6xl mt-5">
-              <article
-                className="rounded-2xl bg-w px-4 sm:px-6 md:px-7 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
-                aria-label={feed.title ?? "Unnamed"}
-              >
-                <div className="relative mb-3">
-                  <h1 className="text-center text-3xl sm:text-4xl font-extrabold t-primary break-all leading-tight mx-auto max-w-3xl">
-                    {feed.title}
-                  </h1>
-                  {profile?.permission && (
-                    <div className="absolute right-0 top-1 flex gap-2">
+          <main className="flex-[0_1_800px] min-w-0 mt-5">
+            <article
+              className="rounded-2xl bg-w px-2 sm:px-6 md:px-7 pt-5 sm:pt-6 pb-5 sm:pb-6 shadow-sm hover:shadow-md transition-all duration-300"
+              aria-label={feed.title ?? "Unnamed"}
+            >
+              <div className="relative mb-3">
+                <h1 className="text-center text-3xl sm:text-4xl font-extrabold t-primary break-all leading-tight mx-auto max-w-3xl mt-0">
+                  {feed.title}
+                </h1>
+                {/* 桌面端按钮组，绝对定位右上角 */}
+                {profile?.permission && (
+                  <div className="absolute right-0 top-1 gap-2 hidden sm:flex article-action-group">
+                    <div className="group relative">
                       <button
                         aria-label={top > 0 ? t("untop.title") : t("top.title")}
                         onClick={topFeed}
@@ -232,6 +232,11 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                       >
                         <i className="ri-skip-up-line text-lg"></i>
                       </button>
+                      <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
+                        {top > 0 ? t("untop.title") : t("top.title")}
+                      </span>
+                    </div>
+                    <div className="group relative">
                       <Link
                         aria-label={t("edit")}
                         href={`/writing/${feed.id}`}
@@ -240,6 +245,11 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                       >
                         <i className="ri-edit-2-line text-lg"></i>
                       </Link>
+                      <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
+                        {t("edit")}
+                      </span>
+                    </div>
+                    <div className="group relative">
                       <button
                         aria-label={t("delete.title")}
                         onClick={deleteFeed}
@@ -248,97 +258,155 @@ export function FeedPage({ id, TOC }: { id: string, TOC: () => JSX.Element }) {
                       >
                         <i className="ri-delete-bin-7-line text-lg"></i>
                       </button>
+                      <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
+                        {t("delete.title")}
+                      </span>
                     </div>
-                  )}
-                </div>
-                <div className="flex justify-center mb-2">
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-white/80 dark:bg-gray-800/80 shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-[15px] font-medium">
+                  </div>
+                )}
+                {/* 移动端按钮组，标题下方横排居中显示 */}
+                {profile?.permission && (
+                  <div className="flex sm:hidden justify-center mt-3 gap-3 article-action-group">
+                    <div className="group relative">
+                      <button
+                        aria-label={top > 0 ? t("untop.title") : t("top.title")}
+                        onClick={topFeed}
+                        className={`w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-sm border transition-all duration-200
+                          ${top > 0
+                            ? "bg-blue-50/80 dark:bg-blue-900/40 text-blue-600 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-800"
+                            : "bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"}
+                          hover:scale-105 active:scale-95`}
+                        style={{backdropFilter: 'blur(4px)'}}
+                      >
+                        <i className="ri-skip-up-line text-base"></i>
+                      </button>
+                      <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
+                        {top > 0 ? t("untop.title") : t("top.title")}
+                      </span>
+                    </div>
+                    <div className="group relative">
+                      <Link
+                        aria-label={t("edit")}
+                        href={`/writing/${feed.id}`}
+                        className="w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-sm border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200"
+                        style={{backdropFilter: 'blur(4px)'}}
+                      >
+                        <i className="ri-edit-2-line text-base"></i>
+                      </Link>
+                      <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
+                        {t("edit")}
+                      </span>
+                    </div>
+                    <div className="group relative">
+                      <button
+                        aria-label={t("delete.title")}
+                        onClick={deleteFeed}
+                        className="w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-sm border bg-white/80 dark:bg-gray-800/80 text-red-500 border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 active:scale-95 transition-all duration-200"
+                        style={{backdropFilter: 'blur(4px)'}}
+                      >
+                        <i className="ri-delete-bin-7-line text-base"></i>
+                      </button>
+                      <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
+                        {t("delete.title")}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {/* 标题与下方内容间增加视觉分隔 */}
+                <div className="mt-4" />
+              </div>
+              <div className="flex justify-center mb-2">
+                <div className="flex flex-wrap gap-2 justify-center w-full">
+                  <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 py-1 rounded-xl bg-white/80 dark:bg-gray-800/80 shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-[15px] font-medium w-full sm:w-auto">
+                    <div className="flex items-center gap-1">
                       <i className="ri-calendar-line text-blue-500 mr-1"></i>
                       <span>{t("published_at")} {timeago(feed.createdAt)}</span>
-                      {feed.createdAt !== feed.updatedAt && (
-                        <>
-                          <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
+                    </div>
+                    {feed.createdAt !== feed.updatedAt && (
+                      <>
+                        <span className="hidden sm:inline mx-2 text-gray-300 dark:text-gray-600">|</span>
+                        <div className="flex items-center gap-1">
                           <i className="ri-history-line text-purple-400 mr-1"></i>
                           <span>{t("feed_card.updated$time", { time: timeago(feed.updatedAt) })}</span>
-                        </>
-                      )}
-                      {counterEnabled && (
-                        <>
-                          <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
+                        </div>
+                      </>
+                    )}
+                    {counterEnabled && (
+                      <>
+                        <span className="hidden sm:inline mx-2 text-gray-300 dark:text-gray-600">|</span>
+                        <div className="flex items-center gap-1">
                           <i className="ri-eye-line text-green-500 mr-1"></i>
                           <span>{t("count.pv")} {feed.pv}</span>
                           <span className="mx-1 text-gray-300 dark:text-gray-600">/</span>
                           <i className="ri-user-3-line text-pink-400 mr-1"></i>
                           <span>{t("count.uv")} {feed.uv}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <hr className="my-4 h-1 border-0 rounded-full bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70 animate-fadeIn" />
-                <div className="mt-6">
-                <Markdown 
-                  content={feed.content} 
-                  onReady={() => {
-                    setTimeout(() => setContentReady(true), 100);
-                  }}
-                />
-                </div>
-                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/30 flex flex-col gap-3">
-                  {feed.hashtags.length > 0 && (
-                    <div className="flex flex-row flex-wrap gap-x-2 gap-y-1.5">
-                      {feed.hashtags.map(({ name }, index) => (
-                        <span key={`hashtag-${index}`}>
-                          <HashTag name={name} />
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="mt-4 flex flex-col items-center justify-center">
-                    <div className="relative flex-shrink-0 mb-2">
-                    <img
-                      src={feed.user.avatar || "/avatar.png"}
-                        className="w-16 h-16 rounded-full border-2 border-gray-100 dark:border-gray-700 shadow-sm"
-                        alt={feed.user.username}
-                      />
-                      {profile?.permission && (
-                        <div className="absolute -top-1 -right-1 bg-theme text-white rounded-full w-6 h-6 flex items-center justify-center">
-                          <i className="ri-verified-badge-fill text-[12px]"></i>
                         </div>
-                      )}
-                    </div>
-                    <div className="text-center">
-                      <span className="text-gray-800 dark:text-gray-200 font-medium text-base cursor-default hover:text-gray-900 dark:hover:text-white transition-colors">
-                        {feed.user.username}
-                      </span>
-                    </div>
+                      </>
+                    )}
                   </div>
-                </div>
-              </article>
-              <AdjacentSection id={id} setError={setError}/>
-              {feed && <Comments id={`${feed.id}`} />}
-              <div className="h-16" />
-            </main>
-            <aside className="w-full lg:w-60 xl:w-64 hidden lg:block mt-5">
-              <div className="sticky top-[5.5rem]">
-                <div className="bg-w rounded-2xl pt-5 px-3 pb-4 mb-5 shadow-sm hover:shadow-md transition-all duration-300">
-                  <h3 className="text-lg font-medium t-primary mb-2 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-                    <i className="ri-list-unordered text-theme"></i>
-                    {t("toc.title", { defaultValue: "目录" })}
-                  </h3>
-                  <div className="max-h-[calc(50vh-5rem)] overflow-auto custom-scrollbar pr-1 pt-1">
-                    <TOC />
-                  </div>
-                </div>
-                <div className="bg-w rounded-2xl shadow-sm">
-                  <RecentPosts />
                 </div>
               </div>
-            </aside>
-          </>
+              <hr className="my-4 h-1 border-0 rounded-full bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70 animate-fadeIn" />
+              <div className="mt-6">
+              <Markdown 
+                content={feed.content} 
+                onReady={() => {
+                  setTimeout(() => setContentReady(true), 100);
+                }}
+              />
+              </div>
+              <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/30 flex flex-col gap-3">
+                {feed.hashtags.length > 0 && (
+                  <div className="flex flex-row flex-wrap gap-x-2 gap-y-1.5">
+                    {feed.hashtags.map(({ name }, index) => (
+                      <span key={`hashtag-${index}`}>
+                        <HashTag name={name} />
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-4 flex flex-col items-center justify-center">
+                  <div className="relative flex-shrink-0 mb-2">
+                  <img
+                    src={feed.user.avatar || "/avatar.png"}
+                      className="w-16 h-16 rounded-full border-2 border-gray-100 dark:border-gray-700 shadow-sm"
+                      alt={feed.user.username}
+                    />
+                    {profile?.permission && (
+                      <div className="absolute -top-1 -right-1 bg-theme text-white rounded-full w-6 h-6 flex items-center justify-center">
+                        <i className="ri-verified-badge-fill text-[12px]"></i>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <span className="text-gray-800 dark:text-gray-200 font-medium text-base cursor-default hover:text-gray-900 dark:hover:text-white transition-colors">
+                      {feed.user.username}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </article>
+            <AdjacentSection id={id} setError={setError}/>
+            {feed && <Comments id={`${feed.id}`} />}
+            <div className="h-16" />
+          </main>
         )}
-      </div>
+        {/* 侧边栏，仅大屏显示 */}
+        <aside className="hidden lg:flex flex-col w-[260px] flex-shrink-0 gap-6 mt-5">
+          <section className="sticky top-[5.5rem]">
+            <div className="mb-6 rounded-2xl bg-white dark:bg-gray-900 p-4 shadow-sm">
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-2 mt-0">
+                <i className="ri-list-unordered text-theme"></i>
+                {t('toc.title', { defaultValue: '目录' })}
+              </h3>
+              <div className="custom-scrollbar max-h-[40vh] overflow-y-auto pr-1">
+                <TOC />
+              </div>
+            </div>
+            <RecentPosts />
+          </section>
+        </aside>
+      </PageContainer>
       <AlertUI />
       <ConfirmUI />
     </Waiting>
