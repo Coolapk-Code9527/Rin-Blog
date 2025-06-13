@@ -66,6 +66,7 @@ export const comments = sqliteTable("comments", {
 export const hashtags = sqliteTable("hashtags", {
     id: integer("id").primaryKey(),
     name: text("name").notNull(),
+    description: text("description"),
     createdAt: created_at,
     updatedAt: updated_at,
 });

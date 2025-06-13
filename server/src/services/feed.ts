@@ -78,7 +78,7 @@ export function FeedService() {
                         })).map(({ content, hashtags, summary, ...other }) => {
                             const avatar = extractImage(content);
                             return {
-                                summary: summary.length > 0 ? summary : markdownToPlainText(content, 100),
+                                summary: summary.length > 0 ? summary : markdownToPlainText(content, 150),
                                 hashtags: hashtags.map(({ hashtag }) => hashtag),
                                 avatar,
                                 ...other
@@ -117,7 +117,7 @@ export function FeedService() {
                     })).map(({ content, hashtags, summary, ...other }) => {
                         const avatar = extractImage(content);
                         return {
-                            summary: summary.length > 0 ? summary : markdownToPlainText(content, 100),
+                            summary: summary.length > 0 ? summary : markdownToPlainText(content, 150),
                             hashtags: hashtags.map(({ hashtag }) => hashtag),
                             avatar,
                             ...other
@@ -340,7 +340,7 @@ export function FeedService() {
                             const summary =
                                 feed.summary.length > 0
                                     ? feed.summary
-                                    : markdownToPlainText(feed.content, 50);
+                                    : markdownToPlainText(feed.content, 150);
                             const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                             const cacheData = {
                             id: feed.id,
@@ -567,7 +567,7 @@ export function FeedService() {
                 orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
             }))).map(({ content, hashtags, summary, ...other }) => {
                 return {
-                    summary: summary.length > 0 ? summary : markdownToPlainText(content, 100),
+                    summary: summary.length > 0 ? summary : markdownToPlainText(content, 150),
                     hashtags: hashtags.map(({ hashtag }) => hashtag),
                     ...other
                 }
@@ -621,7 +621,7 @@ export function FeedService() {
                 const draft = item?.['wp:status'] !== 'publish';
                 const contentHtml = item?.['content:encoded'];
                 const content = html2md(contentHtml);
-                const summary = markdownToPlainText(content, 100);
+                const summary = markdownToPlainText(content, 150);
                 let tags = item?.['category'];
                 if (tags && Array.isArray(tags)) {
                     tags = tags.map((tag: any) => tag + '');

@@ -83,6 +83,7 @@ export type FriendItem = {
 export type Hashtag = {
   id: number;
   name: string;
+  description?: string;
   createdAt: Date;
   updatedAt: Date;
   feeds: number;

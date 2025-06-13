@@ -7,6 +7,7 @@ import {headersWithAuth} from "../utils/auth"
 import {siteName} from "../utils/constants"
 import {useTranslation} from "react-i18next";
 import { PageContainer } from "../components/container";
+import { Timeline } from "../components/timeline";
 
 // Object.groupBy polyfill（如原生不支持则自动挂载）
 if (!Object.groupBy) {
@@ -22,9 +23,9 @@ if (!Object.groupBy) {
 }
 
 export function TimelinePage() {
-    const [feeds, setFeeds] = useState<Partial<Record<number, { id: number; title: string | null; createdAt: number; }[]>>>()
-    const [length, setLength] = useState(0)
-    const { t } = useTranslation()
+    const [feeds, setFeeds] = useState<Partial<Record<number, any[]>>>();
+    const [length, setLength] = useState(0);
+    const { t } = useTranslation();
     const [location] = useLocation();
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -32,7 +33,9 @@ export function TimelinePage() {
     function fetchFeeds() {
         setError(null);
         setLoading(true);
-        client.feed.timeline.get({
+        // 获取完整文章列表（含摘要、标签、图片等）
+        client.feed.index.get({
+            query: { page: 1, limit: 9999 },
             headers: headersWithAuth()
         }).then(({ data, error: apiError }) => {
             setLoading(false);
@@ -41,14 +44,14 @@ export function TimelinePage() {
                 setFeeds({});
                 return;
             }
-            
             if (data && typeof data !== 'string') {
-                setLength(data.length)
+                setLength(data.size || data.data.length);
+                // 按年份分组
                 const groups = (Object.groupBy as any)(
-                  data,
+                  data.data,
                   (item: any, idx: number, array: any) => new Date(item.createdAt).getFullYear()
                 );
-                setFeeds(groups)
+                setFeeds(groups);
                 setError(null);
             } else if (data === null || (typeof data === 'object' && Object.keys(data).length === 0)) {
                 setLength(0);
@@ -60,12 +63,12 @@ export function TimelinePage() {
             setLoading(false);
             setFeeds({});
             setError(t('load_failed') || '加载失败');
-        })
+        });
     }
 
     useEffect(() => {
-        fetchFeeds()
-    }, [location[0]])
+        fetchFeeds();
+    }, [location[0]]);
 
     return (
         <>
@@ -80,7 +83,7 @@ export function TimelinePage() {
             <Waiting for={feeds}>
                 <main className="w-full flex flex-col justify-center items-center mb-8 ani-show">
                     <PageContainer>
-                        <div className="wauto text-start text-black dark:text-white py-4 text-2xl font-bold">
+                        <div className="w-full max-w-6xl mx-auto text-start text-black dark:text-white py-4 text-2xl font-bold">
                             <p>
                                 {t('timeline')}
                             </p>
@@ -112,39 +115,13 @@ export function TimelinePage() {
                               </div>
                             )}
                         </div>
-                        {feeds && Object.keys(feeds).length > 0 ? (
-                          Object.keys(feeds).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
-                            <div key={year} className="wauto flex flex-col justify-center items-start">
-                              <h1 className="flex flex-row items-center space-x-2">
-                                <span className="text-2xl font-bold t-primary ">
-                                  {t('year$year', { year: year })}
-                                </span>
-                                <span className="text-base font-medium t-secondary">
-                                  {t('article.total_short$count', { count: feeds[+year]?.length })}
-                                </span>
-                              </h1>
-                              <div className="w-full flex flex-col justify-center items-start my-4">
-                                {feeds[+year]?.map((feed) => (
-                                  <FeedItem key={feed.id} id={feed.id.toString()} title={feed.title || t('unlisted')} createdAt={feed.createdAt} />
-                                ))}
-                              </div>
-                            </div>
-                          ))
-                        ) : !error && (
-                          <div className="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-center">
-                            <div className="w-12 h-12 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
-                              <i className="ri-calendar-line text-xl text-gray-500"></i>
-                            </div>
-                            <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
-                              {t('no_more')}
-                            </h3>
-                          </div>
-                        )}
+                        {/* 使用Timeline组件渲染分组数据，内容丰富、响应式、交互体验升级 */}
+                        <Timeline feeds={feeds} error={error} t={t} />
                     </PageContainer>
                 </main>
             </Waiting>
         </>
-    )
+    );
 }
 
 export function FeedItem({ id, title, createdAt, ...rest }: { id: string, title: string, createdAt: number } & Record<string, any>) {

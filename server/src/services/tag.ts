@@ -4,6 +4,7 @@ import type { DB } from "../_worker";
 import { feedHashtags, hashtags } from "../db/schema";
 import { getDB } from "../utils/di";
 import { setup } from "../setup";
+import { t } from "elysia";
 
 export function TagService() {
     const db: DB = getDB();
@@ -22,7 +23,8 @@ export function TagService() {
                     return tag_list.map((tag) => {
                         return {
                             ...tag,
-                            feeds: tag.feeds.length
+                            feeds: tag.feeds.length,
+                            description: tag.description || ''
                         }
                     })
                 })
@@ -73,8 +75,32 @@ export function TagService() {
                     }
                     return {
                         ...tag,
-                        feeds: tagFeeds
+                        feeds: tagFeeds,
+                        description: tag.description || ''
                     };
+                })
+                .post('/update-description', async ({ body, set, admin }) => {
+                    if (!admin) {
+                        set.status = 403;
+                        return 'Permission denied';
+                    }
+                    const { name, description } = body;
+                    if (!name) {
+                        set.status = 400;
+                        return 'Tag name required';
+                    }
+                    const tag = await db.query.hashtags.findFirst({ where: eq(hashtags.name, name) });
+                    if (!tag) {
+                        set.status = 404;
+                        return 'Tag not found';
+                    }
+                    await db.update(hashtags).set({ description }).where(eq(hashtags.id, tag.id));
+                    return { success: true };
+                }, {
+                    body: t.Object({
+                        name: t.String(),
+                        description: t.String()
+                    })
                 })
         );
 }

@@ -8,7 +8,7 @@
  * @param {number} maxLength 可选，截断的最大长度
  * @returns {string} 转换后的纯文本
  */
-export function markdownToPlainText(markdown: string, maxLength?: number): string {
+export function markdownToPlainText(markdown: string, maxLength: number = 150): string {
   if (!markdown) return '';
   
   let text = markdown
