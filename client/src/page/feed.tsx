@@ -192,7 +192,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
           />
         </Helmet>
       )}
-      <PageContainer maxWidth="max-w-3xl" className="flex flex-col lg:flex-row justify-center ani-show lg:gap-5">
+      <PageContainer className="flex flex-col lg:flex-row justify-center ani-show lg:gap-5">
         {error && (
           <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
             <h1 className="text-xl font-bold t-primary mt-0">{error}</h1>

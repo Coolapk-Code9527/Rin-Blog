@@ -21,6 +21,7 @@ import { useColorMode } from "../utils/darkModeUtils";
 import { useTranslation } from "react-i18next";
 import Loading from 'react-loading';
 import { ClientConfigContext } from "../state/config";
+import '../styles/lightbox-fix.css';
 
 // 图片加载状态接口
 interface ImageState {
@@ -927,6 +928,83 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             </button>
           );
         },
+        iframe({ src, ...props }) {
+          // 移除原有width/height，统一用样式控制
+          return (
+            <div className="w-full my-4 rounded-xl overflow-hidden" style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+              <iframe
+                src={src}
+                {...props}
+                width="100%"
+                height="100%"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  border: 0,
+                  borderRadius: '12px',
+                  background: '#000'
+                }}
+                allowFullScreen
+              />
+            </div>
+          );
+        },
+        embed({ src, ...props }) {
+          return (
+            <div className="w-full my-4 rounded-xl overflow-hidden" style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+              <embed
+                src={src}
+                {...props}
+                width="100%"
+                height="100%"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  border: 0,
+                  borderRadius: '12px',
+                  background: '#000'
+                }}
+              />
+            </div>
+          );
+        },
+        object({ data, ...props }) {
+          return (
+            <div className="w-full my-4 rounded-xl overflow-hidden" style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+              <object
+                data={data}
+                {...props}
+                width="100%"
+                height="100%"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  border: 0,
+                  borderRadius: '12px',
+                  background: '#000'
+                }}
+              />
+            </div>
+          );
+        },
+        svg({ children, ...props }) {
+          return (
+            <div className="w-full overflow-auto my-4" style={{ maxWidth: '100%' }}>
+              <svg {...props} style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }}>
+                {children}
+              </svg>
+            </div>
+          );
+        },
       }}
     />
   ), [content, colorMode, imageUrls]);
@@ -934,28 +1012,32 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
   return (
     <>
       {Content}
-      <Lightbox
-        open={index >= 0}
-        close={() => setIndex(-1)}
-        index={index}
-        slides={generateSlides()}
-        plugins={[Counter, Zoom, Download]}
-        controller={{
-          closeOnBackdropClick: true,
-          closeOnPullDown: true
-        }}
-        carousel={{
-          finite: imageUrls.length <= 1
-        }}
-        zoom={{
-          maxZoomPixelRatio: 5,
-          zoomInMultiplier: 2
-        }}
-        render={{
-          buttonPrev: imageUrls.length <= 1 ? () => null : undefined,
-          buttonNext: imageUrls.length <= 1 ? () => null : undefined,
-        }}
-      />
+      <div style={{ overflow: 'visible', pointerEvents: 'auto' }}>
+        <Lightbox
+          open={index >= 0}
+          close={() => setIndex(-1)}
+          index={index}
+          slides={generateSlides()}
+          plugins={[Counter, Zoom, Download]}
+          controller={{
+            closeOnBackdropClick: true,
+            closeOnPullDown: true
+          }}
+          carousel={{
+            finite: imageUrls.length <= 1
+          }}
+          zoom={{
+            maxZoomPixelRatio: 5,
+            zoomInMultiplier: 2
+          }}
+          render={{
+            buttonPrev: imageUrls.length <= 1 ? () => null : undefined,
+            buttonNext: imageUrls.length <= 1 ? () => null : undefined,
+          }}
+          className="rin-lightbox-fix"
+          styles={{ container: { zIndex: 20000, pointerEvents: 'auto' } }}
+        />
+      </div>
     </>
   );
 }

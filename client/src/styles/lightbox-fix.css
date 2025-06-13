@@ -1,0 +1,8 @@
+/* Lightbox 弹窗层级与交互修正 */
+.rin-lightbox-fix, .rin-lightbox-fix * {
+  z-index: 20000 !important;
+  pointer-events: auto !important;
+}
+.rin-lightbox-fix {
+  overflow: visible !important;
+} 

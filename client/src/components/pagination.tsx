@@ -83,7 +83,7 @@ export function Pagination({
   const renderPageButton = (pageNumber: number, label?: string) => {
     const isCurrentPage = pageNumber === currentPage;
     const commonClasses = "relative block w-10 h-10 flex items-center justify-center rounded-2xl text-base font-semibold transition-all duration-300 leading-none shadow-sm hover:shadow-md";
-    const activeClasses = "bg-gradient-to-r from-theme-light via-theme to-theme-dark text-white ring-2 ring-theme/60 shadow-lg hover:shadow-xl";
+    const activeClasses = "bg-theme text-white ring-2 ring-theme/60 shadow-lg hover:shadow-xl";
     const inactiveClasses = "bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme hover:bg-theme-50/60 dark:hover:bg-theme-900/10";
     const fullClasses = `${commonClasses} ${isCurrentPage ? activeClasses : inactiveClasses}`;
     const ariaLabel = label || t("pagination.page", { page: pageNumber });
