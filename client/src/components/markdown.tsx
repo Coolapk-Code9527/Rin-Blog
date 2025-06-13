@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import Loading from 'react-loading';
 import { ClientConfigContext } from "../state/config";
 import '../styles/lightbox-fix.css';
+import mermaid from 'mermaid';
 
 // 图片加载状态接口
 interface ImageState {
@@ -252,6 +253,24 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
       return () => clearTimeout(timer);
     }
   }, [content, isReady, onReady]);
+
+  // 自动渲染 mermaid 图表
+  useEffect(() => {
+    if (!isReady) return;
+    // 明亮主题
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    mermaid.run({
+      suppressErrors: true,
+      nodes: document.querySelectorAll('pre.mermaid_default')
+    }).then(() => {
+      // 暗色主题
+      mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+      mermaid.run({
+        suppressErrors: true,
+        nodes: document.querySelectorAll('pre.mermaid_dark')
+      });
+    });
+  }, [content, isReady]);
 
   // 生成图片查看器的幻灯片
   const generateSlides = () => {

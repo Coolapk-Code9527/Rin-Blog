@@ -139,25 +139,6 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
       });
     ref.current = id;
   }, [id]);
-  React.useEffect(() => {
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: "default",
-    });
-    mermaid.run({
-      suppressErrors: true,
-      nodes: document.querySelectorAll("pre.mermaid_default")
-    }).then(()=>{
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: "dark",
-      });
-      mermaid.run({
-        suppressErrors: true,
-        nodes: document.querySelectorAll("pre.mermaid_dark")
-      });
-    })
-  }, [feed]);
 
   return (
     <Waiting for={feed || error}>

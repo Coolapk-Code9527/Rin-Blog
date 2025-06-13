@@ -1381,31 +1381,6 @@ export function WritingPage({ id }: { id?: number }) {
         });
     }
   }, []);
-  const debouncedUpdate = useCallback(
-    _.debounce(() => {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: "default",
-      });
-      mermaid.run({
-        suppressErrors: true,
-        nodes: document.querySelectorAll("pre.mermaid_default")
-      }).then(()=>{
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: "dark",
-        });
-        mermaid.run({
-          suppressErrors: true,
-          nodes: document.querySelectorAll("pre.mermaid_dark")
-        });
-      })
-    }, 100),
-    []
-  );
-  useEffect(() => {
-    debouncedUpdate();
-  }, [content, debouncedUpdate]);
 
   // 文件插入逻辑
   useEffect(() => {
@@ -1670,7 +1645,7 @@ export function WritingPage({ id }: { id?: number }) {
                       options={{
                         wordWrap: "on",
                         fontSize: 14,
-                        lineNumbers: "off",
+                        lineNumbers: "on",
                         dragAndDrop: true,
                         pasteAs: { enabled: false },
                         quickSuggestions: {
@@ -1682,7 +1657,7 @@ export function WritingPage({ id }: { id?: number }) {
                         tabSize: 2,
                         insertSpaces: true,
                         autoIndent: "full",
-                        formatOnType: true
+                        formatOnType: true,
                       }}
                     />
                   </div>
