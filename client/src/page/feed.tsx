@@ -573,7 +573,7 @@ function CommentInput({
           {parentId && onCancel && (
             <button
               onClick={onCancel}
-              className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center"
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 rounded-lg transition-all duration-200"
             >
               <i className="ri-close-line mr-1"></i>
               取消回复
@@ -832,21 +832,28 @@ function Comments({ id }: { id: string }) {
               {comments.length > 0 ? (
                 <div className="w-full space-y-4">
                   <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="bg-gray-50 dark:bg-gray-750 px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                      <h3 className="text-base font-medium flex items-center">
-                        <i className="ri-chat-3-line mr-2 text-theme"></i>
-                        {t("comment.list.title", { count: comments.length })}
-                      </h3>
-                      <button
-                        className="text-xs text-gray-500 dark:text-gray-400 flex items-center hover:text-theme transition-colors"
-                        onClick={loadComments}
-                      >
-                        <i className="ri-refresh-line mr-1"></i>
-                        {t("reload")}
-                      </button>
-                  </div>
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-750 dark:to-gray-800 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold flex items-center gap-3 text-gray-900 dark:text-gray-100">
+                          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                            <i className="ri-chat-3-line text-blue-600 dark:text-blue-400"></i>
+                          </div>
+                          全部评论
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                            {totalComments}
+                          </span>
+                        </h3>
+                        <button
+                          className="inline-flex items-center px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200"
+                          onClick={loadComments}
+                        >
+                          <i className="ri-refresh-line mr-2"></i>
+                          {t("reload")}
+                        </button>
+                      </div>
+                    </div>
                   
-                    <div className="p-4 space-y-4">
+                    <div className="p-6 space-y-6">
                       {currentComments.map((comment, idx) => (
                         <div key={comment.id != null ? comment.id : idx}>
                           <CommentItem
@@ -906,6 +913,15 @@ function CommentItem({
   const { t } = useTranslation();
   const profile = React.useContext(ProfileContext);
   const [showReplyForm, setShowReplyForm] = React.useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [showAllReplies, setShowAllReplies] = React.useState(false);
+
+  // 回复显示逻辑
+  const INITIAL_REPLIES_COUNT = 3; // 初始显示3条回复
+  const hasMoreReplies = comment.replies && comment.replies.length > INITIAL_REPLIES_COUNT;
+  const displayedReplies = showAllReplies
+    ? comment.replies
+    : comment.replies?.slice(0, INITIAL_REPLIES_COUNT);
   
   // 解析昵称和邮箱
   function parseNicknameAndEmail(nicknameField?: string) {
@@ -954,86 +970,184 @@ function CommentItem({
   const canDelete = profile && 
     (profile.permission || (!isAnonymous && comment.user && profile.id === comment.user.id));
 
+  // 计算缩进和样式
+  const getCommentStyles = () => {
+    if (depth === 0) {
+      return {
+        container: 'bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md',
+        indent: ''
+      };
+    }
+
+    // 多层回复的视觉设计
+    const indentLevel = Math.min(depth, 6); // 最大6层缩进
+    const indentClass = `ml-${indentLevel * 4} pl-4`; // 每层4个单位缩进
+
+    // 不同深度使用不同的边框颜色
+    const borderColors = [
+      'border-blue-200 dark:border-blue-600',    // 第1层
+      'border-green-200 dark:border-green-600',  // 第2层
+      'border-purple-200 dark:border-purple-600', // 第3层
+      'border-orange-200 dark:border-orange-600', // 第4层
+      'border-pink-200 dark:border-pink-600',    // 第5层
+      'border-gray-200 dark:border-gray-600'     // 第6层及以上
+    ];
+
+    const borderColor = borderColors[Math.min(depth - 1, borderColors.length - 1)];
+
+    return {
+      container: `bg-gray-50/60 dark:bg-gray-800/40 rounded-lg border-l-3 ${borderColor}`,
+      indent: indentClass
+    };
+  };
+
+  const styles = getCommentStyles();
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow transition-all duration-300 overflow-hidden">
-      <div className="p-5">
-        <div className="flex justify-between">
-          <div className="flex items-start">
-            {!isAnonymous && comment.user ? (
-              <div className="flex items-center">
-                <div className="relative flex-shrink-0">
+    <div
+      className={`group relative transition-all duration-200 ${styles.container} ${styles.indent} ${
+        isHovered ? 'shadow-lg' : 'shadow-sm'
+      }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="p-4">
+        {/* 用户信息头部 */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-start space-x-3 flex-1">
+            {/* 头像 - 根据深度调整大小 */}
+            <div className="flex-shrink-0">
+              {!isAnonymous && comment.user ? (
+                <div className="relative">
                   <img
-                    className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-gray-700"
+                    className={`${depth === 0 ? 'w-10 h-10' : depth === 1 ? 'w-9 h-9' : 'w-8 h-8'} rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-700`}
                     src={comment.user.avatar || "/avatar.png"}
                     alt={comment.user.username}
                   />
                   {comment.user.permission && (
-                    <div className="absolute -top-0.5 -right-0.5 bg-theme text-white rounded-full w-4 h-4 flex items-center justify-center">
-                      <i className="ri-verified-badge-fill text-[10px]"></i>
+                    <div className={`absolute -top-1 -right-1 bg-blue-500 text-white rounded-full ${depth === 0 ? 'w-4 h-4' : 'w-3 h-3'} flex items-center justify-center`}>
+                      <i className={`ri-verified-badge-fill ${depth === 0 ? 'text-[10px]' : 'text-[8px]'}`}></i>
                     </div>
                   )}
                 </div>
-                <div className="ml-3">
-                  <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">{comment.user.username}</h4>
-                  <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
-                    addSuffix: true,
-                  })}</span>
+              ) : (
+                <div className={`${depth === 0 ? 'w-10 h-10' : depth === 1 ? 'w-9 h-9' : 'w-8 h-8'} rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center`}>
+                  <i className={`ri-user-line text-white ${depth === 0 ? 'text-lg' : depth === 1 ? 'text-base' : 'text-sm'}`}></i>
                 </div>
+              )}
+            </div>
+
+            {/* 用户信息 */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-2 mb-1">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  {!isAnonymous && comment.user ? comment.user.username : displayName}
+                </h4>
+                {isAnonymous && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                    <i className="ri-user-line mr-1"></i>
+                    {t("comment.anonymous.tag")}
+                  </span>
+                )}
               </div>
-            ) : (
-              <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                  <i className="ri-user-line text-gray-400 dark:text-gray-500"></i>
-                </div>
-                <div className="ml-3">
-                  <div className="flex items-center">
-                    <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">{displayName}</h4>
-                    <span className="ml-2 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">{t("comment.anonymous.tag")}</span>
+
+              {/* 回复路径和时间 */}
+              <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
+                {depth > 0 && (
+                  <div className="flex items-center space-x-1">
+                    <i className="ri-reply-line"></i>
+                    <span>回复</span>
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
+                    <span>第 {depth} 层</span>
                   </div>
-                  {displayEmail && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-0.5 mb-0.5">
-                      <i className="ri-mail-line mr-1 text-xs"></i>
-                      {displayEmail}
+                )}
+                {displayEmail && (
+                  <>
+                    {depth > 0 && <span className="text-gray-300 dark:text-gray-600">•</span>}
+                    <div className="flex items-center">
+                      <i className="ri-mail-line mr-1"></i>
+                      <span className="truncate max-w-32">{displayEmail}</span>
                     </div>
-                  )}
-                  <span className="text-xs text-gray-400">{formatDistance(new Date(comment.createdAt), new Date(), {
-                    addSuffix: true,
-                  })}</span>
-                </div>
+                  </>
+                )}
+                <time className="flex items-center">
+                  {(depth > 0 || displayEmail) && <span className="text-gray-300 dark:text-gray-600 mr-2">•</span>}
+                  <i className="ri-time-line mr-1"></i>
+                  {formatDistance(new Date(comment.createdAt), new Date(), { addSuffix: true })}
+                </time>
               </div>
-            )}
+            </div>
           </div>
-          
-          <div className="flex items-center gap-2">
-            {depth < 2 && (
-              <button
-                className="text-gray-400 hover:text-theme transition-colors text-sm flex items-center"
-                onClick={() => setShowReplyForm(!showReplyForm)}
-                title="回复"
-              >
-                <i className="ri-reply-line"></i>
-              </button>
-            )}
+
+          {/* 操作按钮 */}
+          <div className={`flex items-center space-x-1 transition-opacity duration-200 ${
+            isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          }`}>
+            {/* 回复按钮 */}
+            <button
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                showReplyForm
+                  ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                  : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+              }`}
+              onClick={() => setShowReplyForm(!showReplyForm)}
+              title={`回复 ${isAnonymous ? displayName : comment.user?.username || 'Unknown'}`}
+            >
+              <i className="ri-reply-line text-sm"></i>
+            </button>
+
+            {/* 点赞按钮（预留功能） */}
+            <button
+              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
+              title="点赞"
+            >
+              <i className="ri-heart-line text-sm"></i>
+            </button>
+
             {canDelete && (
               <button
-                className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors text-sm flex items-center"
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
                 onClick={deleteComment}
                 title={t("delete.title")}
               >
-                <i className="ri-delete-bin-line"></i>
+                <i className="ri-delete-bin-line text-sm"></i>
               </button>
             )}
           </div>
         </div>
-        
-        <div className="mt-4 pt-4 border-t border-gray-50 dark:border-gray-700/30 prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+
+        {/* 评论内容 */}
+        <div className="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 leading-relaxed">
           <Markdown content={comment.content} />
         </div>
       </div>
 
       {/* 回复表单 */}
       {showReplyForm && (
-        <div className="border-t border-gray-100 dark:border-gray-700">
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-b-xl -mx-4 px-4 pb-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+              <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-2">
+                <i className="ri-reply-line text-blue-600 dark:text-blue-400 text-xs"></i>
+              </div>
+              回复
+              <span className="font-semibold mx-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
+                @{isAnonymous ? displayName : comment.user?.username}
+              </span>
+              {depth > 0 && (
+                <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                  • 第 {depth + 1} 层回复
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => setShowReplyForm(false)}
+              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
+              title="关闭回复框"
+            >
+              <i className="ri-close-line text-sm"></i>
+            </button>
+          </div>
           <CommentInput
             id={feedId}
             onRefresh={onRefresh}
@@ -1046,10 +1160,57 @@ function CommentItem({
 
       {/* 回复列表 */}
       {comment.replies && comment.replies.length > 0 && (
-        <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
-          <div className="p-4 space-y-3">
-            {comment.replies.map((reply) => (
-              <div key={reply.id} className="ml-4 border-l-2 border-gray-200 dark:border-gray-600 pl-4">
+        <div className="mt-4">
+          {/* 回复统计信息 */}
+          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4 px-4">
+            <div className="flex items-center space-x-2">
+              <i className="ri-chat-3-line"></i>
+              <span>{comment.replies.length} 条回复</span>
+              {depth > 0 && (
+                <>
+                  <span className="text-gray-300 dark:text-gray-600">•</span>
+                  <span>第 {depth + 1} 层</span>
+                </>
+              )}
+            </div>
+
+            {/* 展开/折叠按钮 */}
+            {hasMoreReplies && (
+              <button
+                onClick={() => setShowAllReplies(!showAllReplies)}
+                className="flex items-center space-x-1 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+              >
+                <span>{showAllReplies ? '收起' : `查看全部 ${comment.replies.length} 条`}</span>
+                <i className={`ri-arrow-${showAllReplies ? 'up' : 'down'}-s-line`}></i>
+              </button>
+            )}
+          </div>
+
+          {/* 回复列表 */}
+          <div className="space-y-4">
+            {displayedReplies?.map((reply) => (
+              <div key={reply.id} className="relative">
+                {/* 现代化连接线系统 */}
+                {depth === 0 && (
+                  <>
+                    {/* 主评论的回复连接线 */}
+                    <div className="absolute left-6 top-0 w-px h-full bg-gradient-to-b from-blue-200 to-transparent dark:from-blue-600 dark:to-transparent"></div>
+                    <div className="absolute left-6 top-6 w-4 h-px bg-blue-200 dark:bg-blue-600"></div>
+                    {/* 连接点 */}
+                    <div className="absolute left-5 top-6 w-2 h-2 bg-blue-400 dark:bg-blue-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+                  </>
+                )}
+
+                {depth > 0 && (
+                  <>
+                    {/* 多层回复的连接线 */}
+                    <div className="absolute left-6 top-0 w-px h-full bg-gradient-to-b from-gray-300 to-transparent dark:from-gray-600 dark:to-transparent"></div>
+                    <div className="absolute left-6 top-6 w-4 h-px bg-gray-300 dark:bg-gray-600"></div>
+                    {/* 连接点 */}
+                    <div className="absolute left-5 top-6 w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+                  </>
+                )}
+
                 <CommentItem
                   comment={reply}
                   onRefresh={onRefresh}
@@ -1059,6 +1220,19 @@ function CommentItem({
               </div>
             ))}
           </div>
+
+          {/* 加载更多回复的提示 */}
+          {hasMoreReplies && !showAllReplies && (
+            <div className="mt-4 px-4">
+              <button
+                onClick={() => setShowAllReplies(true)}
+                className="w-full py-2 text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 border border-dashed border-blue-200 dark:border-blue-600"
+              >
+                <i className="ri-add-line mr-2"></i>
+                查看剩余 {comment.replies.length - INITIAL_REPLIES_COUNT} 条回复
+              </button>
+            </div>
+          )}
         </div>
       )}
 
