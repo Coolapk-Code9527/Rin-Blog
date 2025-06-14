@@ -43,7 +43,8 @@ Rin is a blog based on Cloudflare Pages + Workers + D1 + R2. It does not require
 19. Smart tag coloring system that automatically assigns visually distinct colors to different tags
 20. Rich content metadata with helpful indicators for article freshness, status, and importance
 21. Mobile-optimized UI with compact design and adaptive elements
-22. For more features, please refer to https://xeu.life
+22. macOS-style loading animation system with colorful breathing effects and lightweight circular indicators
+23. For more features, please refer to https://xeu.life
 
 # User Interface
 - **Responsive Navigation**: Adapts seamlessly to different screen sizes with optimized layouts for desktop, tablet, and mobile devices
@@ -65,7 +66,10 @@ Rin is a blog based on Cloudflare Pages + Workers + D1 + R2. It does not require
 - **Mobile-First Implementation**: Compact UI elements and simplified interactions for small screens
 - **Adaptive Content Presentation**: Dynamic element sizing and spacing based on viewport dimensions
 - **Progressive Enhancement**: Feature-rich experience on desktop with essential functionality preserved on mobile
-- **Improved accessibility and user experience for code blocks in both dark and light modes.**
+- **Improved accessibility and user experience for code blocks in both dark and light modes**
+- **macOS-style Loading System**: Unified loading animation aesthetics with colorful breathing dot animations and lightweight circular spinners
+- **Performance-optimized Loading States**: Smart loading component selection based on usage scenarios, balancing visual effects with performance
+- **Zero-dependency Animation Implementation**: Pure CSS animations reducing JavaScript overhead and improving overall application performance.
 
 # Documentation
 [rin-docs.xeu.life](https://rin-docs.xeu.life)
@@ -171,6 +175,16 @@ All functions and constants are documented in both Chinese and English for multi
 - **Dark Mode**: Comprehensive dark theme support with proper contrast and color balance
 - **Responsive Design**: Seamless experience across desktop, tablet, and mobile devices
 - **Performance**: Optimized CSS implementation with efficient animations and transitions
+
+### Phase 5: macOS-style Loading Component System (2024-12-xx)
+- **Unified Loading Aesthetics**: Complete removal of react-loading dependency, implementing pure macOS-style loading animations
+- **Colorful Breathing Animation**: Main pages feature 5-color gradient dot breathing effects that are both stunning and elegant
+- **Lightweight Circular Indicators**: Small components and frequent operations use performance-optimized rotating indicators
+- **Performance-tiered Optimization**: Four different performance levels of loading components based on usage scenarios
+- **Comprehensive Component Migration**: 8 major components completed migration including buttons, file manager, settings, etc.
+- **Zero-dependency Implementation**: Pure CSS animations reducing bundle size and improving loading performance
+- **Multi-layer Transparency Effects**: Breathing animations with multi-layer concentric circle shadows for enhanced visual hierarchy
+- **Smart Adaptation**: Automatic adaptation to dark mode, responsive design, and low-performance device optimization
 
 ### Design System Features
 - **Apple HIG Compliance**: Full adherence to Apple Human Interface Guidelines

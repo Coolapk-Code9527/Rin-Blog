@@ -27,7 +27,7 @@ export function Tips({ value, type = 'tips' }: { value: string, type?: 'note' | 
 
     return (
         <div className={`flex flex-col items-start justify-center space-y-2 ${className} p-4 rounded-xl`}>
-            <p className="markdown-alert-title"> {type.toUpperCase()} </p>
+            <p className="markdown-alert-title"> {t(`tips.${type}`)} </p>
             <p className="text-sm">
                 {t(value)}
             </p>

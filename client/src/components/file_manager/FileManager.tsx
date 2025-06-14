@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect, useCallback, useContext } from 'rea
 import { useTranslation } from 'react-i18next';
 import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
-import ReactLoading from "react-loading";
-import { ShowAlertType } from '../../hooks/useAlert';
+import { MacOSSpinner } from "../loading";
+import { ShowAlertType } from '../dialog';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Pagination } from '../pagination';
@@ -25,9 +25,9 @@ function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// 使用ReactLoading作为Loading组件
-const Loading = ({ type, height, width, color = "#FC466B" }: { type: any, height: number, width: number, color?: string }) => (
-  <ReactLoading type={type} height={height} width={height} color={color} />
+// 使用macOS风格的Loading组件
+const Loading = ({ size = "medium" }: { size?: "small" | "medium" | "large" }) => (
+  <MacOSSpinner size={size} />
 );
 
 // Button组件
@@ -1293,7 +1293,7 @@ export function FileManager({
       <div className="min-h-[60vh]">
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
-            <Loading type="spin" height={32} width={32} />
+            <Loading size="large" />
           </div>
         ) : (
           <div>

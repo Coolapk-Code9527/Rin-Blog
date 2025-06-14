@@ -247,7 +247,7 @@ function Friend(props: any) {
                 <p className="text-base text-center">{friend.name}</p>
                 {friend.health.length == 0 && <p className="text-sm text-neutral-500 text-center">{friend.desc}</p>}
                 {friend.accepted !== 1 && <p className={`${friend.accepted === 0 ? "t-primary" : "text-theme"}`}>{statusOption[friend.accepted + 1].label}</p>}
-                {friend.health.length > 0 && <p className="text-sm text-gray-500 text-center">{errorHumanize(friend.health)}</p>}
+                {friend.health.length > 0 && <p className="text-sm text-gray-500 text-center">{errorHumanize(friend.health, t)}</p>}
                 {(profile?.permission || profile?.id === friend.uid) && <>
                     <button onClick={(e) => { e.preventDefault(); setIsOpen(true) }} className="absolute top-0 right-0 m-2 px-2 py-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-600 dark:text-gray-300 rounded-full shadow-enhanced hover:shadow-enhanced-lg transition-all duration-200">
                         <i className="ri-settings-line"></i>
@@ -324,11 +324,11 @@ function Friend(props: any) {
     )
 }
 
-function errorHumanize(error: string) {
+function errorHumanize(error: string, t: (key: string) => string) {
     if (error === "certificate has expired" || error == "526") {
-        return "证书已过期"
+        return t("error_messages.certificate_expired")
     } else if (error.includes("Unable to connect") || error == "521" || error == "522") {
-        return "无法访问"
+        return t("error_messages.unable_to_connect")
     }
     return error
 }

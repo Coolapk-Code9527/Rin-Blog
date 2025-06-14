@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { MacOSSpinner } from './loading';
 
 interface InfiniteScrollProps {
   /**
@@ -93,10 +94,8 @@ export function InfiniteScroll({
   // 默认加载指示器
   const defaultLoader = (
     <div className="w-full py-4 flex justify-center items-center">
-      <div className="flex items-center space-x-2">
-        <div className="h-5 w-5">
-          <i className="ri-loader-4-line animate-spin text-theme"></i>
-        </div>
+      <div className="flex items-center space-x-3">
+        <MacOSSpinner size="small" />
         <p className="text-gray-500 text-sm">{t("loading")}</p>
       </div>
     </div>

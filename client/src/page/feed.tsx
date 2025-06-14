@@ -1,6 +1,7 @@
 import * as React from "react";
 import {Helmet} from "react-helmet-async";
 import {useTranslation} from "react-i18next";
+import { InlineSpinner, MacOSSpinner } from "../components/loading";
 import ReactModal from "react-modal";
 import Popup from "reactjs-popup";
 import {Link, useLocation} from "wouter";
@@ -176,7 +177,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
       <PageContainer className="flex flex-col lg:flex-row justify-center ani-show lg:gap-5">
         {error && (
           <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
-            <h1 className="text-xl font-bold t-primary mt-0">{error}</h1>
+            <h1 className="text-xl font-bold t-primary mt-0">{error === "Not found" ? t("error.not_found") : error}</h1>
             {error === "Not found" && id === "about" && (
               <Tips value={t("about.notfound")} />
             )}
@@ -516,7 +517,7 @@ function CommentInput({
     
     // 验证邮箱格式
     if (email && !validateEmail(email)) {
-      setEmailError("请输入有效的邮箱地址");
+      setEmailError(t("comment.invalid_email"));
       return;
     } else {
       setEmailError("");
@@ -618,7 +619,7 @@ function CommentInput({
           </div>
           
           <div className="w-full sm:w-[48%]">
-            <label htmlFor="email" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">邮箱 (选填)</label>
+            <label htmlFor="email" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t("comment.email_label")}</label>
             <div className="relative">
               <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <i className="ri-mail-line text-gray-400"></i>
@@ -627,13 +628,13 @@ function CommentInput({
                 id="email"
                 type="email"
                 className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
-                placeholder="your@email.com (选填)"
+                placeholder={t("comment.email_placeholder")}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
                   // 当用户输入时进行验证
                   if (e.target.value && !validateEmail(e.target.value)) {
-                    setEmailError("请输入有效的邮箱地址");
+                    setEmailError(t("comment.invalid_email"));
                   } else {
                     setEmailError("");
                   }
@@ -681,7 +682,7 @@ function CommentInput({
             >
               {submitting ? (
                 <>
-                  <i className="ri-loader-2-line animate-spin mr-1"></i>
+                  <InlineSpinner size="small" className="mr-1" />
                   {t("publishing")}
                 </>
               ) : (
@@ -805,9 +806,7 @@ function Comments({ id }: { id: string }) {
           {loading ? (
             <div className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl p-8 flex justify-center shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
               <div className="flex items-center space-x-3">
-                <div className="h-5 w-5">
-                  <i className="ri-loader-4-line animate-spin text-theme"></i>
-                </div>
+                <MacOSSpinner size="small" />
                 <p className="text-gray-500 dark:text-gray-300 text-sm">{t("loading")}</p>
               </div>
             </div>

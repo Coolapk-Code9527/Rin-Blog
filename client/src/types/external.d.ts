@@ -46,21 +46,7 @@ declare module 'react-i18next' {
   export const Trans: React.ComponentType<any>;
 }
 
-// react-loading类型声明
-declare module 'react-loading' {
-  import * as React from 'react';
-  
-  export interface LoadingProps {
-    color?: string;
-    delay?: number;
-    height?: number | string;
-    width?: number | string;
-    type?: 'blank' | 'balls' | 'bars' | 'bubbles' | 'cubes' | 'cylon' | 'spin' | 'spinningBubbles' | 'spokes';
-    className?: string;
-  }
-  
-  export default class Loading extends React.Component<LoadingProps> {}
-}
+
 
 // 环境变量类型声明
 declare namespace NodeJS {

@@ -72,22 +72,8 @@ function App() {
   const [profile, setProfile] = useState<Profile | undefined>()
   const [config, setConfig] = useState<ConfigWrapper>(new ConfigWrapper({}, new Map()))
   const [contentReady, setContentReady] = useState(false);
-  useEffect(() => {
-    if (ref.current) return
-    if (getCookie('token')?.length ?? 0 > 0) {
-      client.user.profile.get({
-        headers: headersWithAuth()
-      }).then(({ data }) => {
-        if (data && typeof data !== 'string') {
-          setProfile({
-            id: data.id,
-            avatar: data.avatar || '',
-            permission: data.permission,
-            name: data.username
-          })
-        }
-      })
-    }
+  // 加载配置的函数
+  const loadConfig = () => {
     const config = sessionStorage.getItem('config')
     if (config) {
       const configObj = JSON.parse(config)
@@ -104,7 +90,35 @@ function App() {
         }
       })
     }
+  }
+
+  useEffect(() => {
+    if (ref.current) return
+    if (getCookie('token')?.length ?? 0 > 0) {
+      client.user.profile.get({
+        headers: headersWithAuth()
+      }).then(({ data }) => {
+        if (data && typeof data !== 'string') {
+          setProfile({
+            id: data.id,
+            avatar: data.avatar || '',
+            permission: data.permission,
+            name: data.username
+          })
+        }
+      })
+    }
+    loadConfig()
     ref.current = true
+  }, [])
+
+  // 监听配置更新事件
+  useEffect(() => {
+    const handleConfigUpdate = () => {
+      loadConfig()
+    }
+    window.addEventListener('configUpdated', handleConfigUpdate)
+    return () => window.removeEventListener('configUpdated', handleConfigUpdate)
   }, [])
   const favicon = `${process.env.API_URL}/favicon`;
   return (
@@ -118,13 +132,13 @@ function App() {
               <link rel="icon" href={favicon} />}
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
             <meta charSet="utf-8" />
-            <meta name="description" content={process.env.DESCRIPTION || '个人博客'} />
-            <meta property="og:site_name" content={process.env.NAME || '个人博客'} />
+            <meta name="description" content={process.env.DESCRIPTION || t('site.default_description')} />
+            <meta property="og:site_name" content={process.env.NAME || t('site.default_name')} />
             <meta property="og:type" content="website" />
             <meta property="og:image" content={process.env.AVATAR} />
             <meta name="twitter:card" content="summary" />
-            <meta name="twitter:title" content={process.env.NAME || '个人博客'} />
-            <meta name="twitter:description" content={process.env.DESCRIPTION || '个人博客'} />
+            <meta name="twitter:title" content={process.env.NAME || t('site.default_name')} />
+            <meta name="twitter:description" content={process.env.DESCRIPTION || t('site.default_description')} />
             <meta name="twitter:image" content={process.env.AVATAR} />
           </Helmet>
           <Switch>

@@ -1,7 +1,7 @@
 import * as Switch from '@radix-ui/react-switch';
 import {ChangeEvent, useContext, useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
-import ReactLoading from "react-loading";
+import { InlineSpinner } from "../components/loading";
 import Modal from "react-modal";
 import {Button} from "../components/button.tsx";
 import {useAlert, useConfirm} from "../components/dialog.tsx";
@@ -135,7 +135,7 @@ export function Settings() {
                                 {t('settings.title')}
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                             </h1>
-                            {(clientLoading || serverLoading) && <ReactLoading width="1em" height="1em" type="spin" color="var(--primary)" />}
+                            {(clientLoading || serverLoading) && <InlineSpinner size="small" />}
                         </div>
                         <div className="flex flex-col items-start space-y-4">
                             <ItemTitle title={t('settings.friend.title')} />
@@ -240,6 +240,7 @@ function ItemTitle({ title }: { title: string }) {
 
 function ItemSwitch({ title, description, type, configKey }: { title: string, description: string, configKey: string, type: 'client' | 'server' }) {
     const config = type === 'client' ? useContext(ClientConfigContext) : useContext(ServerConfigContext);
+    const clientConfig = useContext(ClientConfigContext);
     const defaultValue = config?.default<boolean>(configKey);
     const [checked, setChecked] = useState(defaultValue);
     const [loading, setLoading] = useState(false);
@@ -277,6 +278,8 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
                     } else {
                         sessionStorage.setItem('config', JSON.stringify({ [key]: value }));
                     }
+                    // 触发全局配置更新事件
+                    window.dispatchEvent(new Event('configUpdated'));
                 }
             }
             setLoading(false);
@@ -299,7 +302,7 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
                     </p>
                 </div>
                 <div className="flex flex-row items-center justify-center space-x-4">
-                    {loading && <ReactLoading width="1em" height="1em" type="spin" color="var(--primary)" />}
+                    {loading && <InlineSpinner size="small" />}
                     <Switch.Root className="SwitchRoot" checked={checked} onCheckedChange={() => {
                         updateConfig(type, configKey, !checked);
                     }}>
@@ -351,6 +354,8 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
                     } else {
                         sessionStorage.setItem('config', JSON.stringify({ [key]: newValue }));
                     }
+                    // 触发全局配置更新事件
+                    window.dispatchEvent(new Event('configUpdated'));
                 }
             }
             setLoading(false);
@@ -373,7 +378,7 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
                     </p>
                 </div>
                 <div className="flex flex-row items-center justify-center space-x-4">
-                    {loading && <ReactLoading width="1em" height="1em" type="spin" color="#FC466B" />}
+                    {loading && <InlineSpinner size="small" />}
                     <Button title={t('update.title')} onClick={() => {
                         setIsOpen(true);
                     }} />
@@ -502,14 +507,7 @@ function ItemWithUpload({
                     <p className="text-xs text-neutral-500">{description}</p>
                 </div>
                 <div className="flex flex-row items-center justify-center space-x-4">
-                    {loading && (
-                        <ReactLoading
-                            width="1em"
-                            height="1em"
-                            type="spin"
-                            color="#FC466B"
-                        />
-                    )}
+                    {loading && <InlineSpinner size="small" />}
                     <input
                         ref={inputRef}
                         type="file"

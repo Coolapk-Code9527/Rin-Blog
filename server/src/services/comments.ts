@@ -4,7 +4,7 @@ import type { DB } from "../_worker";
 import type { Env } from "../db/db";
 import { comments, feeds, users } from "../db/schema";
 import { setup } from "../setup";
-import { ServerConfig } from "../utils/cache";
+import { ServerConfig, ClientConfig } from "../utils/cache";
 import { Config } from "../utils/config";
 import { getDB, getEnv } from "../utils/di";
 import { notify } from "../utils/webhook";
@@ -20,6 +20,12 @@ export function CommentService() {
         .group('/feed/comment', (group) =>
             group
                 .get('/:feed', async ({ params: { feed } }) => {
+                    // 检查评论功能是否启用
+                    const commentEnabled = await ClientConfig().getOrDefault('comment.enabled', true);
+                    if (!commentEnabled) {
+                        return [];
+                    }
+
                     const feedId = parseInt(feed);
                     try {
                     try {
@@ -99,11 +105,18 @@ export function CommentService() {
                     }
                 })
                 .post('/:feed', async ({ uid, set, params: { feed }, body: { content, nickname, isAnonymous, email, parentId } }) => {
+                    // 检查评论功能是否启用
+                    const commentEnabled = await ClientConfig().getOrDefault('comment.enabled', true);
+                    if (!commentEnabled) {
+                        set.status = 403;
+                        return 'Comment feature is disabled';
+                    }
+
                     if (!content) {
                         set.status = 400;
                         return 'Content is required';
                     }
-                    
+
                     const feedId = parseInt(feed);
                     const exist = await db.query.feeds.findFirst({ where: eq(feeds.id, feedId) });
                     if (!exist) {

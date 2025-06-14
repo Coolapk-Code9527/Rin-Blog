@@ -19,7 +19,7 @@ import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import "yet-another-react-lightbox/styles.css";
 import { useColorMode } from "../utils/darkModeUtils";
 import { useTranslation } from "react-i18next";
-import Loading from 'react-loading';
+import { MacOSSpinner } from './loading';
 import { ClientConfigContext } from "../state/config";
 import '../styles/lightbox-fix.css';
 import mermaid from 'mermaid';
@@ -100,7 +100,7 @@ const OptimizedImage = React.memo(({
     <div className="relative flex justify-center items-center">
       {!imageState.loaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
-          <Loading type="spin" height={24} width={24} color="#FC466B" />
+          <MacOSSpinner size="small" />
         </div>
       )}
       

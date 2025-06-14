@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { MacOSSpinner } from './loading';
 import { Link } from "wouter";
 import { client } from "../main";
 import { timeago } from "../utils/timeago";
@@ -84,7 +85,7 @@ export function RecentPosts() {
         {t("recent_posts.title", { defaultValue: "最近发布" })}
       </h3>
       {loading ? (
-        <div className="text-gray-400 text-sm flex items-center gap-2 py-3"><i className="ri-loader-4-line animate-spin"></i>{t("loading")}</div>
+        <div className="text-gray-400 text-sm flex items-center gap-2 py-3"><MacOSSpinner size="small" />{t("loading")}</div>
       ) : error ? (
         <div className="text-red-500 text-sm py-3">{error}</div>
       ) : posts.length === 0 ? (

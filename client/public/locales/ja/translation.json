@@ -63,13 +63,17 @@
       "next": "次のページ",
       "page": "{{page}}ページ目",
       "title": "コメントページネーション"
-    }
+    },
+    "invalid_email": "有効なメールアドレスを入力してください",
+    "email_label": "メール (任意)",
+    "email_placeholder": "your@email.com (任意)"
   },
   "comparison": "対比",
   "confirm": "確認",
   "content": {
     "empty": "コンテンツを空にすることはできません",
-    "placeholder": "コンテンツがありません。左側に書いてください。"
+    "placeholder": "コンテンツがありません。左側に書いてください。",
+    "writing_placeholder": "ここで書き始めてください..."
   },
   "count": {
     "pv": "閲覧数",
@@ -173,10 +177,17 @@
       "rejected": "拒否されました",
       "waiting": "審査待ち"
     },
-    "title": "友人"
+    "title": "友人",
+    "total$count_one": "{{count}} 人の友人",
+    "total$count_other": "{{count}} 人の友人"
   },
   "github_login": "Github ログイン",
   "hashtags": "ラベル",
+  "hashtag": {
+    "aria_label": "タグ: {{name}}",
+    "view_title": "タグを表示: {{name}}",
+    "meta_description": "{{name}}：{{description}}、合計{{count}}記事。"
+  },
   "home": "ホーム",
   "index": {
     "back": "ホームに戻る",
@@ -290,6 +301,10 @@
     }
   },
   "sitename": "サイト名",
+  "site": {
+    "default_name": "個人ブログ",
+    "default_description": "個人ブログ"
+  },
   "status": "ステータス",
   "summary": "概要",
   "tags": "タグ",
@@ -321,12 +336,29 @@
   "visible": {
     "self_only": "自分のみ可視"
   },
-  "writing": "執筆",
+  "writing": {
+    "title": "執筆",
+    "title_hint": "メインタイトルをここに入力してください。本文にレベル1見出し（# タイトル）を書く必要はありません。"
+  },
   "year$year": "{{year}} 年",
   "editing": "編集中...",
   "unnamed": "名称未設定",
   "published_at": "公開日時",
   "date_format": {
     "month_day": "MM月DD日"
+  },
+  "input_required": "すべてのフィールドが必須です",
+  "input_too_long": "フィールドの長さが制限を超えています",
+  "error_messages": {
+    "certificate_expired": "証明書の有効期限が切れています",
+    "unable_to_connect": "接続できません"
+  },
+  "tips": {
+    "note": "注意",
+    "tips": "ヒント",
+    "warn": "警告",
+    "error": "エラー",
+    "info": "情報",
+    "important": "重要"
   }
 }

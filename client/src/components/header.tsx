@@ -623,7 +623,7 @@ function NavBar({ menu, onClick }: { menu: boolean, onClick?: () => void }) {
                 selected={location === "/" || location.startsWith('/feed')} href="/" />
             <NavItem menu={menu} onClick={onClick} title={t('timeline')} iconKey="timeline" selected={location === "/timeline"} href="/timeline" />
             <NavItem menu={menu} onClick={onClick} title={t('hashtags')} iconKey="hashtags" selected={location === "/hashtags"} href="/hashtags" />
-            <NavItem menu={menu} onClick={onClick} when={profile?.permission == true} title={t('writing')} iconKey="writing"
+            <NavItem menu={menu} onClick={onClick} when={profile?.permission == true} title={t('writing.title')} iconKey="writing"
                 selected={location.startsWith("/writing")} href="/writing" />
             <NavItem menu={menu} onClick={onClick} when={profile?.permission == true} title={t('files.title')} iconKey="files.title"
                 selected={location === "/files"} href="/files" />

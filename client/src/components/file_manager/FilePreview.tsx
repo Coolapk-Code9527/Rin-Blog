@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { FileItem } from '../../types/api';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -15,6 +16,7 @@ interface FilePreviewProps {
 }
 
 export function FilePreview({ files, current, onClose }: FilePreviewProps) {
+  const { t } = useTranslation();
   const [index, setIndex] = useState(current);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -41,8 +43,8 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
       <div className="relative max-w-full max-h-full flex flex-col items-center justify-center select-none" onClick={e => e.stopPropagation()}>
         <div className="flex flex-col items-center justify-center w-[min(60vw,400px)] h-[min(40vh,200px)] text-gray-400">
           <i className="ri-file-3-line text-6xl mb-4"></i>
-          <div className="mb-2">文件不存在或索引错误</div>
-          <button className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors text-white" onClick={onClose} title="关闭">关闭</button>
+          <div className="mb-2">{t('files.load_error', { error: 'File not found or index error' })}</div>
+          <button className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors text-white" onClick={onClose} title={t('close')}>{t('close')}</button>
         </div>
       </div>
     </div>
@@ -157,15 +159,45 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
     setShowOrig(false);
   }, [current, files]);
 
+  // 定义导航函数
+  const prev = () => {
+    setIndex(i => (i - 1 + files.length) % files.length);
+    setLoading(true);
+    setError(false);
+    setShowOrig(false);
+  };
+
+  const next = () => {
+    setIndex(i => (i + 1) % files.length);
+    setLoading(true);
+    setError(false);
+    setShowOrig(false);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft') prev();
-      if (e.key === 'ArrowRight') next();
+      // 检查是否有弹窗打开，如果有则不处理键盘事件
+      if (document.querySelector('.ReactModal__Overlay')) {
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prev();
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        next();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  });
+  }, [onClose, prev, next]); // 添加依赖数组
 
   useEffect(() => {
     if (isText && file.url) {
@@ -182,7 +214,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
             /<!DOCTYPE html>/i.test(txt)
           ) {
             setTextError(true);
-            setTextContent('文件不存在或无权限，或 R2 返回了错误页面。');
+            setTextContent(t('files.load_error', { error: 'File not found or permission denied' }));
           } else {
             setTextContent(txt);
           }
@@ -199,7 +231,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
                 /<!DOCTYPE html>/i.test(txt)
               ) {
                 setTextError(true);
-                setTextContent('文件不存在或无权限，或 R2 返回了错误页面。');
+                setTextContent(t('files.load_error', { error: 'File not found or permission denied' }));
               } else {
                 setTextContent(txt);
               }
@@ -210,18 +242,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
     }
   }, [index, files, isText]);
 
-  const prev = () => {
-    setIndex(i => (i - 1 + files.length) % files.length);
-    setLoading(true);
-    setError(false);
-    setShowOrig(false);
-  };
-  const next = () => {
-    setIndex(i => (i + 1) % files.length);
-    setLoading(true);
-    setError(false);
-    setShowOrig(false);
-  };
+
 
   // 下载原图
   const handleDownload = () => {
@@ -258,16 +279,16 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
     <div className="fixed inset-0 z-[12010] flex items-center justify-center bg-gradient-to-br from-black/80 via-black/70 to-gray-900/90 animate-fadeIn" onClick={onClose}>
       <div className="relative max-w-full max-h-full flex flex-col items-center justify-center select-none" onClick={e => e.stopPropagation()}>
         {/* 关闭按钮 */}
-        <button className="absolute top-4 right-4 text-white text-2xl bg-black/50 hover:bg-black/80 rounded-full p-2 shadow-lg z-20 transition-all" onClick={onClose} title="关闭">
+        <button className="absolute top-4 right-4 text-white text-2xl bg-black/50 hover:bg-black/80 rounded-full p-2 shadow-lg z-20 transition-all" onClick={onClose} title={t('close')}>
           <i className="ri-close-line"></i>
         </button>
         {/* 左右切换按钮 */}
         {files.length > 1 && (
           <>
-            <button className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-3xl bg-black/40 hover:bg-black/70 rounded-full p-2 shadow-lg z-20 transition-all" onClick={prev} title="上一项">
+            <button className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-3xl bg-black/40 hover:bg-black/70 rounded-full p-2 shadow-lg z-20 transition-all" onClick={prev} title={t('files.previous')}>
               <i className="ri-arrow-left-s-line"></i>
             </button>
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 text-white text-3xl bg-black/40 hover:bg-black/70 rounded-full p-2 shadow-lg z-20 transition-all" onClick={next} title="下一项">
+            <button className="absolute right-2 top-1/2 -translate-y-1/2 text-white text-3xl bg-black/40 hover:bg-black/70 rounded-full p-2 shadow-lg z-20 transition-all" onClick={next} title={t('files.next')}>
               <i className="ri-arrow-right-s-line"></i>
             </button>
           </>
@@ -280,19 +301,19 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
               {loading && thumb && !error && (
                 <img
                   src={thumb}
-                  alt="缩略图"
+                  alt={t('files.thumbnail')}
                   className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[60vw] max-h-[60vh] blur-sm opacity-60 animate-pulse pointer-events-none"
                   draggable={false}
                 />
               )}
               {loading && !error && (
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-white animate-pulse z-10">
-                  <i className="ri-image-2-line text-4xl mr-2"></i> 加载原图...
+                  <i className="ri-image-2-line text-4xl mr-2"></i> {t('files.loading_original')}
                 </div>
               )}
               {error && (
                 <div className="flex items-center justify-center w-full h-full text-red-400 z-10">
-                  <i className="ri-error-warning-line text-4xl mr-2"></i> 加载失败
+                  <i className="ri-error-warning-line text-4xl mr-2"></i> {t('files.load_failed')}
                 </div>
               )}
               <img

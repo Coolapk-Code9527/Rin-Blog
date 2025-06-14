@@ -64,7 +64,7 @@ const fetchFullArticle = async (id: number): Promise<string | null> => {
             }
         }
     } catch (error) {
-        console.error(`获取文章 ${id} 信息失败:`, error);
+        console.error(`Failed to fetch article ${id}:`, error);
     }
     return null;
 };
@@ -104,7 +104,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                         }
                         
                         extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
-                        console.log(`上一篇文章(ID:${data.previousFeed.id})缩略图:`, extractedThumbnails[`prev-${data.previousFeed.id}`]);
+                        console.log(`Previous article (ID:${data.previousFeed.id}) thumbnail:`, extractedThumbnails[`prev-${data.previousFeed.id}`]);
                     }
                     
                     // 处理下一篇文章
@@ -118,7 +118,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                         }
                         
                         extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
-                        console.log(`下一篇文章(ID:${data.nextFeed.id})缩略图:`, extractedThumbnails[`next-${data.nextFeed.id}`]);
+                        console.log(`Next article (ID:${data.nextFeed.id}) thumbnail:`, extractedThumbnails[`next-${data.nextFeed.id}`]);
                     }
                     
                     setThumbnails(extractedThumbnails);

@@ -1,7 +1,9 @@
 import { useLocation } from "wouter"
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 
 export function HashTag({ name }: { name: string }) {
+    const { t } = useTranslation()
     const [_, setLocation] = useLocation()
     const [isHovered, setIsHovered] = useState(false)
     const [isVisible, setIsVisible] = useState(false)
@@ -69,8 +71,8 @@ export function HashTag({ name }: { name: string }) {
                 ${tagColor}
                 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}
                 hover:shadow-enhanced-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-theme/30`}
-            aria-label={`标签: ${name}`}
-            title={`查看标签: ${name}`}
+            aria-label={t("hashtag.aria_label", { name })}
+            title={t("hashtag.view_title", { name })}
             role="link"
         >
             <div className="flex gap-0.5 items-center">

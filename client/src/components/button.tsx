@@ -1,4 +1,4 @@
-import ReactLoading from "react-loading";
+import { InlineSpinner } from "./loading";
 
 export function Button({ title, onClick, secondary = false }: { title: string, secondary?: boolean, onClick: () => void }) {
     return (
@@ -40,7 +40,7 @@ export function ButtonWithLoading({ title, onClick, loading, secondary = false }
                 space-x-2 flex flex-row items-center justify-center
             `}
         >
-            {loading && <ReactLoading width="1em" height="1em" type="spin" color={secondary ? "currentColor" : "#FFF"} />}
+            {loading && <InlineSpinner size="small" className={secondary ? "text-current" : "text-white"} />}
             <span>
                 {title}
             </span>

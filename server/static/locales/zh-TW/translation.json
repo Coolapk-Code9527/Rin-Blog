@@ -68,7 +68,8 @@
   "confirm": "確認",
   "content": {
     "empty": "內容不能為空",
-    "placeholder": "還沒有內容。在左側編輯區域開始寫作。"
+    "placeholder": "還沒有內容。在左側編輯區域開始寫作。",
+    "writing_placeholder": "在這裡開始寫作..."
   },
   "count": {
     "pv": "瀏覽數",
@@ -114,7 +115,9 @@
       "rejected": "拒絕",
       "waiting": "待審核"
     },
-    "title": "朋友們"
+    "title": "朋友們",
+    "total$count_one": "{{count}} 位朋友",
+    "total$count_other": "{{count}} 位朋友"
   },
   "github_login": "Github 登入",
   "hashtags": "標籤",
@@ -258,7 +261,10 @@
   "visible": {
     "self_only": "僅自己可見"
   },
-  "writing": "寫作",
+  "writing": {
+    "title": "寫作",
+    "title_hint": "主標題請在此輸入，正文無需再寫一級標題（# 標題）。"
+  },
   "year$year": "{{year}} 年",
   "editing": "編輯中...",
   "unnamed": "未命名",
@@ -266,5 +272,19 @@
   "date_format": {
     "month_day": "MM/DD"
   },
-  "recommended_posts": "推薦閱讀"
+  "recommended_posts": "推薦閱讀",
+  "input_required": "所有欄位均不能為空",
+  "input_too_long": "欄位長度超出限制",
+  "error_messages": {
+    "certificate_expired": "憑證已過期",
+    "unable_to_connect": "無法存取"
+  },
+  "tips": {
+    "note": "注意",
+    "tips": "提示",
+    "warn": "警告",
+    "error": "錯誤",
+    "info": "資訊",
+    "important": "重要"
+  }
 }

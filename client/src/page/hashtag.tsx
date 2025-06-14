@@ -93,7 +93,11 @@ export function HashtagPage({ name }: { name: string }) {
                 <meta property="og:image" content={process.env.AVATAR} />
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
-                <meta name="description" content={`${hashtag?.name}：${hashtag?.description || ''}，共${hashtag?.feeds?.length || 0}篇文章。`} />
+                <meta name="description" content={t("hashtag.meta_description", {
+                    name: hashtag?.name,
+                    description: hashtag?.description || '',
+                    count: hashtag?.feeds?.length || 0
+                })} />
             </Helmet>
             <PageContainer>
                 <Waiting for={hashtag || status === 'idle'}>

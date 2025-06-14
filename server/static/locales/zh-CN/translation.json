@@ -71,7 +71,8 @@
   "confirm": "确认",
   "content": {
     "empty": "内容不能为空",
-    "placeholder": "还没有内容。在左侧编辑区域开始写作。"
+    "placeholder": "还没有内容。在左侧编辑区域开始写作。",
+    "writing_placeholder": "在这里开始写作..."
   },
   "count": {
     "pv": "浏览数",
@@ -279,7 +280,10 @@
   "visible": {
     "self_only": "仅自己可见"
   },
-  "writing": "写作",
+  "writing": {
+    "title": "写作",
+    "title_hint": "主标题请在此输入，正文无需再写一级标题（# 标题）。"
+  },
   "year$year": "{{year}} 年",
   "templates": {
     "templates": "模板",
@@ -330,7 +334,9 @@
       "rejected": "已拒绝",
       "waiting": "待审核"
     },
-    "title": "朋友"
+    "title": "朋友",
+    "total$count_one": "{{count}} 位朋友",
+    "total$count_other": "{{count}} 位朋友"
   },
   "markdown": {
     "heading": "标题",
@@ -402,5 +408,19 @@
   "image_load_error": "图片加载失败",
   "unlisted_description": "未列出的文章，有链接才能访问",
   "draft_description": "文章草稿区，仅自己可见",
-  "recommended_posts": "推荐阅读"
+  "recommended_posts": "推荐阅读",
+  "input_required": "所有字段均不能为空",
+  "input_too_long": "字段长度超出限制",
+  "error_messages": {
+    "certificate_expired": "证书已过期",
+    "unable_to_connect": "无法访问"
+  },
+  "tips": {
+    "note": "注意",
+    "tips": "提示",
+    "warn": "警告",
+    "error": "错误",
+    "info": "信息",
+    "important": "重要"
+  }
 }

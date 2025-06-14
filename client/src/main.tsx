@@ -32,8 +32,8 @@ export const endpoint = isDev
 
 // 如果在生产环境中没有设置API_URL，在控制台发出警告
 if (!isDev && !endpoint) {
-  console.error('警告: 生产环境中未设置API_URL环境变量，API请求可能无法正常工作');
-  console.log('请在Cloudflare Pages中设置API_URL环境变量，指向您的API服务器地址');
+  console.error('Warning: API_URL environment variable not set in production, API requests may not work properly');
+  console.log('Please set API_URL environment variable in Cloudflare Pages pointing to your API server address');
 }
 
 // OAuth URL同样从API端点派生
@@ -41,8 +41,8 @@ export const oauth_url = endpoint + '/user/github';
 export const client = treaty<ServerType>(endpoint) as unknown as ApiClient;
 
 // 调试信息
-console.log('当前环境:', isDev ? '开发环境' : '生产环境');
-console.log('API端点:', endpoint);
+console.log('Current environment:', isDev ? 'Development' : 'Production');
+console.log('API endpoint:', endpoint);
 
 listenSystemMode()
 
@@ -68,10 +68,10 @@ const i18n = i18next;
     },
   })
   .then(() => {
-    console.log('i18n 初始化完成，当前语言:', (i18n as any).language);
+    console.log('i18n initialization completed, current language:', (i18n as any).language);
   })
   .catch((err) => {
-    console.error('i18n 初始化失败:', err);
+    console.error('i18n initialization failed:', err);
   });
 
 const helmetContext = {};

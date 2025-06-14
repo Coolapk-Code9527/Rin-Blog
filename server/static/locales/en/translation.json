@@ -69,7 +69,8 @@
   "confirm": "Confirm",
   "content": {
     "empty": "Content cannot be empty",
-    "placeholder": "No content now. Write on the left side."
+    "placeholder": "No content now. Write on the left side.",
+    "writing_placeholder": "Start writing here..."
   },
   "count": {
     "pv": "Page View",
@@ -115,7 +116,9 @@
       "rejected": "Rejected",
       "waiting": "Pending review"
     },
-    "title": "Friends"
+    "title": "Friends",
+    "total$count_one": "{{count}} friend",
+    "total$count_other": "{{count}} friends"
   },
   "github_login": "Github Login",
   "hashtags": "Hashtags",
@@ -262,7 +265,10 @@
   "visible": {
     "self_only": "Visible to self only"
   },
-  "writing": "Writing",
+  "writing": {
+    "title": "Writing",
+    "title_hint": "Please enter the main title here. No need to write a level-1 heading (# title) in the content."
+  },
   "year$year": "{{year}}",
   "templates": {
     "templates": "Templates",
@@ -350,5 +356,19 @@
     "advanced": "Advanced",
     "tools": "Tools"
   },
-  "recommended_posts": "Recommended Posts"
+  "recommended_posts": "Recommended Posts",
+  "input_required": "All fields are required",
+  "input_too_long": "Field length exceeds limit",
+  "error_messages": {
+    "certificate_expired": "Certificate has expired",
+    "unable_to_connect": "Unable to connect"
+  },
+  "tips": {
+    "note": "Note",
+    "tips": "Tips",
+    "warn": "Warning",
+    "error": "Error",
+    "info": "Info",
+    "important": "Important"
+  }
 }

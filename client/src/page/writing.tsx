@@ -9,7 +9,7 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {Helmet} from "react-helmet-async";
 import {useTranslation} from "react-i18next";
-import Loading from 'react-loading';
+import { MacOSSpinner, InlineSpinner } from '../components/loading';
 import {ShowAlertType, useAlert} from '../components/dialog';
 import {Checkbox, Input} from "../components/input";
 import {Markdown} from "../components/markdown";
@@ -1429,7 +1429,7 @@ export function WritingPage({ id }: { id?: number }) {
             setValue={setTitle}
             placeholder={t("title")}
           />
-          <p className="text-xs text-gray-400 mt-1 ml-1">主标题请在此输入，正文无需再写一级标题（# 标题）。</p>
+          <p className="text-xs text-gray-400 mt-1 ml-1">{t("writing.title_hint")}</p>
           <Input
             id={id}
             value={summary}
@@ -1536,7 +1536,7 @@ export function WritingPage({ id }: { id?: number }) {
                 <div className="flex-grow" />
                 {uploading &&
                   <div className="flex flex-row space-x-2 items-center">
-                    <Loading type="spin" color="#FC466B" height={16} width={16} />
+                    <InlineSpinner size="small" />
                     <span className="text-sm text-neutral-500">{t('uploading')}</span>
                   </div>
                 }
@@ -1671,7 +1671,7 @@ export function WritingPage({ id }: { id?: number }) {
                     onScroll={handlePreviewScroll}
                     style={{height: '100%', overflow: 'auto'}} 
                   >
-                    <Markdown content={content ? content : `> ${t('content.placeholder')}`} />
+                    <Markdown content={content ? content : `> ${t('content.writing_placeholder')}`} />
                   </div>
                 </div>
               </div>
@@ -1684,7 +1684,7 @@ export function WritingPage({ id }: { id?: number }) {
             >
               {publishing ? (
                 <div className="flex items-center">
-                  <Loading type="spin" height={16} width={16} className="mr-2" />
+                  <InlineSpinner size="small" className="mr-2" />
                   <span>{t('publishing')}</span>
                 </div>
               ) : (
@@ -1705,7 +1705,7 @@ export function WritingPage({ id }: { id?: number }) {
             >
               {publishing ? (
                 <div className="flex items-center">
-                  <Loading type="spin" height={16} width={16} className="mr-2" />
+                  <InlineSpinner size="small" className="mr-2" />
                   <span>{t('publishing')}</span>
                 </div>
               ) : (

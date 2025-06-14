@@ -63,13 +63,17 @@
       "next": "下一頁",
       "page": "第 {{page}} 頁",
       "title": "留言分頁"
-    }
+    },
+    "invalid_email": "請輸入有效的電子郵件地址",
+    "email_label": "電子郵件 (選填)",
+    "email_placeholder": "your@email.com (選填)"
   },
   "comparison": "比較",
   "confirm": "確認",
   "content": {
     "empty": "內容不能為空",
-    "placeholder": "還沒有內容。在左側編輯區域開始寫作。"
+    "placeholder": "還沒有內容。在左側編輯區域開始寫作。",
+    "writing_placeholder": "在這裡開始寫作..."
   },
   "count": {
     "pv": "瀏覽數",
@@ -173,10 +177,17 @@
       "rejected": "拒絕",
       "waiting": "待審核"
     },
-    "title": "朋友們"
+    "title": "朋友們",
+    "total$count_one": "{{count}} 位朋友",
+    "total$count_other": "{{count}} 位朋友"
   },
   "github_login": "Github 登入",
   "hashtags": "標籤",
+  "hashtag": {
+    "aria_label": "標籤: {{name}}",
+    "view_title": "查看標籤: {{name}}",
+    "meta_description": "{{name}}：{{description}}，共{{count}}篇文章。"
+  },
   "home": "首頁",
   "index": {
     "back": "返回首頁",
@@ -291,6 +302,10 @@
     }
   },
   "sitename": "網站名稱",
+  "site": {
+    "default_name": "個人部落格",
+    "default_description": "個人部落格"
+  },
   "status": "狀態",
   "summary": "簡介",
   "tags": "標籤",
@@ -322,12 +337,29 @@
   "visible": {
     "self_only": "僅自己可見"
   },
-  "writing": "寫作",
+  "writing": {
+    "title": "寫作",
+    "title_hint": "主標題請在此輸入，正文無需再寫一級標題（# 標題）。"
+  },
   "year$year": "{{year}} 年",
   "editing": "編輯中...",
   "unnamed": "未命名",
   "published_at": "發布於",
   "date_format": {
     "month_day": "MM/DD"
+  },
+  "input_required": "所有欄位均不能為空",
+  "input_too_long": "欄位長度超出限制",
+  "error_messages": {
+    "certificate_expired": "憑證已過期",
+    "unable_to_connect": "無法存取"
+  },
+  "tips": {
+    "note": "注意",
+    "tips": "提示",
+    "warn": "警告",
+    "error": "錯誤",
+    "info": "資訊",
+    "important": "重要"
   }
 }

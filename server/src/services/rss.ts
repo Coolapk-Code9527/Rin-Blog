@@ -16,6 +16,7 @@ import { feeds, users } from "../db/schema";
 import { getEnv } from "../utils/di";
 import { extractImage } from "../utils/image";
 import { createS3Client } from "../utils/s3";
+import { ClientConfig } from "../utils/cache";
 
 export function RSSService() {
     const env: Env = getEnv();
@@ -24,6 +25,13 @@ export function RSSService() {
     const folder = env.S3_CACHE_FOLDER || 'cache/';
     return new Elysia({ aot: false })
         .get('/sub/:name', async ({ set, params: { name } }) => {
+            // 检查RSS功能是否启用
+            const rssEnabled = await ClientConfig().getOrDefault('rss', true);
+            if (!rssEnabled) {
+                set.status = 404;
+                return 'RSS feature is disabled';
+            }
+
             const host = `${(accessHost.startsWith("http://") || accessHost.startsWith("https://") ? '' :'https://')}${accessHost}`;
             if (!host) {
                 set.status = 500;
