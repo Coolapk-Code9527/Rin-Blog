@@ -88,11 +88,11 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     return (
             <Link href={`/feed/${id}`}
             className={`group block w-full rounded-2xl h-full duration-300 overflow-hidden hover:shadow-enhanced-xl transition-all transform hover:-translate-y-2 border ${top === 1
-                ? 'bg-white/95 dark:bg-gray-800/95 border-theme/40 dark:border-theme/30 shadow-enhanced-lg ring-2 ring-theme/15 backdrop-blur-md'
-                : 'bg-white/90 dark:bg-gray-800/90 border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced hover:border-neutral-400/80 dark:hover:border-neutral-500/80 backdrop-blur-sm hover:backdrop-blur-md'}
+                ? 'bg-white/80 dark:bg-gray-800/80 border-theme/40 dark:border-theme/30 shadow-enhanced-lg ring-2 ring-theme/15 backdrop-blur-md'
+                : 'bg-white/75 dark:bg-gray-800/75 border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced hover:border-neutral-400/80 dark:hover:border-neutral-500/80 backdrop-blur-md hover:backdrop-blur-xl'}
                 flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px]
                 focus:outline-none focus:ring-2 focus:ring-theme/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900
-                hover:bg-white/95 dark:hover:bg-gray-800/95
+                hover:bg-white/85 dark:hover:bg-gray-800/85
             `}
             aria-labelledby={`article-title-${id}`}
             onMouseEnter={prefetchArticle}

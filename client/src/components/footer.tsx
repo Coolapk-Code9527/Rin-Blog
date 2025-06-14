@@ -121,7 +121,7 @@ function Spliter() {
 
 function ThemeButton({ current, mode, label, icon, onClick }: { current: ThemeMode, label: string, mode: ThemeMode, icon: string, onClick: (mode: ThemeMode) => void }) {
     return (<button aria-label={label} type="button" onClick={() => onClick(mode)}
-        className={`rounded-inherit inline-flex h-[32px] w-[32px] items-center justify-center border-0 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:scale-[0.98] active:scale-[0.96] ${current === mode ? "bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-full shadow-enhanced-lg" : "hover:bg-gray-100/50 dark:hover:bg-gray-700/50"}`}>
+        className={`rounded-inherit inline-flex h-[32px] w-[32px] items-center justify-center border-0 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:scale-[0.98] active:scale-[0.96] ${current === mode ? "bg-white/75 dark:bg-gray-800/75 backdrop-blur-md rounded-full shadow-enhanced-lg" : "hover:bg-gray-100/50 dark:hover:bg-gray-700/50"}`}>
         <i className={`${icon}`} />
     </button>)
 }

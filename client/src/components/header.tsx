@@ -10,6 +10,7 @@ import { IconSmall } from "./icon";
 import { Input } from "./input";
 import { Padding } from "./padding";
 import { ClientConfigContext } from "../state/config";
+import { useConfirm } from "./dialog";
 import React from 'react';
 
 
@@ -336,10 +337,19 @@ function MobileMenu() {
         }
     };
     
+    // 退出登录确认弹窗
+    const { showConfirm, ConfirmUI } = useConfirm();
+
     // 处理退出登录
     const handleLogout = () => {
-        removeCookie("token");
-        window.location.reload();
+        showConfirm(
+            t('logout_confirm_title', { defaultValue: '确认退出登录' }),
+            t('logout_confirm_message', { defaultValue: '您确定要退出登录吗？' }),
+            () => {
+                removeCookie("token");
+                window.location.reload();
+            }
+        );
     };
 
     return (
@@ -442,6 +452,7 @@ function MobileMenu() {
                                         )}
                                     </div>
                                     <LoginModal /> {/* Ensure LoginModal is rendered to be usable */}
+                                    <ConfirmUI /> {/* 退出登录确认弹窗 */}
 
                                     {/* 搜索和语言区域 */}
                                     <div className="px-3 py-3 border-b border-neutral-200/60 dark:border-neutral-700/60">
@@ -450,7 +461,7 @@ function MobileMenu() {
                                             {!isSearchExpanded ? (
                                                 <button 
                                                     onClick={() => setIsSearchExpanded(true)}
-                                                    className="flex items-center w-full p-2 text-xs text-gray-700 dark:text-gray-300 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-full border border-theme/30 dark:border-theme/40 hover:border-theme dark:hover:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
+                                                    className="flex items-center w-full p-2 text-xs text-gray-700 dark:text-gray-300 bg-white/75 dark:bg-gray-800/75 backdrop-blur-md rounded-full border border-theme/30 dark:border-theme/40 hover:border-theme dark:hover:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
                                                     aria-label={t('article.search.title')}
                                                 >
                                                     <i className="ri-search-line text-theme/60 mr-2 text-sm"></i>
@@ -467,7 +478,7 @@ function MobileMenu() {
                                                         onChange={(e) => setSearchValue(e.target.value)}
                                                         onKeyDown={(e) => e.key === 'Enter' && onSearch()}
                                                         placeholder={t('article.search.placeholder')}
-                                                        className="w-full py-2 pl-8 pr-9 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-theme/30 dark:border-theme/40 rounded-full text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:shadow-enhanced-lg focus:outline-none transition-all duration-200 text-xs"
+                                                        className="w-full py-2 pl-8 pr-9 bg-white/75 dark:bg-gray-800/75 backdrop-blur-md border border-theme/30 dark:border-theme/40 rounded-full text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:shadow-enhanced-lg focus:outline-none transition-all duration-200 text-xs"
                                                         aria-controls={searchHistory.length > 0 ? "mobile-search-history" : undefined}
                                                         aria-expanded={isSearchExpanded}
                                                         autoComplete="off"
@@ -510,12 +521,20 @@ function MobileMenu() {
                                             {isSearchExpanded && searchHistory.length > 0 && (
                                                 <div 
                                                     id="mobile-search-history"
-                                                    className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg z-20 overflow-hidden animate-slideDown"
+                                                    className="absolute top-full left-0 right-0 mt-2 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg z-20 overflow-hidden animate-slideDown"
+                                                    style={{
+                                                        backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                                                        WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                                                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)'
+                                                    }}
                                                     role="listbox"
-                                                    style={{boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)'}}
                                                 >
                                                     <div className="max-h-36 overflow-y-auto">
-                                                        <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-gray-700">
+                                                        <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl z-10 border-b border-gray-100 dark:border-gray-700"
+                                                            style={{
+                                                                backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                                                                WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
+                                                            }}>
                                                             <span className="flex items-center">
                                                                 <i className="ri-history-line mr-1.5 text-theme/70"></i>
                                                                 {t('article.search.history')}
@@ -578,7 +597,11 @@ function MobileMenu() {
                                             </button>
 
                                             <div className={`absolute top-full left-0 right-0 z-30 ${showLanguages ? 'block' : 'hidden'}`} style={{ maxHeight: '300px' }}>
-                                                <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced-lg overflow-hidden animate-slideDown mt-1">
+                                                <div className="bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced-lg overflow-hidden animate-slideDown mt-1"
+                                                    style={{
+                                                        backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                                                        WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
+                                                    }}>
                                                     {languages.map(({ code, name, flag }) => (
                                                         <button 
                                                             key={code} 
@@ -688,11 +711,16 @@ function LanguageSwitch({ className }: { className?: string }) {
             
             {isOpen && (
                 <div 
-                    className="absolute top-full right-0 mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/50 dark:border-gray-700/50 z-50 animate-slideDown"
+                    className="absolute top-full right-0 mt-2 bg-white/85 dark:bg-gray-900/85 backdrop-blur-xl rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/60 dark:border-gray-700/60 z-50 animate-slideDown"
+                    style={{
+                        backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                        WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                        maxHeight: '300px',
+                        overflowY: 'auto'
+                    }}
                     role="menu"
                     aria-orientation="vertical"
                     aria-labelledby="language-menu"
-                    style={{ maxHeight: '300px', overflowY: 'auto' }}
                 >
                     <p className='font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center'>
                         <i className="ri-translate-2 mr-1.5 text-theme"></i>
@@ -911,7 +939,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={getTranslatedText('article.search.placeholder', '搜索文章...')}
-                            className={`${getSearchInputWidthClass()} py-2 pl-8 pr-9 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-theme/30 dark:border-theme/40 rounded-full text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:shadow-enhanced-lg transition-all duration-200 text-xs`}
+                            className={`${getSearchInputWidthClass()} py-2 pl-8 pr-9 bg-white/75 dark:bg-gray-800/75 backdrop-blur-md border border-theme/30 dark:border-theme/40 rounded-full text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:shadow-enhanced-lg transition-all duration-200 text-xs`}
                             aria-expanded={isExpanded}
                             autoComplete="off"
                             aria-autocomplete="list"
@@ -954,12 +982,20 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                     {isExpanded && searchHistory.length > 0 && (
                         <div 
                             id="search-history-dropdown"
-                            className={`absolute top-full mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg z-50 overflow-hidden animate-slideDown ${getHistoryDropdownPositionClass()}`}
+                            className={`absolute top-full mt-2 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg z-50 overflow-hidden animate-slideDown ${getHistoryDropdownPositionClass()}`}
                             role="listbox"
-                            style={{boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)'}}
+                            style={{
+                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)',
+                                backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                                WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
+                            }}
                         >
                             <div className="max-h-48 overflow-y-auto">
-                                <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-gray-700">
+                                <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl z-10 border-b border-gray-100 dark:border-gray-700"
+                                    style={{
+                                        backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                                        WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
+                                    }}>
                                     <span className="flex items-center">
                                         <i className="ri-history-line mr-1.5 text-theme/70"></i>
                                         {getTranslatedText('article.search.history', '搜索历史')}
@@ -1013,6 +1049,9 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
     const config = useContext(ClientConfigContext);
     const [isOpen, setIsOpen] = useState(false);
     const userMenuRef = useRef<HTMLDivElement>(null);
+
+    // 退出登录确认弹窗
+    const { showConfirm, ConfirmUI } = useConfirm();
     
     // 监听点击外部关闭菜单
     useEffect(() => {
@@ -1032,8 +1071,14 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
     
     // 处理退出登录
     const handleLogout = () => {
-        removeCookie("token");
-        window.location.reload();
+        showConfirm(
+            t('logout_confirm_title', { defaultValue: '确认退出登录' }),
+            t('logout_confirm_message', { defaultValue: '您确定要退出登录吗？' }),
+            () => {
+                removeCookie("token");
+                window.location.reload();
+            }
+        );
     };
 
     if (!config.get<boolean>('login.enabled')) return null;
@@ -1058,7 +1103,11 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                     
                     {isOpen && (
                         <div 
-                            className="absolute top-full right-0 mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl shadow-xl p-2 w-64 border border-gray-200/50 dark:border-gray-700/50 z-20 animate-slideDown"
+                            className="absolute top-full right-0 mt-2 bg-white/85 dark:bg-gray-900/85 backdrop-blur-xl rounded-xl shadow-xl p-2 w-64 border border-gray-200/60 dark:border-gray-700/60 z-20 animate-slideDown"
+                            style={{
+                                backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                                WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
+                            }}
                             role="menu"
                             aria-orientation="vertical"
                             aria-labelledby="user-menu"
@@ -1099,6 +1148,7 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                 </button>
             )}
             <LoginModal />
+            <ConfirmUI />
         </div>
     )
 }
@@ -1138,7 +1188,11 @@ function CollapsedMenu() {
             </button>
             
             {isOpen && (
-                <div className="absolute right-0 mt-2 py-2 w-48 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60 z-20 animate-slideDown">
+                <div className="absolute right-0 mt-2 py-2 w-48 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl rounded-lg shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60 z-20 animate-slideDown"
+                    style={{
+                        backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                        WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
+                    }}>
                     <NavBar menu={true} onClick={() => setIsOpen(false)} />
                 </div>
             )}

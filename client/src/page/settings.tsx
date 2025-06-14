@@ -197,7 +197,7 @@ export function Settings() {
                     }
                 }}
             >
-                <div className="flex flex-col items-start p-6 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60">
+                <div className="flex flex-col items-start p-6 bg-white/75 dark:bg-gray-800/75 backdrop-blur-md rounded-2xl shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60">
                     <h1 className="text-2xl font-bold t-primary mb-4">
                         {t('settings.import_result')}
                     </h1>
@@ -217,11 +217,7 @@ export function Settings() {
                         </ul>
                     </div>
                     <div className="w-full flex flex-col items-center mt-4">
-                        <button onClick={() => {
-                            setIsOpen(false);
-                        }} className="bg-theme text-white rounded-xl px-8 py-2.5 h-min font-medium shadow-enhanced hover:shadow-enhanced-lg hover:bg-theme-hover active:bg-theme-active transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96]">
-                            {t('close')}
-                        </button>
+                        <Button title={t('close')} onClick={() => setIsOpen(false)} />
                     </div>
                 </div>
             </Modal>
@@ -291,7 +287,7 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
     }
     
     return (
-        <div className="flex flex-col w-full items-start bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
+        <div className="flex flex-col w-full items-start bg-white/75 dark:bg-gray-800/75 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
             <div className="flex flex-row justify-between w-full items-center">
                 <div className="flex flex-col">
                     <p className="text-lg font-semibold t-primary">
@@ -367,7 +363,7 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
     }
     
     return (
-        <div className="flex flex-col w-full items-start bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
+        <div className="flex flex-col w-full items-start bg-white/75 dark:bg-gray-800/75 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
             <div className="flex flex-row justify-between w-full items-center">
                 <div className="flex flex-col">
                     <p className="text-lg font-bold dark:text-white">
@@ -413,7 +409,7 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
                     }
                 }}
             >
-                <div className="flex flex-col items-start p-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md space-y-4 w-full shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60 rounded-2xl">
+                <div className="flex flex-col items-start p-4 bg-white/75 dark:bg-gray-800/75 backdrop-blur-xl space-y-4 w-full shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60 rounded-2xl">
                     <h1 className="text-2xl font-bold t-primary">
                         {t('update$sth', { sth: configKeyTitle })}
                     </h1>
@@ -454,7 +450,7 @@ function ItemButton({
     }) {
     const { showConfirm, ConfirmUI } = useConfirm();
     return (
-        <div className="flex flex-col w-full items-start bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
+        <div className="flex flex-col w-full items-start bg-white/75 dark:bg-gray-800/75 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
             <div className="flex flex-row justify-between w-full items-center">
                 <div className="flex flex-col">
                     <p className="text-lg font-bold dark:text-white">
@@ -500,7 +496,7 @@ function ItemWithUpload({
     };
 
     return (
-        <div className="flex flex-col w-full items-start bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
+        <div className="flex flex-col w-full items-start bg-white/75 dark:bg-gray-800/75 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
             <div className="flex flex-row justify-between w-full items-center">
                 <div className="flex flex-col">
                     <p className="text-lg font-bold dark:text-white">{title}</p>

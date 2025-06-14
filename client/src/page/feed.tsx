@@ -15,7 +15,7 @@ import {ProfileContext} from "../state/profile";
 import {headersWithAuth} from "../utils/auth";
 import {siteName} from "../utils/constants";
 import {timeago} from "../utils/timeago";
-import {Button} from "../components/button";
+import {Button, IconButton} from "../components/button";
 import {Tips} from "../components/tips";
 import {useLoginModal} from "../hooks/useLoginModal";
 import mermaid from "mermaid";
@@ -251,18 +251,13 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                 {profile?.permission && (
                   <div className="flex sm:hidden justify-center mt-3 gap-3 article-action-group">
                     <div className="group relative">
-                      <button
-                        aria-label={top > 0 ? t("untop.title") : t("top.title")}
+                      <IconButton
+                        icon="ri-skip-up-line"
                         onClick={topFeed}
-                        className={`w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border transition-all duration-200
-                          ${top > 0
-                            ? "bg-blue-50/80 dark:bg-blue-900/40 text-blue-600 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-800"
-                            : "bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"}
-                          hover:scale-105 active:scale-95`}
-                        style={{backdropFilter: 'blur(4px)'}}
-                      >
-                        <i className="ri-skip-up-line text-base"></i>
-                      </button>
+                        title={top > 0 ? t("untop.title") : t("top.title")}
+                        variant={top > 0 ? "info" : "secondary"}
+                        size="small"
+                      />
                       <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
                         {top > 0 ? t("untop.title") : t("top.title")}
                       </span>
@@ -281,14 +276,13 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       </span>
                     </div>
                     <div className="group relative">
-                      <button
-                        aria-label={t("delete.title")}
+                      <IconButton
+                        icon="ri-delete-bin-7-line"
                         onClick={deleteFeed}
-                        className="w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-red-500 border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 active:scale-95 transition-all duration-200"
-                        style={{backdropFilter: 'blur(4px)'}}
-                      >
-                        <i className="ri-delete-bin-7-line text-base"></i>
-                      </button>
+                        title={t("delete.title")}
+                        variant="danger"
+                        size="small"
+                      />
                       <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
                         {t("delete.title")}
                       </span>
@@ -402,13 +396,13 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
 
   return (
     <div className="lg:hidden">
-      <button
+      <IconButton
+        icon="ri-menu-2-fill"
         onClick={() => setIsOpened(true)}
-        className="w-10 h-10 rounded-full flex flex-row items-center justify-center bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60"
-        aria-label="显示目录"
-      >
-        <i className="ri-menu-2-fill t-primary ri-lg"></i>
-      </button>
+        title="显示目录"
+        variant="secondary"
+        size="medium"
+      />
       <ReactModal
         isOpen={isOpened}
         style={{
@@ -443,13 +437,13 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
               <i className="ri-list-unordered text-theme"></i>
               {t("toc.title", { defaultValue: "目录" })}
             </h3>
-            <button 
+            <IconButton
+              icon="ri-close-line"
               onClick={() => setIsOpened(false)}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-              aria-label="关闭目录"
-            >
-              <i className="ri-close-line text-lg"></i>
-            </button>
+              title="关闭目录"
+              variant="secondary"
+              size="small"
+            />
           </div>
           <div className="custom-scrollbar overflow-y-auto max-h-[50vh] pt-1 pl-1">
             <TOC />
@@ -671,27 +665,11 @@ function CommentInput({
               </div>
             )}
             <div className="flex-grow"></div>
-            <button
-              disabled={submitting}
-              className={`px-4 py-2 rounded-2xl flex items-center text-sm shadow-enhanced hover:shadow-enhanced-lg transition-all duration-200 ${
-                submitting
-                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                  : 'bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-[0.98] active:scale-[0.96]'
-              }`}
+            <Button
+              title={submitting ? t("publishing") : t("comment.submit")}
               onClick={submit}
-            >
-              {submitting ? (
-                <>
-                  <InlineSpinner size="small" className="mr-1" />
-                  {t("publishing")}
-                </>
-              ) : (
-                <>
-                  <i className="ri-send-plane-fill mr-1"></i>
-                  {t("comment.submit")}
-                </>
-              )}
-            </button>
+              disabled={submitting}
+            />
           </div>
         </div>
       ) : (
@@ -700,13 +678,10 @@ function CommentInput({
             <i className="ri-user-follow-line text-5xl text-gray-200 dark:text-gray-700 mb-3 block"></i>
             <p className="text-gray-500 dark:text-gray-400 text-sm">{t("login.required")}</p>
           </div>
-          <button
-            className="bg-theme text-white px-4 py-2 rounded-2xl hover:bg-theme-hover active:bg-theme-active shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96] transition-all duration-200 flex items-center text-sm font-medium"
+          <Button
+            title={t("login.title")}
             onClick={() => setIsOpened(true)}
-          >
-            <i className="ri-login-circle-line mr-1"></i>
-            {t("login.title")}
-          </button>
+          />
         </div>
       )}
       
@@ -1131,34 +1106,31 @@ function CommentItem({
             isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
           }`}>
             {/* 回复按钮 */}
-            <button
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                showReplyForm
-                  ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20'
-                  : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-              }`}
+            <IconButton
+              icon="ri-reply-line"
               onClick={() => setShowReplyForm(!showReplyForm)}
               title={`回复 ${isAnonymous ? displayName : comment.user?.username || 'Unknown'}`}
-            >
-              <i className="ri-reply-line text-sm"></i>
-            </button>
+              variant={showReplyForm ? 'info' : 'secondary'}
+              size="small"
+            />
 
             {/* 点赞按钮（预留功能） */}
-            <button
-              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
+            <IconButton
+              icon="ri-heart-line"
+              onClick={() => {}}
               title="点赞"
-            >
-              <i className="ri-heart-line text-sm"></i>
-            </button>
+              variant="secondary"
+              size="small"
+            />
 
             {canDelete && (
-              <button
-                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
+              <IconButton
+                icon="ri-delete-bin-line"
                 onClick={deleteComment}
                 title={t("delete.title")}
-              >
-                <i className="ri-delete-bin-line text-sm"></i>
-              </button>
+                variant="danger"
+                size="small"
+              />
             )}
           </div>
         </div>
@@ -1187,13 +1159,13 @@ function CommentItem({
                 </span>
               )}
             </div>
-            <button
+            <IconButton
+              icon="ri-close-line"
               onClick={() => setShowReplyForm(false)}
-              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
               title="关闭回复框"
-            >
-              <i className="ri-close-line text-sm"></i>
-            </button>
+              variant="secondary"
+              size="small"
+            />
           </div>
           <CommentInput
             id={feedId}

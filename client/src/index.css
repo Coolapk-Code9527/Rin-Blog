@@ -25,6 +25,9 @@
   --primary-light: #339FFF;
   --primary-dark: #0056CC;
 
+  /* 主题色RGB值 - 用于rgba函数 */
+  --theme-rgb: 0, 122, 255;
+
   /* 语义化颜色 - 遵循苹果 HIG */
   --success: #34C759;
   --success-light: #5DD87A;
@@ -99,20 +102,20 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* 确保毛玻璃效果的支持 */
+/* 增强的毛玻璃效果 - macOS风格 */
 .backdrop-blur-sm {
-  backdrop-filter: blur(8px) saturate(150%);
-  -webkit-backdrop-filter: blur(8px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.1);
 }
 
 .backdrop-blur-md {
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(200%) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.1);
 }
 
 .backdrop-blur-xl {
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(220%) brightness(1.15);
+  -webkit-backdrop-filter: blur(40px) saturate(220%) brightness(1.15);
 }
 
 /* 增强阴影效果 */
@@ -158,17 +161,17 @@ body {
     0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-/* 现代化的毛玻璃卡片效果 */
+/* 增强的毛玻璃卡片效果 - 更明显的透明度 */
 .glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px) saturate(200%) brightness(1.1);
+  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 [data-color-mode="dark"] .glass-card {
-  background: rgba(13, 17, 23, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(13, 17, 23, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* 增强的按钮效果 */
@@ -198,31 +201,31 @@ body {
   left: 100%;
 }
 
-/* 现代化的导航栏毛玻璃效果 */
+/* 增强的导航栏毛玻璃效果 - 更明显的透明度 */
 .nav-glass {
-  background: rgba(255, 255, 255, 0.90);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.80);
+  backdrop-filter: blur(32px) saturate(220%) brightness(1.1);
+  -webkit-backdrop-filter: blur(32px) saturate(220%) brightness(1.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 [data-color-mode="dark"] .nav-glass {
-  background: rgba(13, 17, 23, 0.90);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(13, 17, 23, 0.80);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* 增强的标签效果 */
+/* 增强的标签毛玻璃效果 */
 .tag-enhanced {
   position: relative;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 [data-color-mode="dark"] .tag-enhanced {
-  background: rgba(33, 38, 45, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(33, 38, 45, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 /* 微妙的发光效果 */
@@ -240,6 +243,37 @@ body {
   box-shadow:
     0 0 20px rgba(0, 122, 255, 0.4),
     0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 增强的毛玻璃背景类 - 用于组件优化 */
+.glass-bg-light {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(200%) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.1);
+}
+
+[data-color-mode="dark"] .glass-bg-light {
+  background: rgba(13, 17, 23, 0.75) !important;
+}
+
+.glass-bg-medium {
+  background: rgba(255, 255, 255, 0.70) !important;
+  backdrop-filter: blur(24px) saturate(220%) brightness(1.15);
+  -webkit-backdrop-filter: blur(24px) saturate(220%) brightness(1.15);
+}
+
+[data-color-mode="dark"] .glass-bg-medium {
+  background: rgba(13, 17, 23, 0.70) !important;
+}
+
+.glass-bg-strong {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(32px) saturate(250%) brightness(1.2);
+  -webkit-backdrop-filter: blur(32px) saturate(250%) brightness(1.2);
+}
+
+[data-color-mode="dark"] .glass-bg-strong {
+  background: rgba(13, 17, 23, 0.65) !important;
 }
 
 /* 英文内容字体 */
@@ -1511,12 +1545,7 @@ i[class^="ri-"]::before, i[class*=" ri-"]::before {
   text-rendering: auto;
 }
 
-/* 分页按钮专用样式 - 覆盖全局.bg-button样式 */
-.pagination-btn {
-  position: relative !important;
-  transform: none !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
-}
+/* 分页按钮专用样式 - 已不再需要覆盖.bg-button样式 */
 
 .pagination-btn:hover {
   transform: translateY(-2px) !important;
@@ -1959,19 +1988,19 @@ button img.rounded-full:hover {
   max-height: 300px; /* 限制最大高度 */
 }
 
-/* 美化文章卡片 */
-.bg-button {
+/* 美化文章卡片 - 重命名为避免与base.css冲突 */
+.card-hover-effect {
   position: relative;
   background-color: var(--bg);
   transition: all 0.3s ease;
 }
 
-.bg-button:hover {
+.card-hover-effect:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.05);
 }
 
-.bg-button::after {
+.card-hover-effect::after {
   content: '';
   position: absolute;
   top: 0;
@@ -1989,7 +2018,7 @@ button img.rounded-full:hover {
   border-radius: inherit;
 }
 
-.bg-button:hover::after {
+.card-hover-effect:hover::after {
   opacity: 1;
 }
 

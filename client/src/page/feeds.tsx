@@ -199,8 +199,8 @@ export function FeedsPage() {
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                             </h1>
                             <div className="py-1.5 sm:px-3 sm:py-1.5 bg-neutral-100/80 dark:bg-neutral-800/80 rounded-xl text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium backdrop-blur-sm border border-neutral-200/40 dark:border-neutral-700/40">
-                                <i className="ri-article-line mr-1.5 text-theme"></i>
-                                {t('article.total$count', { count: feeds[listState]?.size })}
+                                <i className="ri-article-line text-theme"></i>
+                                <span className="ml-1.5">{t('article.total$count', { count: feeds[listState]?.size })}</span>
                             </div>
                         </div>
                         
@@ -208,26 +208,26 @@ export function FeedsPage() {
                         {profile?.permission && (
                             <div className="flex items-center gap-2 md:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
                                 <Link href="/writing/new"
-                                    className="flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-[0.98] hover:shadow-enhanced-lg glow-on-hover btn-enhanced">
-                                    <i className="ri-add-line mr-1.5"></i>
-                                    <span>{t('new_article')}</span>
+                                    className="flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:-translate-y-0.5 active:translate-y-0 hover:shadow-enhanced-lg glow-on-hover btn-enhanced">
+                                    <i className="ri-add-line"></i>
+                                    <span className="ml-1.5">{t('new_article')}</span>
                                 </Link>
                                 <div className="flex items-center gap-2">
                                     <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'}
-                                        className={`flex-1 sm:flex-none h-9 xs:h-auto px-3 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced transform hover:scale-[0.98] active:scale-[0.96]
+                                        className={`flex-1 sm:flex-none h-9 xs:h-auto px-3 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
                                         ${listState === 'draft'
                                         ? "bg-theme/12 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced-lg backdrop-blur-sm"
                                         : "bg-white/95 dark:bg-gray-800/95 text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme backdrop-blur-sm"}`}>
-                                        <i className="ri-draft-line mr-1.5 md:mr-2"></i>
-                                        <span className="hidden xs:inline">{t('draft_bin')}</span>
+                                        <i className="ri-draft-line"></i>
+                                        <span className="hidden xs:inline ml-1.5 md:ml-2">{t('draft_bin')}</span>
                                     </Link>
                                     <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'}
-                                        className={`flex-1 sm:flex-none h-9 xs:h-auto px-3 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced transform hover:scale-[0.98] active:scale-[0.96]
+                                        className={`flex-1 sm:flex-none h-9 xs:h-auto px-3 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
                                         ${listState === 'unlisted'
                                         ? "bg-theme/12 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced-lg backdrop-blur-sm"
                                         : "bg-white/95 dark:bg-gray-800/95 text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme backdrop-blur-sm"}`}>
-                                        <i className="ri-eye-off-line mr-1.5 md:mr-2"></i>
-                                        <span className="hidden xs:inline">{t('unlisted')}</span>
+                                        <i className="ri-eye-off-line"></i>
+                                        <span className="hidden xs:inline ml-1.5 md:ml-2">{t('unlisted')}</span>
                                     </Link>
                                 </div>
                             </div>
@@ -335,9 +335,9 @@ export function FeedsPage() {
                                 </p>
                             </div>
                             {profile?.permission && (
-                                <Link href="/writing/new" className="mt-4 px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center justify-center shadow-sm bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-105 hover:shadow-md">
-                                    <i className="ri-add-line mr-2"></i>
-                                    {t('create_now')}
+                                <Link href="/writing/new" className="mt-4 px-6 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:-translate-y-0.5 active:translate-y-0 hover:shadow-enhanced-lg">
+                                    <i className="ri-add-line"></i>
+                                    <span className="ml-2">{t('create_now')}</span>
                                 </Link>
                             )}
                         </div>

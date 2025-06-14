@@ -10,10 +10,7 @@
       background-color: var(--bg-secondary);
     }
 
-    .bg-button {
-      @apply hover:bg-neutral-200 dark:hover:bg-neutral-600 active:bg-neutral-300 dark:active:bg-neutral-500;
-      transition: all 0.2s ease;
-    }
+    /* .bg-button 类已移除，请使用统一的按钮组件系统 */
 
     .bg-hover {
       @apply hover:bg-neutral-200 dark:hover:bg-neutral-600;

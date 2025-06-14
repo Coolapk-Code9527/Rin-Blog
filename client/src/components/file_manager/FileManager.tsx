@@ -1226,13 +1226,12 @@ export function FileManager({
               </button>
             </div>
             {/* 单/多选模式切换按钮（仅icon） */}
-            <button
+            <IconButton
+              icon={`ri-checkbox-${multipleState ? 'multiple' : 'blank'}-line`}
               onClick={() => setMultiple(m => !m)}
-              className="px-3 py-2 h-10 bg-gray-100/80 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200"
               title={multipleState ? t('files.single_select') : t('files.multi_select')}
-            >
-              <i className={`ri-checkbox-${multipleState ? 'multiple' : 'blank'}-line`}></i>
-            </button>
+              variant="secondary"
+            />
             {/* 新建文件夹按钮 */}
             <IconButton
               icon="ri-folder-add-line"

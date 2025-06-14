@@ -79,8 +79,8 @@ export function RecentPosts() {
   }, []);
 
   return (
-    <section className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60" aria-label={t("recent_posts.title", { defaultValue: "最近发布" })}>
-      <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm z-10">
+    <section className="bg-white/75 dark:bg-gray-800/75 backdrop-blur-md rounded-2xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60" aria-label={t("recent_posts.title", { defaultValue: "最近发布" })}>
+      <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md z-10">
         <i className="ri-time-line text-theme"></i>
         {t("recent_posts.title", { defaultValue: "最近发布" })}
       </h3>

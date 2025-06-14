@@ -119,7 +119,7 @@ export const macOSFullscreenModalStyles = {
 export const MODAL_CONTAINER_CLASSES = {
   // 标准弹窗容器
   standard: `
-    bg-white/95 dark:bg-gray-800/95
+    bg-white/75 dark:bg-gray-800/75
     backdrop-blur-xl
     shadow-enhanced-2xl
     border border-neutral-200/60 dark:border-neutral-700/60
@@ -135,7 +135,8 @@ export const MODAL_CONTAINER_CLASSES = {
 
   // 大尺寸弹窗容器
   large: `
-    bg-white dark:bg-gray-800
+    bg-white/80 dark:bg-gray-800/80
+    backdrop-blur-xl
     rounded-2xl
     shadow-enhanced-2xl
     border border-neutral-200/60 dark:border-neutral-700/60
