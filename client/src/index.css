@@ -278,7 +278,7 @@ textarea:focus {
   position: relative;
   padding-left: 1.2em;
 }
-.dark .toc-content h1, .dark .markdown-body h1, .dark .wmde-markdown h1 {
+[data-color-mode="dark"] .toc-content h1, [data-color-mode="dark"] .markdown-body h1, [data-color-mode="dark"] .wmde-markdown h1 {
   color: #fff;
 }
 .toc-content h1 .title-bar, .markdown-body h1 .title-bar, .wmde-markdown h1 .title-bar {
@@ -323,10 +323,10 @@ textarea:focus {
 .toc-content h2:hover .title-bar, .markdown-body h2:hover .title-bar, .wmde-markdown h2:hover .title-bar {
   background: #339cff;
 }
-.dark .toc-content h2, .dark .markdown-body h2, .dark .wmde-markdown h2 {
+[data-color-mode="dark"] .toc-content h2, [data-color-mode="dark"] .markdown-body h2, [data-color-mode="dark"] .wmde-markdown h2 {
   color: #e0e6f0;
 }
-.dark .toc-content h2 .title-bar, .dark .markdown-body h2 .title-bar, .dark .wmde-markdown h2 .title-bar {
+[data-color-mode="dark"] .toc-content h2 .title-bar, [data-color-mode="dark"] .markdown-body h2 .title-bar, [data-color-mode="dark"] .wmde-markdown h2 .title-bar {
   background: #339cff;
 }
 
@@ -356,10 +356,10 @@ textarea:focus {
 .toc-content h3:hover .title-bar, .markdown-body h3:hover .title-bar, .wmde-markdown h3:hover .title-bar {
   background: #4cd964;
 }
-.dark .toc-content h3, .dark .markdown-body h3, .dark .wmde-markdown h3 {
+[data-color-mode="dark"] .toc-content h3, [data-color-mode="dark"] .markdown-body h3, [data-color-mode="dark"] .wmde-markdown h3 {
   color: #e0e6f0;
 }
-.dark .toc-content h3 .title-bar, .dark .markdown-body h3 .title-bar, .dark .wmde-markdown h3 .title-bar {
+[data-color-mode="dark"] .toc-content h3 .title-bar, [data-color-mode="dark"] .markdown-body h3 .title-bar, [data-color-mode="dark"] .wmde-markdown h3 .title-bar {
   background: #4cd964;
 }
 
@@ -389,10 +389,10 @@ textarea:focus {
 .toc-content h4:hover .title-bar, .markdown-body h4:hover .title-bar, .wmde-markdown h4:hover .title-bar {
   background: #b39ddb;
 }
-.dark .toc-content h4, .dark .markdown-body h4, .dark .wmde-markdown h4 {
+[data-color-mode="dark"] .toc-content h4, [data-color-mode="dark"] .markdown-body h4, [data-color-mode="dark"] .wmde-markdown h4 {
   color: #e0e6f0;
 }
-.dark .toc-content h4 .title-bar, .dark .markdown-body h4 .title-bar, .dark .wmde-markdown h4 .title-bar {
+[data-color-mode="dark"] .toc-content h4 .title-bar, [data-color-mode="dark"] .markdown-body h4 .title-bar, [data-color-mode="dark"] .wmde-markdown h4 .title-bar {
   background: #b39ddb;
 }
 
@@ -422,10 +422,10 @@ textarea:focus {
 .toc-content h5:hover .title-bar, .markdown-body h5:hover .title-bar, .wmde-markdown h5:hover .title-bar {
   background: #ffb340;
 }
-.dark .toc-content h5, .dark .markdown-body h5, .dark .wmde-markdown h5 {
+[data-color-mode="dark"] .toc-content h5, [data-color-mode="dark"] .markdown-body h5, [data-color-mode="dark"] .wmde-markdown h5 {
   color: #e0e6f0;
 }
-.dark .toc-content h5 .title-bar, .dark .markdown-body h5 .title-bar, .dark .wmde-markdown h5 .title-bar {
+[data-color-mode="dark"] .toc-content h5 .title-bar, [data-color-mode="dark"] .markdown-body h5 .title-bar, [data-color-mode="dark"] .wmde-markdown h5 .title-bar {
   background: #ffb340;
 }
 
@@ -455,10 +455,10 @@ textarea:focus {
 .toc-content h6:hover .title-bar, .markdown-body h6:hover .title-bar, .wmde-markdown h6:hover .title-bar {
   background: #ff6f6f;
 }
-.dark .toc-content h6, .dark .markdown-body h6, .dark .wmde-markdown h6 {
+[data-color-mode="dark"] .toc-content h6, [data-color-mode="dark"] .markdown-body h6, [data-color-mode="dark"] .wmde-markdown h6 {
   color: #e0e6f0;
 }
-.dark .toc-content h6 .title-bar, .dark .markdown-body h6 .title-bar, .dark .wmde-markdown h6 .title-bar {
+[data-color-mode="dark"] .toc-content h6 .title-bar, [data-color-mode="dark"] .markdown-body h6 .title-bar, [data-color-mode="dark"] .wmde-markdown h6 .title-bar {
   background: #ff6f6f;
 }
 
@@ -690,9 +690,9 @@ ul {
   );
 }
 
-.dark .search-container input {
-  background-image: linear-gradient(to bottom, 
-    rgba(31, 41, 55, 0.95), 
+[data-color-mode="dark"] .search-container input {
+  background-image: linear-gradient(to bottom,
+    rgba(31, 41, 55, 0.95),
     rgba(31, 41, 55, 0.85)
   );
 }
@@ -1206,14 +1206,30 @@ button[role="option"] > * {
   }
 }
 
-/* 弹窗遮罩层样式 */
+/* flex居中专用动画 - 不包含translate */
+@keyframes zoomInFlex {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.zoom-in-flex {
+  animation-name: zoomInFlex;
+}
+
+/* 弹窗遮罩层样式 - 使用统一的层级管理 */
 .ReactModal__Overlay {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  z-index: 99998 !important;
+  z-index: 10300 !important; /* 使用统一的MODAL层级 */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1234,24 +1250,31 @@ button[role="option"] > * {
   opacity: 0;
 }
 
-/* 弹窗内容样式 - 不覆盖内联样式，只提供默认值 */
+/* 弹窗内容样式 - 确保完美居中 */
 .ReactModal__Content {
-  z-index: 99999 !important;
+  /* 移除所有可能影响定位的属性，让内联样式完全控制 */
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  /* 不强制覆盖transform，让动画自然进行 */
+  margin: 0 !important;
+  /* 保留必要的样式 */
+  z-index: 10301 !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: auto !important;
-  /* 确保在flex容器中完全居中 */
   flex-shrink: 0;
-  /* 防止内容溢出 */
   overflow-y: auto;
 }
 
 .ReactModal__Content--after-open {
-  transform: scale(1) !important;
+  /* 移除transform的!important，让动画自然完成 */
   opacity: 1;
 }
 
 .ReactModal__Content--before-close {
-  transform: scale(0.95) !important;
+  /* 移除transform的!important，让动画自然完成 */
   opacity: 0;
 }
 
@@ -1488,6 +1511,27 @@ i[class^="ri-"]::before, i[class*=" ri-"]::before {
   text-rendering: auto;
 }
 
+/* 分页按钮专用样式 - 覆盖全局.bg-button样式 */
+.pagination-btn {
+  position: relative !important;
+  transform: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+.pagination-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.pagination-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+.pagination-btn::after {
+  display: none !important;
+}
+
 /* 表格变体样式 */
 /* 紧凑型表格 */
 .table.table-compact th,
@@ -1552,7 +1596,7 @@ i[class^="ri-"]::before, i[class*=" ri-"]::before {
   z-index: 2;
   background: #f3f4f6;
 }
-.dark .markdown-body thead, .dark .wmde-markdown thead {
+[data-color-mode="dark"] .markdown-body thead, [data-color-mode="dark"] .wmde-markdown thead {
   background: #23272f;
 }
 .markdown-body::-webkit-scrollbar, .wmde-markdown::-webkit-scrollbar {
@@ -1562,7 +1606,7 @@ i[class^="ri-"]::before, i[class*=" ri-"]::before {
   background: #cbd5e1;
   border-radius: 6px;
 }
-.dark .markdown-body::-webkit-scrollbar-thumb, .dark .wmde-markdown::-webkit-scrollbar-thumb {
+[data-color-mode="dark"] .markdown-body::-webkit-scrollbar-thumb, [data-color-mode="dark"] .wmde-markdown::-webkit-scrollbar-thumb {
   background: #334155;
 }
 
@@ -2075,9 +2119,9 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   );
 }
 
-.dark .search-container input {
-  background-image: linear-gradient(to bottom, 
-    rgba(31, 41, 55, 0.95), 
+[data-color-mode="dark"] .search-container input {
+  background-image: linear-gradient(to bottom,
+    rgba(31, 41, 55, 0.95),
     rgba(31, 41, 55, 0.85)
   );
 }
@@ -2233,11 +2277,11 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   background-color: rgba(156, 163, 175, 0.5);
 }
 
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+[data-color-mode="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(156, 163, 175, 0.2);
 }
 
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+[data-color-mode="dark"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(156, 163, 175, 0.3);
 }
 
@@ -2323,16 +2367,16 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   /* 四级圆点 */
   background: linear-gradient(135deg, #a78bfa 60%, #34C759 100%);
 }
-.dark .toc-content ul > li::before, .dark .markdown-body ul > li::before, .dark .wmde-markdown ul > li::before {
+[data-color-mode="dark"] .toc-content ul > li::before, [data-color-mode="dark"] .markdown-body ul > li::before, [data-color-mode="dark"] .wmde-markdown ul > li::before {
   background: linear-gradient(135deg, #60a5fa 60%, #c4b5fd 100%);
 }
-.dark .toc-content ul ul > li::before, .dark .markdown-body ul ul > li::before, .dark .wmde-markdown ul ul > li::before {
+[data-color-mode="dark"] .toc-content ul ul > li::before, [data-color-mode="dark"] .markdown-body ul ul > li::before, [data-color-mode="dark"] .wmde-markdown ul ul > li::before {
   background: linear-gradient(135deg, #4ade80 60%, #f472b6 100%);
 }
-.dark .toc-content ul ul ul > li::before, .dark .markdown-body ul ul ul > li::before, .dark .wmde-markdown ul ul ul > li::before {
+[data-color-mode="dark"] .toc-content ul ul ul > li::before, [data-color-mode="dark"] .markdown-body ul ul ul > li::before, [data-color-mode="dark"] .wmde-markdown ul ul ul > li::before {
   background: linear-gradient(135deg, #f472b6 60%, #fde047 100%);
 }
-.dark .toc-content ul ul ul ul > li::before, .dark .markdown-body ul ul ul ul > li::before, .dark .wmde-markdown ul ul ul ul > li::before {
+[data-color-mode="dark"] .toc-content ul ul ul ul > li::before, [data-color-mode="dark"] .markdown-body ul ul ul ul > li::before, [data-color-mode="dark"] .wmde-markdown ul ul ul ul > li::before {
   background: linear-gradient(135deg, #c4b5fd 60%, #34C759 100%);
 }
 .toc-content ol, .markdown-body ol, .wmde-markdown ol {
@@ -2364,10 +2408,10 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 .toc-content ol > li:hover::before, .markdown-body ol > li:hover::before, .wmde-markdown ol > li:hover::before {
   color: #2563eb;
 }
-.dark .toc-content ol > li::before, .dark .markdown-body ol > li::before, .dark .wmde-markdown ol > li::before {
+[data-color-mode="dark"] .toc-content ol > li::before, [data-color-mode="dark"] .markdown-body ol > li::before, [data-color-mode="dark"] .wmde-markdown ol > li::before {
   color: #60a5fa;
 }
-.dark .toc-content ol > li:hover::before, .dark .markdown-body ol > li:hover::before, .dark .wmde-markdown ol > li:hover::before {
+[data-color-mode="dark"] .toc-content ol > li:hover::before, [data-color-mode="dark"] .markdown-body ol > li:hover::before, [data-color-mode="dark"] .wmde-markdown ol > li:hover::before {
   color: #3b82f6;
 }
 
@@ -2402,15 +2446,15 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   padding-left: 1.2rem;
   box-shadow: 0 2px 8px 0 rgba(251,191,36,0.08);
 }
-.dark .toc-content blockquote, .dark .markdown-body blockquote, .dark .wmde-markdown blockquote {
+[data-color-mode="dark"] .toc-content blockquote, [data-color-mode="dark"] .markdown-body blockquote, [data-color-mode="dark"] .wmde-markdown blockquote {
   background: linear-gradient(90deg, #1e293b 80%, transparent 100%);
   color: #e0e6f0;
 }
-.dark .toc-content blockquote blockquote, .dark .markdown-body blockquote blockquote, .dark .wmde-markdown blockquote blockquote {
+[data-color-mode="dark"] .toc-content blockquote blockquote, [data-color-mode="dark"] .markdown-body blockquote blockquote, [data-color-mode="dark"] .wmde-markdown blockquote blockquote {
   background: linear-gradient(90deg, #312e81 80%, transparent 100%);
   color: #c4b5fd;
 }
-.dark .toc-content blockquote blockquote blockquote, .dark .markdown-body blockquote blockquote blockquote, .dark .wmde-markdown blockquote blockquote blockquote {
+[data-color-mode="dark"] .toc-content blockquote blockquote blockquote, [data-color-mode="dark"] .markdown-body blockquote blockquote blockquote, [data-color-mode="dark"] .wmde-markdown blockquote blockquote blockquote {
   background: linear-gradient(90deg, #831843 80%, transparent 100%);
   color: #fde68a;
 }
@@ -2567,7 +2611,7 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   font-weight: 500;
   line-height: 1.2;
 }
-.dark .toc-content kbd, .dark .markdown-body kbd, .dark .wmde-markdown kbd {
+[data-color-mode="dark"] .toc-content kbd, [data-color-mode="dark"] .markdown-body kbd, [data-color-mode="dark"] .wmde-markdown kbd {
   background: #23272f;
   color: #eee;
   border: 1px solid #444;
@@ -2609,7 +2653,7 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   white-space: nowrap;
   z-index: 10;
 }
-.dark .toc-content abbr[title]:hover::after, .dark .markdown-body abbr[title]:hover::after, .dark .wmde-markdown abbr[title]:hover::after {
+[data-color-mode="dark"] .toc-content abbr[title]:hover::after, [data-color-mode="dark"] .markdown-body abbr[title]:hover::after, [data-color-mode="dark"] .wmde-markdown abbr[title]:hover::after {
   background: #23272f;
   color: #eee;
 }
@@ -2667,7 +2711,7 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   font-size: 0.875em;
   color: #888;
 }
-.dark .toc-content small, .dark .markdown-body small, .dark .wmde-markdown small {
+[data-color-mode="dark"] .toc-content small, [data-color-mode="dark"] .markdown-body small, [data-color-mode="dark"] .wmde-markdown small {
   color: #aaa;
 }
 
@@ -2686,7 +2730,7 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 }
 
 /* 兼容深色模式下的高亮、插入、删除等 */
-.dark .toc-content mark, .dark .markdown-body mark, .dark .wmde-markdown mark {
+[data-color-mode="dark"] .toc-content mark, [data-color-mode="dark"] .markdown-body mark, [data-color-mode="dark"] .wmde-markdown mark {
   background: linear-gradient(90deg, #665c00 80%, #bba800 100%);
   color: #fffbe6;
 }
@@ -2711,10 +2755,10 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   border-left: 2px solid #e0e7ef;
   padding-left: 1em;
 }
-.dark .toc-content dt, .dark .markdown-body dt, .dark .wmde-markdown dt {
+[data-color-mode="dark"] .toc-content dt, [data-color-mode="dark"] .markdown-body dt, [data-color-mode="dark"] .wmde-markdown dt {
   color: #fff;
 }
-.dark .toc-content dd, .dark .markdown-body dd, .dark .wmde-markdown dd {
+[data-color-mode="dark"] .toc-content dd, [data-color-mode="dark"] .markdown-body dd, [data-color-mode="dark"] .wmde-markdown dd {
   color: #bbb;
   border-left: 2px solid #334155;
 }
@@ -2747,7 +2791,7 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   outline-offset: 2px;
   background: #e6f0ff;
 }
-.dark .toc-content summary:focus, .dark .markdown-body summary:focus, .dark .wmde-markdown summary:focus {
+[data-color-mode="dark"] .toc-content summary:focus, [data-color-mode="dark"] .markdown-body summary:focus, [data-color-mode="dark"] .wmde-markdown summary:focus {
   background: #23272f;
 }
 
@@ -2836,24 +2880,24 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 }
 
 /* 深色模式辅助色彩 */
-.dark .toc-content ul > li::before, .dark .markdown-body ul > li::before, .dark .wmde-markdown ul > li::before {
+[data-color-mode="dark"] .toc-content ul > li::before, [data-color-mode="dark"] .markdown-body ul > li::before, [data-color-mode="dark"] .wmde-markdown ul > li::before {
   background: linear-gradient(135deg, #60a5fa 60%, #c4b5fd 100%);
 }
-.dark .toc-content ul > li:hover::before, .dark .markdown-body ul > li:hover::before, .dark .wmde-markdown ul > li:hover::before {
+[data-color-mode="dark"] .toc-content ul > li:hover::before, [data-color-mode="dark"] .markdown-body ul > li:hover::before, [data-color-mode="dark"] .wmde-markdown ul > li:hover::before {
   background: linear-gradient(135deg, #3b82f6 60%, #f472b6 100%);
 }
-.dark .toc-content blockquote, .dark .markdown-body blockquote, .dark .wmde-markdown blockquote {
+[data-color-mode="dark"] .toc-content blockquote, [data-color-mode="dark"] .markdown-body blockquote, [data-color-mode="dark"] .wmde-markdown blockquote {
   background: linear-gradient(90deg, #1e293b 80%, transparent 100%);
   color: #e0e6f0;
 }
-.dark .toc-content code, .dark .markdown-body code, .dark .wmde-markdown code {
+[data-color-mode="dark"] .toc-content code, [data-color-mode="dark"] .markdown-body code, [data-color-mode="dark"] .wmde-markdown code {
   background: #23272f;
   color: #fbbf24;
 }
-.dark .toc-content code:hover, .dark .markdown-body code:hover, .dark .wmde-markdown code:hover {
+[data-color-mode="dark"] .toc-content code:hover, [data-color-mode="dark"] .markdown-body code:hover, [data-color-mode="dark"] .wmde-markdown code:hover {
   background: #334155;
 }
-.dark .toc-content mark, .dark .markdown-body mark, .dark .wmde-markdown mark {
+[data-color-mode="dark"] .toc-content mark, [data-color-mode="dark"] .markdown-body mark, [data-color-mode="dark"] .wmde-markdown mark {
   background: linear-gradient(90deg, #facc15 80%, #fde68a 100%);
   color: #78350f;
 }
@@ -2886,11 +2930,11 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   box-shadow: 0 6px 24px 0 rgba(59,130,246,0.18);
   border-color: #3b82f6;
 }
-.dark .toc-content img[src$='.svg'], .dark .markdown-body img[src$='.svg'], .dark .wmde-markdown img[src$='.svg'] {
+[data-color-mode="dark"] .toc-content img[src$='.svg'], [data-color-mode="dark"] .markdown-body img[src$='.svg'], [data-color-mode="dark"] .wmde-markdown img[src$='.svg'] {
   background: #18181b;
   border: 1.5px solid #334155;
 }
-.dark .toc-content img[src$='.svg']:hover, .dark .markdown-body img[src$='.svg']:hover, .dark .wmde-markdown img[src$='.svg']:hover {
+[data-color-mode="dark"] .toc-content img[src$='.svg']:hover, [data-color-mode="dark"] .markdown-body img[src$='.svg']:hover, [data-color-mode="dark"] .wmde-markdown img[src$='.svg']:hover {
   border-color: #60a5fa;
 }
 
@@ -3020,7 +3064,7 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   background: #e6ecf5 !important; /* 浅色模式下hover背景加深 */
   box-shadow: 0 4px 24px 0 rgba(59,130,246,0.13);
 }
-.dark .wmde-markdown pre:hover, .dark .toc-content pre:hover, .dark .markdown-body pre:hover {
+[data-color-mode="dark"] .wmde-markdown pre:hover, [data-color-mode="dark"] .toc-content pre:hover, [data-color-mode="dark"] .markdown-body pre:hover {
   background: #232b36 !important; /* 深色模式下hover背景加亮 */
   box-shadow: 0 4px 24px 0 rgba(59,130,246,0.18);
 }
@@ -3028,7 +3072,7 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 .wmde-markdown pre:hover code, .toc-content pre:hover code, .markdown-body pre:hover code {
   color: #23272f !important;
 }
-.dark .wmde-markdown pre:hover code, .dark .toc-content pre:hover code, .dark .markdown-body pre:hover code {
+[data-color-mode="dark"] .wmde-markdown pre:hover code, [data-color-mode="dark"] .toc-content pre:hover code, [data-color-mode="dark"] .markdown-body pre:hover code {
   color: #fbbf24 !important;
 }
 .wmde-markdown pre:hover:has(.code-block-action:hover) code,
@@ -3036,9 +3080,9 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 .markdown-body pre:hover:has(.code-block-action:hover) code {
   /* 已优化：按钮悬停不影响代码色彩 */
 }
-.dark .wmde-markdown pre:hover:has(.code-block-action:hover) code,
-.dark .toc-content pre:hover:has(.code-block-action:hover) code,
-.dark .markdown-body pre:hover:has(.code-block-action:hover) code {
+[data-color-mode="dark"] .wmde-markdown pre:hover:has(.code-block-action:hover) code,
+[data-color-mode="dark"] .toc-content pre:hover:has(.code-block-action:hover) code,
+[data-color-mode="dark"] .markdown-body pre:hover:has(.code-block-action:hover) code {
   /* 已优化：按钮悬停不影响代码色彩 */
 }
 

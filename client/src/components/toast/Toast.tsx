@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { MODAL_Z_INDEX } from '../../utils/modal-config';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 export interface ToastItem {
@@ -42,7 +43,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }): JSX.
     { value: { showToast } },
     <>
       {children}
-      <div className="fixed top-5 right-5 z-[12050] flex flex-col gap-3 items-end pointer-events-none select-none">
+      <div
+        className="fixed top-5 right-5 flex flex-col gap-3 items-end pointer-events-none select-none"
+        style={{ zIndex: MODAL_Z_INDEX.CRITICAL }}
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}

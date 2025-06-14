@@ -993,31 +993,43 @@ export function FileService() {
                     query: t.Object({ url: t.String() })
                 })
 
-                // stat接口分页重构（limit最大10，默认5）
-                .get('/stat', async ({ admin, set, query }) => {
+                // stat接口 - 计算R2总容量
+                .get('/stat', async ({ admin, set }) => {
                     if (!admin) {
                         set.status = 403;
                         return { error: 'Permission denied' };
                     }
-                    let limit = Number(query?.limit) || 5;
-                    if (limit > 10) limit = 10;
-                    const cursor = Number(query?.cursor) || 0;
-                    let r2Used = 0;
-                    const r2Files = await listAllR2Files();
-                    const filesSlice = r2Files.slice(cursor, cursor + limit);
-                    for (const path of filesSlice) {
-                        const name = path.split('/').pop() || '';
-                        if (name.startsWith('thumb_')) continue;
-                        const meta = await getR2FileMeta(path);
-                        if (meta && meta.size) r2Used += meta.size;
+
+                    try {
+                        let r2Used = 0;
+                        const r2Files = await listAllR2Files();
+
+                        // 计算所有文件的总大小（排除缩略图）
+                        for (const path of r2Files) {
+                            const name = path.split('/').pop() || '';
+                            if (name.startsWith('thumb_')) continue; // 跳过缩略图
+
+                            try {
+                                const meta = await getR2FileMeta(path);
+                                if (meta && meta.size) {
+                                    r2Used += meta.size;
+                                }
+                            } catch (error) {
+                                console.warn(`Failed to get meta for ${path}:`, error);
+                                // 继续处理其他文件，不中断整个统计过程
+                            }
+                        }
+
+                        return {
+                            r2: { used: r2Used },
+                            total: r2Files.length,
+                            filesCount: r2Files.filter(path => !path.split('/').pop()?.startsWith('thumb_')).length
+                        };
+                    } catch (error: any) {
+                        console.error('Error calculating R2 usage:', error);
+                        set.status = 500;
+                        return { error: error.message || 'Failed to calculate R2 usage' };
                     }
-                    const nextCursor = cursor + limit < r2Files.length ? cursor + limit : null;
-                    return { r2: { used: r2Used }, nextCursor, total: r2Files.length };
-                }, {
-                    query: t.Object({
-                        limit: t.Optional(t.Numeric()),
-                        cursor: t.Optional(t.Numeric())
-                    })
                 })
         );
 } 

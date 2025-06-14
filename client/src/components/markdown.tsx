@@ -1070,7 +1070,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
             buttonNext: imageUrls.length <= 1 ? () => null : undefined,
           }}
           className="rin-lightbox-fix"
-          styles={{ container: { zIndex: 20000, pointerEvents: 'auto' } }}
+          styles={{ container: { zIndex: 10700, pointerEvents: 'auto' } }}
         />
       </div>
     </>

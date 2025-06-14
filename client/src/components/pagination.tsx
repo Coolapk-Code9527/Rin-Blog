@@ -82,12 +82,12 @@ export function Pagination({
   // 生成页码按钮
   const renderPageButton = (pageNumber: number, label?: string) => {
     const isCurrentPage = pageNumber === currentPage;
-    const commonClasses = "relative block w-10 h-10 flex items-center justify-center rounded-2xl text-base font-semibold transition-all duration-300 leading-none shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]";
-    const activeClasses = "bg-theme text-white ring-2 ring-theme/60 shadow-enhanced-lg hover:shadow-enhanced-xl";
-    const inactiveClasses = "bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm text-gray-700 dark:text-gray-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme hover:bg-theme-50/60 dark:hover:bg-theme-900/10";
+    const commonClasses = "pagination-btn w-10 h-10 flex items-center justify-center rounded-xl text-sm font-medium transition-all duration-200 shadow-enhanced";
+    const activeClasses = "!bg-theme !text-white shadow-enhanced-lg hover:shadow-enhanced-xl hover:-translate-y-0.5 active:translate-y-0";
+    const inactiveClasses = "!bg-white/95 dark:!bg-gray-800/95 backdrop-blur-md !text-gray-700 dark:!text-gray-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-theme hover:!text-theme hover:!bg-theme/10 hover:shadow-enhanced-lg hover:-translate-y-0.5 active:translate-y-0";
     const fullClasses = `${commonClasses} ${isCurrentPage ? activeClasses : inactiveClasses}`;
     const ariaLabel = label || t("pagination.page", { page: pageNumber });
-    
+
     return onPageChange ? (
       <button
         key={pageNumber}
@@ -95,9 +95,14 @@ export function Pagination({
         className={fullClasses}
         aria-label={ariaLabel}
         aria-current={isCurrentPage ? "page" : undefined}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+        style={{
+          transform: 'none',
+          boxShadow: isCurrentPage
+            ? '0 4px 12px rgba(0, 122, 255, 0.3), 0 2px 6px rgba(0, 0, 0, 0.1)'
+            : '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
+        }}
       >
-        <span className="flex items-center justify-center w-full h-full leading-none">{label || pageNumber}</span>
+        {label || pageNumber}
       </button>
     ) : (
       <Link
@@ -106,9 +111,14 @@ export function Pagination({
         className={fullClasses}
         aria-label={ariaLabel}
         aria-current={isCurrentPage ? "page" : undefined}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+        style={{
+          transform: 'none',
+          boxShadow: isCurrentPage
+            ? '0 4px 12px rgba(0, 122, 255, 0.3), 0 2px 6px rgba(0, 0, 0, 0.1)'
+            : '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
+        }}
       >
-        <span className="flex items-center justify-center w-full h-full leading-none">{label || pageNumber}</span>
+        {label || pageNumber}
       </Link>
     );
   };
@@ -116,9 +126,9 @@ export function Pagination({
   // 渲染上一页按钮
   const renderPreviousButton = () => {
     const disabled = currentPage === 1;
-    const baseClasses = "w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300 leading-none h-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60";
-    const disabledClasses = `${baseClasses} text-gray-300 dark:text-gray-600 cursor-not-allowed`;
-    const activeClasses = `${baseClasses} text-theme hover:bg-theme/10 hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]`;
+    const baseClasses = "pagination-btn w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 !bg-white/95 dark:!bg-gray-800/95 backdrop-blur-md shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60";
+    const disabledClasses = `${baseClasses} !text-gray-300 dark:!text-gray-600 cursor-not-allowed opacity-50`;
+    const activeClasses = `${baseClasses} !text-theme hover:!bg-theme/10 hover:shadow-enhanced-lg hover:-translate-y-0.5 active:translate-y-0`;
     const classes = disabled ? disabledClasses : activeClasses;
     if (onPageChange) {
       return (
@@ -127,9 +137,12 @@ export function Pagination({
           disabled={disabled}
           className={classes}
           aria-label={t("pagination.previous")}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+          style={{
+            transform: 'none',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
+          }}
         >
-          <i className="ri-arrow-left-s-line text-xl"></i>
+          <i className="ri-arrow-left-s-line text-lg"></i>
         </button>
       );
     }
@@ -138,18 +151,24 @@ export function Pagination({
         disabled
         className={disabledClasses}
         aria-label={t("pagination.previous")}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+        style={{
+          transform: 'none',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
+        }}
       >
-        <i className="ri-arrow-left-s-line text-xl"></i>
+        <i className="ri-arrow-left-s-line text-lg"></i>
       </button>
     ) : (
       <Link
         href={getPageUrl(currentPage - 1)}
         className={activeClasses}
         aria-label={t("pagination.previous")}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+        style={{
+          transform: 'none',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
+        }}
       >
-        <i className="ri-arrow-left-s-line text-xl"></i>
+        <i className="ri-arrow-left-s-line text-lg"></i>
       </Link>
     );
   };
@@ -157,9 +176,9 @@ export function Pagination({
   // 渲染下一页按钮
   const renderNextButton = () => {
     const disabled = currentPage === totalPages;
-    const baseClasses = "w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300 leading-none h-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60";
-    const disabledClasses = `${baseClasses} text-gray-300 dark:text-gray-600 cursor-not-allowed`;
-    const activeClasses = `${baseClasses} text-theme hover:bg-theme/10 hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]`;
+    const baseClasses = "pagination-btn w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 !bg-white/95 dark:!bg-gray-800/95 backdrop-blur-md shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60";
+    const disabledClasses = `${baseClasses} !text-gray-300 dark:!text-gray-600 cursor-not-allowed opacity-50`;
+    const activeClasses = `${baseClasses} !text-theme hover:!bg-theme/10 hover:shadow-enhanced-lg hover:-translate-y-0.5 active:translate-y-0`;
     const classes = disabled ? disabledClasses : activeClasses;
     if (onPageChange) {
       return (
@@ -168,9 +187,12 @@ export function Pagination({
           disabled={disabled}
           className={classes}
           aria-label={t("pagination.next")}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+          style={{
+            transform: 'none',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
+          }}
         >
-          <i className="ri-arrow-right-s-line text-xl"></i>
+          <i className="ri-arrow-right-s-line text-lg"></i>
         </button>
       );
     }
@@ -179,18 +201,24 @@ export function Pagination({
         disabled
         className={disabledClasses}
         aria-label={t("pagination.next")}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+        style={{
+          transform: 'none',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
+        }}
       >
-        <i className="ri-arrow-right-s-line text-xl"></i>
+        <i className="ri-arrow-right-s-line text-lg"></i>
       </button>
     ) : (
       <Link
         href={getPageUrl(currentPage + 1)}
         className={activeClasses}
         aria-label={t("pagination.next")}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+        style={{
+          transform: 'none',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
+        }}
       >
-        <i className="ri-arrow-right-s-line text-xl"></i>
+        <i className="ri-arrow-right-s-line text-lg"></i>
       </Link>
     );
   };

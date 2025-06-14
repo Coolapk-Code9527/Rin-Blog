@@ -1,7 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "react-modal";
 import { Button, ButtonWithLoading } from "./button";
+import {
+    macOSModalStyles,
+    MODAL_CONTAINER_CLASSES,
+    useModalKeyboard,
+    useModalBodyLock,
+    MODAL_Z_INDEX
+} from "../utils/modal-config";
 
 export type Confirm = {
     title: string;
@@ -16,43 +23,6 @@ export type Alert = {
 
 export type ShowAlertType = (msg: string, onConfirm?: () => (Promise<void> | void)) => void;
 
-// macOS风格弹窗的统一样式配置
-const macOSModalStyles = {
-    content: {
-        position: 'absolute' as const,
-        top: '50%',
-        left: '50%',
-        right: 'auto',
-        bottom: 'auto',
-        transform: 'translate(-50%, -50%)',
-        padding: '0',
-        border: 'none',
-        borderRadius: '16px',
-        background: 'transparent',
-        outline: 'none',
-        overflow: 'visible',
-        maxWidth: '500px',
-        width: '90vw',
-        minWidth: '320px',
-        maxHeight: '90vh',
-        // 防止初始位置跳动
-        transition: 'none',
-    },
-    overlay: {
-        position: 'fixed' as const,
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        backdropFilter: 'blur(12px)',
-        zIndex: 99998,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-    }
-};
-
 // macOS风格弹窗容器组件
 const MacOSModalContainer = ({
     children,
@@ -61,21 +31,7 @@ const MacOSModalContainer = ({
     children: React.ReactNode;
     className?: string;
 }) => (
-    <div className={`
-        bg-white/95 dark:bg-gray-800/95
-        backdrop-blur-xl
-        shadow-enhanced-2xl
-        border border-neutral-200/60 dark:border-neutral-700/60
-        rounded-2xl
-        p-6
-        w-full
-        animate-in
-        fade-in-0
-        zoom-in-95
-        duration-200
-        ease-out
-        ${className}
-    `}>
+    <div className={`${MODAL_CONTAINER_CLASSES.standard} ${className}`}>
         {children}
     </div>
 );
@@ -98,35 +54,9 @@ export function useAlert() {
         setIsOpen(true)
     }
 
-    // 键盘事件处理 - Enter键确认，Escape键关闭
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (!isOpen) return;
-
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                event.stopPropagation();
-                close();
-            } else if (event.key === 'Escape') {
-                event.preventDefault();
-                event.stopPropagation();
-                close();
-            }
-        };
-
-        if (isOpen) {
-            // 使用多重监听确保事件被捕获
-            document.addEventListener('keydown', handleKeyDown, true); // 捕获阶段
-            document.addEventListener('keydown', handleKeyDown, false); // 冒泡阶段
-            window.addEventListener('keydown', handleKeyDown, true);
-
-            return () => {
-                document.removeEventListener('keydown', handleKeyDown, true);
-                document.removeEventListener('keydown', handleKeyDown, false);
-                window.removeEventListener('keydown', handleKeyDown, true);
-            };
-        }
-    }, [isOpen, close]);
+    // 使用统一的键盘事件处理和body锁定
+    useModalKeyboard(isOpen, close, close);
+    useModalBodyLock(isOpen);
 
     const { t } = useTranslation()
 
@@ -203,35 +133,9 @@ export function useConfirm() {
         }
     };
 
-    // 键盘事件处理 - Enter键确认，Escape键关闭
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (!isOpen) return;
-
-            if (event.key === 'Enter' && !loading) {
-                event.preventDefault();
-                event.stopPropagation();
-                handleConfirm();
-            } else if (event.key === 'Escape' && !loading) {
-                event.preventDefault();
-                event.stopPropagation();
-                close();
-            }
-        };
-
-        if (isOpen) {
-            // 使用多重监听确保事件被捕获
-            document.addEventListener('keydown', handleKeyDown, true); // 捕获阶段
-            document.addEventListener('keydown', handleKeyDown, false); // 冒泡阶段
-            window.addEventListener('keydown', handleKeyDown, true);
-
-            return () => {
-                document.removeEventListener('keydown', handleKeyDown, true);
-                document.removeEventListener('keydown', handleKeyDown, false);
-                window.removeEventListener('keydown', handleKeyDown, true);
-            };
-        }
-    }, [isOpen, loading, close, handleConfirm]);
+    // 使用统一的键盘事件处理和body锁定（加载时禁用）
+    useModalKeyboard(isOpen, close, handleConfirm, loading);
+    useModalBodyLock(isOpen);
 
     const { t } = useTranslation()
 

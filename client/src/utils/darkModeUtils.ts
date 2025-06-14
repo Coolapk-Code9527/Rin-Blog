@@ -8,8 +8,12 @@ export function listenSystemMode() {
     if (mode === null || mode === "system") {
       if (mediaQuery.matches) {
         document.documentElement.setAttribute("data-color-mode", "dark");
+        document.documentElement.classList.add("dark");
+        document.documentElement.classList.remove("light");
       } else {
         document.documentElement.setAttribute("data-color-mode", "light");
+        document.documentElement.classList.add("light");
+        document.documentElement.classList.remove("dark");
       }
       window.dispatchEvent(new Event("colorSchemeChange"));
     }

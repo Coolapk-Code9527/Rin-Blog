@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HistoryItem } from '../utils/history';
+import {
+  MODAL_Z_INDEX,
+  MODAL_CONTAINER_CLASSES,
+  useModalKeyboard,
+  useModalBodyLock
+} from '../utils/modal-config';
 
 interface HistoryDialogProps {
   isOpen: boolean;
@@ -22,12 +28,19 @@ export function HistoryDialog({
   const { t } = useTranslation();
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  
+
+  // 使用统一的键盘事件处理和body锁定
+  useModalKeyboard(isOpen, onClose);
+  useModalBodyLock(isOpen);
+
   if (!isOpen) return null;
-  
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white dark:bg-gray-800 w-full max-w-3xl rounded-lg shadow-xl overflow-hidden">
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40"
+      style={{ zIndex: MODAL_Z_INDEX.MODAL }}
+    >
+      <div className={`${MODAL_CONTAINER_CLASSES.large} w-full max-w-3xl`}>
         <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-4">
           <h3 className="font-medium text-lg">{t('history.title')}</h3>
           <div className="flex items-center gap-2">

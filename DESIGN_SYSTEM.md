@@ -158,22 +158,59 @@ transition: all 0.3s ease;
 
 ## Dark Mode Support
 
-### Color Adaptations
-```css
-/* Light mode */
-.light {
-  --bg-primary: #FFFFFF;
-  --text-primary: #000000;
-  --border-color: rgba(229, 231, 235, 0.6);
-}
+### Unified Detection Mechanism
+深色模式采用统一的检测和状态管理机制：
 
-/* Dark mode */
-.dark {
-  --bg-primary: #1C1C1E;
-  --text-primary: #FFFFFF;
-  --border-color: rgba(55, 65, 81, 0.6);
+```javascript
+// 状态管理 - 同时设置属性和类名确保兼容性
+function applyMode(targetMode) {
+  document.documentElement.setAttribute('data-color-mode', targetMode);
+  if (targetMode === 'dark') {
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
+  } else {
+    document.documentElement.classList.add('light');
+    document.documentElement.classList.remove('dark');
+  }
 }
 ```
+
+### TailwindCSS Configuration
+```javascript
+// tailwind.config.ts
+module.exports = {
+  darkMode: ['selector', '[data-color-mode="dark"]'],
+  // ...
+}
+```
+
+### CSS Variable System
+```css
+/* Light mode variables */
+:root {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F2F2F7;
+  --text-primary: #000000;
+  --text-secondary: #3C3C43;
+  --separator: #3C3C4329;
+}
+
+/* Dark mode variables */
+[data-color-mode="dark"] {
+  --bg-primary: #0D1117;
+  --bg-secondary: #161B22;
+  --text-primary: #F0F6FC;
+  --text-secondary: #C9D1D9;
+  --separator: #30363D;
+}
+```
+
+### Component Adaptations
+所有组件都支持完整的深色模式适配：
+- **目录组件**: 背景、文本、边框完全适配
+- **评论系统**: 输入框、按钮、容器统一深色主题
+- **Markdown渲染**: 代码块、引用、列表等元素深色优化
+- **导航栏**: 毛玻璃效果和透明度深色适配
 
 ## Implementation Status
 
@@ -188,6 +225,9 @@ transition: all 0.3s ease;
 - [x] Login system standardization
 - [x] Theme switcher enhancement
 - [x] Complete CSS color system migration
+- [x] **Deep dark mode optimization and fixes**
+- [x] **Unified dark mode detection mechanism**
+- [x] **Complete CSS selector standardization**
 
 ### 🎯 Key Achievements
 - **100% Design Consistency**: All 21 components follow unified design language
@@ -195,6 +235,28 @@ transition: all 0.3s ease;
 - **Accessibility**: Enhanced keyboard navigation and screen reader support
 - **Performance**: Optimized CSS with efficient animations
 - **Cross-platform**: Seamless experience across all devices
+- **🌙 Perfect Dark Mode**: 完整的深色模式支持，统一的检测机制和样式适配
+- **🔧 Technical Excellence**: 解决了深色模式检测不一致的根本问题
+
+## 🌙 Dark Mode Optimization (Latest Update)
+
+### Problem Solved
+修复了深色模式显示问题的根本原因：
+- **检测机制不一致**: TailwindCSS使用 `[data-color-mode="dark"]`，但组件样式使用 `.dark` 类名
+- **状态管理混乱**: JavaScript设置属性，CSS检测类名，导致样式失效
+- **目录和评论区域**: 深色模式样式完全不生效
+
+### Technical Solution
+1. **统一状态管理**: 同时设置 `data-color-mode` 属性和 `dark` 类名
+2. **CSS选择器标准化**: 将所有 `.dark` 选择器替换为 `[data-color-mode="dark"]`
+3. **TailwindCSS配置优化**: 确保 `dark:` 前缀基于正确的选择器工作
+4. **完整测试验证**: 覆盖目录、评论、Markdown等所有组件
+
+### Impact
+- ✅ 目录标题区域深色模式完美显示
+- ✅ 评论发布区域深色模式样式正常
+- ✅ 所有 `dark:` 前缀的Tailwind样式生效
+- ✅ 深色模式切换响应迅速且一致
 
 ## Usage Guidelines
 

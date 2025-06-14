@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Draft } from '../utils/draft';
+import {
+  MODAL_Z_INDEX,
+  MODAL_CONTAINER_CLASSES,
+  useModalKeyboard,
+  useModalBodyLock
+} from '../utils/modal-config';
 
 interface DraftDialogProps {
   isOpen: boolean;
@@ -25,7 +31,11 @@ export function DraftDialog({
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedDraft, setSelectedDraft] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
+  // 使用统一的键盘事件处理和body锁定
+  useModalKeyboard(isOpen, onClose);
+  useModalBodyLock(isOpen);
+
   if (!isOpen) return null;
   
   // 过滤草稿
@@ -49,8 +59,11 @@ export function DraftDialog({
   };
   
   return (
-    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 w-full max-w-4xl h-3/4 rounded-lg shadow-xl overflow-hidden flex flex-col">
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm"
+      style={{ zIndex: MODAL_Z_INDEX.MODAL }}
+    >
+      <div className={`${MODAL_CONTAINER_CLASSES.large} w-full max-w-4xl h-3/4`}>
         <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center">
             <h3 className="font-medium text-lg">{t('drafts.title')}</h3>

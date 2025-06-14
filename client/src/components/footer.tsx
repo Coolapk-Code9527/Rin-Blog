@@ -25,15 +25,25 @@ function Footer() {
         setModeState(mode);
         localStorage.setItem('theme', mode);
 
-
-        if (mode !== 'system' || (!('theme' in localStorage) && window.matchMedia(`(prefers-color-scheme: ${mode})`).matches)) {
-            document.documentElement.setAttribute('data-color-mode', mode);
-        } else {
-            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-            if (mediaQuery.matches) {
-                document.documentElement.setAttribute('data-color-mode', 'dark');
+        const applyMode = (targetMode: 'light' | 'dark') => {
+            document.documentElement.setAttribute('data-color-mode', targetMode);
+            if (targetMode === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
             } else {
-                document.documentElement.setAttribute('data-color-mode', 'light');
+                document.documentElement.classList.add('light');
+                document.documentElement.classList.remove('dark');
+            }
+        };
+
+        if (mode !== 'system') {
+            applyMode(mode as 'light' | 'dark');
+        } else {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            if (mediaQuery.matches) {
+                applyMode('dark');
+            } else {
+                applyMode('light');
             }
         }
         window.dispatchEvent(new Event("colorSchemeChange"));

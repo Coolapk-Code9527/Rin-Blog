@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import Modal from 'react-modal';
 import { FileManager } from './FileManager';
 import type { FileItem } from '../../types/api';
+import {
+  macOSLargeModalStyles,
+  MODAL_CONTAINER_CLASSES,
+  useModalKeyboard,
+  useModalBodyLock
+} from '../../utils/modal-config';
 
 interface FileSelectorDialogProps {
   isOpen: boolean;
@@ -26,38 +32,21 @@ export function FileSelectorDialog({
     setInternalOpen(isOpen);
   }, [isOpen]);
 
+  // 使用统一的键盘事件处理和body锁定
+  useModalKeyboard(internalOpen, onClose);
+  useModalBodyLock(internalOpen);
+
   return (
     <Modal
       isOpen={internalOpen}
       onRequestClose={onClose}
       shouldCloseOnOverlayClick={true}
       shouldCloseOnEsc={true}
-      style={{
-        content: {
-          top: '50%',
-          left: '50%',
-          right: 'auto',
-          bottom: 'auto',
-          marginRight: '-50%',
-          transform: 'translate(-50%, -50%)',
-          padding: 0,
-          border: 'none',
-          borderRadius: '16px',
-          background: 'transparent',
-          minWidth: 360,
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          overflow: 'visible',
-        },
-        overlay: {
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          zIndex: 12000,
-        },
-      }}
+      style={macOSLargeModalStyles}
       ariaHideApp={false}
     >
-      <div className="bg-w dark:bg-gray-900 rounded-2xl shadow-xl p-4 min-w-[320px] max-w-[90vw] max-h-[80vh] flex flex-col">
-        {title && <h2 className="text-lg font-bold mb-2">{title}</h2>}
+      <div className={MODAL_CONTAINER_CLASSES.large}>
+        {title && <h2 className="text-lg font-bold mb-2 t-primary">{title}</h2>}
         <div className="flex-1 overflow-auto">
           <FileManager
             onSelect={(files) => {

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useContext } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
@@ -12,6 +13,12 @@ import { useConfirm } from '../dialog';
 import { ClientConfigContext } from '../../state/config';
 import { FilePreview } from './FilePreview';
 import { FileTypeSvgIcon } from './FileTypeSvgIcon';
+import {
+  MODAL_Z_INDEX,
+  MODAL_CONTAINER_CLASSES,
+  useModalKeyboard,
+  useModalBodyLock
+} from '../../utils/modal-config';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
@@ -30,15 +37,8 @@ const Loading = ({ size = "medium" }: { size?: "small" | "medium" | "large" }) =
   <MacOSSpinner size={size} />
 );
 
-// Button组件
-const Button = ({ onClick, title, secondary = false }: { onClick: () => void, title: string, secondary?: boolean }) => (
-  <button 
-    onClick={onClick} 
-    className={`${secondary ? "bg-secondary t-primary bg-button" : "bg-theme text-white active:bg-theme-active hover:bg-theme-hover"} text-nowrap rounded-full px-4 py-2 h-min space-x-2 flex flex-row items-center`}
-  >
-    <span>{title}</span>
-  </button>
-);
+// 使用统一的Button组件
+import { Button, IconButton } from '../button';
 
 // 判断文件是否可预览（与FilePreview类型保持一致）
 function isPreviewable(file: FileItem): boolean {
@@ -686,6 +686,7 @@ export function FileManager({
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [moveTargetPath, setMoveTargetPath] = useState<string>('');
   const [moving, setMoving] = useState(false);
+
   const handleBatchMove = () => {
     setShowMoveDialog(true);
   };
@@ -725,6 +726,20 @@ export function FileManager({
       showToast(t('files.move_success', { defaultValue: '移动成功' }), 'success');
     }
   };
+
+  // 使用统一的键盘事件处理和body锁定 - 移动弹窗
+  useModalKeyboard(showMoveDialog, () => setShowMoveDialog(false), confirmBatchMove, moving);
+  useModalBodyLock(showMoveDialog);
+
+  // 使用统一的键盘事件处理和body锁定 - 重命名弹窗
+  useModalKeyboard(showRenameDialog, () => setShowRenameDialog(false), confirmRename);
+  useModalBodyLock(showRenameDialog);
+
+  // 使用统一的键盘事件处理和body锁定 - 其他弹窗
+  useModalBodyLock(showNewFolderDialog);
+  useModalBodyLock(!!errorMessage);
+  useModalBodyLock(refDialogOpen);
+  useModalBodyLock(syncDetailOpen);
 
   // 拖拽上传事件处理
   const handleDragEnter = (e: any) => {
@@ -1094,20 +1109,21 @@ export function FileManager({
     );
   };
 
-  useEffect(() => {
-    const hasModal = showNewFolderDialog || errorMessage || refDialogOpen || showMoveDialog;
-    if (hasModal) {
-      document.body.classList.add('modal-open');
-      window.dispatchEvent(new Event('modal-toggle'));
-    } else {
-      document.body.classList.remove('modal-open');
-      window.dispatchEvent(new Event('modal-toggle'));
-    }
-    return () => {
-      document.body.classList.remove('modal-open');
-      window.dispatchEvent(new Event('modal-toggle'));
-    };
-  }, [showNewFolderDialog, errorMessage, refDialogOpen, showMoveDialog]);
+  // 移除重复的modal-open类管理，由useModalBodyLock统一处理
+  // useEffect(() => {
+  //   const hasModal = showNewFolderDialog || errorMessage || refDialogOpen || showMoveDialog;
+  //   if (hasModal) {
+  //     document.body.classList.add('modal-open');
+  //     window.dispatchEvent(new Event('modal-toggle'));
+  //   } else {
+  //     document.body.classList.remove('modal-open');
+  //     window.dispatchEvent(new Event('modal-toggle'));
+  //   }
+  //   return () => {
+  //     document.body.classList.remove('modal-open');
+  //     window.dispatchEvent(new Event('modal-toggle'));
+  //   };
+  // }, [showNewFolderDialog, errorMessage, refDialogOpen, showMoveDialog]);
 
   useEffect(() => {
     const handler = () => loadFiles(true);
@@ -1218,21 +1234,21 @@ export function FileManager({
               <i className={`ri-checkbox-${multipleState ? 'multiple' : 'blank'}-line`}></i>
             </button>
             {/* 新建文件夹按钮 */}
-            <button
+            <IconButton
+              icon="ri-folder-add-line"
               onClick={() => setShowNewFolderDialog(true)}
-              className="px-3 py-2 h-10 bg-gray-100/80 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200"
               title={t('files.new_folder')}
-            >
-              <i className="ri-folder-add-line"></i>
-            </button>
+              variant="secondary"
+            />
             {/* 上传文件按钮 */}
-            <button
-              onClick={() => uploadInputRef.current?.click()}
-              className="px-3 py-2 h-10 bg-gray-100/80 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200"
-              title={t('files.upload')}
-              disabled={isUploading}
-            >
-              <i className="ri-upload-2-line"></i>
+            <div className="relative">
+              <IconButton
+                icon="ri-upload-2-line"
+                onClick={() => uploadInputRef.current?.click()}
+                title={t('files.upload')}
+                variant="secondary"
+                disabled={isUploading}
+              />
               <input
                 ref={uploadInputRef}
                 type="file"
@@ -1241,9 +1257,10 @@ export function FileManager({
                 onChange={handleFileUpload}
                 accept={allowedTypes ? allowedTypes.map(type => type + '/*').join(',') : undefined}
               />
-            </button>
+            </div>
             {/* 全量同步R2按钮（仅icon） */}
-            <button
+            <IconButton
+              icon="ri-refresh-line"
               onClick={async () => {
                 showConfirm(
                   t('files.r2sync_confirm') || '确定要全量同步R2存储桶所有文件到数据库吗？',
@@ -1279,12 +1296,10 @@ export function FileManager({
                   }
                 );
               }}
-              className="px-3 py-2 h-10 bg-gray-100/80 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200"
-              disabled={isSyncing}
               title={t('files.r2sync')}
-            >
-              <i className="ri-refresh-line"></i>
-            </button>
+              variant="secondary"
+              disabled={isSyncing}
+            />
           </div>
         </div>
       </div>
@@ -1332,9 +1347,12 @@ export function FileManager({
       )}
       
       {/* 新建文件夹对话框 */}
-      {showNewFolderDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[11000]">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+      {showNewFolderDialog && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
+          style={{ zIndex: MODAL_Z_INDEX.NESTED_DIALOG }}
+        >
+          <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium mb-4">{t('files.create_folder', { defaultValue: '新建文件夹' })}</h3>
             <input
               ref={folderNameInputRef}
@@ -1348,13 +1366,17 @@ export function FileManager({
               <Button onClick={handleCreateFolder} title={typeof t('create_action.title') === 'string' ? t('create_action.title') : '创建'} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       
       {/* 错误信息对话框 */}
-      {errorMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[11000]">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+      {errorMessage && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
+          style={{ zIndex: MODAL_Z_INDEX.CRITICAL }}
+        >
+          <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium text-red-600 mb-4">{t('alert')}</h3>
             <p className="mb-6">{t('files.load_error', { error: errorMessage })}</p>
             <div className="flex justify-end gap-2">
@@ -1363,13 +1385,17 @@ export function FileManager({
               <Button onClick={() => { closeErrorDialog(); window.location.href = '/'; }} title={t('index.back')} secondary />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 引用详情弹窗 */}
-      {refDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[11000]">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+      {refDialogOpen && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
+          style={{ zIndex: MODAL_Z_INDEX.NESTED_DIALOG }}
+        >
+          <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium mb-4">{t('files.ref_detail')}</h3>
             {refDialogLoading ? (
               <div className="text-center text-gray-500">{t('loading')}</div>
@@ -1392,13 +1418,22 @@ export function FileManager({
               <Button onClick={() => setRefDialogOpen(false)} title={t('close')} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 移动弹窗 */}
-      {showMoveDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[11000]">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+      {showMoveDialog && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
+          style={{ zIndex: MODAL_Z_INDEX.NESTED_DIALOG }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowMoveDialog(false);
+            }
+          }}
+        >
+          <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium mb-4">{t('files.move_to')}</h3>
             <input
               type="text"
@@ -1413,13 +1448,22 @@ export function FileManager({
               <Button onClick={confirmBatchMove} title={moving ? t('files.moving') : t('files.move')} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 重命名弹窗 */}
-      {showRenameDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[11000]">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+      {showRenameDialog && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
+          style={{ zIndex: MODAL_Z_INDEX.NESTED_DIALOG }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowRenameDialog(false);
+            }
+          }}
+        >
+          <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium mb-4">{t('files.rename_prompt') || '请输入新文件名'}</h3>
             <input
               type="text"
@@ -1433,13 +1477,22 @@ export function FileManager({
               <Button onClick={confirmRename} title={t('confirm')} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* R2同步结果弹窗 */}
-      {syncDetailOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[11000]">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full shadow-2xl">
+      {syncDetailOpen && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
+          style={{ zIndex: MODAL_Z_INDEX.NESTED_DIALOG }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSyncDetailOpen(false);
+            }
+          }}
+        >
+          <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium mb-4">{t('files.r2sync_result', { defaultValue: 'R2同步结果' })}</h3>
             <div className="mb-4 text-gray-700 dark:text-gray-200 whitespace-pre-line break-all">
               {syncResult}
@@ -1457,12 +1510,14 @@ export function FileManager({
               <Button onClick={() => setSyncDetailOpen(false)} title={t('close')} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 图片预览弹窗 */}
-      {previewOpen && (
-        <FilePreview files={previewableFiles} current={previewIndex} onClose={() => setPreviewOpen(false)} />
+      {previewOpen && createPortal(
+        <FilePreview files={previewableFiles} current={previewIndex} onClose={() => setPreviewOpen(false)} />,
+        document.body
       )}
 
       <ConfirmUI />

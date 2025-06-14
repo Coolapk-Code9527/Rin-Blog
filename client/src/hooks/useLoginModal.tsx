@@ -5,46 +5,38 @@ import ReactModal from "react-modal";
 import { Icon } from "../components/icon";
 import { Input } from "../components/input";
 import { oauth_url } from "../main";
+import {
+    macOSModalStyles,
+    MODAL_CONTAINER_CLASSES,
+    useModalKeyboard,
+    useModalBodyLock
+} from "../utils/modal-config";
 
 export function useLoginModal(onClose?: () => void) {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [isOpened, setIsOpened] = useState(false);
+
+    // 使用统一的键盘事件处理和body锁定
+    useModalKeyboard(isOpened, () => setIsOpened(false));
+    useModalBodyLock(isOpened);
+
     const onLogin = useCallback(() => {
         setTimeout(() => {
             setIsOpened(false)
             onClose?.()
         }, 100)
     }, [username, password])
+
     const LoginModal = useCallback(() => {
         return (
             <ReactModal
                 isOpen={isOpened}
-                style={{
-                    content: {
-                        top: "50%",
-                        left: "50%",
-                        right: "auto",
-                        bottom: "auto",
-                        marginRight: "-50%",
-                        transform: "translate(-50%, -50%)",
-                        padding: "0",
-                        border: "none",
-                        borderRadius: "16px",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        background: "none",
-                    },
-                    overlay: {
-                        backgroundColor: "rgba(0, 0, 0, 0.5)",
-                        zIndex: 1000,
-                    },
-                }}
+                style={macOSModalStyles}
                 onRequestClose={() => setIsOpened(false)}
+                ariaHideApp={false}
             >
-                <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md w-full flex flex-col items-center justify-between p-4 space-y-2 text-gray-900 dark:text-gray-100 min-w-64 shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60 rounded-2xl">
+                <div className={MODAL_CONTAINER_CLASSES.standard}>
                     <p className="text-xl">{t('login.title')}</p>
                     {false && <>
                         <Input value={username} setValue={setUsername} placeholder={t('login.username.placeholder')}

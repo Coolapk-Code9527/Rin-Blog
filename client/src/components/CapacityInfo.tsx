@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { endpoint } from '../main';
 import { headersWithAuth } from '../utils/auth';
@@ -8,40 +8,93 @@ export function CapacityInfo() {
   const [r2Usage, setR2Usage] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filesCount, setFilesCount] = useState<number | null>(null);
+
+  const fetchCapacityInfo = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`${endpoint}/files/stat`, {
+        headers: headersWithAuth(),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (data && data.r2 && typeof data.r2.used === 'number') {
+        setR2Usage(data.r2.used);
+        setFilesCount(data.filesCount || null);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`${endpoint}/files/stat`, {
-      headers: headersWithAuth(),
-    })
-      .then(res => res.json())
-      .then((data: any) => {
-        if (data && data.r2 && typeof data.r2.used === 'number') setR2Usage(data.r2.used);
-        setLoading(false);
-      })
-      .catch(e => {
-        setError(e.message);
-        setLoading(false);
-      });
+    fetchCapacityInfo();
   }, []);
 
   function formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return '0 B';
+
+    // 使用1024作为基数，与R2控制台保持一致
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+
+    // 根据大小调整精度
+    let precision = 2;
+    if (i === 0) precision = 0; // Bytes不需要小数
+    if (i === 1 && bytes < 10 * k) precision = 1; // 小于10KB时显示1位小数
+
+    const value = bytes / Math.pow(k, i);
+    const formatted = value.toFixed(precision);
+
+    // 移除不必要的尾随零
+    const cleanFormatted = parseFloat(formatted).toString();
+
+    return `${cleanFormatted} ${sizes[i]}`;
   }
 
-  if (loading) return <div className="text-xs text-gray-400 mt-1">{t('loading')}</div>;
-  if (error) return <div className="text-xs text-red-400 mt-1">{t('error')}: {error}</div>;
+  if (loading) return (
+    <div className="flex items-center gap-2 mb-2">
+      <div className="w-4 h-4 border-2 border-theme border-t-transparent rounded-full animate-spin"></div>
+      <span className="text-xs text-gray-500 dark:text-gray-400">{t('loading')}</span>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-error/10 border border-error/20 rounded-xl">
+      <i className="ri-error-warning-line text-error text-sm"></i>
+      <span className="text-xs text-error">{t('error')}: {error}</span>
+    </div>
+  );
 
   return (
-    <div className="flex flex-row gap-4 items-center mb-2">
-      <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-pink-50 dark:bg-pink-900/20 px-3 py-1 rounded-full">
-        <i className="ri-database-2-line text-pink-400 text-base" />
-        {t('files.r2_usage', { used: r2Usage !== null ? formatFileSize(r2Usage) : '--' })}
-      </span>
+    <div className="flex flex-row gap-3 items-center mb-2">
+      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <i className={`ri-database-2-line text-theme text-sm ${loading ? 'animate-spin' : ''}`} />
+        <span>
+          {t('files.r2_usage', { used: r2Usage !== null ? formatFileSize(r2Usage) : '--' })}
+        </span>
+        {filesCount !== null && (
+          <span className="text-gray-400 ml-1">
+            ({filesCount} {t('files.files_count', { defaultValue: '个文件' })})
+          </span>
+        )}
+      </div>
     </div>
   );
 } 

@@ -192,3 +192,46 @@ All functions and constants are documented in both Chinese and English for multi
 - **Visual Hierarchy**: Clear distinction between interface elements and content areas
 - **Accessibility**: Enhanced keyboard navigation, focus states, and screen reader support
 - **Modern Aesthetics**: Contemporary design with subtle animations and refined details
+
+### Phase 6: File Management System macOS Optimization (2024-12-xx)
+
+#### FilePreview Component Complete Redesign
+- **Button Visibility Fix**: Resolved white transparent buttons merging with white backgrounds (PDF, Word documents, etc.)
+- **macOS-style Navigation**: Redesigned close, download, and navigation buttons with dark semi-transparent backgrounds (`bg-black/60`)
+- **Unified Container Sizes**: Standardized all file preview containers to 800x600px (desktop) with responsive adaptation
+- **Enhanced Visual Hierarchy**: Improved loading states, error displays, and file type indicators with glassmorphism effects
+- **Smart Content Scaling**: Implemented `object-fit: contain` for images/videos ensuring proper aspect ratio preservation
+
+#### Button Design System Unification
+- **Component Architecture**: Created unified Button, ButtonWithLoading, and IconButton components with consistent styling
+- **Animation Standardization**: Replaced mixed scale/translate animations with unified `hover:-translate-y-0.5` macOS-style effects
+- **Size Standardization**: Established 40px height standard for all buttons with proper icon centering
+- **Variant System**: Implemented 5 semantic color variants (primary, secondary, danger, success, warning)
+- **Pagination Enhancement**: Complete redesign of pagination buttons with enhanced shadows and hover effects
+
+#### File Manager Interface Improvements
+- **Icon Button Migration**: Replaced custom buttons with unified IconButton components throughout file manager
+- **Visual Consistency**: Applied consistent rounded corners (`rounded-xl`), shadows, and spacing across all elements
+- **Interaction Feedback**: Enhanced hover states and click animations for better user experience
+- **Accessibility**: Improved keyboard navigation and screen reader support for file operations
+
+#### R2 Capacity Display Optimization
+- **Accurate Calculation**: Fixed server-side capacity calculation from paginated to full R2 bucket analysis
+- **macOS Design Compliance**: Removed pink theme colors, implemented neutral glassmorphism design
+- **Precision Formatting**: Enhanced file size formatting to match R2 console display exactly
+- **Information Architecture**: Added file count display and optimized information hierarchy
+- **Performance**: Optimized API calls with proper error handling and loading states
+
+#### Technical Achievements
+- **CSS Conflict Resolution**: Resolved global `.bg-button` style conflicts affecting pagination components
+- **Server-side Optimization**: Improved R2 file statistics calculation for accurate capacity reporting
+- **Component Reusability**: Established reusable button component system reducing code duplication
+- **Type Safety**: Enhanced TypeScript support across all button and file management components
+- **Performance**: Optimized file preview rendering with unified container sizing and smart content loading
+
+#### User Experience Enhancements
+- **Visual Consistency**: 100% macOS design compliance across all file management interfaces
+- **Intuitive Interactions**: Simplified and standardized user interactions throughout the system
+- **Error Handling**: Improved error states with clear visual feedback and recovery options
+- **Responsive Design**: Enhanced mobile and tablet experience with adaptive layouts
+- **Accessibility**: Comprehensive keyboard navigation and screen reader optimization

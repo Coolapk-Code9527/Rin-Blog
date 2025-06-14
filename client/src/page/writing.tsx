@@ -28,6 +28,7 @@ import { useToast } from '../hooks/useToast';
 import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialog';
 import type { FileItem } from '../types/api';
 import { PageContainer } from "../components/container";
+import { MODAL_Z_INDEX } from "../utils/modal-config";
 
 // 处理process.env问题
 declare const process: {
@@ -248,7 +249,10 @@ const ContentTemplates = React.memo(({ editor }: { editor?: editor.IStandaloneCo
       </button>
       
       {isOpen && (
-        <div className="absolute z-20 mt-2 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-md shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60">
+        <div
+          className="absolute mt-2 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-md shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60"
+          style={{ zIndex: MODAL_Z_INDEX.DROPDOWN }}
+        >
           <div className="p-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h3 className="font-medium text-sm">{t('templates.templates')}</h3>
             <button 
