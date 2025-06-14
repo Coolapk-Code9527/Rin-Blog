@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from 'react-modal';
+import { useTranslation } from 'react-i18next';
 import { FileManager } from './FileManager';
 import type { FileItem } from '../../types/api';
 import {
@@ -26,6 +27,8 @@ export function FileSelectorDialog({
   multiple = false,
   title
 }: FileSelectorDialogProps) {
+  const { t } = useTranslation();
+
   // 只在弹窗打开时渲染FileManager，关闭时卸载
   const [internalOpen, setInternalOpen] = useState(isOpen);
   React.useEffect(() => {
@@ -62,7 +65,7 @@ export function FileSelectorDialog({
           className="mt-4 px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
           onClick={onClose}
         >
-          取消
+          {t('cancel')}
         </button>
       </div>
     </Modal>

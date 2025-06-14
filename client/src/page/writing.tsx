@@ -9,7 +9,7 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {Helmet} from "react-helmet-async";
 import {useTranslation} from "react-i18next";
-import { MacOSSpinner, InlineSpinner } from '../components/loading';
+import { InlineSpinner } from '../components/loading';
 import { ToolbarButton, Button } from '../components/button';
 import {ShowAlertType, useAlert} from '../components/dialog';
 import {Checkbox, Input} from "../components/input";
@@ -19,13 +19,13 @@ import {headersWithAuth} from "../utils/auth";
 import {Cache, useCache} from '../utils/cache';
 import {siteName} from "../utils/constants";
 import {useColorMode} from "../utils/darkModeUtils";
-import mermaid from 'mermaid';
+
 import { HistoryDialog } from "../components/history_dialog";
 import { useEditorHistory, HistoryItem } from "../utils/history";
 import {DraftDialog} from "../components/draft_dialog";
 import {useDraftManager, Draft} from "../utils/draft";
 import type { Feed } from '../types/api';  // 根据实际路径调整
-import { useToast } from '../hooks/useToast';
+
 import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialog';
 import type { FileItem } from '../types/api';
 import { PageContainer } from "../components/container";
@@ -242,10 +242,10 @@ const ContentTemplates = React.memo(({ editor }: { editor?: editor.IStandaloneCo
     <div className="relative inline-block" ref={templatesPanelRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center shadow-sm hover:shadow-enhanced transition-all duration-200"
+        className="h-8 px-3 bg-purple-50/70 dark:bg-purple-900/25 backdrop-blur-md text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-800/40 border border-purple-200 dark:border-purple-800 shadow-enhanced hover:shadow-enhanced-lg rounded-xl font-medium transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-theme/30 focus:ring-offset-2 dark:focus:ring-offset-gray-900 flex items-center justify-center"
         title={t('templates.insert')}
       >
-        <i className="ri-file-list-line text-lg mr-1" />
+        <i className="ri-file-list-line text-base mr-1" />
         <span className="text-sm hidden sm:inline">{t('templates.templates')}</span>
       </button>
       
@@ -397,10 +397,8 @@ const MarkdownToolbar = React.memo(({
       />
       
       {/* 模板工具 */}
-      <div className="flex items-center rounded overflow-hidden border border-gray-200 dark:border-gray-700">
-        {/* @ts-ignore - 忽略ContentTemplates组件类型问题 */}
-        <ContentTemplates editor={editor} />
-      </div>
+      {/* @ts-ignore */}
+      <ContentTemplates editor={editor} />
 
       {/* 文档管理工具组 - 靠右 */}
       <div className="ml-auto flex items-center gap-1">
@@ -430,7 +428,7 @@ const MarkdownToolbar = React.memo(({
           showText={true}
           text={t('history.save_snapshot')}
         />
-      </div>
+
         {/* 插入文件按钮 */}
         <ToolbarButton
           icon="ri-attachment-2"
@@ -440,172 +438,113 @@ const MarkdownToolbar = React.memo(({
           showText={true}
           text={t('markdown.insert_file', { defaultValue: '插入文件' })}
         />
+      </div>
     </div>
   );
 });
 // 确保有一个明确的displayName
 MarkdownToolbar.displayName = 'MarkdownToolbar';
 
-// 增强的图片拖放上传区域
-const ImageDropzone = React.memo(({ onImageUploaded }: { onImageUploaded: (url: string, filename: string) => void }) => {
+// 增强的编辑器拖放上传功能
+const useEditorDragDrop = (editorRef: React.RefObject<editor.IStandaloneCodeEditor>, showAlert: ShowAlertType) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { showAlert } = useAlert();
+  const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const { t } = useTranslation();
-  
-  const handleUpload = useCallback((file: File) => {
-    if (!file || !file.type.startsWith('image/')) {
-      showAlert(t("upload.image_only"));
-      return;
-    }
-    
-    // 创建预览
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewImage(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-    
+
+  const handleFileUpload = useCallback(async (files: FileList) => {
+    if (!editorRef.current || files.length === 0) return;
+
+    const editor = editorRef.current;
+    const selection = editor.getSelection();
+    if (!selection) return;
+
     setIsUploading(true);
-    // 模拟进度
-    const interval = setInterval(() => {
-      setUploadProgress((prev: number) => Math.min(prev + 5, 95));
-    }, 100);
-    
-    uploadImage(file, (url) => {
-      clearInterval(interval);
+    setUploadingFiles(Array.from(files));
+    setUploadProgress(0);
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setUploadProgress(Math.round((i / files.length) * 100));
+
+        await new Promise<void>((resolve, reject) => {
+          uploadImage(file, (url) => {
+            const currentValue = editor.getModel()?.getValue();
+            let insertText = '';
+
+            if (file.type.startsWith('image/')) {
+              insertText = `![${file.name}](${url})\n`;
+            } else if (file.type.startsWith('audio/')) {
+              insertText = `<audio src="${url}" controls></audio>\n`;
+            } else if (file.type.startsWith('video/')) {
+              insertText = `<video src="${url}" controls></video>\n`;
+            } else {
+              insertText = `[${file.name}](${url})\n`;
+            }
+
+            if (currentValue && currentValue.includes(insertText.trim())) {
+              resolve();
+              return;
+            }
+
+            editor.executeEdits(undefined, [{
+              range: selection,
+              text: insertText,
+            }]);
+            resolve();
+          }, (error) => {
+            showAlert(error);
+            reject(new Error(error));
+          });
+        });
+      }
       setUploadProgress(100);
-      
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
       setTimeout(() => {
-        onImageUploaded(url, file.name);
         setIsUploading(false);
         setUploadProgress(0);
-        setPreviewImage(null); // 上传完成后清除预览
+        setUploadingFiles([]);
       }, 500);
-    }, showAlert);
-  }, [onImageUploaded, showAlert, t]);
-  
-  // 取消上传
-  const cancelUpload = useCallback(() => {
-    setIsUploading(false);
-    setUploadProgress(0);
-    setPreviewImage(null);
-  }, []);
-  
-  const handleDragOver = useCallback((e: DragDropEvent) => { 
-    e.preventDefault(); 
-    setIsDragging(true); 
-  }, []);
-  
-  const handleDragLeave = useCallback(() => { 
-    setIsDragging(false); 
-  }, []);
-  
-  const handleDrop = useCallback((e: DragDropEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files?.[0]) {
-          handleUpload(e.dataTransfer.files[0]);
-        }
-  }, [handleUpload]);
-  
-  const handleClick = useCallback(() => {
-    if (!isUploading) {
-      fileInputRef.current?.click();
     }
-  }, [isUploading]);
-  
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      handleUpload(e.target.files[0]);
-    }
-  }, [handleUpload]);
-  
-  const handleCancelButtonClick = useCallback((e: React.MouseEvent) => {
+  }, [editorRef, showAlert, t]);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    cancelUpload();
-  }, [cancelUpload]);
-  
-  return (
-    <div 
-      className={`border-2 border-dashed rounded-lg p-4 mb-2 text-center transition-all cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
-        isDragging 
-          ? 'border-theme bg-theme/10 shadow-md' 
-          : 'border-gray-300 dark:border-gray-600'
-      }`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onClick={handleClick}
-    >
-      <input 
-        type="file" 
-        className="hidden" 
-        ref={fileInputRef}
-        accept="image/jpeg, image/png, image/gif, image/webp, image/avif, image/svg+xml" 
-        onChange={handleFileChange}
-      />
-      
-      {!isUploading && !previewImage && (
-        <div className="flex flex-col items-center py-2">
-          <div className="w-12 h-12 mb-2 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            <i className="ri-image-add-line text-2xl text-theme" />
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">{t("drop_or_click_to_upload")}</p>
-          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF, WEBP, AVIF, SVG ({t("upload.max_size", {size: 20})})</p>
-        </div>
-      )}
-      
-      {previewImage && (
-        <div className="relative mb-2">
-          <img 
-            src={previewImage} 
-            alt="Preview" 
-            className="max-h-40 mx-auto rounded-md object-contain shadow-sm" 
-          />
-          {!isUploading && (
-            <button 
-              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
-              onClick={handleCancelButtonClick}
-            >
-              <i className="ri-close-line text-xs" />
-            </button>
-          )}
-        </div>
-      )}
-      
-      {isUploading && (
-        <div className="mt-3">
-          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-pink-500 to-theme transition-all duration-300" 
-              style={{width: `${uploadProgress}%`}}
-            />
-          </div>
-          <div className="flex justify-between items-center mt-2">
-            <p className="text-xs text-gray-500">
-              <i className={`ri-upload-cloud-line mr-1 ${uploadProgress === 100 ? 'text-green-500' : 'text-theme'}`}></i>
-              {uploadProgress === 100 ? t("upload.success") : `${uploadProgress}%`}
-            </p>
-            {uploadProgress < 100 && (
-              <button
-                className="text-xs text-red-500 hover:text-red-700 transition-colors"
-                onClick={handleCancelButtonClick}
-              >
-                {t("cancel")}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
-// 确保有一个明确的displayName
-ImageDropzone.displayName = 'ImageDropzone';
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer?.files) {
+      handleFileUpload(e.dataTransfer.files);
+    }
+  }, [handleFileUpload]);
+
+  return {
+    isDragging,
+    isUploading,
+    uploadProgress,
+    uploadingFiles,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleFileUpload
+  };
+};
 
 // 增强的粘贴处理函数，支持预览
 function handlePaste(event: React.ClipboardEvent<HTMLDivElement>, editorRef: React.RefObject<editor.IStandaloneCodeEditor>, setUploading: (value: boolean) => void, showAlert: ShowAlertType) {
@@ -1069,7 +1008,9 @@ export function WritingPage({ id }: { id?: number }) {
   const [editorScrolling, setEditorScrolling] = useState(false);
   const [previewScrolling, setPreviewScrolling] = useState(false);
   const { showAlert, AlertUI } = useAlert()
-  const { showToast } = useToast();
+
+  // 使用新的拖放功能
+  const dragDropHandlers = useEditorDragDrop(editorRef, showAlert);
   
   // 历史记录状态
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
@@ -1473,9 +1414,9 @@ export function WritingPage({ id }: { id?: number }) {
   return (
     <>
       <Helmet>
-        <title>{`${t('writing')} - ${NAME}`}</title>
+        <title>{`${t('writing.title')} - ${NAME}`}</title>
         <meta property="og:site_name" content={siteName} />
-        <meta property="og:title" content={t('writing')} />
+        <meta property="og:title" content={t('writing.title')} />
         <meta property="og:image" content={AVATAR} />
         <meta property="og:type" content="article" />
         <meta property="og:url" content={document.URL} />
@@ -1551,52 +1492,48 @@ export function WritingPage({ id }: { id?: number }) {
               </div>
               <div className={`w-full h-full ${preview === 'comparison' ? "flex flex-row space-x-4" : ""}`}>
                 <div
-                  className={`flex flex-col ${preview === 'preview' ? "hidden" : ""} ${preview === 'comparison' ? "w-1/2" : "w-full"} editor-container custom-scrollbar`}
-                  onDrop={(e: DragEvent) => {
-                    e.preventDefault();
-                    const editor = editorRef.current;
-                    if (!editor) return;
-                    for (let i = 0; i < e.dataTransfer.files.length; i++) {
-                      const selection = editor.getSelection();
-                      if (!selection) return;
-                      const file = e.dataTransfer.files[i];
-                      setUploading(true);
-                      uploadImage(file, (url) => {
-                        setUploading(false);
-                        const currentValue = editor.getModel()?.getValue();
-                        let insertText = '';
-                        if (file.type.startsWith('image/')) {
-                          insertText = `![${file.name}](${url})\n`;
-                        } else if (file.type.startsWith('audio/')) {
-                          insertText = `<audio src=\"${url}\" controls></audio>\n`;
-                        } else if (file.type.startsWith('video/')) {
-                          insertText = `<video src=\"${url}\" controls></video>\n`;
-                        } else {
-                          insertText = `[${file.name}](${url})\n`;
-                        }
-                        if (currentValue && currentValue.includes(insertText.trim())) return;
-                        editor.executeEdits(undefined, [{ range: selection, text: insertText }]);
-                      }, showAlert);
-                    }
-                  }}
+                  className={`flex flex-col ${preview === 'preview' ? "hidden" : ""} ${preview === 'comparison' ? "w-1/2" : "w-full"} editor-container custom-scrollbar relative ${
+                    dragDropHandlers.isDragging ? 'border-2 border-dashed border-theme bg-theme/5' : ''
+                  }`}
+                  onDragOver={dragDropHandlers.handleDragOver}
+                  onDragLeave={dragDropHandlers.handleDragLeave}
+                  onDrop={dragDropHandlers.handleDrop}
                   onPaste={handlePasteProxy}
                 >
-                  <div className="mb-2">
-                    {/* @ts-ignore - 忽略ImageDropzone的类型错误 */}
-                    <ImageDropzone onImageUploaded={(url, filename) => {
-                      const editor = editorRef.current;
-                      if (!editor) return;
-                      const selection = editor.getSelection();
-                      if (!selection) return;
-                      const currentValue = editor.getModel()?.getValue();
-                      const imageMarkdown = `![${filename}](${url})`;
-                      if (currentValue && currentValue.includes(imageMarkdown)) return; // 已有则不插入
-                      editor.executeEdits(undefined, [{
-                        range: selection,
-                        text: imageMarkdown + '\n',
-                      }]);
-                    }} />
-                  </div>
+                  {/* 拖放上传提示覆盖层 */}
+                  {dragDropHandlers.isDragging && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-theme/10 backdrop-blur-sm rounded-lg">
+                      <div className="text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-theme/20 flex items-center justify-center">
+                          <i className="ri-upload-cloud-2-line text-3xl text-theme" />
+                        </div>
+                        <p className="text-lg font-medium text-theme">{t('upload.drop_files_here')}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('upload.all_file_types_supported')}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 上传进度提示 */}
+                  {dragDropHandlers.isUploading && (
+                    <div className="absolute top-4 right-4 z-20 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-enhanced p-3 border border-neutral-200/60 dark:border-neutral-700/60">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-theme/20 flex items-center justify-center">
+                          <i className="ri-upload-cloud-line text-theme animate-pulse" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {t('uploading')} {dragDropHandlers.uploadingFiles.length} {t('files')}
+                          </p>
+                          <div className="w-32 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full mt-1">
+                            <div
+                              className="h-1.5 bg-gradient-to-r from-pink-500 to-theme rounded-full transition-all duration-300"
+                              style={{ width: `${dragDropHandlers.uploadProgress}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   {/* @ts-ignore - 忽略MarkdownToolbar组件类型问题 */}
                   <MarkdownToolbar 

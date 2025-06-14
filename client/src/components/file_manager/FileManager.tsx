@@ -459,7 +459,7 @@ export function FileManager({
     // 禁止删除虚拟一级目录
     const virtualFolders = ["/" + S3_FOLDER, "/" + S3_CACHE_FOLDER];
     if (virtualFolders.includes(file.path)) {
-      showToast(t('delete_error', { error: t('files.delete_error') + ' (不能删除系统目录)' }), 'error');
+      showToast(t('delete_error', { error: t('files.delete_error') + ' (' + t('files.cannot_delete_system_dir', { defaultValue: '不能删除系统目录' }) + ')' }), 'error');
       return;
     }
     showConfirm(
@@ -610,7 +610,7 @@ export function FileManager({
   // 1. 单文件下载
   const handleDownloadFile = async (file: FileItem) => {
     if (file.isFolder) {
-      showToast(t('files.download_folder_not_supported') || '暂不支持直接下载整个文件夹', 'info');
+      showToast(t('files.download_folder_not_supported', { defaultValue: '暂不支持直接下载整个文件夹' }), 'info');
       return;
     }
     try {
@@ -820,7 +820,7 @@ export function FileManager({
               <span className="truncate">
                 {file.name && !/^[a-f0-9]{32,}$/.test(file.name)
                   ? file.name
-                  : (/^[a-f0-9]{32,}$/.test(file.name) ? (file.name + '（无原始名）') : file.name)}
+                  : (/^[a-f0-9]{32,}$/.test(file.name) ? (file.name + '（' + t('files.no_original_name', { defaultValue: '无原始名' }) + '）') : file.name)}
               </span>
             </p>
             {/* 文件大小/类型 */}
@@ -871,7 +871,7 @@ export function FileManager({
               {isPreviewable(file) && (
                 <button
                   className="text-pink-500 hover:text-pink-700 p-1"
-                  title={t('files.preview') || '预览'}
+                  title={t('files.preview', { defaultValue: '预览' })}
                   onClick={e => {e.stopPropagation(); handlePreviewClick(file);}}
                 >
                   <i className="ri-eye-line"></i>
@@ -1003,7 +1003,7 @@ export function FileManager({
                   <span className="truncate">
                     {file.name && !/^[a-f0-9]{32,}$/.test(file.name)
                       ? file.name
-                      : (/^[a-f0-9]{32,}$/.test(file.name) ? (file.name + '（无原始名）') : file.name)}
+                      : (/^[a-f0-9]{32,}$/.test(file.name) ? (file.name + '（' + t('files.no_original_name', { defaultValue: '无原始名' }) + '）') : file.name)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-500">
@@ -1057,7 +1057,7 @@ export function FileManager({
                   {isPreviewable(file) && (
                     <button
                       className="text-pink-500 hover:text-pink-700 p-1"
-                      title={t('files.preview') || '预览'}
+                      title={t('files.preview', { defaultValue: '预览' })}
                       onClick={e => {e.stopPropagation(); handlePreviewClick(file);}}
                     >
                       <i className="ri-eye-line"></i>
