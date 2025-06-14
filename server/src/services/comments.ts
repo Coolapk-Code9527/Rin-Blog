@@ -23,7 +23,7 @@ export function CommentService() {
                     const feedId = parseInt(feed);
                     try {
                     try {
-                        // 尝试使用嵌套查询（如果数据库支持parentId字段）
+                        // 尝试使用嵌套查询获取评论和回复
                         const comment_list = await db.query.comments.findMany({
                             where: and(eq(comments.feedId, feedId), isNull(comments.parentId)),
                             columns: { feedId: false },
@@ -44,7 +44,7 @@ export function CommentService() {
                         });
 
                         // 处理匿名评论的显示
-                        const processedComments = comment_list.map(comment => {
+                        return comment_list.map(comment => {
                             const processComment = (c: any) => {
                                 if (c.nickname) {
                                     return {
@@ -65,37 +65,31 @@ export function CommentService() {
 
                             return processedComment;
                         });
-
-                        return processedComments;
-                    } catch (nestedError: any) {
-                        // 如果嵌套查询失败（可能是因为数据库不支持parentId），回退到平铺查询
-                        if (nestedError.message && nestedError.message.includes('no such column: parent_id')) {
-                            console.warn("Database doesn't support parentId yet, using flat structure");
-                            const all_comments = await db.query.comments.findMany({
-                                where: eq(comments.feedId, feedId),
-                                columns: { feedId: false },
-                                with: {
-                                    user: {
-                                        columns: { id: true, username: true, avatar: true, permission: true }
-                                    }
-                                },
-                                orderBy: [desc(comments.createdAt)]
-                            });
-
-                            // 处理匿名评论的显示
-                            return all_comments.map(comment => {
-                                if (comment.nickname) {
-                                    return {
-                                        ...comment,
-                                        userId: undefined,
-                                        user: undefined
-                                    };
+                    } catch (error: any) {
+                        // 如果数据库不支持parentId字段，回退到平铺查询
+                        console.warn("Database may not support parentId field, falling back to flat structure:", error.message);
+                        const comment_list = await db.query.comments.findMany({
+                            where: eq(comments.feedId, feedId),
+                            columns: { feedId: false },
+                            with: {
+                                user: {
+                                    columns: { id: true, username: true, avatar: true, permission: true }
                                 }
-                                return comment;
-                            });
-                        } else {
-                            throw nestedError;
-                        }
+                            },
+                            orderBy: [desc(comments.createdAt)]
+                        });
+
+                        // 处理匿名评论的显示
+                        return comment_list.map(comment => {
+                            if (comment.nickname) {
+                                return {
+                                    ...comment,
+                                    userId: undefined,
+                                    user: undefined
+                                };
+                            }
+                            return comment;
+                        });
                     }
                         
 
@@ -138,7 +132,7 @@ export function CommentService() {
                                     content
                                 };
 
-                                // 如果有parentId，尝试添加（部署后数据库会支持）
+                                // 如果有parentId，添加到插入数据中
                                 if (parentId) {
                                     insertData.parentId = parseInt(parentId);
                                 }
@@ -146,9 +140,9 @@ export function CommentService() {
                                 try {
                                     await db.insert(comments).values(insertData);
                                 } catch (dbError: any) {
-                                    // 如果是因为parentId字段不存在导致的错误，尝试不带parentId插入
-                                    if (dbError.message && dbError.message.includes('no such column: parent_id')) {
-                                        console.warn("Database doesn't support parentId yet, inserting as top-level comment");
+                                    // 如果是parentId字段不存在的错误，尝试不带parentId插入
+                                    if (dbError.message && (dbError.message.includes('no such column: parent_id') || dbError.message.includes('parentId'))) {
+                                        console.warn("Database doesn't support parentId field, inserting as top-level comment");
                                         delete insertData.parentId;
                                         await db.insert(comments).values(insertData);
                                     } else {
@@ -186,7 +180,7 @@ export function CommentService() {
                         content
                     };
 
-                    // 如果有parentId，尝试添加（部署后数据库会支持）
+                    // 如果有parentId，添加到插入数据中
                     if (parentId) {
                         insertData.parentId = parseInt(parentId);
                     }
@@ -194,9 +188,9 @@ export function CommentService() {
                     try {
                         await db.insert(comments).values(insertData);
                     } catch (dbError: any) {
-                        // 如果是因为parentId字段不存在导致的错误，尝试不带parentId插入
-                        if (dbError.message && dbError.message.includes('no such column: parent_id')) {
-                            console.warn("Database doesn't support parentId yet, inserting as top-level comment");
+                        // 如果是parentId字段不存在的错误，尝试不带parentId插入
+                        if (dbError.message && (dbError.message.includes('no such column: parent_id') || dbError.message.includes('parentId'))) {
+                            console.warn("Database doesn't support parentId field, inserting as top-level comment");
                             delete insertData.parentId;
                             await db.insert(comments).values(insertData);
                         } else {

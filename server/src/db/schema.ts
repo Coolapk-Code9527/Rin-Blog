@@ -57,7 +57,7 @@ export const comments = sqliteTable("comments", {
     id: integer("id").primaryKey(),
     feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
     userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
-    parentId: integer("parent_id"), // 部署时会自动添加到数据库
+    parentId: integer("parent_id"),
     nickname: text("nickname"),
     content: text("content").notNull(),
     createdAt: created_at,
