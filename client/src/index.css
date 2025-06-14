@@ -1047,7 +1047,7 @@ i[class^="ri-"]::before, i[class*=" ri-"]::before {
 
 .wmde-markdown pre code, .toc-content pre code, .markdown-body pre code {
   @apply block p-4 overflow-x-auto text-sm bg-transparent border-0 text-gray-800 dark:text-gray-200;
-  color: inherit !important;
+  /* 已优化：不再强制 color，保留高亮库色彩 */
 }
 
 .wmde-markdown pre.language-mermaid, .toc-content pre.language-mermaid, .markdown-body pre.language-mermaid {
@@ -2412,12 +2412,12 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 .wmde-markdown pre:hover:has(.code-block-action:hover) code,
 .toc-content pre:hover:has(.code-block-action:hover) code,
 .markdown-body pre:hover:has(.code-block-action:hover) code {
-  color: inherit !important;
+  /* 已优化：按钮悬停不影响代码色彩 */
 }
 .dark .wmde-markdown pre:hover:has(.code-block-action:hover) code,
 .dark .toc-content pre:hover:has(.code-block-action:hover) code,
 .dark .markdown-body pre:hover:has(.code-block-action:hover) code {
-  color: inherit !important;
+  /* 已优化：按钮悬停不影响代码色彩 */
 }
 
 /* 按钮组增强响应式间距和触控体验 */
@@ -2441,4 +2441,10 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 /* 保证正文h1和目录h3齐平 */
 main h1, [role="complementary"] h3, aside h3 {
   margin-top: 0 !important;
+}
+
+.wmde-markdown pre code,
+.toc-content pre code,
+.markdown-body pre code {
+  box-shadow: none !important;
 }

@@ -384,6 +384,9 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
 
           const language = match ? match[1] : "";
 
+          // 若无语言标记，自动补充 className 以保证高亮
+          const codeClassName = className || 'language-plaintext';
+
           // 折叠逻辑：超高时显示折叠按钮
           const [shouldCollapse, setShouldCollapse] = React.useState(false);
           React.useEffect(() => {
@@ -394,16 +397,25 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
 
           if (isCodeBlock) {
             return (
-              <div className={`my-0 shadow-lg bg-[#23272f] overflow-hidden relative`}
-                style={{}}>
+              <div className={`my-0 overflow-hidden relative`}
+                style={{ background: colorMode === 'dark' ? '#23272f' : '#f3f4f6' }}>
                 {/* Mac风格顶部栏 */}
-                <div className="flex items-center h-8 px-4 rounded-t-xl bg-gradient-to-r from-[#23272f] via-[#2d3748] to-[#23272f] border-b border-gray-700 select-none shadow-md">
+                <div className="flex items-center h-8 px-4 rounded-t-xl bg-gradient-to-r"
+                  style={{
+                    background: colorMode === 'dark'
+                      ? 'linear-gradient(to right, #23272f, #2d3748, #23272f)'
+                      : 'linear-gradient(to right, #f3f4f6, #e5e7eb, #f3f4f6)',
+                    borderBottom: colorMode === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
+                  }}>
                   <span className="flex space-x-2 mr-3">
                     <span className="w-3 h-3 rounded-full bg-red-500"></span>
                     <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
                     <span className="w-3 h-3 rounded-full bg-green-500"></span>
                   </span>
                   <span className="text-xs text-gray-300 font-mono tracking-widest uppercase">{language || 'CODE'}</span>
+                  {!language && (
+                    <span className="ml-2 text-xs text-yellow-400 font-mono">未指定语言</span>
+                  )}
                   <button 
                     className="code-block-action ml-auto px-2 py-1 bg-gray-700/60 hover:bg-gray-600/80 text-gray-200 rounded text-xs flex items-center gap-1 shadow-sm transition-colors"
                     onClick={() => {
@@ -431,6 +443,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                   ref={codeRef}
                   className="rounded-b-xl"
                   style={{
+                    background: colorMode === 'dark' ? '#23272f' : '#f3f4f6',
                     maxHeight: shouldCollapse && collapsed ? 320 : 'none',
                     overflow: shouldCollapse && collapsed ? 'hidden' : 'auto',
                     transition: 'max-height 0.3s',
@@ -438,7 +451,8 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                 >
                   <SyntaxHighlighter
                     PreTag="div"
-                    language={language}
+                    language={language || 'plaintext'}
+                    className={codeClassName}
                     style={colorMode === "dark" ? oneDarkStyle : oneLightStyle}
                     wrapLongLines={true}
                     showLineNumbers={true}
@@ -459,7 +473,6 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                       background: 'transparent',
                       overflow: 'visible',
                       maxHeight: 'none',
-                      color: '#e5e7eb',
                     }}
                     codeTagProps={{ 
                       style: {
@@ -473,10 +486,13 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                 </div>
                 {/* 折叠/展开按钮 */}
                 {shouldCollapse && (
-                  <div className="flex justify-center bg-[#23272f] border-t border-gray-700">
+                  <div className="flex justify-center border-t"
+                    style={{ background: colorMode === 'dark' ? '#23272f' : '#f3f4f6', borderTop: colorMode === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb' }}>
                     <button
                       className="text-xs text-blue-400 py-2 hover:underline focus:outline-none"
                       onClick={() => setCollapsed(v => !v)}
+                      aria-label={collapsed ? t('code.expand', { defaultValue: '展开全部' }) : t('code.collapse', { defaultValue: '收起' })}
+                      title={collapsed ? t('code.expand', { defaultValue: '展开全部' }) : t('code.collapse', { defaultValue: '收起' })}
                     >
                       {collapsed ? t('code.expand', { defaultValue: '展开全部' }) : t('code.collapse', { defaultValue: '收起' })}
                     </button>

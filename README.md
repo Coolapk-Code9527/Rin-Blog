@@ -65,6 +65,7 @@ Rin is a blog based on Cloudflare Pages + Workers + D1 + R2. It does not require
 - **Mobile-First Implementation**: Compact UI elements and simplified interactions for small screens
 - **Adaptive Content Presentation**: Dynamic element sizing and spacing based on viewport dimensions
 - **Progressive Enhancement**: Feature-rich experience on desktop with essential functionality preserved on mobile
+- **Improved accessibility and user experience for code blocks in both dark and light modes.**
 
 # Documentation
 [rin-docs.xeu.life](https://rin-docs.xeu.life)
@@ -124,3 +125,12 @@ All functions and constants are documented in both Chinese and English for multi
 - Removed front-end slice logic, pagination is now fully backend-driven.
 - Only renders current page data from backend, preventing lag with large file sets.
 - Users can customize page size for a smoother experience.
+
+## 2024-xx-xx Code Block Highlight & Interaction Fixes
+
+- Fixed code blocks in some articles showing as all white/gray or without syntax highlight.
+- Removed hardcoded color in SyntaxHighlighter, now respects theme colors.
+- Optimized CSS: removed color: inherit !important from pre code, hover and button hover no longer override highlight colors.
+- Expand/collapse button hover no longer causes code to disappear.
+- Code blocks without language marker now default to plaintext and show a user tip.
+- Top bar and content area now adapt to dark/light mode.

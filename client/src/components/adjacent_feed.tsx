@@ -133,7 +133,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     
     return (
         <div className="w-full mt-3 sm:mt-4 mb-3 sm:mb-4">
-            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-2 gap-x-2 divide-x divide-gray-100 dark:divide-gray-700">
+            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-700">
                 <AdjacentCard 
                     data={adjacentFeeds?.previousFeed}
                     type="previous"
@@ -167,7 +167,7 @@ export function AdjacentCard({
     
     if (!data) {
         return (
-            <div className="w-full p-2 sm:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center min-h-[5.5rem] sm:min-h-[8rem]">
+            <div className="h-full w-full block p-2 sm:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center min-h-[5.5rem] sm:min-h-[8rem]">
                 <span className="text-xs sm:text-sm text-gray-400">{t('no_more')}</span>
             </div>
         );
@@ -175,7 +175,7 @@ export function AdjacentCard({
     
     return (
         <Link href={`/feed/${data.id}`}
-              className={`w-full p-0 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group`}>
+              className={`h-full w-full block p-0 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group overflow-hidden ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>
             <div className={`flex flex-row ${type === "next" ? "flex-row-reverse" : "flex-row"} items-stretch w-full h-20 sm:h-32`}>
                 {/* 图片区 */}
                 <div className={`flex-shrink-0 w-16 sm:w-32 h-full overflow-hidden bg-gray-200 dark:bg-gray-700 relative ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>

@@ -98,35 +98,25 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         >
             {/* 卡片顶部区域 - 根据屏幕大小调整高度 */}
             <div className={`w-full h-36 xs:h-40 sm:h-44 md:h-48 overflow-hidden rounded-t-xl relative`}>
-                {/* 渐变背景占位 - 根据文章标题生成的稳定渐变色 */}
+                {/* 动态渐变背景层 - 与TimelineItem一致 */}
                 <div 
                     className="absolute inset-0 w-full h-full z-0"
                     style={{
                         background: `linear-gradient(${generateGradient.angle}deg, ${generateGradient.colors.join(', ')})`,
-                        opacity: avatar && imageLoaded ? 0 : 0.8
+                        opacity: (!avatar || imageError) ? 0.8 : 0,
+                        transition: 'opacity 0.3s'
                     }}
                 />
-                
                 {/* 顶部渐变遮罩层 */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-300 z-10"></div>
-                
-                {avatar && (
+                {avatar && !imageError && (
                     <>
                         {/* 图片加载状态指示器 */}
-                        {!imageLoaded && !imageError && (
+                        {!imageLoaded && (
                             <div className="absolute inset-0 flex items-center justify-center z-5">
                                 <div className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-white/70 border-t-transparent rounded-full animate-spin"></div>
                             </div>
                         )}
-                        
-                        {/* 图片加载错误占位符 */}
-                        {imageError && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center z-5">
-                                <i className="ri-image-line text-2xl sm:text-3xl text-white/80 mb-1 sm:mb-2"></i>
-                                <span className="text-xs text-white/80 bg-black/30 px-2 py-0.5 sm:py-1 rounded">{t('image_load_error')}</span>
-                            </div>
-                        )}
-                        
                         <img 
                             src={avatar} 
                             alt={title}
@@ -141,14 +131,11 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                         />
                     </>
                 )}
-                
-                {/* 无图片时的内容提示 */}
-                {!avatar && (
-                    <div className="absolute inset-0 flex items-center justify-center z-5">
-                        <div className="text-white/90 text-center px-4">
-                            <i className="ri-article-line text-3xl sm:text-4xl mb-1 sm:mb-2 drop-shadow-md"></i>
-                            <p className="text-xs sm:text-sm font-medium drop-shadow-md">{title.substring(0, 20)}{title.length > 20 ? '...' : ''}</p>
-                        </div>
+                {/* 无图片或图片加载失败时的占位符（统一风格） */}
+                {(!avatar || imageError) && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20 text-white/90 text-center px-4">
+                        <i className="ri-article-line text-3xl sm:text-4xl mb-1 sm:mb-2 drop-shadow-md"></i>
+                        <p className="text-xs sm:text-sm font-medium drop-shadow-md">{title.substring(0, 20)}{title.length > 20 ? '...' : ''}</p>
                     </div>
                 )}
                     
