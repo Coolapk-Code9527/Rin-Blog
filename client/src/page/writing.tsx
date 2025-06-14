@@ -238,9 +238,9 @@ const ContentTemplates = React.memo(({ editor }: { editor?: editor.IStandaloneCo
   
   return (
     <div className="relative inline-block" ref={templatesPanelRef}>
-      <button 
-        onClick={() => setIsOpen(!isOpen)} 
-        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center"
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center shadow-sm hover:shadow-enhanced transition-all duration-200"
         title={t('templates.insert')}
       >
         <i className="ri-file-list-line text-lg mr-1" />
@@ -248,7 +248,7 @@ const ContentTemplates = React.memo(({ editor }: { editor?: editor.IStandaloneCo
       </button>
       
       {isOpen && (
-        <div className="absolute z-20 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="absolute z-20 mt-2 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-md shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60">
           <div className="p-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h3 className="font-medium text-sm">{t('templates.templates')}</h3>
             <button 
@@ -359,63 +359,63 @@ const MarkdownToolbar = React.memo(({
   return (
     <div className="flex flex-wrap items-center p-2 border-b dark:border-gray-700 mb-2 gap-2">
       {/* 所有工具按钮线性排列 */}
-      <button onClick={() => insertText('# ')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.heading')}>
+      <button onClick={() => insertText('# ')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.heading')}>
         <i className="ri-heading text-base" />
       </button>
-      <button onClick={() => insertText('**', '**', '粗体文本')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.bold')}>
+      <button onClick={() => insertText('**', '**', '粗体文本')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.bold')}>
         <i className="ri-bold text-base" />
       </button>
-      <button onClick={() => insertText('*', '*', '斜体文本')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.italic')}>
+      <button onClick={() => insertText('*', '*', '斜体文本')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.italic')}>
         <i className="ri-italic text-base" />
       </button>
-      <button onClick={() => insertText('~~', '~~', '删除线文本')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.strikethrough')}>
+      <button onClick={() => insertText('~~', '~~', '删除线文本')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.strikethrough')}>
         <i className="ri-strikethrough text-base" />
       </button>
-      <button onClick={() => insertText('==', '==', '高亮文本')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.highlight')}>
+      <button onClick={() => insertText('==', '==', '高亮文本')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.highlight')}>
         <i className="ri-mark-pen-line text-base" />
       </button>
 
-      <button onClick={() => insertText('- ')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.unordered_list')}>
+      <button onClick={() => insertText('- ')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.unordered_list')}>
         <i className="ri-list-unordered text-base" />
       </button>
-      <button onClick={() => insertText('1. ')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.ordered_list')}>
+      <button onClick={() => insertText('1. ')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.ordered_list')}>
         <i className="ri-list-ordered text-base" />
       </button>
-      <button onClick={() => insertText('- [ ] ')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.task_list')}>
+      <button onClick={() => insertText('- [ ] ')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.task_list')}>
         <i className="ri-checkbox-line text-base" />
       </button>
 
-      <button onClick={() => insertText('[', '](url)', '链接文本')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.link')}>
+      <button onClick={() => insertText('[', '](url)', '链接文本')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.link')}>
         <i className="ri-link text-base" />
       </button>
-      <button onClick={() => insertText('![', '](url)', '图片描述')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.image')}>
+      <button onClick={() => insertText('![', '](url)', '图片描述')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.image')}>
         <i className="ri-image-line text-base" />
       </button>
-      <button onClick={() => insertText('> ')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.quote')}>
+      <button onClick={() => insertText('> ')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.quote')}>
         <i className="ri-double-quotes-l text-base" />
       </button>
-      <button onClick={() => insertText('```\n', '\n```', '代码块')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.code')}>
+      <button onClick={() => insertText('```\n', '\n```', '代码块')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.code')}>
         <i className="ri-code-s-slash-line text-base" />
       </button>
-      <button onClick={() => insertText('---\n')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.divider')}>
+      <button onClick={() => insertText('---\n')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.divider')}>
         <i className="ri-separator text-base" />
       </button>
     
       <button onClick={() => insertText(
         '| 表头1 | 表头2 | 表头3 |\n| --- | --- | --- |\n| 内容1 | 内容2 | 内容3 |\n| 内容4 | 内容5 | 内容6 |\n'
-      )} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.table')}>
+      )} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.table')}>
         <i className="ri-table-line text-base" />
       </button>
-      <button onClick={() => insertText('^', '', '上标')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.superscript')}>
+      <button onClick={() => insertText('^', '', '上标')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.superscript')}>
         <i className="ri-superscript text-base" />
       </button>
-      <button onClick={() => insertText('~', '', '下标')} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.subscript')}>
+      <button onClick={() => insertText('~', '', '下标')} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.subscript')}>
         <i className="ri-subscript text-base" />
       </button>
       <button onClick={() => {
         const now = new Date();
         insertText(now.toISOString().split('T')[0]);
-      }} className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700" title={t('markdown.date')}>
+      }} className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200" title={t('markdown.date')}>
         <i className="ri-calendar-line text-base" />
       </button>
       
@@ -427,27 +427,27 @@ const MarkdownToolbar = React.memo(({
 
       {/* 文档管理工具组 - 靠右 */}
       <div className="ml-auto flex items-center gap-1">
-        <button 
-          onClick={() => setDraftDialogOpen(true)} 
-          className="p-1.5 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-md flex items-center border border-blue-200 dark:border-blue-800" 
+        <button
+          onClick={() => setDraftDialogOpen(true)}
+          className="p-1.5 bg-blue-50/80 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-md flex items-center border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-enhanced transition-all duration-200"
           title={t('drafts.title')}
         >
           <i className="ri-draft-line text-base mr-1" />
           <span className="text-sm hidden sm:inline">{t('drafts.title')}</span>
         </button>
-        
-        <button 
-          onClick={() => setHistoryDialogOpen(true)} 
-          className="p-1.5 bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800/40 rounded-md flex items-center border border-green-200 dark:border-green-800" 
+
+        <button
+          onClick={() => setHistoryDialogOpen(true)}
+          className="p-1.5 bg-green-50/80 text-green-600 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800/40 rounded-md flex items-center border border-green-200 dark:border-green-800 shadow-sm hover:shadow-enhanced transition-all duration-200"
           title={t('history.title')}
         >
           <i className="ri-history-line text-base mr-1" />
           <span className="text-sm hidden sm:inline">{t('history.title')}</span>
         </button>
-        
-        <button 
-          onClick={manualSaveHistory} 
-          className="p-1.5 bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-800/40 rounded-md flex items-center border border-purple-200 dark:border-purple-800" 
+
+        <button
+          onClick={manualSaveHistory}
+          className="p-1.5 bg-purple-50/80 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-800/40 rounded-md flex items-center border border-purple-200 dark:border-purple-800 shadow-sm hover:shadow-enhanced transition-all duration-200"
           title={t('history.save_snapshot')}
         >
           <i className="ri-save-line text-base mr-1" />
@@ -457,7 +457,7 @@ const MarkdownToolbar = React.memo(({
       {/* 插入文件按钮 */}
       <button
         onClick={() => setFileSelectorOpen(true)}
-        className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700"
+        className="p-1.5 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200"
         title={t('markdown.insert_file') || '插入文件'}
       >
         <i className="ri-attachment-2 text-base" />
@@ -1505,7 +1505,7 @@ export function WritingPage({ id }: { id?: number }) {
       </Helmet>
       <div className="grid grid-cols-1 md:grid-cols-3 t-primary mt-2 md:pb-0">
         <div className="col-span-2 pb-8">
-          <div className="bg-w rounded-2xl shadow-xl shadow-light p-4">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced-xl hover:shadow-enhanced-2xl transition-all duration-300 p-4 border border-neutral-200/60 dark:border-neutral-700/60">
             {MetaInput({ className: "visible md:hidden mb-8" })}
             <PageContainer>
               <div className="flex flex-row space-x-2 border-b border-gray-200 dark:border-gray-700 mb-4">
@@ -1680,7 +1680,7 @@ export function WritingPage({ id }: { id?: number }) {
           <div className="visible md:hidden flex flex-row justify-center mt-8">
             <button
               onClick={publishButton}
-              className="basis-1/2 bg-gradient-to-r from-pink-500 to-theme text-white py-4 rounded-full shadow-xl shadow-light hover:shadow-2xl transition-all duration-300 flex flex-row justify-center items-center space-x-2"
+              className="basis-1/2 bg-gradient-to-r from-pink-500 to-theme text-white py-4 rounded-full shadow-enhanced-xl hover:shadow-enhanced-2xl hover:scale-[0.98] active:scale-[0.96] transition-all duration-300 flex flex-row justify-center items-center space-x-2"
             >
               {publishing ? (
                 <div className="flex items-center">
@@ -1697,11 +1697,11 @@ export function WritingPage({ id }: { id?: number }) {
           </div>
         </div>
         <div className="hidden md:visible max-w-96 md:flex flex-col">
-          {MetaInput({ className: "bg-w rounded-2xl shadow-xl shadow-light p-4 w-full" })}
+          {MetaInput({ className: "bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced-xl hover:shadow-enhanced-2xl transition-all duration-300 p-4 w-full border border-neutral-200/60 dark:border-neutral-700/60" })}
           <div className="flex flex-row justify-center mt-8">
             <button
               onClick={publishButton}
-              className="basis-1/2 bg-gradient-to-r from-pink-500 to-theme text-white py-4 rounded-full shadow-xl shadow-light hover:shadow-2xl transition-all duration-300 flex flex-row justify-center items-center space-x-2"
+              className="basis-1/2 bg-gradient-to-r from-pink-500 to-theme text-white py-4 rounded-full shadow-enhanced-xl hover:shadow-enhanced-2xl hover:scale-[0.98] active:scale-[0.96] transition-all duration-300 flex flex-row justify-center items-center space-x-2"
             >
               {publishing ? (
                 <div className="flex items-center">

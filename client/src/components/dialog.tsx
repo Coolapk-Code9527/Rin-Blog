@@ -125,7 +125,7 @@ export function useConfirm() {
                 }
             }}
         >
-            <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full min-w-56 sm:min-w-96">
+            <div className="flex flex-col items-start p-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md space-y-4 w-full min-w-56 sm:min-w-96 shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60 rounded-2xl">
                 <h1 className="text-2xl font-bold t-primary">
                     {confirm?.title}
                 </h1>

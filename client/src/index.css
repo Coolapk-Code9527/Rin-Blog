@@ -5,38 +5,241 @@
 :root {
   /* 无衬线字体优先级 */
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Arial, sans-serif;
-  
+
   /* 衬线字体 */
   --font-serif: 'Noto Serif', Georgia, 'Times New Roman', serif;
-  
+
   /* 等宽字体 */
   --font-mono: SFMono-Regular, Menlo, Monaco, 'Fira Code', monospace;
-  
+
   /* 中文专用字体 */
   --font-cn: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'Noto Sans SC', sans-serif;
-  
+
   /* 日文字体 */
   --font-jp: 'Hiragino Kaku Gothic Pro', 'Hiragino Sans', Meiryo, 'MS PGothic', 'Noto Sans JP', sans-serif;
 
-  --brand-blue: #007AFF;
-  --success-green: #34C759;
-  --warning-orange: #FF9F0A;
-  --error-red: #FF3B30;
-  --info-purple: #a78bfa;
-  --highlight-yellow: #fde047;
-  --secondary-pink: #f472b6;
-  --neutral-bg: #f6f8fa;
-  --neutral-dark: #23272f;
+  /* 主品牌色系 - 基于苹果系统蓝 */
+  --primary: #007AFF;
+  --primary-hover: #0056CC;
+  --primary-active: #004499;
+  --primary-light: #339FFF;
+  --primary-dark: #0056CC;
+
+  /* 语义化颜色 - 遵循苹果 HIG */
+  --success: #34C759;
+  --success-light: #5DD87A;
+  --success-dark: #248A3D;
+  --warning: #FF9F0A;
+  --warning-light: #FFB340;
+  --warning-dark: #D17A00;
+  --error: #FF3B30;
+  --error-light: #FF6B5B;
+  --error-dark: #D70015;
+  --info: #5856D6;
+  --info-light: #7D7AFF;
+  --info-dark: #3634A3;
+
+  /* 背景色系 - macOS 风格 */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F2F2F7;
+  --bg-tertiary: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+
+  /* 文本颜色 - macOS 风格 */
+  --text-primary: #000000;
+  --text-secondary: #3C3C43;
+  --text-tertiary: #3C3C4399;
+  --text-quaternary: #3C3C4360;
+
+  /* 分隔线和边框 */
+  --separator: #3C3C4329;
+  --separator-opaque: #C6C6C8;
+
+  /* 中性色系 */
+  --neutral-50: #F9FAFB;
+  --neutral-100: #F3F4F6;
+  --neutral-200: #E5E7EB;
+  --neutral-300: #D1D5DB;
+  --neutral-400: #9CA3AF;
+  --neutral-500: #6B7280;
+  --neutral-600: #4B5563;
+  --neutral-700: #374151;
+  --neutral-800: #1F2937;
+  --neutral-900: #111827;
+}
+
+/* 深色模式颜色 - 遵循苹果深色模式指南 */
+[data-color-mode="dark"] {
+  /* 背景色系 - 深色模式 */
+  --bg-primary: #0D1117;
+  --bg-secondary: #161B22;
+  --bg-tertiary: #21262D;
+  --bg-elevated: #1C2128;
+
+  /* 文本颜色 - 深色模式 */
+  --text-primary: #F0F6FC;
+  --text-secondary: #C9D1D9;
+  --text-tertiary: #8B949E;
+  --text-quaternary: #6E7681;
+
+  /* 分隔线和边框 - 深色模式 */
+  --separator: #30363D;
+  --separator-opaque: #21262D;
 }
 
 body {
-  @apply bg-background-light dark:bg-background-dark text-gray-800;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   font-family: var(--font-sans) !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   letter-spacing: -0.008em;
   word-spacing: 0.02em;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 确保毛玻璃效果的支持 */
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px) saturate(150%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+.backdrop-blur-xl {
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+}
+
+/* 增强阴影效果 */
+.shadow-enhanced {
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-enhanced-lg {
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-enhanced-xl {
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.12),
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* 深色模式下的阴影 */
+[data-color-mode="dark"] .shadow-enhanced {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+[data-color-mode="dark"] .shadow-enhanced-lg {
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.2),
+    0 1px 3px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+[data-color-mode="dark"] .shadow-enhanced-xl {
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.3),
+    0 4px 10px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* 现代化的毛玻璃卡片效果 */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+[data-color-mode="dark"] .glass-card {
+  background: rgba(13, 17, 23, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* 增强的按钮效果 */
+.btn-enhanced {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+}
+
+.btn-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.btn-enhanced:hover::before {
+  left: 100%;
+}
+
+/* 现代化的导航栏毛玻璃效果 */
+.nav-glass {
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-color-mode="dark"] .nav-glass {
+  background: rgba(13, 17, 23, 0.90);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* 增强的标签效果 */
+.tag-enhanced {
+  position: relative;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+[data-color-mode="dark"] .tag-enhanced {
+  background: rgba(33, 38, 45, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* 微妙的发光效果 */
+.glow-on-hover {
+  transition: all 0.3s ease;
+}
+
+.glow-on-hover:hover {
+  box-shadow:
+    0 0 20px rgba(0, 122, 255, 0.3),
+    0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+[data-color-mode="dark"] .glow-on-hover:hover {
+  box-shadow:
+    0 0 20px rgba(0, 122, 255, 0.4),
+    0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* 英文内容字体 */
@@ -495,9 +698,9 @@ ul {
 }
 
 .search-container input:focus {
-  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.2),
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2),
               0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: rgba(244, 114, 182, 0.5);
+  border-color: rgba(0, 122, 255, 0.5);
   background-image: none;
 }
 
@@ -510,13 +713,13 @@ ul {
 #mobile-search-history,
 #search-history-dropdown {
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(244, 114, 182, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
-  border-color: rgba(244, 114, 182, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 122, 255, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 122, 255, 0.15);
   border-width: 1px;
   max-height: min(320px, calc(100vh - 180px));
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(244, 114, 182, 0.15) transparent;
+  scrollbar-color: rgba(0, 122, 255, 0.15) transparent;
 }
 
 #mobile-search-history::-webkit-scrollbar,
@@ -531,13 +734,13 @@ ul {
 
 #mobile-search-history::-webkit-scrollbar-thumb,
 #search-history-dropdown::-webkit-scrollbar-thumb {
-  background-color: rgba(244, 114, 182, 0.3);
+  background-color: rgba(0, 122, 255, 0.3);
   border-radius: 4px;
 }
 
 #mobile-search-history::-webkit-scrollbar-thumb:hover,
 #search-history-dropdown::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(244, 114, 182, 0.5);
+  background-color: rgba(0, 122, 255, 0.5);
 }
 
 /* 搜索历史项样式增强 */
@@ -1461,9 +1664,9 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 }
 
 .search-container input:focus {
-  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.2),
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2),
               0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: rgba(244, 114, 182, 0.5);
+  border-color: rgba(0, 122, 255, 0.5);
   background-image: none;
 }
 
@@ -1548,7 +1751,7 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 }
 
 .search-container button:hover i.ri-search-line {
-  color: rgb(244, 114, 182);
+  color: rgb(0, 122, 255);
   transform: translateY(-1px);
 }
 
@@ -1558,26 +1761,26 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 
 .search-container button[aria-label="清除"]:hover i,
 .search-container button[aria-label="clear"]:hover i {
-  color: rgb(244, 114, 182);
+  color: rgb(0, 122, 255);
   transform: scale(1.2) rotate(90deg);
 }
 
 /* 搜索历史项的粉色风格增强 */
 [role="option"]:hover i.ri-time-line,
 [role="option"][aria-selected="true"] i.ri-time-line {
-  color: rgb(244, 114, 182) !important;
+  color: rgb(0, 122, 255) !important;
 }
 
 /* 特殊动画效果：输入时的波纹 */
 @keyframes searchPulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(244, 114, 182, 0.4);
+    box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.4);
   }
   70% {
-    box-shadow: 0 0 0 6px rgba(244, 114, 182, 0);
+    box-shadow: 0 0 0 6px rgba(0, 122, 255, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(244, 114, 182, 0);
+    box-shadow: 0 0 0 0 rgba(0, 122, 255, 0);
   }
 }
 

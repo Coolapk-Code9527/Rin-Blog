@@ -132,8 +132,8 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     }, [id, setError]);
     
     return (
-        <div className="w-full mt-3 sm:mt-4 mb-3 sm:mb-4">
-            <div className="rounded-2xl overflow-hidden bg-w shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-700">
+        <div className="w-full mt-6 mb-6">
+            <div className="rounded-2xl overflow-hidden bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 grid grid-cols-2 divide-x divide-neutral-200/60 dark:divide-neutral-700/60 border border-neutral-200/60 dark:border-neutral-700/60">
                 <AdjacentCard 
                     data={adjacentFeeds?.previousFeed}
                     type="previous"
@@ -167,15 +167,15 @@ export function AdjacentCard({
     
     if (!data) {
         return (
-            <div className="h-full w-full block p-2 sm:p-4 duration-300 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center min-h-[5.5rem] sm:min-h-[8rem]">
-                <span className="text-xs sm:text-sm text-gray-400">{t('no_more')}</span>
+            <div className="h-full w-full block p-4 sm:p-6 duration-300 bg-neutral-50/80 dark:bg-neutral-800/40 backdrop-blur-sm flex items-center justify-center min-h-[5.5rem] sm:min-h-[8rem]">
+                <span className="text-xs sm:text-sm text-neutral-400 dark:text-neutral-500 font-medium">{t('no_more')}</span>
             </div>
         );
     }
     
     return (
         <Link href={`/feed/${data.id}`}
-              className={`h-full w-full block p-0 duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 relative group overflow-hidden ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>
+              className={`h-full w-full block p-0 duration-300 hover:bg-neutral-50/80 dark:hover:bg-neutral-800/60 relative group overflow-hidden backdrop-blur-sm transition-all ease-out ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>
             <div className={`flex flex-row ${type === "next" ? "flex-row-reverse" : "flex-row"} items-stretch w-full h-20 sm:h-32`}>
                 {/* 图片区 */}
                 <div className={`flex-shrink-0 w-16 sm:w-32 h-full overflow-hidden bg-gray-200 dark:bg-gray-700 relative ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>
@@ -211,17 +211,17 @@ export function AdjacentCard({
                 </div>
                 {/* 内容区 */}
                 <div className={`flex-1 h-full flex flex-col justify-center min-h-0 overflow-hidden px-2 sm:px-4 ${type === "next" ? "items-end text-end" : "items-start text-start"}`}>
-                    <h2 className="text-xs sm:text-base font-medium text-gray-700 dark:text-white truncate max-w-[90%] group-hover:text-theme transition-colors mb-1 leading-tight">
+                    <h2 className="text-xs sm:text-base font-semibold text-neutral-700 dark:text-neutral-100 truncate max-w-[90%] group-hover:text-theme transition-colors duration-200 mb-1.5 leading-tight">
                         {data.title}
                     </h2>
-                    <div className={`flex items-center text-[11px] sm:text-sm text-gray-400 w-full min-h-0 overflow-hidden whitespace-nowrap max-w-[80%] ${type === "next" ? "justify-end" : "justify-start"}`}>
+                    <div className={`flex items-center text-[11px] sm:text-sm text-neutral-500 dark:text-neutral-400 w-full min-h-0 overflow-hidden whitespace-nowrap max-w-[80%] ${type === "next" ? "justify-end" : "justify-start"}`}>
                         {type === "previous" ? (
-                            <span className="flex items-center transition-transform group-hover:-translate-x-0.5 whitespace-nowrap truncate">
-                                <i className="ri-arrow-left-line mr-1 text-theme"></i> {t("previous")}
+                            <span className="flex items-center transition-all duration-200 group-hover:-translate-x-1 whitespace-nowrap truncate font-medium">
+                                <i className="ri-arrow-left-line mr-1.5 text-theme group-hover:text-theme-hover"></i> {t("previous")}
                             </span>
                         ) : (
-                            <span className="flex items-center transition-transform group-hover:translate-x-0.5 whitespace-nowrap truncate">
-                                {t("next")} <i className="ri-arrow-right-line ml-1 text-theme"></i>
+                            <span className="flex items-center transition-all duration-200 group-hover:translate-x-1 whitespace-nowrap truncate font-medium">
+                                {t("next")} <i className="ri-arrow-right-line ml-1.5 text-theme group-hover:text-theme-hover"></i>
                             </span>
                         )}
                     </div>

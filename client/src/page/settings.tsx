@@ -130,13 +130,14 @@ export function Settings() {
                 {/* @ts-ignore - 忽略Provider的类型检查 */}
                 <ClientConfigContext.Provider value={clientConfig}>
                     <PageContainer>
-                        <div className="flex flex-row items-center space-x-2">
-                            <h1 className="text-2xl font-bold t-primary">
+                        <div className="flex flex-row items-center gap-3 mb-6">
+                            <h1 className="text-2xl font-bold t-primary relative group">
                                 {t('settings.title')}
+                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                             </h1>
-                            {(clientLoading || serverLoading) && <ReactLoading width="1em" height="1em" type="spin" color="#FC466B" />}
+                            {(clientLoading || serverLoading) && <ReactLoading width="1em" height="1em" type="spin" color="var(--primary)" />}
                         </div>
-                        <div className="flex flex-col items-start space-y-2">
+                        <div className="flex flex-col items-start space-y-4">
                             <ItemTitle title={t('settings.friend.title')} />
                             <ItemSwitch title={t('settings.friend.apply.title')} description={t('settings.friend.apply.desc')} type="client" configKey="friend_apply_enable" />
                             <ItemSwitch title={t('settings.friend.health.title')} description={t('settings.friend.health.desc')} type="server" configKey="friend_crontab" />
@@ -196,8 +197,8 @@ export function Settings() {
                     }
                 }}
             >
-                <div className="flex flex-col items-start p-4 bg-w">
-                    <h1 className="text-2xl font-bold t-primary">
+                <div className="flex flex-col items-start p-6 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60">
+                    <h1 className="text-2xl font-bold t-primary mb-4">
                         {t('settings.import_result')}
                     </h1>
                     <p className="text-base dark:text-white">
@@ -218,7 +219,7 @@ export function Settings() {
                     <div className="w-full flex flex-col items-center mt-4">
                         <button onClick={() => {
                             setIsOpen(false);
-                        }} className="bg-theme text-white rounded-xl px-8 py-2 h-min">
+                        }} className="bg-theme text-white rounded-xl px-8 py-2.5 h-min font-medium shadow-enhanced hover:shadow-enhanced-lg hover:bg-theme-hover active:bg-theme-active transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96]">
                             {t('close')}
                         </button>
                     </div>
@@ -231,9 +232,9 @@ export function Settings() {
 
 function ItemTitle({ title }: { title: string }) {
     return (
-        <h1 className="text-sm t-primary pt-4">
+        <h2 className="text-lg font-semibold t-primary pt-6 pb-2 border-b border-neutral-200/60 dark:border-neutral-700/60 w-full">
             {title}
-        </h1>
+        </h2>
     );
 }
 
@@ -287,18 +288,18 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
     }
     
     return (
-        <div className="flex flex-col w-full items-start">
+        <div className="flex flex-col w-full items-start bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
             <div className="flex flex-row justify-between w-full items-center">
                 <div className="flex flex-col">
-                    <p className="text-lg font-bold dark:text-white">
+                    <p className="text-lg font-semibold t-primary">
                         {title}
                     </p>
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                         {description}
                     </p>
                 </div>
                 <div className="flex flex-row items-center justify-center space-x-4">
-                    {loading && <ReactLoading width="1em" height="1em" type="spin" color="#FC466B" />}
+                    {loading && <ReactLoading width="1em" height="1em" type="spin" color="var(--primary)" />}
                     <Switch.Root className="SwitchRoot" checked={checked} onCheckedChange={() => {
                         updateConfig(type, configKey, !checked);
                     }}>
@@ -361,7 +362,7 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
     }
     
     return (
-        <div className="flex flex-col w-full items-start">
+        <div className="flex flex-col w-full items-start bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
             <div className="flex flex-row justify-between w-full items-center">
                 <div className="flex flex-col">
                     <p className="text-lg font-bold dark:text-white">
@@ -407,7 +408,7 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
                     }
                 }}
             >
-                <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full">
+                <div className="flex flex-col items-start p-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md space-y-4 w-full shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60 rounded-2xl">
                     <h1 className="text-2xl font-bold t-primary">
                         {t('update$sth', { sth: configKeyTitle })}
                     </h1>
@@ -448,7 +449,7 @@ function ItemButton({
     }) {
     const { showConfirm, ConfirmUI } = useConfirm();
     return (
-        <div className="flex flex-col w-full items-start">
+        <div className="flex flex-col w-full items-start bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
             <div className="flex flex-row justify-between w-full items-center">
                 <div className="flex flex-col">
                     <p className="text-lg font-bold dark:text-white">
@@ -494,7 +495,7 @@ function ItemWithUpload({
     };
 
     return (
-        <div className="flex flex-col w-full items-start">
+        <div className="flex flex-col w-full items-start bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
             <div className="flex flex-row justify-between w-full items-center">
                 <div className="flex flex-col">
                     <p className="text-lg font-bold dark:text-white">{title}</p>

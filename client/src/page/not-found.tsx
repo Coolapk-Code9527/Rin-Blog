@@ -38,7 +38,7 @@ export function NotFoundPage() {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href="/"
-              className="px-6 py-3 bg-theme text-white rounded-lg shadow-md hover:bg-theme-hover active:bg-theme-active transition-all duration-300 flex items-center justify-center font-medium"
+              className="px-6 py-3 bg-theme text-white rounded-lg shadow-enhanced hover:shadow-enhanced-lg hover:bg-theme-hover active:bg-theme-active hover:scale-[0.98] active:scale-[0.96] transition-all duration-300 flex items-center justify-center font-medium"
             >
               <i className="ri-home-line mr-2"></i>
               {t("error.back_home")}
@@ -52,7 +52,7 @@ export function NotFoundPage() {
                   window.location.href = '/';
                 }
               }}
-              className="px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 flex items-center justify-center font-medium"
+              className="px-6 py-3 bg-gray-100/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 rounded-lg shadow-enhanced hover:shadow-enhanced-lg hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-[0.98] active:scale-[0.96] transition-all duration-300 flex items-center justify-center font-medium"
             >
               <i className="ri-arrow-left-line mr-2"></i>
               {t("error.go_back")}

@@ -83,21 +83,23 @@ export function TimelinePage() {
             <Waiting for={feeds}>
                 <main className="w-full flex flex-col justify-center items-center mb-8 ani-show">
                     <PageContainer>
-                        <div className="w-full max-w-6xl mx-auto text-start text-black dark:text-white py-4 text-2xl font-bold">
-                            <p>
-                                {t('timeline')}
-                            </p>
-                            <div className="flex flex-row justify-between">
-                                <p className="text-base font-medium t-secondary">
+                        <div className="w-full max-w-6xl mx-auto text-start py-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <h1 className="text-2xl font-bold t-primary relative group">
+                                    {t('timeline')}
+                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
+                                </h1>
+                                <div className="py-1.5 px-3 bg-neutral-100/80 dark:bg-neutral-800/80 rounded-xl text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium backdrop-blur-sm border border-neutral-200/40 dark:border-neutral-700/40">
+                                    <i className="ri-time-line mr-1.5 text-theme"></i>
                                     {t('article.total$count', { count: length })}
-                                </p>
+                                </div>
                             </div>
                             {error && (
                               <div className="mt-2 mb-4 flex flex-col items-start">
                                 <span className="text-red-500 text-sm mb-2">{error}</span>
-                                <button 
-                                  onClick={fetchFeeds} 
-                                  className="px-4 py-2 bg-theme text-white rounded hover:bg-theme-dark dark:bg-theme-dark dark:hover:bg-theme-light focus:outline-none focus:ring-2 focus:ring-theme-focus"
+                                <button
+                                  onClick={fetchFeeds}
+                                  className="px-4 py-2.5 bg-theme text-white rounded-xl hover:bg-theme-hover active:bg-theme-active focus:outline-none focus:ring-2 focus:ring-theme/30 focus:ring-offset-2 dark:focus:ring-offset-gray-900 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
                                   aria-label={t('reload') || "Reload"}
                                   disabled={loading}
                                 >

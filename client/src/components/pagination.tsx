@@ -82,9 +82,9 @@ export function Pagination({
   // 生成页码按钮
   const renderPageButton = (pageNumber: number, label?: string) => {
     const isCurrentPage = pageNumber === currentPage;
-    const commonClasses = "relative block w-10 h-10 flex items-center justify-center rounded-2xl text-base font-semibold transition-all duration-300 leading-none shadow-sm hover:shadow-md";
-    const activeClasses = "bg-theme text-white ring-2 ring-theme/60 shadow-lg hover:shadow-xl";
-    const inactiveClasses = "bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme hover:bg-theme-50/60 dark:hover:bg-theme-900/10";
+    const commonClasses = "relative block w-10 h-10 flex items-center justify-center rounded-2xl text-base font-semibold transition-all duration-300 leading-none shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]";
+    const activeClasses = "bg-theme text-white ring-2 ring-theme/60 shadow-enhanced-lg hover:shadow-enhanced-xl";
+    const inactiveClasses = "bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm text-gray-700 dark:text-gray-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-theme hover:text-theme dark:hover:border-theme dark:hover:text-theme hover:bg-theme-50/60 dark:hover:bg-theme-900/10";
     const fullClasses = `${commonClasses} ${isCurrentPage ? activeClasses : inactiveClasses}`;
     const ariaLabel = label || t("pagination.page", { page: pageNumber });
     
@@ -116,9 +116,9 @@ export function Pagination({
   // 渲染上一页按钮
   const renderPreviousButton = () => {
     const disabled = currentPage === 1;
-    const baseClasses = "w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300 leading-none h-full bg-white/60 dark:bg-gray-800/60 shadow-sm";
+    const baseClasses = "w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300 leading-none h-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60";
     const disabledClasses = `${baseClasses} text-gray-300 dark:text-gray-600 cursor-not-allowed`;
-    const activeClasses = `${baseClasses} text-theme hover:bg-theme/10 hover:shadow-md`;
+    const activeClasses = `${baseClasses} text-theme hover:bg-theme/10 hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]`;
     const classes = disabled ? disabledClasses : activeClasses;
     if (onPageChange) {
       return (
@@ -157,9 +157,9 @@ export function Pagination({
   // 渲染下一页按钮
   const renderNextButton = () => {
     const disabled = currentPage === totalPages;
-    const baseClasses = "w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300 leading-none h-full bg-white/60 dark:bg-gray-800/60 shadow-sm";
+    const baseClasses = "w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300 leading-none h-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60";
     const disabledClasses = `${baseClasses} text-gray-300 dark:text-gray-600 cursor-not-allowed`;
-    const activeClasses = `${baseClasses} text-theme hover:bg-theme/10 hover:shadow-md`;
+    const activeClasses = `${baseClasses} text-theme hover:bg-theme/10 hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]`;
     const classes = disabled ? disabledClasses : activeClasses;
     if (onPageChange) {
       return (

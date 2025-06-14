@@ -44,7 +44,7 @@ export function useLoginModal(onClose?: () => void) {
                 }}
                 onRequestClose={() => setIsOpened(false)}
             >
-                <div className="bg-w w-full flex flex-col items-center justify-between p-4 space-y-2 t-primary min-w-64">
+                <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md w-full flex flex-col items-center justify-between p-4 space-y-2 text-gray-900 dark:text-gray-100 min-w-64 shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60 rounded-2xl">
                     <p className="text-xl">{t('login.title')}</p>
                     {false && <>
                         <Input value={username} setValue={setUsername} placeholder={t('login.username.placeholder')}

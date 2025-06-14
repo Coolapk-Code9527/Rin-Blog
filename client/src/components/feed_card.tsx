@@ -86,14 +86,22 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     } as React.CSSProperties;
 
     return (
-            <Link href={`/feed/${id}`} 
-            className={`group block w-full rounded-2xl bg-white dark:bg-gray-800 h-full duration-300 overflow-hidden hover:shadow-lg transition-all transform hover:-translate-y-1 border ${top === 1 
-                ? 'border-theme/30 dark:border-theme/20 shadow-md' 
-                : 'border-gray-100 dark:border-gray-700 shadow-sm'} 
-                flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900`}
+            <Link href={`/feed/${id}`}
+            className={`group block w-full rounded-2xl h-full duration-300 overflow-hidden hover:shadow-enhanced-xl transition-all transform hover:-translate-y-2 border ${top === 1
+                ? 'bg-white/95 dark:bg-gray-800/95 border-theme/40 dark:border-theme/30 shadow-enhanced-lg ring-2 ring-theme/15 backdrop-blur-md'
+                : 'bg-white/90 dark:bg-gray-800/90 border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced hover:border-neutral-400/80 dark:hover:border-neutral-500/80 backdrop-blur-sm hover:backdrop-blur-md'}
+                flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px]
+                focus:outline-none focus:ring-2 focus:ring-theme/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900
+                hover:bg-white/95 dark:hover:bg-gray-800/95
+            `}
             aria-labelledby={`article-title-${id}`}
             onMouseEnter={prefetchArticle}
-            style={cardStyle}
+            style={{
+                ...cardStyle,
+                boxShadow: top === 1
+                    ? '0 4px 20px rgba(0, 122, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1)'
+                    : '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
+            }}
             replace={false}
         >
             {/* 卡片顶部区域 - 根据屏幕大小调整高度 */}

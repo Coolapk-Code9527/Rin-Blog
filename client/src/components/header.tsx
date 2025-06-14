@@ -51,11 +51,11 @@ export function Header({ children }: { children?: React.ReactNode }) {
 
     return useMemo(() => (
         <>
-            <div 
+            <div
                 className={`fixed z-[10000] w-full transition-all duration-300 ${
-                    isScrolled 
-                        ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-md border-b border-gray-200/50 dark:border-gray-800/50' 
-                        : 'bg-white/0 dark:bg-gray-900/0 backdrop-blur-0'
+                    isScrolled
+                        ? 'nav-glass shadow-enhanced-lg'
+                        : 'bg-white/0 dark:bg-gray-900/0'
                 }`}
             >
                 <div className="max-w-full xl:max-w-7xl 2xl:max-w-screen-2xl mx-auto px-2 sm:px-6 flex justify-between items-center py-3">
@@ -147,17 +147,18 @@ function NavItem({ menu, title, selected, href, when = true, onClick, iconKey }:
             {when &&
                 <a href={href}
                     className={`
-                        ${menu 
-                            ? "block w-full relative px-4 py-2.5" 
-                            : "inline-flex items-center relative px-3 py-2"} 
-                        text-base font-medium rounded-lg transition-all duration-300
-                        ${selected 
-                            ? menu 
-                                ? "text-theme dark:text-theme bg-theme/5 dark:bg-theme/10 font-semibold" 
-                                : "nav-item active text-theme dark:text-theme" 
-                            : menu 
-                                ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme" 
-                                : "nav-item text-gray-700 dark:text-gray-300 hover:text-theme dark:hover:text-theme hover:bg-gray-100/70 dark:hover:bg-gray-800/70"}
+                        ${menu
+                            ? "block w-full relative px-4 py-3"
+                            : "inline-flex items-center relative px-4 py-2.5"}
+                        text-sm font-medium rounded-xl transition-all duration-200 ease-out
+                        ${selected
+                            ? menu
+                                ? "text-theme dark:text-theme bg-theme/8 dark:bg-theme/12 font-semibold shadow-sm"
+                                : "nav-item active text-theme dark:text-theme bg-theme/5 dark:bg-theme/8"
+                            : menu
+                                ? "text-gray-700 dark:text-gray-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-theme dark:hover:text-theme"
+                                : "nav-item text-gray-700 dark:text-gray-300 hover:text-theme dark:hover:text-theme hover:bg-neutral-100/80 dark:hover:bg-neutral-800/80"}
+                        transform hover:scale-[0.98] active:scale-[0.96]
                     `}
                     onClick={handleClick}
                     aria-current={selected ? 'page' : undefined}
@@ -383,9 +384,9 @@ function MobileMenu() {
                                 }
                             }}
                             style={{
-                                boxShadow: isDarkMode ? '0 0 30px rgba(0, 0, 0, 0.6)' : '0 0 30px rgba(0, 0, 0, 0.4)',
+                                boxShadow: 'var(--shadow-enhanced-xl)',
                                 borderLeft: isDarkMode ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
-                                backgroundColor: isDarkMode ? 'rgba(17, 24, 39, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                                backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                                 transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
                                 opacity: isOpen ? 1 : 0,
                             }}
@@ -402,7 +403,7 @@ function MobileMenu() {
                             <div className="flex flex-col h-full">
                                 <div className="pt-14"> {/* 为关闭按钮留出空间 */}
                                     {/* 用户头像及认证区域 */}
-                                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col items-center space-y-4">
+                                    <div className="p-4 border-b border-neutral-200/60 dark:border-neutral-700/60 flex flex-col items-center space-y-4">
                                         {profile?.avatar ? (
                                             <>
                                                 <div className="relative">
@@ -419,7 +420,7 @@ function MobileMenu() {
                                                 </div>
                                                 <button 
                                                     onClick={handleLogout}
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-colors duration-150 font-medium shadow-sm hover:shadow"
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm bg-red-50/80 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-all duration-200 font-medium shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]"
                                                 >
                                                     <i className="ri-logout-circle-line"></i>
                                                     <span>{t('logout')}</span>
@@ -432,7 +433,7 @@ function MobileMenu() {
                                                 </div>
                                                 <button 
                                                     onClick={() => setIsLoginModalOpened(true)} 
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm bg-theme/10 hover:bg-theme/20 text-theme transition-colors duration-150 font-medium"
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm bg-theme/10 hover:bg-theme/20 text-theme transition-all duration-200 font-medium shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]"
                                                 >
                                                     <i className="ri-github-fill"></i>
                                                     <span>{t('github_login')}</span>
@@ -443,16 +444,16 @@ function MobileMenu() {
                                     <LoginModal /> {/* Ensure LoginModal is rendered to be usable */}
 
                                     {/* 搜索和语言区域 */}
-                                    <div className="px-3 py-3 border-b border-gray-200 dark:border-gray-700">
+                                    <div className="px-3 py-3 border-b border-neutral-200/60 dark:border-neutral-700/60">
                                         {/* 搜索栏 */}
                                         <div ref={searchContainerRef} className="relative flex items-center mb-3" role="search">
                                             {!isSearchExpanded ? (
                                                 <button 
                                                     onClick={() => setIsSearchExpanded(true)}
-                                                    className="flex items-center w-full p-2 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-full border border-pink-300 dark:border-pink-500/40 hover:border-pink-400 dark:hover:border-pink-400/60 hover:shadow focus:outline-none focus:ring-2 focus:ring-pink-400/30 transition-all duration-200"
+                                                    className="flex items-center w-full p-2 text-xs text-gray-700 dark:text-gray-300 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-full border border-theme/30 dark:border-theme/40 hover:border-theme dark:hover:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
                                                     aria-label={t('article.search.title')}
                                                 >
-                                                    <i className="ri-search-line text-gray-400 mr-2 text-sm"></i>
+                                                    <i className="ri-search-line text-theme/60 mr-2 text-sm"></i>
                                                     <span className="text-gray-500 dark:text-gray-400">
                                                         {t('article.search.placeholder')}
                                                     </span>
@@ -466,17 +467,17 @@ function MobileMenu() {
                                                         onChange={(e) => setSearchValue(e.target.value)}
                                                         onKeyDown={(e) => e.key === 'Enter' && onSearch()}
                                                         placeholder={t('article.search.placeholder')}
-                                                        className="w-full py-2 pl-8 pr-9 bg-white dark:bg-gray-800 border border-pink-300 dark:border-pink-500/40 rounded-full text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-pink-400/30 focus:border-pink-400 dark:focus:border-pink-400 shadow-sm hover:shadow focus:shadow-md focus:outline-none transition-all duration-200 text-xs"
+                                                        className="w-full py-2 pl-8 pr-9 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-theme/30 dark:border-theme/40 rounded-full text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:shadow-enhanced-lg focus:outline-none transition-all duration-200 text-xs"
                                                         aria-controls={searchHistory.length > 0 ? "mobile-search-history" : undefined}
                                                         aria-expanded={isSearchExpanded}
                                                         autoComplete="off"
                                                     />
-                                                    <i className="ri-search-line absolute left-3 text-gray-400 text-sm"></i>
+                                                    <i className="ri-search-line absolute left-3 text-theme/60 text-sm"></i>
                                                     <div className="absolute right-2 flex space-x-1">
                                                         {searchValue.trim() && (
                                                             <button 
                                                                 onClick={() => setSearchValue('')}
-                                                                className="p-1 text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
+                                                                className="p-1 text-gray-400 hover:text-theme dark:hover:text-theme transition-colors duration-150"
                                                                 aria-label={t('clear')}
                                                                 type="button"
                                                             >
@@ -491,7 +492,7 @@ function MobileMenu() {
                                                                     setIsSearchExpanded(false);
                                                                 }
                                                             }}
-                                                            className="p-1 text-gray-500 dark:text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
+                                                            className="p-1 text-gray-500 dark:text-gray-400 hover:text-theme dark:hover:text-theme transition-colors duration-150"
                                                             aria-label={searchValue.trim() ? t('search') : t('close')}
                                                             type="button"
                                                         >
@@ -516,7 +517,7 @@ function MobileMenu() {
                                                     <div className="max-h-36 overflow-y-auto">
                                                         <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-gray-700">
                                                             <span className="flex items-center">
-                                                                <i className="ri-history-line mr-1.5 text-pink-400/70"></i>
+                                                                <i className="ri-history-line mr-1.5 text-theme/70"></i>
                                                                 {t('article.search.history')}
                                                             </span>
                                                             <button 
@@ -564,7 +565,7 @@ function MobileMenu() {
                                         <div className="relative mb-3">
                                             <button 
                                                 onClick={() => setShowLanguages(!showLanguages)}
-                                                className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-theme/30 shadow-sm"
+                                                className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-theme/30 shadow-enhanced hover:shadow-enhanced-lg"
                                                 aria-expanded={showLanguages}
                                             >
                                                 <div className="flex items-center">
@@ -577,7 +578,7 @@ function MobileMenu() {
                                             </button>
 
                                             <div className={`absolute top-full left-0 right-0 z-30 ${showLanguages ? 'block' : 'hidden'}`} style={{ maxHeight: '300px' }}>
-                                                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-slideDown mt-1">
+                                                <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced-lg overflow-hidden animate-slideDown mt-1">
                                                     {languages.map(({ code, name, flag }) => (
                                                         <button 
                                                             key={code} 
@@ -680,7 +681,7 @@ function LanguageSwitch({ className }: { className?: string }) {
                 aria-label={label}
                 aria-expanded={isOpen}
                 aria-haspopup="true"
-                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
+                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
             >
                 <i className="ri-translate-2 text-xl"></i>
             </button>
@@ -896,7 +897,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                     onClick={() => setIsExpanded(true)} 
                     title={label} 
                     aria-label={label}
-                    className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-110"
+                    className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
                 >
                     <i className="ri-search-line text-xl"></i>
                 </button>
@@ -910,18 +911,18 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={getTranslatedText('article.search.placeholder', '搜索文章...')}
-                            className={`${getSearchInputWidthClass()} py-2 pl-8 pr-9 bg-white dark:bg-gray-800 border border-pink-300 dark:border-pink-500/40 rounded-full text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-pink-400/30 focus:border-pink-400 dark:focus:border-pink-400 shadow-sm hover:shadow focus:shadow-md transition-all duration-200 text-xs`}
+                            className={`${getSearchInputWidthClass()} py-2 pl-8 pr-9 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-theme/30 dark:border-theme/40 rounded-full text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:shadow-enhanced-lg transition-all duration-200 text-xs`}
                             aria-expanded={isExpanded}
                             autoComplete="off"
                             aria-autocomplete="list"
                             aria-controls={searchHistory.length > 0 ? "search-history-dropdown" : undefined}
                         />
-                        <i className="ri-search-line absolute left-3 text-gray-400 text-sm"></i>
+                        <i className="ri-search-line absolute left-3 text-theme/60 text-sm"></i>
                         <div className="absolute right-2 flex space-x-1">
                             {value.trim() && (
                                 <button 
                                     onClick={() => setValue('')}
-                                    className="p-1 text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
+                                    className="p-1 text-gray-400 hover:text-theme dark:hover:text-theme transition-colors duration-150"
                                     aria-label={getTranslatedText('clear', '清除')}
                                     type="button"
                                 >
@@ -936,7 +937,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                                         setIsExpanded(false);
                                     }
                                 }}
-                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-pink-400 dark:hover:text-pink-300 transition-colors duration-150"
+                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-theme dark:hover:text-theme transition-colors duration-150"
                                 aria-label={value.trim() ? getTranslatedText('search', '搜索') : getTranslatedText('close', '关闭')}
                                 type="button"
                             >
@@ -960,7 +961,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                             <div className="max-h-48 overflow-y-auto">
                                 <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-gray-700">
                                     <span className="flex items-center">
-                                        <i className="ri-history-line mr-1.5 text-pink-400/70"></i>
+                                        <i className="ri-history-line mr-1.5 text-theme/70"></i>
                                         {getTranslatedText('article.search.history', '搜索历史')}
                                     </span>
                                     <button 
@@ -1077,7 +1078,7 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                             <div className="mt-1 space-y-1">
                                 <button 
                                     onClick={handleLogout}
-                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-all duration-150 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 group"
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-all duration-200 hover:bg-red-50/80 dark:hover:bg-red-900/20 text-red-500 group shadow-sm hover:shadow-enhanced hover:scale-[0.98] active:scale-[0.96]"
                                     role="menuitem"
                                 >
                                     <i className="ri-logout-circle-line text-red-400 group-hover:text-red-500 transition-colors"></i>
@@ -1092,7 +1093,7 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                     onClick={() => setIsOpened(true)} 
                     title={label} 
                     aria-label={label}
-                    className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
+                    className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
                 >
                     <i className="ri-user-line text-xl"></i>
                 </button>
@@ -1129,7 +1130,7 @@ function CollapsedMenu() {
         <div ref={menuRef}>
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
+                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
                 aria-expanded={isOpen}
                 aria-label={t('menu')}
             >
@@ -1137,7 +1138,7 @@ function CollapsedMenu() {
             </button>
             
             {isOpen && (
-                <div className="absolute right-0 mt-2 py-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 animate-slideDown">
+                <div className="absolute right-0 mt-2 py-2 w-48 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60 z-20 animate-slideDown">
                     <NavBar menu={true} onClick={() => setIsOpen(false)} />
                 </div>
             )}

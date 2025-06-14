@@ -779,7 +779,7 @@ export function FileManager({
         {displayFiles.map(file => (
           <div
             key={file.id}
-            className={`group relative flex flex-col items-center p-4 rounded-xl border bg-white dark:bg-gray-900 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 ${selectedFiles.some(f => f.id === file.id) ? 'border-theme ring-2 ring-theme/30 bg-pink-50 dark:bg-pink-900/20' : 'border-gray-200 dark:border-gray-700'}`}
+            className={`group relative flex flex-col items-center p-4 rounded-xl border bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-enhanced hover:shadow-enhanced-lg hover:-translate-y-1 transition-all duration-300 ${selectedFiles.some(f => f.id === file.id) ? 'border-theme ring-2 ring-theme/30 bg-pink-50/80 dark:bg-pink-900/20' : 'border-neutral-200/60 dark:border-neutral-700/60'}`}
             style={{ minWidth: 0 }}
             onClick={() => handleFileClick(file)}
           >
@@ -817,7 +817,7 @@ export function FileManager({
               {file.modifiedAt ? new Date(file.modifiedAt * 1000).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }) : ''}
             </p>
             {/* 操作按钮区，悬浮显示，半透明背景 */}
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 dark:bg-gray-900/80 rounded-lg p-1 shadow z-10">
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-enhanced z-10">
               {/* 下载按钮 */}
               {!file.isFolder && (
                 <button 
@@ -1118,7 +1118,7 @@ export function FileManager({
   return (
     <div
       className={
-        "relative bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 w-full" +
+        "relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60 w-full" +
         (dragActive ? " ring-4 ring-pink-400/60 ring-inset" : "")
       }
       onDragEnter={handleDragEnter}
@@ -1193,17 +1193,17 @@ export function FileManager({
           </div>
           <div className="flex flex-row flex-wrap gap-2 min-w-0">
             {/* 视图切换按钮 */}
-            <div className="flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden">
+            <div className="flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-enhanced transition-all duration-200">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`px-3 py-2 h-10 ${viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                className={`px-3 py-2 h-10 transition-all duration-200 ${viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                 title={t('files.grid_view')}
               >
                 <i className="ri-grid-line"></i>
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`px-3 py-2 h-10 ${viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                className={`px-3 py-2 h-10 transition-all duration-200 ${viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                 title={t('files.list_view')}
               >
                 <i className="ri-list-check"></i>
@@ -1212,7 +1212,7 @@ export function FileManager({
             {/* 单/多选模式切换按钮（仅icon） */}
             <button
               onClick={() => setMultiple(m => !m)}
-              className="px-3 py-2 h-10 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3 py-2 h-10 bg-gray-100/80 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200"
               title={multipleState ? t('files.single_select') : t('files.multi_select')}
             >
               <i className={`ri-checkbox-${multipleState ? 'multiple' : 'blank'}-line`}></i>
@@ -1220,7 +1220,7 @@ export function FileManager({
             {/* 新建文件夹按钮 */}
             <button
               onClick={() => setShowNewFolderDialog(true)}
-              className="px-3 py-2 h-10 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3 py-2 h-10 bg-gray-100/80 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200"
               title={t('files.new_folder')}
             >
               <i className="ri-folder-add-line"></i>
@@ -1228,7 +1228,7 @@ export function FileManager({
             {/* 上传文件按钮 */}
             <button
               onClick={() => uploadInputRef.current?.click()}
-              className="px-3 py-2 h-10 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3 py-2 h-10 bg-gray-100/80 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200"
               title={t('files.upload')}
               disabled={isUploading}
             >
@@ -1279,7 +1279,7 @@ export function FileManager({
                   }
                 );
               }}
-              className="px-3 py-2 h-10 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3 py-2 h-10 bg-gray-100/80 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 shadow-sm hover:shadow-enhanced transition-all duration-200"
               disabled={isSyncing}
               title={t('files.r2sync')}
             >

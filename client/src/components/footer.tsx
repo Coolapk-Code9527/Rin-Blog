@@ -91,7 +91,7 @@ function Footer() {
                         </Popup>
                     </>}
                 </p>
-                <div className="w-fit-content inline-flex rounded-full border border-zinc-200 p-[3px] dark:border-zinc-700">
+                <div className="w-fit-content inline-flex rounded-full border border-neutral-200/60 dark:border-neutral-700/60 p-[3px] shadow-enhanced hover:shadow-enhanced-lg transition-all duration-200">
                     <ThemeButton mode='light' current={modeState} label="Toggle light mode" icon="ri-sun-line" onClick={setMode} />
                     <ThemeButton mode='system' current={modeState} label="Toggle system mode" icon="ri-computer-line" onClick={setMode} />
                     <ThemeButton mode='dark' current={modeState} label="Toggle dark mode" icon="ri-moon-line" onClick={setMode} />
@@ -111,7 +111,7 @@ function Spliter() {
 
 function ThemeButton({ current, mode, label, icon, onClick }: { current: ThemeMode, label: string, mode: ThemeMode, icon: string, onClick: (mode: ThemeMode) => void }) {
     return (<button aria-label={label} type="button" onClick={() => onClick(mode)}
-        className={`rounded-inherit inline-flex h-[32px] w-[32px] items-center justify-center border-0 t-primary ${current === mode ? "bg-w rounded-full shadow-xl shadow-light" : ""}`}>
+        className={`rounded-inherit inline-flex h-[32px] w-[32px] items-center justify-center border-0 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:scale-[0.98] active:scale-[0.96] ${current === mode ? "bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-full shadow-enhanced-lg" : "hover:bg-gray-100/50 dark:hover:bg-gray-700/50"}`}>
         <i className={`${icon}`} />
     </button>)
 }

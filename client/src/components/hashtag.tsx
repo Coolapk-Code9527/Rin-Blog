@@ -64,10 +64,11 @@ export function HashTag({ name }: { name: string }) {
             onFocus={() => setIsHovered(true)}
             onBlur={() => setIsHovered(false)}
             // onTouchStart={onTouchStart}
-            className={`text-base text-pretty overflow-hidden px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full transition-all duration-200 border border-transparent transform 
-                ${isHovered ? '-translate-y-0.5 shadow-md' : 'shadow-sm'} 
-                ${tagColor} 
-                ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} 
+            className={`text-base text-pretty overflow-hidden px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition-all duration-200 ease-out border border-transparent transform tag-enhanced
+                ${isHovered ? '-translate-y-1 shadow-enhanced-lg scale-105 glow-on-hover' : 'shadow-enhanced'}
+                ${tagColor}
+                ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}
+                hover:shadow-enhanced-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-theme/30`}
             aria-label={`标签: ${name}`}
             title={`查看标签: ${name}`}
             role="link"

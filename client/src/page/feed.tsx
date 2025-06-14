@@ -191,7 +191,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
         {feed && !error && (
           <main className="w-full mt-5">
             <article
-              className="w-full rounded-2xl bg-w pt-5 sm:pt-6 pb-5 sm:pb-6 px-4 sm:px-6 md:px-8 shadow-sm hover:shadow-md transition-all duration-300"
+              className="w-full rounded-2xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md pt-5 sm:pt-6 pb-5 sm:pb-6 px-4 sm:px-6 md:px-8 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60"
               aria-label={feed.title ?? "Unnamed"}
             >
               <div className="relative mb-3">
@@ -205,7 +205,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <button
                         aria-label={top > 0 ? t("untop.title") : t("top.title")}
                         onClick={topFeed}
-                        className={`w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-sm border transition-all duration-200
+                        className={`w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border transition-all duration-200
                           ${top > 0
                             ? "bg-blue-50/80 dark:bg-blue-900/40 text-blue-600 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-800"
                             : "bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"}
@@ -222,7 +222,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <Link
                         aria-label={t("edit")}
                         href={`/writing/${feed.id}`}
-                        className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-sm border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200"
+                        className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200"
                         style={{backdropFilter: 'blur(4px)'}}
                       >
                         <i className="ri-edit-2-line text-lg"></i>
@@ -235,7 +235,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <button
                         aria-label={t("delete.title")}
                         onClick={deleteFeed}
-                        className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-sm border bg-white/80 dark:bg-gray-800/80 text-red-500 border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 active:scale-95 transition-all duration-200"
+                        className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-red-500 border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 active:scale-95 transition-all duration-200"
                         style={{backdropFilter: 'blur(4px)'}}
                       >
                         <i className="ri-delete-bin-7-line text-lg"></i>
@@ -253,7 +253,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <button
                         aria-label={top > 0 ? t("untop.title") : t("top.title")}
                         onClick={topFeed}
-                        className={`w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-sm border transition-all duration-200
+                        className={`w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border transition-all duration-200
                           ${top > 0
                             ? "bg-blue-50/80 dark:bg-blue-900/40 text-blue-600 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-800"
                             : "bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"}
@@ -270,7 +270,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <Link
                         aria-label={t("edit")}
                         href={`/writing/${feed.id}`}
-                        className="w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-sm border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200"
+                        className="w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200"
                         style={{backdropFilter: 'blur(4px)'}}
                       >
                         <i className="ri-edit-2-line text-base"></i>
@@ -283,7 +283,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <button
                         aria-label={t("delete.title")}
                         onClick={deleteFeed}
-                        className="w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-sm border bg-white/80 dark:bg-gray-800/80 text-red-500 border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 active:scale-95 transition-all duration-200"
+                        className="w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-red-500 border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 active:scale-95 transition-all duration-200"
                         style={{backdropFilter: 'blur(4px)'}}
                       >
                         <i className="ri-delete-bin-7-line text-base"></i>
@@ -299,7 +299,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               </div>
               <div className="flex justify-center mb-2">
                 <div className="flex flex-wrap gap-2 justify-center w-full">
-                  <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 py-1 rounded-xl bg-white/80 dark:bg-gray-800/80 shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-[15px] font-medium w-full sm:w-auto">
+                  <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 py-1 rounded-xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60 text-gray-500 dark:text-gray-400 text-[15px] font-medium w-full sm:w-auto">
                     <div className="flex items-center gap-1">
                       <i className="ri-calendar-line text-blue-500 mr-1"></i>
                       <span>{t("published_at")} {timeago(feed.createdAt)}</span>
@@ -351,7 +351,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                   <div className="relative flex-shrink-0 mb-2">
                   <img
                     src={feed.user.avatar || "/avatar.png"}
-                      className="w-16 h-16 rounded-full border-2 border-gray-100 dark:border-gray-700 shadow-sm"
+                      className="w-16 h-16 rounded-full border-2 border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300"
                       alt={feed.user.username}
                     />
                     {profile?.permission && (
@@ -376,7 +376,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
         {/* 侧边栏，仅大屏显示 */}
         <aside className="hidden lg:flex flex-col w-[260px] flex-shrink-0 gap-6 mt-5">
           <section className="sticky top-[5.5rem]">
-            <div className="mb-6 rounded-2xl bg-white dark:bg-gray-900 p-4 shadow-sm">
+            <div className="mb-6 rounded-2xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md p-4 shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60">
               <h3 className="text-lg font-bold mb-3 flex items-center gap-2 mt-0">
                 <i className="ri-list-unordered text-theme"></i>
                 {t('toc.title', { defaultValue: '目录' })}
@@ -403,7 +403,7 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
     <div className="lg:hidden">
       <button
         onClick={() => setIsOpened(true)}
-        className="w-10 h-10 rounded-full flex flex-row items-center justify-center bg-white dark:bg-gray-800 shadow-sm"
+        className="w-10 h-10 rounded-full flex flex-row items-center justify-center bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60"
         aria-label="显示目录"
       >
         <i className="ri-menu-2-fill t-primary ri-lg"></i>
@@ -436,7 +436,7 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
         }}
         onRequestClose={() => setIsOpened(false)}
       >
-        <div className="w-[85vw] sm:w-[60vw] lg:w-[40vw] overflow-hidden relative t-primary bg-white dark:bg-gray-800 rounded-2xl p-5 max-h-[70vh] overflow-y-auto">
+        <div className="w-[85vw] sm:w-[60vw] lg:w-[40vw] overflow-hidden relative t-primary bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl p-5 max-h-[70vh] overflow-y-auto shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60">
           <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">
             <h3 className="font-medium flex items-center gap-2">
               <i className="ri-list-unordered text-theme"></i>
@@ -562,8 +562,8 @@ function CommentInput({
   }
   
   return (
-    <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
-      <div className="bg-gray-50 dark:bg-gray-750 px-5 py-3.5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+    <div className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60">
+      <div className="bg-neutral-50/80 dark:bg-gray-750/80 backdrop-blur-sm px-5 py-3.5 border-b border-neutral-200/60 dark:border-neutral-700/60 flex justify-between items-center">
         <h3 className="text-base font-medium flex items-center gap-2">
           <i className={`${parentId ? "ri-reply-line" : "ri-chat-new-line"} text-theme`}></i>
           {parentId ? `回复 ${replyTo}` : (isAnonymous ? t("comment.anonymous.title") : t("comment.title"))}
@@ -672,10 +672,10 @@ function CommentInput({
             <div className="flex-grow"></div>
             <button
               disabled={submitting}
-              className={`px-4 py-2 rounded-2xl flex items-center text-sm ${
-                submitting 
-                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
-                  : 'bg-theme text-white hover:bg-theme-hover'
+              className={`px-4 py-2 rounded-2xl flex items-center text-sm shadow-enhanced hover:shadow-enhanced-lg transition-all duration-200 ${
+                submitting
+                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                  : 'bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:scale-[0.98] active:scale-[0.96]'
               }`}
               onClick={submit}
             >
@@ -700,7 +700,7 @@ function CommentInput({
             <p className="text-gray-500 dark:text-gray-400 text-sm">{t("login.required")}</p>
           </div>
           <button
-            className="bg-theme text-white px-4 py-2 rounded-2xl hover:bg-theme-hover transition-colors flex items-center text-sm"
+            className="bg-theme text-white px-4 py-2 rounded-2xl hover:bg-theme-hover active:bg-theme-active shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96] transition-all duration-200 flex items-center text-sm font-medium"
             onClick={() => setIsOpened(true)}
           >
             <i className="ri-login-circle-line mr-1"></i>
@@ -803,7 +803,7 @@ function Comments({ id }: { id: string }) {
           <CommentInput id={id} onRefresh={loadComments} />
           
           {loading ? (
-            <div className="w-full bg-white dark:bg-gray-800 rounded-2xl p-8 flex justify-center shadow-sm">
+            <div className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl p-8 flex justify-center shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
               <div className="flex items-center space-x-3">
                 <div className="h-5 w-5">
                   <i className="ri-loader-4-line animate-spin text-theme"></i>
@@ -812,7 +812,7 @@ function Comments({ id }: { id: string }) {
               </div>
             </div>
           ) : error ? (
-            <div className="w-full rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-sm">
+            <div className="w-full rounded-2xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md p-6 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
               <div className="flex flex-col items-center">
                 <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-3">
                   <i className="ri-error-warning-line text-xl text-red-500 dark:text-red-400"></i>
@@ -831,7 +831,7 @@ function Comments({ id }: { id: string }) {
             <>
               {comments.length > 0 ? (
                 <div className="w-full space-y-4">
-                  <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+                  <div className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60">
                     <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-750 dark:to-gray-800 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                       <div className="flex justify-between items-center">
                         <h3 className="text-lg font-semibold flex items-center gap-3 text-gray-900 dark:text-gray-100">
@@ -880,7 +880,7 @@ function Comments({ id }: { id: string }) {
                   )}
                 </div>
               ) : (
-                <div className="w-full bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm">
+                <div className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl p-8 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
                   <div className="flex flex-col items-center">
                     <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
                       <i className="ri-chat-1-line text-xl text-gray-400 dark:text-gray-500"></i>
@@ -995,7 +995,7 @@ function CommentItem({
   const getCommentStyles = () => {
     if (depth === 0) {
       return {
-        container: 'bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md',
+        container: 'bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced hover:shadow-enhanced-lg hover:border-theme/30 transition-all duration-300',
         indent: '',
         padding: 'p-6'
       };

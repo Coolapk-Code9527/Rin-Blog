@@ -134,3 +134,47 @@ All functions and constants are documented in both Chinese and English for multi
 - Expand/collapse button hover no longer causes code to disappear.
 - Code blocks without language marker now default to plaintext and show a user tip.
 - Top bar and content area now adapt to dark/light mode.
+
+## 2024-12-xx macOS Design System Implementation
+
+### Phase 1: Design System Foundation
+- **Unified Color System**: Implemented Apple System Blue (#007AFF) as primary theme color across all components
+- **Enhanced Shadow System**: Added 4-tier shadow system (shadow-enhanced, shadow-enhanced-lg, shadow-enhanced-xl, shadow-enhanced-2xl)
+- **Glassmorphism Effects**: Applied backdrop-blur and semi-transparent backgrounds throughout the interface
+- **Border Standardization**: Unified border colors using neutral-200/60 and neutral-700/60 with consistent transparency
+
+### Phase 2: Core Component Styling
+- **Button Components**: Complete redesign with enhanced shadows, micro-interactions, and scale animations
+- **Input Components**: Glassmorphism backgrounds, theme-colored borders, and improved focus states
+- **Card Components**: Elevated design with enhanced shadows and hover effects
+- **Navigation Components**: Unified styling across desktop and mobile interfaces
+
+### Phase 3: Page-Level Consistency
+- **Homepage**: Enhanced article cards with improved visual hierarchy and consistent spacing
+- **Timeline Page**: Optimized layout with better content organization and visual flow
+- **Article Detail**: Improved reading experience with enhanced typography and spacing
+- **Writing Interface**: Professional editor design with optimized toolbar and container styling
+- **File Manager**: Modern file browsing experience with enhanced card design
+- **Settings Page**: Unified setting item cards with consistent visual treatment
+
+### Phase 4: Cross-Device Optimization
+- **Mobile Sidebar**: Complete theme color unification and enhanced glassmorphism effects
+- **Desktop Search**: Unified search system with consistent theme colors and interactions
+- **Login System**: Standardized login/logout buttons with unified visual design
+- **Theme Switching**: Enhanced theme toggle with modern button design
+- **Icon Buttons**: Lightweight design approach for better visual hierarchy
+
+### Technical Achievements
+- **21 Components**: Complete macOS design system implementation across all interface elements
+- **100% Design Consistency**: Unified visual language throughout the entire application
+- **Professional UX**: Smooth animations, micro-interactions, and enhanced accessibility
+- **Dark Mode**: Comprehensive dark theme support with proper contrast and color balance
+- **Responsive Design**: Seamless experience across desktop, tablet, and mobile devices
+- **Performance**: Optimized CSS implementation with efficient animations and transitions
+
+### Design System Features
+- **Apple HIG Compliance**: Full adherence to Apple Human Interface Guidelines
+- **Color Harmony**: Unified theme color system with semantic color variations
+- **Visual Hierarchy**: Clear distinction between interface elements and content areas
+- **Accessibility**: Enhanced keyboard navigation, focus states, and screen reader support
+- **Modern Aesthetics**: Contemporary design with subtle animations and refined details

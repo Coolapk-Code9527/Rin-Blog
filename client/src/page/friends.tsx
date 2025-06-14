@@ -124,7 +124,7 @@ export function FriendsPage() {
                 <FriendList title={t('friends.my_apply')} show={profile?.permission !== true && apply !== undefined} friends={apply ? [apply] : []} />
                 {profile && (profile.permission || config.get("friend_apply_enable")) &&
                     <div className="w-full t-primary flex text-start text-2xl font-bold mt-8">
-                        <div className="w-full md:basis-1/2 bg-w rounded-xl p-4">
+                        <div className="w-full md:basis-1/2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
                             <p>
                                 {profile.permission ? t('friends.create') : t('friends.apply')}
                             </p>
@@ -134,7 +134,7 @@ export function FriendsPage() {
                                 <Input value={avatar} setValue={setAvatar} placeholder={t('avatar.url')} className="mt-2" />
                                 <Input value={url} setValue={setUrl} placeholder={t('url')} className="my-2" />
                                 <div className='flex flex-row justify-center'>
-                                    <button onClick={publishButton} className='basis-1/2 bg-theme text-white py-4 rounded-full shadow-xl shadow-light'>{t('create_action.title')}</button>
+                                    <button onClick={publishButton} className='basis-1/2 bg-theme text-white py-4 rounded-full shadow-enhanced-xl hover:shadow-enhanced-2xl hover:scale-[0.98] active:scale-[0.96] transition-all duration-300'>{t('create_action.title')}</button>
                                 </div>
                             </div>
                         </div>
@@ -239,7 +239,7 @@ function Friend(props: any) {
 
     return (
         <>
-            <a title={friend.name} href={friend.url} target="_blank" className="bg-button w-full bg-w rounded-xl p-4 flex flex-col justify-center items-center relative">
+            <a title={friend.name} href={friend.url} target="_blank" className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md w-full rounded-xl p-4 flex flex-col justify-center items-center relative shadow-enhanced hover:shadow-enhanced-lg hover:-translate-y-1 transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
                 <div className="w-16 h-16 relative flex items-center justify-center">
                     <img className={"rounded-xl w-full h-full object-cover " + (friend.health.length > 0 ? "grayscale" : "")} src={friend.avatar} alt={friend.name} style={{zIndex:1, position:'relative'}} />
                     {modalIsOpen && <div className="absolute inset-0 rounded-xl bg-black/40 pointer-events-none flex items-center justify-center" style={{zIndex:2}}></div>}
@@ -249,7 +249,7 @@ function Friend(props: any) {
                 {friend.accepted !== 1 && <p className={`${friend.accepted === 0 ? "t-primary" : "text-theme"}`}>{statusOption[friend.accepted + 1].label}</p>}
                 {friend.health.length > 0 && <p className="text-sm text-gray-500 text-center">{errorHumanize(friend.health)}</p>}
                 {(profile?.permission || profile?.id === friend.uid) && <>
-                    <button onClick={(e) => { e.preventDefault(); setIsOpen(true) }} className="absolute top-0 right-0 m-2 px-2 py-1 bg-secondary t-primary rounded-full bg-button">
+                    <button onClick={(e) => { e.preventDefault(); setIsOpen(true) }} className="absolute top-0 right-0 m-2 px-2 py-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-600 dark:text-gray-300 rounded-full shadow-enhanced hover:shadow-enhanced-lg transition-all duration-200">
                         <i className="ri-settings-line"></i>
                     </button></>}
             </a>
@@ -282,7 +282,7 @@ function Friend(props: any) {
                 onRequestClose={() => setIsOpen(false)}
                 contentLabel={t('update$sth', { sth: friend.name })}
             >
-                <div className="w-[80vw] sm:w-[60vw] md:w-[50vw] lg:w-[40vw] xl:w-[30vw] bg-w rounded-xl p-4 flex flex-col justify-start items-center relative">
+                <div className="w-[80vw] sm:w-[60vw] md:w-[50vw] lg:w-[40vw] xl:w-[30vw] bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl p-4 flex flex-col justify-start items-center relative shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60">
                     <div className="w-16 h-16 relative flex items-center justify-center">
                         <img className={"rounded-xl w-full h-full object-cover " + (friend.health.length > 0 ? "grayscale" : "")} src={friend.avatar} alt={friend.name} style={{zIndex:1, position:'relative'}} />
                         {modalIsOpen && <div className="absolute inset-0 rounded-xl bg-black/40 pointer-events-none flex items-center justify-center" style={{zIndex:2}}></div>}
@@ -313,8 +313,8 @@ function Friend(props: any) {
                     <Input value={avatar} setValue={setAvatar} placeholder={t('avatar.url')} className="mt-2" />
                     <Input value={url} setValue={setUrl} placeholder={t('url')} className="my-2" />
                     <div className='flex flex-row justify-center space-x-2'>
-                        <button onClick={deleteFriend} className="bg-secondary text-theme rounded-full bg-button px-4 py-2 mt-2">{t('delete.title')}</button>
-                        <button onClick={updateFriend} className="bg-secondary t-primary rounded-full bg-button px-4 py-2 mt-2">{t('save')}</button>
+                        <button onClick={deleteFriend} className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-full px-4 py-2 mt-2 shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96] transition-all duration-200">{t('delete.title')}</button>
+                        <button onClick={updateFriend} className="bg-theme text-white rounded-full px-4 py-2 mt-2 shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96] transition-all duration-200">{t('save')}</button>
                     </div>
                 </div >
             </Modal>

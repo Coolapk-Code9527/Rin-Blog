@@ -46,13 +46,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }): JSX.
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto min-w-[220px] max-w-xs px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium animate-fadeIn
-              ${toast.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/80 dark:text-green-200' : ''}
-              ${toast.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/80 dark:text-red-200' : ''}
-              ${toast.type === 'info' ? 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/80 dark:text-blue-200' : ''}
-              ${toast.type === 'warning' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/80 dark:text-yellow-200' : ''}
+            className={`pointer-events-auto min-w-[220px] max-w-xs px-4 py-3 rounded-lg shadow-enhanced-lg backdrop-blur-md flex items-center gap-2 text-sm font-medium animate-fadeIn transition-all duration-300 hover:scale-[0.98]
+              ${toast.type === 'success' ? 'bg-green-50/95 text-green-700 border border-green-200/60 dark:bg-green-900/90 dark:text-green-200 dark:border-green-700/60' : ''}
+              ${toast.type === 'error' ? 'bg-red-50/95 text-red-700 border border-red-200/60 dark:bg-red-900/90 dark:text-red-200 dark:border-red-700/60' : ''}
+              ${toast.type === 'info' ? 'bg-blue-50/95 text-blue-700 border border-blue-200/60 dark:bg-blue-900/90 dark:text-blue-200 dark:border-blue-700/60' : ''}
+              ${toast.type === 'warning' ? 'bg-yellow-50/95 text-yellow-700 border border-yellow-200/60 dark:bg-yellow-900/90 dark:text-yellow-200 dark:border-yellow-700/60' : ''}
             `}
-            style={{ boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)' }}
           >
             <i className={`ri-${toast.type === 'success' ? 'checkbox-circle-line' : toast.type === 'error' ? 'close-circle-line' : toast.type === 'warning' ? 'error-warning-line' : 'information-line'} text-lg`}></i>
             <span className="flex-1 truncate">{toast.message}</span>

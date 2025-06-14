@@ -65,13 +65,13 @@ export function HashtagsPage() {
                 <Waiting for={hashtags}>
                     <main className="w-full flex flex-col justify-center items-center mb-3 ani-show">
                         <div className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 gap-2 sm:gap-3">
-                          <div className="flex items-center gap-2 sm:gap-3">
-                            <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group">
+                          <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold t-primary relative group">
                               {t('hashtags')}
                               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                             </h1>
-                            <div className="py-1 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-800/80 rounded-full text-base text-gray-500 dark:text-gray-400 flex items-center font-medium backdrop-blur-sm">
-                              <i className="ri-hashtag mr-1"></i>
+                            <div className="py-1.5 px-3 bg-neutral-100/80 dark:bg-neutral-800/80 rounded-xl text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium backdrop-blur-sm border border-neutral-200/40 dark:border-neutral-700/40">
+                              <i className="ri-hashtag mr-1.5 text-theme"></i>
                               {t('article.total$count', { count: hashtags.length })}
                             </div>
                           </div>
@@ -81,12 +81,12 @@ export function HashtagsPage() {
                           <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                         </div>
                         {/* 排序切换 */}
-                        <div className="mb-4 flex gap-2 items-center w-full">
-                          <span className="text-sm text-gray-500 dark:text-gray-400">{t('排序')}:</span>
+                        <div className="mb-6 flex gap-3 items-center w-full">
+                          <span className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">{t('排序')}:</span>
                           {SORT_OPTIONS.map(opt => (
                             <button
                               key={opt.value}
-                              className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${sort === opt.value ? 'bg-theme/10 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme'}`}
+                              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] ${sort === opt.value ? 'bg-theme/12 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced backdrop-blur-sm' : 'bg-white/95 dark:bg-gray-800/95 text-neutral-600 dark:text-neutral-300 border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme backdrop-blur-sm shadow-enhanced'}`}
                               onClick={() => setSort(opt.value as any)}
                             >
                               {opt.label}
@@ -95,23 +95,23 @@ export function HashtagsPage() {
                         </div>
                         {/* 标签云布局 */}
                         {sortedTags.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-                            <i className="ri-emotion-unhappy-line text-4xl mb-2"></i>
-                            <div>{t('暂无标签')}</div>
+                          <div className="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-500">
+                            <i className="ri-emotion-unhappy-line text-5xl mb-3 text-neutral-300 dark:text-neutral-600"></i>
+                            <div className="text-lg font-medium">{t('暂无标签')}</div>
                           </div>
                         ) : (
-                          <div className="w-full flex flex-row flex-wrap gap-3 items-start justify-start md:justify-start sm:gap-3 gap-2 md:gap-4 lg:gap-5">
+                          <div className="w-full flex flex-row flex-wrap gap-4 items-start justify-start md:justify-start sm:gap-4 md:gap-5 lg:gap-6">
                             {sortedTags.map((hashtag, index) => (
-                              <div key={index} className="relative group flex flex-col items-center min-w-[80px] max-w-full">
+                              <div key={index} className="relative group flex flex-col items-center min-w-[90px] max-w-full">
                                 <Link href={`/hashtag/${hashtag.name}`} className="inline-block w-full">
                                   <span className={`transition-all duration-200 ${getFontSize(hashtag.feeds)} break-all w-full text-center`} title={hashtag.description || ''} style={{display: 'inline-block', minWidth: 0, maxWidth: '100%'}}>
                                     <HashTag name={hashtag.name} />
                                   </span>
                                 </Link>
-                                <span className="text-xs text-gray-400 mt-1 select-none w-full text-center">{t("article.total_short$count", { count: hashtag.feeds })}</span>
+                                <span className="text-xs text-neutral-400 dark:text-neutral-500 mt-2 select-none w-full text-center font-medium">{t("article.total_short$count", { count: hashtag.feeds })}</span>
                                 {/* 简介tooltip */}
                                 {hashtag.description && (
-                                  <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-20 hidden group-hover:block bg-gray-900 text-white text-xs rounded px-2 py-1 shadow-lg whitespace-pre-line max-w-xs">
+                                  <span className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-20 hidden group-hover:block bg-neutral-900/95 dark:bg-neutral-100/95 text-white dark:text-neutral-900 text-xs rounded-lg px-3 py-2 shadow-enhanced-lg whitespace-pre-line max-w-xs backdrop-blur-md">
                                     {hashtag.description}
                                   </span>
                                 )}

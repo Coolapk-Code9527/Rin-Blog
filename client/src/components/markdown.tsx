@@ -416,8 +416,8 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                   {!language && (
                     <span className="ml-2 text-xs text-yellow-400 font-mono">未指定语言</span>
                   )}
-                  <button 
-                    className="code-block-action ml-auto px-2 py-1 bg-gray-700/60 hover:bg-gray-600/80 text-gray-200 rounded text-xs flex items-center gap-1 shadow-sm transition-colors"
+                  <button
+                    className="code-block-action ml-auto px-3 py-1.5 bg-neutral-700/70 hover:bg-neutral-600/80 active:bg-neutral-500/80 text-neutral-200 rounded-lg text-xs flex items-center gap-1.5 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] backdrop-blur-sm"
                     onClick={() => {
                       navigator.clipboard.writeText(String(children));
                       setCopied(true);
@@ -489,7 +489,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                   <div className="flex justify-center border-t"
                     style={{ background: colorMode === 'dark' ? '#23272f' : '#f3f4f6', borderTop: colorMode === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb' }}>
                     <button
-                      className="text-xs text-blue-400 py-2 hover:underline focus:outline-none"
+                      className="text-xs text-theme py-2.5 px-4 hover:bg-theme/10 dark:hover:bg-theme/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 ease-out font-medium"
                       onClick={() => setCollapsed(v => !v)}
                       aria-label={collapsed ? t('code.expand', { defaultValue: '展开全部' }) : t('code.collapse', { defaultValue: '收起' })}
                       title={collapsed ? t('code.expand', { defaultValue: '展开全部' }) : t('code.collapse', { defaultValue: '收起' })}
