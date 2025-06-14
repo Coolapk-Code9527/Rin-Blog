@@ -853,7 +853,7 @@ function Comments({ id }: { id: string }) {
                       </div>
                     </div>
                   
-                    <div className="p-6 space-y-6">
+                    <div className="p-6 space-y-8">
                       {currentComments.map((comment, idx) => (
                         <div key={comment.id != null ? comment.id : idx}>
                           <CommentItem
@@ -916,12 +916,33 @@ function CommentItem({
   const [isHovered, setIsHovered] = React.useState(false);
   const [showAllReplies, setShowAllReplies] = React.useState(false);
 
-  // 回复显示逻辑
-  const INITIAL_REPLIES_COUNT = 3; // 初始显示3条回复
+  // 默认折叠策略 - 保持评论区简洁
+  const INITIAL_REPLIES_COUNT = depth === 0 ? 1 : 0; // 主评论只显示1条，其他默认折叠
   const hasMoreReplies = comment.replies && comment.replies.length > INITIAL_REPLIES_COUNT;
+
+  // 智能回复排序和显示
+  const getSortedReplies = (replies: any[]) => {
+    if (!replies) return [];
+
+    // 按时间排序（新的在前）
+    const sorted = [...replies].sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return sorted;
+  };
+
+  const sortedReplies = getSortedReplies(comment.replies || []);
   const displayedReplies = showAllReplies
-    ? comment.replies
-    : comment.replies?.slice(0, INITIAL_REPLIES_COUNT);
+    ? sortedReplies
+    : sortedReplies.slice(0, INITIAL_REPLIES_COUNT);
+
+  // 调试信息
+  React.useEffect(() => {
+    if (comment.replies && comment.replies.length > 0) {
+      console.log(`Comment ${comment.id}: ${comment.replies.length} replies, hasMoreReplies: ${hasMoreReplies}, showAllReplies: ${showAllReplies}, displayedReplies: ${displayedReplies?.length}`);
+    }
+  }, [comment.id, comment.replies?.length, hasMoreReplies, showAllReplies, displayedReplies?.length]);
   
   // 解析昵称和邮箱
   function parseNicknameAndEmail(nicknameField?: string) {
@@ -975,29 +996,51 @@ function CommentItem({
     if (depth === 0) {
       return {
         container: 'bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md',
-        indent: ''
+        indent: '',
+        padding: 'p-6'
       };
     }
 
-    // 多层回复的视觉设计
-    const indentLevel = Math.min(depth, 6); // 最大6层缩进
-    const indentClass = `ml-${indentLevel * 4} pl-4`; // 每层4个单位缩进
+    // 多层回复的视觉设计 - 更明显的层级区分
+    const indentLevel = Math.min(depth, 4); // 最大4层缩进，避免过度缩进
+    const indentClass = `ml-${indentLevel * 3} pl-4`; // 每层3个单位缩进，更紧凑
 
-    // 不同深度使用不同的边框颜色
-    const borderColors = [
-      'border-blue-200 dark:border-blue-600',    // 第1层
-      'border-green-200 dark:border-green-600',  // 第2层
-      'border-purple-200 dark:border-purple-600', // 第3层
-      'border-orange-200 dark:border-orange-600', // 第4层
-      'border-pink-200 dark:border-pink-600',    // 第5层
-      'border-gray-200 dark:border-gray-600'     // 第6层及以上
+    // 不同深度使用不同的边框颜色和背景
+    const styleConfigs = [
+      {
+        border: 'border-l-4 border-blue-400 dark:border-blue-500',
+        bg: 'bg-blue-50/80 dark:bg-blue-900/20',
+        accent: 'blue'
+      }, // 第1层
+      {
+        border: 'border-l-4 border-green-400 dark:border-green-500',
+        bg: 'bg-green-50/80 dark:bg-green-900/20',
+        accent: 'green'
+      }, // 第2层
+      {
+        border: 'border-l-4 border-purple-400 dark:border-purple-500',
+        bg: 'bg-purple-50/80 dark:bg-purple-900/20',
+        accent: 'purple'
+      }, // 第3层
+      {
+        border: 'border-l-4 border-orange-400 dark:border-orange-500',
+        bg: 'bg-orange-50/80 dark:bg-orange-900/20',
+        accent: 'orange'
+      }, // 第4层
+      {
+        border: 'border-l-4 border-gray-400 dark:border-gray-500',
+        bg: 'bg-gray-50/80 dark:bg-gray-900/20',
+        accent: 'gray'
+      }  // 第5层及以上
     ];
 
-    const borderColor = borderColors[Math.min(depth - 1, borderColors.length - 1)];
+    const config = styleConfigs[Math.min(depth - 1, styleConfigs.length - 1)];
 
     return {
-      container: `bg-gray-50/60 dark:bg-gray-800/40 rounded-lg border-l-3 ${borderColor}`,
-      indent: indentClass
+      container: `${config.bg} rounded-lg ${config.border}`,
+      indent: indentClass,
+      padding: depth > 2 ? 'p-3' : 'p-4', // 深层回复使用更小的内边距
+      accent: config.accent
     };
   };
 
@@ -1007,11 +1050,11 @@ function CommentItem({
     <div
       className={`group relative transition-all duration-200 ${styles.container} ${styles.indent} ${
         isHovered ? 'shadow-lg' : 'shadow-sm'
-      }`}
+      } mb-${depth === 0 ? '6' : depth === 1 ? '4' : '3'}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="p-4">
+      <div className={styles.padding}>
         {/* 用户信息头部 */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-start space-x-3 flex-1">
@@ -1055,10 +1098,15 @@ function CommentItem({
               <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
                 {depth > 0 && (
                   <div className="flex items-center space-x-1">
-                    <i className="ri-reply-line"></i>
-                    <span>回复</span>
-                    <span className="text-gray-300 dark:text-gray-600">•</span>
-                    <span>第 {depth} 层</span>
+                    <div className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                      depth === 1 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                      depth === 2 ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' :
+                      depth === 3 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' :
+                      'bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-300'
+                    }`}>
+                      <i className="ri-reply-line mr-1"></i>
+                      L{depth}
+                    </div>
                   </div>
                 )}
                 {displayEmail && (
@@ -1160,76 +1208,86 @@ function CommentItem({
 
       {/* 回复列表 */}
       {comment.replies && comment.replies.length > 0 && (
-        <div className="mt-4">
-          {/* 回复统计信息 */}
-          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4 px-4">
+        <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+          {/* 简化的回复统计信息 */}
+          <div className="flex items-center justify-between text-sm mb-3 py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
             <div className="flex items-center space-x-2">
-              <i className="ri-chat-3-line"></i>
-              <span>{comment.replies.length} 条回复</span>
-              {depth > 0 && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600">•</span>
-                  <span>第 {depth + 1} 层</span>
-                </>
+              <i className={`ri-chat-3-line ${
+                depth === 0 ? 'text-blue-500' :
+                depth === 1 ? 'text-green-500' :
+                'text-purple-500'
+              }`}></i>
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                {comment.replies.length} 条回复
+              </span>
+              {comment.replies.length > 5 && (
+                <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-full text-xs">
+                  热门
+                </span>
               )}
             </div>
 
             {/* 展开/折叠按钮 */}
             {hasMoreReplies && (
               <button
-                onClick={() => setShowAllReplies(!showAllReplies)}
-                className="flex items-center space-x-1 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                onClick={() => {
+                  console.log(`Toggling showAllReplies for comment ${comment.id}: ${showAllReplies} -> ${!showAllReplies}`);
+                  setShowAllReplies(!showAllReplies);
+                }}
+                className="flex items-center space-x-1 px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg transition-all duration-200 font-medium"
               >
-                <span>{showAllReplies ? '收起' : `查看全部 ${comment.replies.length} 条`}</span>
+                <span>{showAllReplies ? '收起' : `展开 ${comment.replies.length} 条`}</span>
                 <i className={`ri-arrow-${showAllReplies ? 'up' : 'down'}-s-line`}></i>
               </button>
             )}
           </div>
 
           {/* 回复列表 */}
-          <div className="space-y-4">
-            {displayedReplies?.map((reply) => (
+          <div className={`space-y-${depth === 0 ? '4' : '3'}`}>
+            {displayedReplies?.map((reply, index) => (
               <div key={reply.id} className="relative">
-                {/* 现代化连接线系统 */}
-                {depth === 0 && (
-                  <>
-                    {/* 主评论的回复连接线 */}
-                    <div className="absolute left-6 top-0 w-px h-full bg-gradient-to-b from-blue-200 to-transparent dark:from-blue-600 dark:to-transparent"></div>
-                    <div className="absolute left-6 top-6 w-4 h-px bg-blue-200 dark:bg-blue-600"></div>
-                    {/* 连接点 */}
-                    <div className="absolute left-5 top-6 w-2 h-2 bg-blue-400 dark:bg-blue-500 rounded-full border-2 border-white dark:border-gray-800"></div>
-                  </>
+                {/* 简化的连接线系统 */}
+                {index < displayedReplies.length - 1 && (
+                  <div className={`absolute left-4 top-12 w-px h-full ${
+                    depth === 0 ? 'bg-blue-200 dark:bg-blue-600' :
+                    depth === 1 ? 'bg-green-200 dark:bg-green-600' :
+                    depth === 2 ? 'bg-purple-200 dark:bg-purple-600' :
+                    'bg-gray-200 dark:bg-gray-600'
+                  }`}></div>
                 )}
 
-                {depth > 0 && (
-                  <>
-                    {/* 多层回复的连接线 */}
-                    <div className="absolute left-6 top-0 w-px h-full bg-gradient-to-b from-gray-300 to-transparent dark:from-gray-600 dark:to-transparent"></div>
-                    <div className="absolute left-6 top-6 w-4 h-px bg-gray-300 dark:bg-gray-600"></div>
-                    {/* 连接点 */}
-                    <div className="absolute left-5 top-6 w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full border-2 border-white dark:border-gray-800"></div>
-                  </>
-                )}
+                {/* 连接点 */}
+                <div className={`absolute left-3 top-6 w-2 h-2 rounded-full border-2 border-white dark:border-gray-800 ${
+                  depth === 0 ? 'bg-blue-400 dark:bg-blue-500' :
+                  depth === 1 ? 'bg-green-400 dark:bg-green-500' :
+                  depth === 2 ? 'bg-purple-400 dark:bg-purple-500' :
+                  'bg-gray-400 dark:bg-gray-500'
+                }`}></div>
 
-                <CommentItem
-                  comment={reply}
-                  onRefresh={onRefresh}
-                  feedId={feedId}
-                  depth={depth + 1}
-                />
+                <div className="ml-6">
+                  <CommentItem
+                    comment={reply}
+                    onRefresh={onRefresh}
+                    feedId={feedId}
+                    depth={depth + 1}
+                  />
+                </div>
               </div>
             ))}
           </div>
 
-          {/* 加载更多回复的提示 */}
+          {/* 简化的加载更多按钮 */}
           {hasMoreReplies && !showAllReplies && (
-            <div className="mt-4 px-4">
+            <div className="mt-3">
               <button
-                onClick={() => setShowAllReplies(true)}
-                className="w-full py-2 text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 border border-dashed border-blue-200 dark:border-blue-600"
+                onClick={() => {
+                  console.log(`Loading more replies for comment ${comment.id}`);
+                  setShowAllReplies(true);
+                }}
+                className="w-full py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 border border-dashed border-blue-200 dark:border-blue-600 flex items-center justify-center space-x-2"
               >
-                <i className="ri-add-line mr-2"></i>
-                查看剩余 {comment.replies.length - INITIAL_REPLIES_COUNT} 条回复
+                <i className="ri-add-line"></i>
+                <span>查看剩余 {comment.replies.length - INITIAL_REPLIES_COUNT} 条回复</span>
               </button>
             </div>
           )}

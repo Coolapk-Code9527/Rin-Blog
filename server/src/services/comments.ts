@@ -23,52 +23,8 @@ export function CommentService() {
                     const feedId = parseInt(feed);
                     try {
                     try {
-                        // 尝试使用嵌套查询获取评论和回复
-                        const comment_list = await db.query.comments.findMany({
-                            where: and(eq(comments.feedId, feedId), isNull(comments.parentId)),
-                            columns: { feedId: false },
-                            with: {
-                                user: {
-                                    columns: { id: true, username: true, avatar: true, permission: true }
-                                },
-                                replies: {
-                                    with: {
-                                        user: {
-                                            columns: { id: true, username: true, avatar: true, permission: true }
-                                        }
-                                    },
-                                    orderBy: [desc(comments.createdAt)]
-                                }
-                            },
-                            orderBy: [desc(comments.createdAt)]
-                        });
-
-                        // 处理匿名评论的显示
-                        return comment_list.map(comment => {
-                            const processComment = (c: any) => {
-                                if (c.nickname) {
-                                    return {
-                                        ...c,
-                                        userId: undefined,
-                                        user: undefined
-                                    };
-                                }
-                                return c;
-                            };
-
-                            const processedComment = processComment(comment);
-
-                            // 处理回复中的匿名评论
-                            if (processedComment.replies) {
-                                processedComment.replies = processedComment.replies.map(processComment);
-                            }
-
-                            return processedComment;
-                        });
-                    } catch (error: any) {
-                        // 如果数据库不支持parentId字段，回退到平铺查询
-                        console.warn("Database may not support parentId field, falling back to flat structure:", error.message);
-                        const comment_list = await db.query.comments.findMany({
+                        // 获取所有评论，然后在内存中构建树形结构
+                        const all_comments = await db.query.comments.findMany({
                             where: eq(comments.feedId, feedId),
                             columns: { feedId: false },
                             with: {
@@ -80,7 +36,7 @@ export function CommentService() {
                         });
 
                         // 处理匿名评论的显示
-                        return comment_list.map(comment => {
+                        const processedComments = all_comments.map(comment => {
                             if (comment.nickname) {
                                 return {
                                     ...comment,
@@ -90,6 +46,49 @@ export function CommentService() {
                             }
                             return comment;
                         });
+
+                        // 构建树形结构
+                        const buildCommentTree = (comments: any[]) => {
+                            const commentMap = new Map();
+                            const rootComments: any[] = [];
+
+                            // 首先创建所有评论的映射
+                            comments.forEach(comment => {
+                                commentMap.set(comment.id, { ...comment, replies: [] });
+                            });
+
+                            // 然后构建树形结构
+                            comments.forEach(comment => {
+                                const commentWithReplies = commentMap.get(comment.id);
+                                if (comment.parentId) {
+                                    const parent = commentMap.get(comment.parentId);
+                                    if (parent) {
+                                        parent.replies.push(commentWithReplies);
+                                    }
+                                } else {
+                                    rootComments.push(commentWithReplies);
+                                }
+                            });
+
+                            // 递归排序回复
+                            const sortReplies = (comment: any) => {
+                                if (comment.replies && comment.replies.length > 0) {
+                                    comment.replies.sort((a: any, b: any) =>
+                                        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                                    );
+                                    comment.replies.forEach(sortReplies);
+                                }
+                            };
+
+                            rootComments.forEach(sortReplies);
+                            return rootComments;
+                        };
+
+                        return buildCommentTree(processedComments);
+                    } catch (error: any) {
+                        console.error("Error fetching comments:", error);
+                        // 如果出错，返回空列表而不是报错
+                        return [];
                     }
                         
 
