@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, and, isNull } from "drizzle-orm";
 import Elysia, { t } from "elysia";
 import type { DB } from "../_worker";
 import type { Env } from "../db/db";
@@ -22,36 +22,90 @@ export function CommentService() {
                 .get('/:feed', async ({ params: { feed } }) => {
                     const feedId = parseInt(feed);
                     try {
-                    const comment_list = await db.query.comments.findMany({
-                        where: eq(comments.feedId, feedId),
+                    try {
+                        // 尝试使用嵌套查询（如果数据库支持parentId字段）
+                        const comment_list = await db.query.comments.findMany({
+                            where: and(eq(comments.feedId, feedId), isNull(comments.parentId)),
                             columns: { feedId: false },
-                        with: {
-                            user: {
-                                columns: { id: true, username: true, avatar: true, permission: true }
-                            }
-                        },
-                        orderBy: [desc(comments.createdAt)]
-                    });
-                        
-                        // 处理匿名评论的显示
-                        return comment_list.map(comment => {
-                            // 如果有 nickname，将其标记为匿名评论
-                            if (comment.nickname) {
-                                return {
-                                    ...comment,
-                                    userId: undefined, // 隐藏真实userId
-                                    user: undefined // 隐藏真实user信息
-                                };
-                            }
-                            return comment;
+                            with: {
+                                user: {
+                                    columns: { id: true, username: true, avatar: true, permission: true }
+                                },
+                                replies: {
+                                    with: {
+                                        user: {
+                                            columns: { id: true, username: true, avatar: true, permission: true }
+                                        }
+                                    },
+                                    orderBy: [desc(comments.createdAt)]
+                                }
+                            },
+                            orderBy: [desc(comments.createdAt)]
                         });
+
+                        // 处理匿名评论的显示
+                        const processedComments = comment_list.map(comment => {
+                            const processComment = (c: any) => {
+                                if (c.nickname) {
+                                    return {
+                                        ...c,
+                                        userId: undefined,
+                                        user: undefined
+                                    };
+                                }
+                                return c;
+                            };
+
+                            const processedComment = processComment(comment);
+
+                            // 处理回复中的匿名评论
+                            if (processedComment.replies) {
+                                processedComment.replies = processedComment.replies.map(processComment);
+                            }
+
+                            return processedComment;
+                        });
+
+                        return processedComments;
+                    } catch (nestedError: any) {
+                        // 如果嵌套查询失败（可能是因为数据库不支持parentId），回退到平铺查询
+                        if (nestedError.message && nestedError.message.includes('no such column: parent_id')) {
+                            console.warn("Database doesn't support parentId yet, using flat structure");
+                            const all_comments = await db.query.comments.findMany({
+                                where: eq(comments.feedId, feedId),
+                                columns: { feedId: false },
+                                with: {
+                                    user: {
+                                        columns: { id: true, username: true, avatar: true, permission: true }
+                                    }
+                                },
+                                orderBy: [desc(comments.createdAt)]
+                            });
+
+                            // 处理匿名评论的显示
+                            return all_comments.map(comment => {
+                                if (comment.nickname) {
+                                    return {
+                                        ...comment,
+                                        userId: undefined,
+                                        user: undefined
+                                    };
+                                }
+                                return comment;
+                            });
+                        } else {
+                            throw nestedError;
+                        }
+                    }
+                        
+
                     } catch (error) {
                         console.error("Error fetching comments:", error);
                         // 如果出错，返回空列表而不是报错
                         return [];
                     }
                 })
-                .post('/:feed', async ({ uid, set, params: { feed }, body: { content, nickname, isAnonymous, email } }) => {
+                .post('/:feed', async ({ uid, set, params: { feed }, body: { content, nickname, isAnonymous, email, parentId } }) => {
                     if (!content) {
                         set.status = 400;
                         return 'Content is required';
@@ -77,12 +131,30 @@ export function CommentService() {
                             
                             // 尝试添加评论，使用系统用户ID作为匿名评论的用户ID
                             try {
-                                await db.insert(comments).values({
+                                const insertData: any = {
                                     feedId,
                                     userId: ANONYMOUS_USER_ID, // 使用系统用户ID
                                     nickname: nicknameWithEmail,
                                     content
-                                });
+                                };
+
+                                // 如果有parentId，尝试添加（部署后数据库会支持）
+                                if (parentId) {
+                                    insertData.parentId = parseInt(parentId);
+                                }
+
+                                try {
+                                    await db.insert(comments).values(insertData);
+                                } catch (dbError: any) {
+                                    // 如果是因为parentId字段不存在导致的错误，尝试不带parentId插入
+                                    if (dbError.message && dbError.message.includes('no such column: parent_id')) {
+                                        console.warn("Database doesn't support parentId yet, inserting as top-level comment");
+                                        delete insertData.parentId;
+                                        await db.insert(comments).values(insertData);
+                                    } else {
+                                        throw dbError;
+                                    }
+                                }
                             } catch (e) {
                                 console.error("Failed to insert anonymous comment:", e);
                                 set.status = 500;
@@ -108,11 +180,29 @@ export function CommentService() {
                             return 'User not found';
                     }
 
-                    await db.insert(comments).values({
+                    const insertData: any = {
                         feedId,
                         userId,
                         content
-                    });
+                    };
+
+                    // 如果有parentId，尝试添加（部署后数据库会支持）
+                    if (parentId) {
+                        insertData.parentId = parseInt(parentId);
+                    }
+
+                    try {
+                        await db.insert(comments).values(insertData);
+                    } catch (dbError: any) {
+                        // 如果是因为parentId字段不存在导致的错误，尝试不带parentId插入
+                        if (dbError.message && dbError.message.includes('no such column: parent_id')) {
+                            console.warn("Database doesn't support parentId yet, inserting as top-level comment");
+                            delete insertData.parentId;
+                            await db.insert(comments).values(insertData);
+                        } else {
+                            throw dbError;
+                        }
+                    }
 
                     const webhookUrl = await ServerConfig().get(Config.webhookUrl) || env.WEBHOOK_URL;
                         // 通知
@@ -128,7 +218,8 @@ export function CommentService() {
                         content: t.String(),
                         nickname: t.Optional(t.String()),
                         isAnonymous: t.Optional(t.Boolean()),
-                        email: t.Optional(t.String())
+                        email: t.Optional(t.String()),
+                        parentId: t.Optional(t.String())
                     })
                 })
         )

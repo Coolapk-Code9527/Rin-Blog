@@ -462,9 +462,15 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
 function CommentInput({
   id,
   onRefresh,
+  parentId,
+  replyTo,
+  onCancel,
 }: {
   id: string;
   onRefresh: () => void;
+  parentId?: number;
+  replyTo?: string;
+  onCancel?: () => void;
 }) {
   const { t } = useTranslation();
   const [content, setContent] = React.useState("");
@@ -522,11 +528,12 @@ function CommentInput({
     client.feed
       .comment({ feed: id })
       .post(
-        { 
-          content, 
-          isAnonymous, 
+        {
+          content,
+          isAnonymous,
           nickname: isAnonymous ? nickname : undefined,
-          email: isAnonymous && email.trim() ? email : undefined
+          email: isAnonymous && email.trim() ? email : undefined,
+          parentId: parentId ? parentId.toString() : undefined
         },
         {
           headers: headersWithAuth(),
@@ -558,11 +565,20 @@ function CommentInput({
     <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
       <div className="bg-gray-50 dark:bg-gray-750 px-5 py-3.5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
         <h3 className="text-base font-medium flex items-center gap-2">
-          <i className="ri-chat-new-line text-theme"></i>
-          {isAnonymous ? t("comment.anonymous.title") : t("comment.title")}
+          <i className={`${parentId ? "ri-reply-line" : "ri-chat-new-line"} text-theme`}></i>
+          {parentId ? `回复 ${replyTo}` : (isAnonymous ? t("comment.anonymous.title") : t("comment.title"))}
         </h3>
         
-        <div className="flex items-center">
+        <div className="flex items-center gap-3">
+          {parentId && onCancel && (
+            <button
+              onClick={onCancel}
+              className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center"
+            >
+              <i className="ri-close-line mr-1"></i>
+              取消回复
+            </button>
+          )}
           <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">{t("comment.anonymous.switch")}</span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
@@ -705,6 +721,7 @@ type Comment = {
   createdAt: Date;
   updatedAt: Date;
   userId?: number;
+  parentId?: number;
   nickname?: string;
   user?: {
     id: number;
@@ -712,6 +729,7 @@ type Comment = {
     avatar: string | null;
     permission: number | null;
   };
+  replies?: Comment[];
 };
 
 function Comments({ id }: { id: string }) {
@@ -834,6 +852,7 @@ function Comments({ id }: { id: string }) {
                           <CommentItem
                             comment={comment}
                             onRefresh={loadComments}
+                            feedId={id}
                           />
                         </div>
                       ))}
@@ -873,15 +892,20 @@ function Comments({ id }: { id: string }) {
 
 function CommentItem({
   comment,
-  onRefresh
+  onRefresh,
+  feedId,
+  depth = 0
 }: {
   comment: Comment;
   onRefresh: () => void;
+  feedId: string;
+  depth?: number;
 }) {
   const { showConfirm, ConfirmUI } = useConfirm();
   const { showAlert, AlertUI } = useAlert();
   const { t } = useTranslation();
   const profile = React.useContext(ProfileContext);
+  const [showReplyForm, setShowReplyForm] = React.useState(false);
   
   // 解析昵称和邮箱
   function parseNicknameAndEmail(nicknameField?: string) {
@@ -980,22 +1004,64 @@ function CommentItem({
             )}
           </div>
           
-          {canDelete && (
-            <button
-              className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors text-sm flex items-center"
-              onClick={deleteComment}
-              title={t("delete.title")}
-            >
-              <i className="ri-delete-bin-line"></i>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {depth < 2 && (
+              <button
+                className="text-gray-400 hover:text-theme transition-colors text-sm flex items-center"
+                onClick={() => setShowReplyForm(!showReplyForm)}
+                title="回复"
+              >
+                <i className="ri-reply-line"></i>
+              </button>
+            )}
+            {canDelete && (
+              <button
+                className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors text-sm flex items-center"
+                onClick={deleteComment}
+                title={t("delete.title")}
+              >
+                <i className="ri-delete-bin-line"></i>
+              </button>
+            )}
+          </div>
         </div>
         
         <div className="mt-4 pt-4 border-t border-gray-50 dark:border-gray-700/30 prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
           <Markdown content={comment.content} />
         </div>
       </div>
-      
+
+      {/* 回复表单 */}
+      {showReplyForm && (
+        <div className="border-t border-gray-100 dark:border-gray-700">
+          <CommentInput
+            id={feedId}
+            onRefresh={onRefresh}
+            parentId={comment.id}
+            replyTo={isAnonymous ? displayName : comment.user?.username}
+            onCancel={() => setShowReplyForm(false)}
+          />
+        </div>
+      )}
+
+      {/* 回复列表 */}
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+          <div className="p-4 space-y-3">
+            {comment.replies.map((reply) => (
+              <div key={reply.id} className="ml-4 border-l-2 border-gray-200 dark:border-gray-600 pl-4">
+                <CommentItem
+                  comment={reply}
+                  onRefresh={onRefresh}
+                  feedId={feedId}
+                  depth={depth + 1}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <ConfirmUI />
       <AlertUI />
     </div>

@@ -57,6 +57,7 @@ export const comments = sqliteTable("comments", {
     id: integer("id").primaryKey(),
     feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
     userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+    parentId: integer("parent_id"), // 部署时会自动添加到数据库
     nickname: text("nickname"),
     content: text("content").notNull(),
     createdAt: created_at,
@@ -114,7 +115,7 @@ export const feedsRelations = relations(feeds, ({ many, one }) => ({
     files: many(feedFiles)
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
     feed: one(feeds, {
         fields: [comments.feedId],
         references: [feeds.id],
@@ -122,6 +123,14 @@ export const commentsRelations = relations(comments, ({ one }) => ({
     user: one(users, {
         fields: [comments.userId],
         references: [users.id],
+    }),
+    parent: one(comments, {
+        fields: [comments.parentId],
+        references: [comments.id],
+        relationName: "CommentReplies"
+    }),
+    replies: many(comments, {
+        relationName: "CommentReplies"
     }),
 }));
 
