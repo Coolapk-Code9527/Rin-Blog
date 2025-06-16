@@ -292,15 +292,15 @@ function ArticleInfoEditor({ title, setTitle }: {
   }, [setTitle]);
 
   return (
-    <div>
-      {/* 标题区域 - 简化样式 */}
-      <div className="relative bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+    <div className="w-full">
+      {/* 标题区域 - 减小高度和内边距 */}
+      <div className="relative bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600 rounded-lg p-2">
         <input
           type="text"
           value={title}
           onChange={handleTitleChange}
           placeholder="输入文章标题..."
-          className="w-full text-xl font-bold bg-transparent border-none outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100 focus:ring-0"
+          className="w-full text-lg font-bold bg-transparent border-none outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100 focus:ring-0 py-1"
         />
       </div>
     </div>
@@ -1934,7 +1934,7 @@ export function WritingPage({ id }: { id?: number }) {
                 <div className="px-4 py-1.5" style={{ gridRow: '1' }}>
 
                   {/* 超紧凑顶部状态栏 - 移动端优化，遵循PageContainer间距 */}
-                  <div className="flex items-center justify-between py-1 px-4 border-b border-neutral-200/60 dark:border-neutral-700/60 mobile-top-toolbar">
+                  <div className="flex items-center justify-between py-1 border-b border-neutral-200/60 dark:border-neutral-700/60 mobile-top-toolbar">
                     {/* 左侧：预览模式切换 - 紧凑图标设计 */}
                     <div className="flex items-center space-x-0.5 mobile-preview-buttons">
                       <button
@@ -2015,27 +2015,29 @@ export function WritingPage({ id }: { id?: number }) {
 
                 </div>
 
-                {/* 区域2：工具栏 - Grid第2行，移动端可隐藏，遵循容器间距 */}
+                {/* 区域2：工具栏 - Grid第2行，移动端可隐藏，减小间距 */}
                 <div
-                  className={`px-4 py-0.5 transition-all duration-300 ${focusMode ? 'mobile-toolbar-hidden' : 'opacity-100'}`}
+                  className={`px-4 py-0 transition-all duration-300 ${focusMode ? 'mobile-toolbar-hidden' : 'opacity-100'}`}
                   style={{ gridRow: '2' }}
                 >
-                  <div className="pb-0.5 border-b border-neutral-200/60 dark:border-neutral-700/60">
+                  <div className="pb-0 border-b border-neutral-200/60 dark:border-neutral-700/60">
                     {/* @ts-ignore */}
                     <MarkdownToolbar editor={editorRef.current} />
                   </div>
                 </div>
 
-                {/* 区域3：标签区域 - Grid第3行，移动端紧凑，遵循容器间距 */}
-                <div className="px-4 py-0.5" style={{ gridRow: '3' }}>
-                  <div className="flex items-center gap-1 sm:gap-2 pb-0.5 border-b border-neutral-200/60 dark:border-neutral-700/60">
+                {/* 区域3：标签区域 - Grid第3行，减小高度和间距 */}
+                <div className="px-4 py-0" style={{ gridRow: '3' }}>
+                  <div className="flex items-center gap-1 sm:gap-2 pb-0 border-b border-neutral-200/60 dark:border-neutral-700/60 min-h-[32px]">
                     <TagManager tags={tags} setTags={setTags} />
                   </div>
                 </div>
 
-                {/* 区域4：标题区域 - Grid第4行，移动端紧凑，遵循容器间距 */}
-                <div className="px-4 py-0.5 sm:py-1" style={{ gridRow: '4' }}>
-                  <ArticleInfoEditor title={title} setTitle={setTitle} />
+                {/* 区域4：标题区域 - Grid第4行，减小高度和间距 */}
+                <div className="px-4 py-0" style={{ gridRow: '4' }}>
+                  <div className="min-h-[28px] flex items-center">
+                    <ArticleInfoEditor title={title} setTitle={setTitle} />
+                  </div>
                 </div>
 
                 {/* 编辑器和预览区域 - Grid第5行，占据剩余空间 */}
@@ -2130,8 +2132,8 @@ export function WritingPage({ id }: { id?: number }) {
                   maxHeight: 'calc(100vh - 150px)' // 与左侧编辑器完全相同的最大高度
                 }}
               >
-                {/* 高级工具区域 - 响应式设计 */}
-                <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/30 dark:to-indigo-900/30 backdrop-blur-sm p-2.5 sm:p-3 flex-shrink-0">
+                {/* 高级工具区域 - 移除背景颜色 */}
+                <div className="p-2.5 sm:p-3 flex-shrink-0 border-b border-neutral-200/60 dark:border-neutral-700/60">
                   <div className="flex items-center mb-2 sm:mb-3">
                     <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-1.5 shadow-sm">
                       <i className="ri-tools-fill text-xs text-blue-600 dark:text-blue-400"></i>
@@ -2192,8 +2194,8 @@ export function WritingPage({ id }: { id?: number }) {
                   </div>
                 </div>
 
-                {/* 发布设置区域 - 响应式设计 */}
-                <div className="bg-gradient-to-br from-green-50/80 to-emerald-50/80 dark:from-green-900/30 dark:to-emerald-900/30 backdrop-blur-sm p-2.5 sm:p-3 flex-1 flex flex-col mobile-publish-settings">
+                {/* 发布设置区域 - 移除背景颜色 */}
+                <div className="p-2.5 sm:p-3 flex-1 flex flex-col mobile-publish-settings overflow-y-auto">
                   <div className="flex items-center mb-2 sm:mb-3">
                     <div className="w-5 h-5 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-1.5 shadow-sm">
                       <i className="ri-settings-3-fill text-xs text-green-600 dark:text-green-400"></i>
@@ -2273,13 +2275,13 @@ export function WritingPage({ id }: { id?: number }) {
                       />
                     </div>
 
-                    {/* 操作按钮卡片 */}
-                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2.5 shadow-sm flex-1 min-h-0">
-                      <div className="space-y-2 h-full flex flex-col justify-center">
+                    {/* 操作按钮卡片 - 苹果macOS蓝色风格 */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2.5 shadow-sm flex-1 min-h-0">
+                      <div className="h-full flex flex-col justify-center">
                         <button
                           onClick={publishButton}
                           disabled={publishing}
-                          className="w-full bg-success hover:bg-success-dark disabled:bg-gray-400 text-white py-2.5 sm:py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base mobile-publish-button min-h-[48px] touch-manipulation"
+                          className="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-400 text-white py-2.5 sm:py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base mobile-publish-button min-h-[48px] touch-manipulation shadow-sm hover:shadow-md"
                         >
                           {publishing ? (
                             <>
@@ -2292,14 +2294,6 @@ export function WritingPage({ id }: { id?: number }) {
                               <span>发布文章</span>
                             </>
                           )}
-                        </button>
-
-                        <button
-                          onClick={saveCurrentAsDraft}
-                          className="w-full bg-white/80 dark:bg-gray-700/80 backdrop-blur-md hover:bg-gray-50/80 dark:hover:bg-gray-600/80 text-gray-700 dark:text-gray-300 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 border border-neutral-200/60 dark:border-neutral-700/60 text-sm sm:text-base mobile-publish-button min-h-[44px] touch-manipulation"
-                        >
-                          <i className="ri-save-fill text-sm sm:text-base"></i>
-                          <span>保存草稿</span>
                         </button>
                       </div>
                     </div>
