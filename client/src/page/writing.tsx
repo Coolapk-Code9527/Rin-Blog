@@ -241,6 +241,7 @@ const scrollbarStyles = `
       padding: 0 !important;
       overflow: hidden !important;
       opacity: 0 !important;
+      transition: all 0.3s ease !important;
     }
   }
 
@@ -252,6 +253,15 @@ const scrollbarStyles = `
     .mobile-function-panel {
       height: calc(100vh - 200px) !important; /* 与左侧编辑器统一高度 */
     }
+
+    /* 专注模式工具栏隐藏 */
+    .mobile-toolbar-hidden {
+      height: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      opacity: 0 !important;
+      transition: all 0.3s ease !important;
+    }
   }
 
   @media (min-width: 769px) and (max-width: 1024px) {
@@ -261,6 +271,15 @@ const scrollbarStyles = `
 
     .mobile-function-panel {
       height: calc(100vh - 200px) !important; /* 与左侧编辑器统一高度 */
+    }
+
+    /* 专注模式工具栏隐藏 */
+    .mobile-toolbar-hidden {
+      height: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      opacity: 0 !important;
+      transition: all 0.3s ease !important;
     }
   }
 
@@ -272,6 +291,27 @@ const scrollbarStyles = `
     .mobile-function-panel {
       height: calc(100vh - 200px) !important; /* 与左侧编辑器统一高度 */
     }
+
+    /* 专注模式工具栏隐藏 */
+    .mobile-toolbar-hidden {
+      height: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      opacity: 0 !important;
+      transition: all 0.3s ease !important;
+    }
+  }
+`;
+
+// 专注模式全局样式
+const focusStyles = `
+  /* 专注模式工具栏隐藏 - 全局样式，适用于所有屏幕尺寸 */
+  .mobile-toolbar-hidden {
+    height: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    transition: all 0.3s ease !important;
   }
 `;
 
@@ -830,15 +870,14 @@ const MarkdownToolbar = React.memo(({
   }, [editor]);
 
   return (
-    <div className="flex items-center space-x-1 flex-wrap gap-y-2">
+    <div className="flex items-center space-x-0.5 flex-wrap gap-y-1">
       {/* 基础格式工具 */}
       <ToolbarButton icon="ri-bold" onClick={() => insertText('**', '**', '粗体文本')} title="粗体 (Ctrl+B)" variant="ghost" />
       <ToolbarButton icon="ri-italic" onClick={() => insertText('*', '*', '斜体文本')} title="斜体 (Ctrl+I)" variant="ghost" />
       <ToolbarButton icon="ri-strikethrough" onClick={() => insertText('~~', '~~', '删除线文本')} title="删除线" variant="ghost" />
       <ToolbarButton icon="ri-mark-pen-line" onClick={() => insertText('==', '==', '高亮文本')} title="高亮标记" variant="ghost" />
       <ToolbarButton icon="ri-underline" onClick={() => insertText('<u>', '</u>', '下划线文本')} title="下划线" variant="ghost" />
-      <ToolbarButton icon="ri-superscript" onClick={() => insertText('<sup>', '</sup>', '上标')} title="上标文本" variant="ghost" />
-      <ToolbarButton icon="ri-subscript" onClick={() => insertText('<sub>', '</sub>', '下标')} title="下标文本" variant="ghost" />
+
 
       {/* 标题工具 */}
       <ToolbarButton icon="ri-h-1" onClick={() => insertText('# ')} title="一级标题" variant="ghost" />
@@ -1907,6 +1946,7 @@ export function WritingPage({ id }: { id?: number }) {
         <meta property="og:type" content="article" />
         <meta property="og:url" content={document.URL} />
         <style>{scrollbarStyles}</style>
+        <style>{focusStyles}</style>
       </Helmet>
 
       {/* 写作页面特殊处理：补偿Padding组件差异，确保与其他页面宽度一致 */}
@@ -1935,10 +1975,10 @@ export function WritingPage({ id }: { id?: number }) {
 
                   {/* 超紧凑顶部状态栏 - 移动端优化，遵循PageContainer间距 */}
                   <div className="flex items-center justify-between py-1 border-b border-neutral-200/60 dark:border-neutral-700/60 mobile-top-toolbar">
-                    {/* 左侧：预览模式切换 - 紧凑图标设计 */}
+                    {/* 左侧：预览模式切换 - 统一按钮样式 */}
                     <div className="flex items-center space-x-0.5 mobile-preview-buttons">
                       <button
-                        className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button ${
+                        className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button min-h-[32px] touch-manipulation ${
                           preview === 'edit'
                             ? 'bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme-light'
                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -1950,7 +1990,7 @@ export function WritingPage({ id }: { id?: number }) {
                         <span className="ml-1 hidden sm:inline text-xs">编辑</span>
                       </button>
                       <button
-                        className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button ${
+                        className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button min-h-[32px] touch-manipulation ${
                           preview === 'preview'
                             ? 'bg-success/10 dark:bg-success/20 text-success dark:text-success-light'
                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -1962,7 +2002,7 @@ export function WritingPage({ id }: { id?: number }) {
                         <span className="ml-1 hidden sm:inline text-xs">预览</span>
                       </button>
                       <button
-                        className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button ${
+                        className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button min-h-[32px] touch-manipulation ${
                           preview === 'comparison'
                             ? 'bg-info/10 dark:bg-info/20 text-info dark:text-info-light'
                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -1999,14 +2039,20 @@ export function WritingPage({ id }: { id?: number }) {
                         </div>
                       </div>
 
-                      {/* 专注模式按钮 - 仅图标 */}
+                      {/* 专注模式按钮 - 正常样式 */}
                       <button
-                        onClick={() => setFocusMode(!focusMode)}
-                        className={`px-1.5 py-1 rounded-md transition-all duration-200 mobile-focus-button ${focusMode
+                        onClick={(e: React.MouseEvent) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setFocusMode(!focusMode);
+                        }}
+                        className={`px-1.5 py-1 rounded-md transition-all duration-200 mobile-focus-button min-h-[32px] touch-manipulation relative z-10 ${focusMode
                           ? 'bg-info/10 dark:bg-info/20 text-info dark:text-info-light'
                           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                         title={focusMode ? '退出专注模式' : '进入专注模式'}
+                        type="button"
+                        style={{ pointerEvents: 'auto' }}
                       >
                         <i className="ri-focus-3-line text-sm"></i>
                       </button>
