@@ -43,10 +43,10 @@ export class Cache {
     }
     public useCache<T>(key: Keys, initialValue: T) {
         const [value, setValue] = React.useState<T>(this.get(key) as T ?? initialValue);
-        const setCache = (value: T) => {
+        const setCache = React.useCallback((value: T) => {
             this.set(key, value as string);
             setValue(value);
-        }
+        }, [key]);
         return [value, setCache] as const;
     }
 }

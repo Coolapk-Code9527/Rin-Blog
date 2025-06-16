@@ -218,6 +218,11 @@ export function FileManager({
   // 加载文件列表
   const loadFiles = async (reload = false) => {
     try {
+      // 检查endpoint是否有效
+      if (!endpoint) {
+        throw new Error('API endpoint not configured. Please check your environment variables.');
+      }
+
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -236,6 +241,9 @@ export function FileManager({
       params.append('limit', String(itemsPerPage));
       params.append('all', '1');
       const authHeaders = headersWithAuth();
+
+      console.log('Loading files from:', `${endpoint}/files?${params.toString()}`);
+
       const response = await fetch(`${endpoint}/files?${params.toString()}`, {
         headers: authHeaders,
         signal: abortControllerRef.current.signal

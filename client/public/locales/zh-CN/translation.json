@@ -373,7 +373,20 @@
   },
   "writing": {
     "title": "写作",
-    "title_hint": "主标题请在此输入，正文无需再写一级标题（# 标题）。"
+    "title_hint": "主标题请在此输入，正文无需再写一级标题（# 标题）。",
+    "article_info": "文章信息",
+    "article_info_desc": "设置文章的基本信息",
+    "expand_metadata": "展开元数据",
+    "collapse_metadata": "折叠元数据",
+    "scroll_sync": "滚动同步",
+    "enter_focus_mode": "进入专注模式",
+    "exit_focus_mode": "退出专注模式",
+    "quick_actions": "快速操作",
+    "save_draft": "保存草稿",
+    "statistics": "统计信息",
+    "characters": "字符数",
+    "words": "单词数",
+    "lines": "行数"
   },
   "year$year": "{{year}} 年",
   "templates": {

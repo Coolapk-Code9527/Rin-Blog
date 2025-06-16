@@ -6,13 +6,13 @@ import * as monaco from 'monaco-editor';
 import {Calendar} from 'primereact/calendar';
 import 'primereact/resources/primereact.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
-import React, {useCallback, useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState, useMemo} from "react";
 import {Helmet} from "react-helmet-async";
 import {useTranslation} from "react-i18next";
-import { InlineSpinner } from '../components/loading';
+
 import { ToolbarButton, Button } from '../components/button';
 import {ShowAlertType, useAlert} from '../components/dialog';
-import {Checkbox, Input} from "../components/input";
+// import {Checkbox, Input} from "../components/input"; // 不再需要，使用内联编辑
 import {Markdown} from "../components/markdown";
 import {client} from "../main";
 import {headersWithAuth} from "../utils/auth";
@@ -28,7 +28,6 @@ import type { Feed } from '../types/api';  // 根据实际路径调整
 
 import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialog';
 import type { FileItem } from '../types/api';
-import { PageContainer } from "../components/container";
 import { MODAL_Z_INDEX } from "../utils/modal-config";
 
 // 处理process.env问题
@@ -102,21 +101,176 @@ const scrollbarStyles = `
   }
   
   /* 针对不同屏幕尺寸的编辑器容器高度调整 */
+  @media (max-width: 1024px) {
+    /* 移动端和平板端布局调整 */
+    .writing-layout {
+      flex-direction: column !important;
+      gap: 1rem !important;
+    }
+
+    .writing-main-area {
+      width: 100% !important;
+      flex: none !important;
+    }
+
+    .writing-sidebar {
+      width: 100% !important;
+      flex-shrink: 1 !important;
+    }
+  }
+
   @media (max-width: 640px) {
     .editor-container {
-      height: calc(100vh - 240px) !important;
+      height: calc(100vh - 280px) !important; /* 为移动端功能面板留出更多空间 */
+    }
+
+    /* 移动端功能面板优化 */
+    .mobile-function-panel {
+      position: relative !important;
+      height: auto !important;
+      min-height: 300px !important;
+      max-height: none !important;
+    }
+
+    /* 移动端工具按钮优化 */
+    .mobile-tool-grid {
+      grid-template-columns: repeat(3, 1fr) !important; /* 3列布局更适合移动端 */
+      gap: 0.75rem !important;
+    }
+
+    .mobile-tool-button {
+      min-height: 44px !important; /* 符合移动端触控标准 */
+      padding: 0.75rem !important;
+      font-size: 0.75rem !important;
+    }
+
+    /* 移动端发布设置优化 */
+    .mobile-publish-settings {
+      padding: 1rem !important;
+      gap: 1rem !important;
+    }
+
+    .mobile-publish-input {
+      min-height: 44px !important;
+      padding: 0.75rem !important;
+      font-size: 1rem !important;
+    }
+
+    .mobile-publish-button {
+      min-height: 48px !important;
+      padding: 0.75rem 1rem !important;
+      font-size: 1rem !important;
+    }
+
+    /* 移动端顶部工具栏优化 - 超紧凑设计，完全遵循PageContainer间距 */
+    .mobile-top-toolbar {
+      padding-top: 0.5rem !important;
+      padding-bottom: 0.5rem !important;
+      padding-left: 0 !important; /* 让PageContainer控制间距 */
+      padding-right: 0 !important; /* 让PageContainer控制间距 */
+      gap: 0.25rem !important;
+    }
+
+    /* 移动端写作页面内容区域宽度限制 - 遵循PageContainer标准 */
+    .writing-content-wrapper {
+      width: 100% !important;
+    }
+
+    /* 移动端编辑器卡片宽度统一 */
+    .mobile-editor-card {
+      width: 100% !important;
+      margin: 0 !important;
     }
   }
-  
-  @media (min-width: 641px) and (max-width: 1024px) {
+
+  /* 桌面端左右面板高度对齐 */
+  @media (min-width: 1024px) {
+    .writing-layout {
+      align-items: stretch !important; /* 确保子元素高度一致 */
+    }
+
+    .writing-main-area,
+    .writing-sidebar {
+      min-height: 600px !important; /* 桌面端最小高度 */
+    }
+
+    /* 确保编辑器和功能面板高度完全一致 */
     .editor-container {
-      height: 600px !important;
+      height: calc(100vh - 200px) !important;
+      max-height: calc(100vh - 150px) !important;
+    }
+
+    .mobile-function-panel {
+      height: calc(100vh - 200px) !important;
+      max-height: calc(100vh - 150px) !important;
+    }
+
+    .mobile-preview-buttons {
+      gap: 0.125rem !important;
+    }
+
+    .mobile-preview-button {
+      min-height: 32px !important;
+      padding: 0.375rem 0.5rem !important;
+      font-size: 0.6875rem !important;
+      touch-action: manipulation;
+      border-radius: 0.375rem !important;
+    }
+
+    .mobile-stats-info {
+      gap: 0.25rem !important;
+    }
+
+    .mobile-stats-compact {
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+      font-size: 0.625rem !important;
+    }
+
+    .mobile-focus-button {
+      min-height: 32px !important;
+      padding: 0.375rem 0.5rem !important;
+      font-size: 0.6875rem !important;
+      border-radius: 0.375rem !important;
+    }
+
+    /* 移动端工具栏隐藏优化 */
+    .mobile-toolbar-hidden {
+      height: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      opacity: 0 !important;
     }
   }
-  
+
+  @media (min-width: 641px) and (max-width: 768px) {
+    .editor-container {
+      height: calc(100vh - 200px) !important; /* 与右侧面板统一高度 */
+    }
+
+    .mobile-function-panel {
+      height: calc(100vh - 200px) !important; /* 与左侧编辑器统一高度 */
+    }
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .editor-container {
+      height: calc(100vh - 200px) !important; /* 与右侧面板统一高度 */
+    }
+
+    .mobile-function-panel {
+      height: calc(100vh - 200px) !important; /* 与左侧编辑器统一高度 */
+    }
+  }
+
   @media (min-width: 1025px) {
     .editor-container {
-      height: 600px !important;
+      height: calc(100vh - 200px) !important; /* 与右侧面板统一高度 */
+    }
+
+    .mobile-function-panel {
+      height: calc(100vh - 200px) !important; /* 与左侧编辑器统一高度 */
     }
   }
 `;
@@ -128,8 +282,147 @@ interface ExtendedFeed extends Feed {
   draft?: number;
 }
 
+// 优化的文章信息编辑器 - 移到组件外部避免重新创建
+function ArticleInfoEditor({ title, setTitle }: {
+  title: string;
+  setTitle: (title: string) => void;
+}): JSX.Element {
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+  }, [setTitle]);
+
+  return (
+    <div>
+      {/* 标题区域 - 简化样式 */}
+      <div className="relative bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+        <input
+          type="text"
+          value={title}
+          onChange={handleTitleChange}
+          placeholder="输入文章标题..."
+          className="w-full text-xl font-bold bg-transparent border-none outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100 focus:ring-0"
+        />
+      </div>
+    </div>
+  );
+}
+
+// 优化的标签管理组件 - 移到组件外部
+function TagManager({ tags, setTags }: {
+  tags: string;
+  setTags: (tags: string) => void;
+}): JSX.Element {
+  const [tagInput, setTagInput] = useState('');
+  const [showTagInput, setShowTagInput] = useState(false);
+
+  // 解析标签字符串为数组
+  const tagArray = useMemo(() =>
+    tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : []
+  , [tags]);
+
+  // 标签颜色配置
+  const tagColors = useMemo(() => [
+    'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700',
+    'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700',
+    'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-700',
+    'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-700',
+    'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700',
+    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-700',
+    'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-700',
+    'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-700',
+  ], []);
+
+  // 根据标签内容生成颜色索引
+  const getTagColor = useCallback((tag: string) => {
+    const hash = tag.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return tagColors[Math.abs(hash) % tagColors.length];
+  }, [tagColors]);
+
+  // 添加标签
+  const addTag = useCallback(() => {
+    if (tagInput.trim() && !tagArray.includes(tagInput.trim())) {
+      const newTags = [...tagArray, tagInput.trim()];
+      setTags(newTags.join(', '));
+      setTagInput('');
+      setShowTagInput(false);
+    }
+  }, [tagInput, tagArray, setTags]);
+
+  // 删除标签
+  const removeTag = useCallback((tagToRemove: string) => {
+    const newTags = tagArray.filter(tag => tag !== tagToRemove);
+    setTags(newTags.join(', '));
+  }, [tagArray, setTags]);
+
+  return (
+    <div className="flex items-center flex-wrap gap-2 flex-1 py-2">
+      {tagArray.map((tag, index) => (
+        <span
+          key={index}
+          className={`inline-flex items-center px-3 py-2 rounded-lg text-xs border ${getTagColor(tag)} shadow-sm backdrop-blur-sm h-8 font-medium`}
+        >
+          <i className="ri-price-tag-3-fill mr-1.5 text-xs"></i>
+          {tag}
+          <button
+            onClick={() => removeTag(tag)}
+            className="ml-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-1 transition-colors"
+          >
+            <i className="ri-close-line text-xs"></i>
+          </button>
+        </span>
+      ))}
+
+      {/* 添加标签按钮或输入框 */}
+      {showTagInput ? (
+        <div className="flex items-center space-x-2 h-8">
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && addTag()}
+            onBlur={() => {
+              if (!tagInput.trim()) {
+                setShowTagInput(false);
+              }
+            }}
+            placeholder="标签名称"
+            className="px-3 py-2 text-xs border border-orange-300 dark:border-orange-600 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-transparent w-28 backdrop-blur-sm shadow-sm h-8"
+            autoFocus
+          />
+          <button
+            onClick={addTag}
+            className="text-orange-500 hover:text-orange-600 text-sm p-1.5 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-full transition-colors"
+          >
+            <i className="ri-check-line"></i>
+          </button>
+          <button
+            onClick={() => {
+              setShowTagInput(false);
+              setTagInput('');
+            }}
+            className="text-gray-400 hover:text-gray-600 text-sm p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+          >
+            <i className="ri-close-line"></i>
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowTagInput(true)}
+          className="inline-flex items-center px-3 py-2 rounded-lg text-xs border border-dashed border-orange-300/60 dark:border-orange-600/60 text-orange-500 hover:border-orange-400 dark:hover:border-orange-500 hover:bg-orange-50/80 dark:hover:bg-orange-900/20 transition-all shadow-sm backdrop-blur-sm h-8 font-medium hover:shadow-md"
+        >
+          <i className="ri-add-line mr-1.5 text-xs"></i>
+          添加标签
+        </button>
+      )}
+    </div>
+  );
+}
+
 // 内容模板组件
-const ContentTemplates = React.memo(({ editor }: { editor?: editor.IStandaloneCodeEditor }) => {
+const ContentTemplates = React.memo(({ editor, onClose }: { editor?: editor.IStandaloneCodeEditor, onClose?: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [customTemplates, setCustomTemplates] = useState<Template[]>([]);
   const [templateName, setTemplateName] = useState('');
@@ -211,18 +504,23 @@ const ContentTemplates = React.memo(({ editor }: { editor?: editor.IStandaloneCo
   // 插入模板内容
   const insertTemplate = useCallback((content: string) => {
     if (!editor) return;
-    
+
     const selection = editor.getSelection();
     if (!selection) return;
-    
+
     editor.executeEdits('', [{
       range: selection,
       text: content
     }]);
-    
+
     setIsOpen(false);
     editor.focus();
-  }, [editor]);
+
+    // 如果有外部关闭回调，也调用它
+    if (onClose) {
+      onClose();
+    }
+  }, [editor, onClose]);
   
   // 点击外部关闭面板
   useEffect(() => {
@@ -333,22 +631,15 @@ const ContentTemplates = React.memo(({ editor }: { editor?: editor.IStandaloneCo
 // 确保有一个明确的displayName
 ContentTemplates.displayName = 'ContentTemplates';
 
-// 更新Markdown工具栏组件，增加模板功能
-const MarkdownToolbar = React.memo(({ 
-  editor, 
-  setDraftDialogOpen, 
-  setHistoryDialogOpen, 
-  manualSaveHistory, 
-  setFileSelectorOpen // 新增
-}: { 
-  editor?: editor.IStandaloneCodeEditor,
-  setDraftDialogOpen: (open: boolean) => void,
-  setHistoryDialogOpen: (open: boolean) => void,
-  manualSaveHistory: () => void,
-  setFileSelectorOpen: (open: boolean) => void // 新增
+// 改进的Markdown工具栏组件 - 支持多行处理和更多工具
+const MarkdownToolbar = React.memo(({
+  editor
+}: {
+  editor?: editor.IStandaloneCodeEditor
 }) => {
   const { t } = useTranslation();
-  
+
+  // 基础文本插入函数
   const insertText = useCallback((before: string, after: string = '', defaultText: string = '') => {
     if (!editor) return;
     const selection = editor.getSelection();
@@ -361,84 +652,253 @@ const MarkdownToolbar = React.memo(({
     editor.focus();
   }, [editor]);
 
+  // 多行列表处理函数
+  const insertMultiLineList = useCallback((listType: 'ordered' | 'unordered') => {
+    if (!editor) return;
+    const selection = editor.getSelection();
+    if (!selection) return;
+
+    const model = editor.getModel();
+    if (!model) return;
+
+    const startLine = selection.startLineNumber;
+    const endLine = selection.endLineNumber;
+
+    // 如果是单行且没有选中文本，直接插入列表标记
+    const isEmptySelection = selection.startLineNumber === selection.endLineNumber &&
+                            selection.startColumn === selection.endColumn;
+    if (startLine === endLine && isEmptySelection) {
+      const prefix = listType === 'ordered' ? '1. ' : '- ';
+      insertText(prefix);
+      return;
+    }
+
+    // 多行处理
+    const edits = [];
+    for (let i = startLine; i <= endLine; i++) {
+      const lineContent = model.getLineContent(i);
+      const trimmedContent = lineContent.trim();
+
+      // 跳过空行
+      if (trimmedContent === '') continue;
+
+      const prefix = listType === 'ordered' ? `${i - startLine + 1}. ` : '- ';
+
+      // 检查是否已经是列表项
+      const isAlreadyList = /^(\s*)([-+*]|\d+\.)\s/.test(lineContent);
+
+      if (isAlreadyList) {
+        // 如果已经是列表，替换列表标记
+        const newContent = lineContent.replace(/^(\s*)([-+*]|\d+\.)\s/, `$1${prefix}`);
+        edits.push({
+          range: new monaco.Range(i, 1, i, lineContent.length + 1),
+          text: newContent
+        });
+      } else {
+        // 如果不是列表，在行首添加列表标记
+        edits.push({
+          range: new monaco.Range(i, 1, i, 1),
+          text: prefix
+        });
+      }
+    }
+
+    if (edits.length > 0) {
+      editor.executeEdits('', edits);
+    }
+    editor.focus();
+  }, [editor]);
+
+  // 多行引用处理函数
+  const insertMultiLineQuote = useCallback(() => {
+    if (!editor) return;
+    const selection = editor.getSelection();
+    if (!selection) return;
+
+    const model = editor.getModel();
+    if (!model) return;
+
+    const startLine = selection.startLineNumber;
+    const endLine = selection.endLineNumber;
+
+    // 如果是单行且没有选中文本，直接插入引用标记
+    const isEmptySelection = selection.startLineNumber === selection.endLineNumber &&
+                            selection.startColumn === selection.endColumn;
+    if (startLine === endLine && isEmptySelection) {
+      insertText('> ');
+      return;
+    }
+
+    // 多行处理
+    const edits = [];
+    for (let i = startLine; i <= endLine; i++) {
+      const lineContent = model.getLineContent(i);
+
+      // 检查是否已经是引用
+      const isAlreadyQuote = /^(\s*)>\s/.test(lineContent);
+
+      if (isAlreadyQuote) {
+        // 如果已经是引用，移除引用标记
+        const newContent = lineContent.replace(/^(\s*)>\s/, '$1');
+        edits.push({
+          range: new monaco.Range(i, 1, i, lineContent.length + 1),
+          text: newContent
+        });
+      } else {
+        // 如果不是引用，在行首添加引用标记
+        edits.push({
+          range: new monaco.Range(i, 1, i, 1),
+          text: '> '
+        });
+      }
+    }
+
+    if (edits.length > 0) {
+      editor.executeEdits('', edits);
+    }
+    editor.focus();
+  }, [editor]);
+
+  // 插入当前时间
+  const insertCurrentTime = useCallback(() => {
+    const now = new Date();
+    const timeString = now.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    insertText(timeString);
+  }, [insertText]);
+
+  // 插入任务列表
+  const insertTaskList = useCallback(() => {
+    insertText('- [ ] ');
+  }, [insertText]);
+
+  // 智能链接插入
+  const insertSmartLink = useCallback(() => {
+    if (!editor) return;
+    const selection = editor.getSelection();
+    if (!selection) return;
+
+    const selectedText = editor.getModel()?.getValueInRange(selection) || '';
+
+    // 如果选中的文本看起来像URL，将其作为链接地址
+    const urlRegex = /^https?:\/\/.+/;
+    if (urlRegex.test(selectedText.trim())) {
+      editor.executeEdits('', [{
+        range: selection,
+        text: `[链接文本](${selectedText.trim()})`
+      }]);
+    } else {
+      // 否则将选中文本作为链接文本
+      const linkText = selectedText || '链接文本';
+      editor.executeEdits('', [{
+        range: selection,
+        text: `[${linkText}](url)`
+      }]);
+    }
+    editor.focus();
+  }, [editor]);
+
+  // 智能图片插入
+  const insertSmartImage = useCallback(() => {
+    if (!editor) return;
+    const selection = editor.getSelection();
+    if (!selection) return;
+
+    const selectedText = editor.getModel()?.getValueInRange(selection) || '';
+
+    // 如果选中的文本看起来像图片URL，将其作为图片地址
+    const imageUrlRegex = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)$/i;
+    if (imageUrlRegex.test(selectedText.trim())) {
+      editor.executeEdits('', [{
+        range: selection,
+        text: `![图片描述](${selectedText.trim()})`
+      }]);
+    } else {
+      // 否则将选中文本作为图片描述
+      const altText = selectedText || '图片描述';
+      editor.executeEdits('', [{
+        range: selection,
+        text: `![${altText}](图片链接)`
+      }]);
+    }
+    editor.focus();
+  }, [editor]);
+
   return (
-    <div className="flex flex-wrap items-center p-2 border-b dark:border-gray-700 mb-2 gap-2">
-      {/* 所有工具按钮线性排列 - 使用统一的ToolbarButton组件 */}
-      <ToolbarButton icon="ri-heading" onClick={() => insertText('# ')} title={t('markdown.heading')} />
-      <ToolbarButton icon="ri-bold" onClick={() => insertText('**', '**', '粗体文本')} title={t('markdown.bold')} />
-      <ToolbarButton icon="ri-italic" onClick={() => insertText('*', '*', '斜体文本')} title={t('markdown.italic')} />
-      <ToolbarButton icon="ri-strikethrough" onClick={() => insertText('~~', '~~', '删除线文本')} title={t('markdown.strikethrough')} />
-      <ToolbarButton icon="ri-mark-pen-line" onClick={() => insertText('==', '==', '高亮文本')} title={t('markdown.highlight')} />
+    <div className="flex items-center space-x-1 flex-wrap gap-y-2">
+      {/* 基础格式工具 */}
+      <ToolbarButton icon="ri-bold" onClick={() => insertText('**', '**', '粗体文本')} title="粗体 (Ctrl+B)" variant="ghost" />
+      <ToolbarButton icon="ri-italic" onClick={() => insertText('*', '*', '斜体文本')} title="斜体 (Ctrl+I)" variant="ghost" />
+      <ToolbarButton icon="ri-strikethrough" onClick={() => insertText('~~', '~~', '删除线文本')} title="删除线" variant="ghost" />
+      <ToolbarButton icon="ri-mark-pen-line" onClick={() => insertText('==', '==', '高亮文本')} title="高亮标记" variant="ghost" />
+      <ToolbarButton icon="ri-underline" onClick={() => insertText('<u>', '</u>', '下划线文本')} title="下划线" variant="ghost" />
+      <ToolbarButton icon="ri-superscript" onClick={() => insertText('<sup>', '</sup>', '上标')} title="上标文本" variant="ghost" />
+      <ToolbarButton icon="ri-subscript" onClick={() => insertText('<sub>', '</sub>', '下标')} title="下标文本" variant="ghost" />
 
-      <ToolbarButton icon="ri-list-unordered" onClick={() => insertText('- ')} title={t('markdown.unordered_list')} />
-      <ToolbarButton icon="ri-list-ordered" onClick={() => insertText('1. ')} title={t('markdown.ordered_list')} />
-      <ToolbarButton icon="ri-checkbox-line" onClick={() => insertText('- [ ] ')} title={t('markdown.task_list')} />
+      {/* 标题工具 */}
+      <ToolbarButton icon="ri-h-1" onClick={() => insertText('# ')} title="一级标题" variant="ghost" />
+      <ToolbarButton icon="ri-h-2" onClick={() => insertText('## ')} title="二级标题" variant="ghost" />
+      <ToolbarButton icon="ri-h-3" onClick={() => insertText('### ')} title="三级标题" variant="ghost" />
 
-      <ToolbarButton icon="ri-link" onClick={() => insertText('[', '](url)', '链接文本')} title={t('markdown.link')} />
-      <ToolbarButton icon="ri-image-line" onClick={() => insertText('![', '](url)', '图片描述')} title={t('markdown.image')} />
-      <ToolbarButton icon="ri-double-quotes-l" onClick={() => insertText('> ')} title={t('markdown.quote')} />
-      <ToolbarButton icon="ri-code-s-slash-line" onClick={() => insertText('```\n', '\n```', '代码块')} title={t('markdown.code')} />
-      <ToolbarButton icon="ri-separator" onClick={() => insertText('---\n')} title={t('markdown.divider')} />
-    
+      {/* 列表工具 */}
+      <ToolbarButton icon="ri-list-unordered" onClick={() => insertMultiLineList('unordered')} title="无序列表 (支持多行)" variant="ghost" />
+      <ToolbarButton icon="ri-list-ordered" onClick={() => insertMultiLineList('ordered')} title="有序列表 (支持多行)" variant="ghost" />
+      <ToolbarButton icon="ri-list-check-2" onClick={insertTaskList} title="任务列表" variant="ghost" />
+      <ToolbarButton icon="ri-checkbox-line" onClick={() => insertText('- [x] ', '', '已完成任务')} title="已完成任务" variant="ghost" />
+      <ToolbarButton icon="ri-double-quotes-l" onClick={insertMultiLineQuote} title="引用 (支持多行)" variant="ghost" />
+
+      {/* 插入工具 */}
+      <ToolbarButton icon="ri-link" onClick={insertSmartLink} title="智能插入链接 (自动识别URL)" variant="ghost" />
+      <ToolbarButton icon="ri-image-line" onClick={insertSmartImage} title="智能插入图片 (自动识别图片URL)" variant="ghost" />
+      <ToolbarButton icon="ri-video-line" onClick={() => insertText('<video controls>\n  <source src="视频链接" type="video/mp4">\n</video>', '', '')} title="插入视频" variant="ghost" />
+      <ToolbarButton icon="ri-music-line" onClick={() => insertText('<audio controls>\n  <source src="音频链接" type="audio/mp3">\n</audio>', '', '')} title="插入音频" variant="ghost" />
+
+      {/* 代码工具 */}
+      <ToolbarButton icon="ri-code-line" onClick={() => insertText('`', '`', '行内代码')} title="行内代码" variant="ghost" />
+      <ToolbarButton icon="ri-code-s-slash-line" onClick={() => insertText('```\n', '\n```', '代码块')} title="代码块" variant="ghost" />
+      <ToolbarButton icon="ri-functions" onClick={() => insertText('$$\n', '\n$$', 'LaTeX公式')} title="数学公式" variant="ghost" />
+
+      {/* 结构工具 */}
       <ToolbarButton
         icon="ri-table-line"
-        onClick={() => insertText('| 表头1 | 表头2 | 表头3 |\n| --- | --- | --- |\n| 内容1 | 内容2 | 内容3 |\n| 内容4 | 内容5 | 内容6 |\n')}
-        title={t('markdown.table')}
+        onClick={() => insertText('| 表头1 | 表头2 | 表头3 |\n| --- | --- | --- |\n| 内容1 | 内容2 | 内容3 |\n')}
+        title="插入表格"
+        variant="ghost"
       />
-      <ToolbarButton icon="ri-superscript" onClick={() => insertText('^', '', '上标')} title={t('markdown.superscript')} />
-      <ToolbarButton icon="ri-subscript" onClick={() => insertText('~', '', '下标')} title={t('markdown.subscript')} />
-      <ToolbarButton
-        icon="ri-calendar-line"
-        onClick={() => {
-          const now = new Date();
-          insertText(now.toISOString().split('T')[0]);
-        }}
-        title={t('markdown.date')}
-      />
-      
-      {/* 模板工具 */}
-      {/* @ts-ignore */}
-      <ContentTemplates editor={editor} />
+      <ToolbarButton icon="ri-separator" onClick={() => insertText('---\n')} title="分隔线" variant="ghost" />
+      <ToolbarButton icon="ri-layout-grid-line" onClick={() => insertText('<details>\n<summary>点击展开</summary>\n\n隐藏内容\n\n</details>', '', '')} title="折叠内容" variant="ghost" />
 
-      {/* 文档管理工具组 - 靠右 */}
-      <div className="ml-auto flex items-center gap-1">
-        <ToolbarButton
-          icon="ri-draft-line"
-          onClick={() => setDraftDialogOpen(true)}
-          title={t('drafts.title')}
-          variant="info"
-          showText={true}
-          text={t('drafts.title')}
-        />
+      {/* 样式工具 */}
+      <ToolbarButton icon="ri-text-spacing" onClick={() => insertText('<center>', '</center>', '居中文本')} title="居中对齐" variant="ghost" />
+      <ToolbarButton icon="ri-palette-line" onClick={() => insertText('<span style="color: red;">', '</span>', '彩色文本')} title="彩色文本" variant="ghost" />
 
-        <ToolbarButton
-          icon="ri-history-line"
-          onClick={() => setHistoryDialogOpen(true)}
-          title={t('history.title')}
-          variant="success"
-          showText={true}
-          text={t('history.title')}
-        />
+      {/* 标记工具 */}
+      <ToolbarButton icon="ri-star-line" onClick={() => insertText('⭐ ', '', '重要标记')} title="重要标记" variant="ghost" />
+      <ToolbarButton icon="ri-lightbulb-line" onClick={() => insertText('💡 ', '', '提示')} title="提示标记" variant="ghost" />
+      <ToolbarButton icon="ri-fire-line" onClick={() => insertText('🔥 ', '', '热门')} title="热门标记" variant="ghost" />
+      <ToolbarButton icon="ri-bookmark-line" onClick={() => insertText('📌 ', '', '重点')} title="重点标记" variant="ghost" />
 
-        <ToolbarButton
-          icon="ri-save-line"
-          onClick={manualSaveHistory}
-          title={t('history.save_snapshot')}
-          variant="warning"
-          showText={true}
-          text={t('history.save_snapshot')}
-        />
+      {/* 提示工具 */}
+      <ToolbarButton icon="ri-information-line" onClick={() => insertText('> [!NOTE]\n> ', '', '注意事项')} title="提示框" variant="ghost" />
+      <ToolbarButton icon="ri-alert-line" onClick={() => insertText('> [!WARNING]\n> ', '', '警告信息')} title="警告框" variant="ghost" />
+      <ToolbarButton icon="ri-file-text-line" onClick={() => insertText('<!-- ', ' -->', '注释内容')} title="HTML注释" variant="ghost" />
 
-        {/* 插入文件按钮 */}
-        <ToolbarButton
-          icon="ri-attachment-2"
-          onClick={() => setFileSelectorOpen(true)}
-          title={t('markdown.insert_file', { defaultValue: '插入文件' })}
-          variant="purple"
-          showText={true}
-          text={t('markdown.insert_file', { defaultValue: '插入文件' })}
-        />
-      </div>
+      {/* 快速插入工具 */}
+      <ToolbarButton icon="ri-time-line" onClick={insertCurrentTime} title="插入当前时间" variant="ghost" />
+      <ToolbarButton icon="ri-calendar-2-line" onClick={() => insertText(new Date().toLocaleDateString('zh-CN'))} title="插入日期" variant="ghost" />
+      <ToolbarButton icon="ri-user-line" onClick={() => insertText('@', '', '用户名')} title="提及用户" variant="ghost" />
+      <ToolbarButton icon="ri-hashtag" onClick={() => insertText('#', '', '标签')} title="插入标签" variant="ghost" />
+      <ToolbarButton icon="ri-external-link-line" onClick={() => insertText('[外部链接](https://)', '', '')} title="外部链接" variant="ghost" />
+      <ToolbarButton icon="ri-download-line" onClick={() => insertText('[下载文件](文件链接)', '', '')} title="下载链接" variant="ghost" />
+      <ToolbarButton icon="ri-keyboard-line" onClick={() => insertText('<kbd>', '</kbd>', '按键')} title="键盘按键" variant="ghost" />
+
+      {/* 新增常用工具 */}
+      <ToolbarButton icon="ri-text-wrap" onClick={() => insertText('<br>', '', '')} title="换行符" variant="ghost" />
     </div>
   );
 });
@@ -1000,11 +1460,8 @@ export function WritingPage({ id }: { id?: number }) {
   const [content, setContent] = cache.useCache("content", "");
   const [createdAt, setCreatedAt] = useState<Date | undefined>(new Date());
   const [preview, setPreview] = useCache<'edit' | 'preview' | 'comparison'>("preview", 'edit');
-  const [uploading, setUploading] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [saveStatus, setSaveStatus] = useState(t('save'));
-  const [lastSaved, setLastSaved] = useState<Date>(new Date());
-  const [scrollSync, setScrollSync] = useState(true); // 滚动同步状态
   const [editorScrolling, setEditorScrolling] = useState(false);
   const [previewScrolling, setPreviewScrolling] = useState(false);
   const { showAlert, AlertUI } = useAlert()
@@ -1026,11 +1483,8 @@ export function WritingPage({ id }: { id?: number }) {
   const {
     drafts,
     saveDraft,
-    updateDraft,
     deleteDraft,
-    clearAllDrafts,
-    getDraft,
-    loadDrafts
+    clearAllDrafts
   } = useDraftManager();
 
   // 添加一个发布状态标记
@@ -1041,22 +1495,69 @@ export function WritingPage({ id }: { id?: number }) {
   // 记录选择的文件（后续插入用）
   const [selectedFiles, setSelectedFiles] = useState<FileItem | FileItem[] | null>(null);
 
+
+
+  // 专注写作模式状态
+  const [focusMode, setFocusMode] = useState(false);
+
+  // 移除复杂的高度计算，使用CSS Grid来解决布局问题
+
+  // 写作目标和进度
+  const [wordTarget] = useState(0);
+
+  // 模板功能状态
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [customTemplates, setCustomTemplates] = useState<{name: string, content: string}[]>([]);
+  const [showSaveTemplateForm, setShowSaveTemplateForm] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+
+  // 优化的写作统计计算 - 使用 useMemo 避免重复计算
+  const writingStats = useMemo(() => {
+    const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+    const charCount = content.length;
+    const lineCount = content.split('\n').length;
+    const progress = wordTarget > 0 ? Math.min((wordCount / wordTarget) * 100, 100) : 0;
+    const readingTime = Math.ceil(wordCount / 200);
+
+    return { wordCount, charCount, lineCount, progress, readingTime };
+  }, [content, wordTarget]);
+
+  const { wordCount } = writingStats;
+
+  // 专注模式快捷键支持
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // F11 或 Ctrl/Cmd + Shift + F 切换专注模式
+      if (e.key === 'F11' || (e.key === 'F' && (e.ctrlKey || e.metaKey) && e.shiftKey)) {
+        e.preventDefault();
+        setFocusMode(!focusMode);
+      }
+      // Escape 退出专注模式
+      if (e.key === 'Escape' && focusMode) {
+        setFocusMode(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [focusMode]);
+
   const autoSave = useCallback(() => {
     if (cache.get("content") !== content) {
       cache.set("content", content);
       setSaveStatus(t('save'));
-      setLastSaved(new Date());
-      
-      // 保存到历史记录
-      saveHistory(content, title || t('history.untitled'), t('history.auto_save'));
+
+      // 保存到历史记录，使用当前值而不是依赖
+      const currentTitle = title || t('history.untitled');
+      saveHistory(content, currentTitle, t('history.auto_save'));
     }
-  }, [content, cache, t, saveHistory, title]);
+  }, [content, cache, t, saveHistory]); // 移除 title 依赖
 
   const handleContentChange = useCallback((data: string | undefined) => {
     const newContent = data ?? "";
     setContent(newContent);
     setSaveStatus(t('editing'));
-  }, [t]);
+  }, [setContent, setSaveStatus, t]);
   
   // 恢复历史记录
   const restoreHistory = useCallback((historyItem: HistoryItem) => {
@@ -1077,16 +1578,18 @@ export function WritingPage({ id }: { id?: number }) {
     showAlert(t('history.restore_success'));
   }, [showAlert, t]);
   
-  // 手动保存历史记录
+  // 手动保存历史记录 - 优化依赖项
   const manualSaveHistory = useCallback(() => {
-    saveHistory(content, title || t('history.untitled'), t('history.manual_save'));
+    const currentTitle = title || t('history.untitled');
+    saveHistory(content, currentTitle, t('history.manual_save'));
     showAlert(t('history.save_success'));
-  }, [content, title, saveHistory, showAlert, t]);
+  }, [content, saveHistory, showAlert, t]); // 移除 title 依赖
   
-  // 保存当前内容为草稿
+  // 保存当前内容为草稿 - 优化依赖项
   const saveCurrentAsDraft = useCallback(() => {
+    const currentTitle = title || t('drafts.untitled');
     saveDraft({
-      title: title || t('drafts.untitled'),
+      title: currentTitle,
       content,
       summary,
       tags,
@@ -1094,7 +1597,7 @@ export function WritingPage({ id }: { id?: number }) {
     });
     showAlert(t('drafts.save_success'));
     setDraftDialogOpen(false);
-  }, [title, content, summary, tags, alias, saveDraft, showAlert, t]);
+  }, [content, summary, tags, alias, saveDraft, showAlert, t]); // 移除 title 依赖
   
   // 加载草稿
   const loadDraftContent = useCallback((draft: Draft) => {
@@ -1119,7 +1622,7 @@ export function WritingPage({ id }: { id?: number }) {
 
   // 处理编辑器滚动事件
   const handleEditorScroll = useCallback(() => {
-    if (!scrollSync || previewScrolling || !editorRef.current || !previewRef.current) return;
+    if (previewScrolling || !editorRef.current || !previewRef.current) return;
     
     setEditorScrolling(true);
     
@@ -1138,11 +1641,11 @@ export function WritingPage({ id }: { id?: number }) {
     previewElement.scrollTop = editorScrollRatio * previewScrollMax;
     
     setTimeout(() => setEditorScrolling(false), 50);
-  }, [scrollSync, previewScrolling]);
+  }, [previewScrolling]);
   
   // 处理预览区域滚动事件
   const handlePreviewScroll = useCallback(() => {
-    if (!scrollSync || editorScrolling || !editorRef.current || !previewRef.current) return;
+    if (editorScrolling || !editorRef.current || !previewRef.current) return;
     
     setPreviewScrolling(true);
     
@@ -1160,7 +1663,7 @@ export function WritingPage({ id }: { id?: number }) {
     editorRef.current.setScrollTop(previewScrollRatio * editorScrollMax);
     
     setTimeout(() => setPreviewScrolling(false), 50);
-  }, [scrollSync, editorScrolling]);
+  }, [editorScrolling]);
   
   // 设置编辑器滚动事件监听
   useEffect(() => {
@@ -1271,7 +1774,7 @@ export function WritingPage({ id }: { id?: number }) {
 
   // 优化的粘贴处理函数
   const handlePasteProxy = useCallback((event: React.ClipboardEvent<HTMLDivElement>) => {
-    handlePaste(event, editorRef, setUploading, showAlert);
+    handlePaste(event, editorRef, () => {}, showAlert);
   }, [showAlert]);
 
   useEffect(() => {
@@ -1300,6 +1803,56 @@ export function WritingPage({ id }: { id?: number }) {
         });
     }
   }, []);
+
+  // 加载自定义模板
+  useEffect(() => {
+    const savedTemplates = localStorage.getItem('custom_templates');
+    if (savedTemplates) {
+      try {
+        setCustomTemplates(JSON.parse(savedTemplates));
+      } catch (e) {
+        console.error('Failed to parse saved templates', e);
+      }
+    }
+  }, []);
+
+  // 保存自定义模板
+  const saveCustomTemplate = useCallback(() => {
+    if (!newTemplateName.trim() || !editorRef.current) return;
+
+    const selection = editorRef.current.getSelection();
+    if (!selection) {
+      showAlert('请先选择要保存为模板的文本');
+      return;
+    }
+
+    const selectedText = editorRef.current.getModel()?.getValueInRange(selection) || '';
+    if (!selectedText.trim()) {
+      showAlert('请先选择要保存为模板的文本');
+      return;
+    }
+
+    const newTemplate = {
+      name: newTemplateName.trim(),
+      content: selectedText
+    };
+
+    const updatedTemplates = [...customTemplates, newTemplate];
+    setCustomTemplates(updatedTemplates);
+    localStorage.setItem('custom_templates', JSON.stringify(updatedTemplates));
+
+    setNewTemplateName('');
+    setShowSaveTemplateForm(false);
+    showAlert('自定义模板保存成功！');
+  }, [newTemplateName, customTemplates, showAlert]);
+
+  // 删除自定义模板
+  const deleteCustomTemplate = useCallback((index: number) => {
+    const updatedTemplates = customTemplates.filter((_, i) => i !== index);
+    setCustomTemplates(updatedTemplates);
+    localStorage.setItem('custom_templates', JSON.stringify(updatedTemplates));
+    showAlert('模板删除成功！');
+  }, [customTemplates, showAlert]);
 
   // 文件插入逻辑
   useEffect(() => {
@@ -1338,78 +1891,11 @@ export function WritingPage({ id }: { id?: number }) {
     setSelectedFiles(null);
   }, [selectedFiles]);
 
-  function MetaInput({ className }: { className?: string }) {
-    return (
-      <>
-        <div className={className}>
-          <Input
-            id={id}
-            value={title}
-            setValue={setTitle}
-            placeholder={t("title")}
-          />
-          <p className="text-xs text-gray-400 mt-1 ml-1">{t("writing.title_hint")}</p>
-          <Input
-            id={id}
-            value={summary}
-            setValue={setSummary}
-            placeholder={t("summary")}
-            className="mt-4"
-          />
-          <Input
-            id={id}
-            value={tags}
-            setValue={setTags}
-            placeholder={t("tags")}
-            className="mt-4"
-          />
-          <Input
-            id={id}
-            value={alias}
-            setValue={setAlias}
-            placeholder={t("alias")}
-            className="mt-4"
-          />
-          <div
-            className="select-none flex flex-row justify-between items-center mt-6 mb-2 px-4"
-            onClick={() => setDraft(!draft)}
-          >
-            <p>{t('visible.self_only')}</p>
-            <Checkbox
-              id="draft"
-              value={draft}
-              setValue={setDraft}
-              placeholder={t('draft')}
-            />
-          </div>
-          <div
-            className="select-none flex flex-row justify-between items-center mt-6 mb-2 px-4"
-            onClick={() => setListed(!listed)}
-          >
-            <p>{t('listed')}</p>
-            <Checkbox
-              id="listed"
-              value={listed}
-              setValue={setListed}
-              placeholder={t('listed')}
-            />
-          </div>
-          <div className="select-none flex flex-row justify-between items-center mt-4 mb-2 pl-4">
-            <p className="break-keep mr-2">
-              {t('created_at')}
-            </p>
-            <Calendar 
-              value={createdAt} 
-              onChange={(e) => setCreatedAt(e.value as Date)} 
-              showTime 
-              touchUI 
-              hourFormat="24" 
-            />
-          </div>
-        </div>
-      </>
-    )
-  }
+
+
+  // 移除内部组件定义，将在组件外部定义
+
+  // 移除内部组件定义，使用外部定义的组件
 
   return (
     <>
@@ -1422,208 +1908,413 @@ export function WritingPage({ id }: { id?: number }) {
         <meta property="og:url" content={document.URL} />
         <style>{scrollbarStyles}</style>
       </Helmet>
-      <div className="grid grid-cols-1 md:grid-cols-3 t-primary mt-2 md:pb-0">
-        <div className="col-span-2 pb-8">
-          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced-xl hover:shadow-enhanced-2xl transition-all duration-300 p-4 border border-neutral-200/60 dark:border-neutral-700/60">
-            {MetaInput({ className: "visible md:hidden mb-8" })}
-            <PageContainer>
-              <div className="flex flex-row space-x-2 border-b border-gray-200 dark:border-gray-700 mb-4">
-                <button 
-                  className={`py-2 font-medium transition-colors border-b-2 ${preview === 'edit' 
-                    ? 'border-theme text-theme' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`} 
-                  onClick={() => setPreview('edit')}
-                >
-                  {t("edit")}
-                </button>
-                <button 
-                  className={`py-2 font-medium transition-colors border-b-2 ${preview === 'preview' 
-                    ? 'border-theme text-theme' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                  onClick={() => setPreview('preview')}
-                >
-                  {t("preview")}
-                </button>
-                <button 
-                  className={`py-2 font-medium transition-colors border-b-2 ${preview === 'comparison' 
-                    ? 'border-theme text-theme' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                  onClick={() => setPreview('comparison')}
-                >
-                  {t("comparison")}
-                </button>
-                <div className="flex-grow" />
-                {uploading &&
-                  <div className="flex flex-row space-x-2 items-center">
-                    <InlineSpinner size="small" />
-                    <span className="text-sm text-neutral-500">{t('uploading')}</span>
-                  </div>
-                }
-                <div className="flex flex-row space-x-2 items-center ml-2">
-                  <span className="text-sm text-gray-500">
-                    {saveStatus === t('save') ? (
-                      <>
-                        <i className="ri-checkbox-circle-line text-green-500 mr-1" />
-                        {saveStatus} {lastSaved && `(${lastSaved.toLocaleTimeString().slice(0, 5)})`}
-                      </>
-                    ) : (
-                      <>
-                        <i className="ri-edit-line text-yellow-500 mr-1" />
-                        {saveStatus}
-                      </>
-                    )}
-                  </span>
-              </div>
-                
-                {/* 在标题栏添加滚动同步开关，避免占用主内容区域空间 */}
-                {preview === 'comparison' && (
-                  <div className="flex items-center ml-2">
-                    <label className="inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={scrollSync} 
-                        onChange={() => setScrollSync(!scrollSync)}
-                        className="sr-only peer"
-                      />
-                      <div className="relative w-8 h-4 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-gray-600 peer-checked:bg-theme"></div>
-                    </label>
-                  </div>
-                )}
-              </div>
-              <div className={`w-full h-full ${preview === 'comparison' ? "flex flex-row space-x-4" : ""}`}>
-                <div
-                  className={`flex flex-col ${preview === 'preview' ? "hidden" : ""} ${preview === 'comparison' ? "w-1/2" : "w-full"} editor-container custom-scrollbar relative ${
-                    dragDropHandlers.isDragging ? 'border-2 border-dashed border-theme bg-theme/5' : ''
-                  }`}
-                  onDragOver={dragDropHandlers.handleDragOver}
-                  onDragLeave={dragDropHandlers.handleDragLeave}
-                  onDrop={dragDropHandlers.handleDrop}
-                  onPaste={handlePasteProxy}
-                >
-                  {/* 拖放上传提示覆盖层 */}
-                  {dragDropHandlers.isDragging && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-theme/10 backdrop-blur-sm rounded-lg">
-                      <div className="text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-theme/20 flex items-center justify-center">
-                          <i className="ri-upload-cloud-2-line text-3xl text-theme" />
-                        </div>
-                        <p className="text-lg font-medium text-theme">{t('upload.drop_files_here')}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('upload.all_file_types_supported')}</p>
-                      </div>
-                    </div>
-                  )}
 
-                  {/* 上传进度提示 */}
-                  {dragDropHandlers.isUploading && (
-                    <div className="absolute top-4 right-4 z-20 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-enhanced p-3 border border-neutral-200/60 dark:border-neutral-700/60">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-full bg-theme/20 flex items-center justify-center">
-                          <i className="ri-upload-cloud-line text-theme animate-pulse" />
+      {/* 写作页面特殊处理：补偿Padding组件差异，确保与其他页面宽度一致 */}
+      <div className="max-w-6xl mx-auto w-full px-2 sm:px-6 md:px-8">
+        <div className="py-6 writing-content-wrapper">
+          {/* 响应式布局：移动端单列，桌面端左右分栏 */}
+          <div className="flex flex-col lg:flex-row gap-6 writing-layout">
+
+            {/* 主编辑器区域 - 与其他页面卡片样式统一 */}
+            <div className="flex-1 lg:flex-[3] writing-main-area">
+              {/* 编辑器卡片 - 统一卡片样式，高度与右侧面板对齐 */}
+              <div
+                className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden editor-container mobile-editor-card h-full"
+                style={{
+                  height: 'calc(100vh - 200px)', // 与右侧面板相同的高度
+                  minHeight: '400px', // 移动端最小高度调整
+                  maxHeight: 'calc(100vh - 150px)', // 最大高度限制
+                  display: 'grid',
+                  gridTemplateRows: 'auto auto auto auto 1fr', // 前4行自适应，最后一行占剩余空间
+                  gridTemplateColumns: '1fr'
+                }}
+              >
+
+                {/* 区域1：顶部状态栏 - Grid第1行 */}
+                <div className="px-4 py-1.5" style={{ gridRow: '1' }}>
+
+                  {/* 超紧凑顶部状态栏 - 移动端优化，遵循PageContainer间距 */}
+                  <div className="flex items-center justify-between py-1 px-4 border-b border-neutral-200/60 dark:border-neutral-700/60 mobile-top-toolbar">
+                    {/* 左侧：预览模式切换 - 紧凑图标设计 */}
+                    <div className="flex items-center space-x-0.5 mobile-preview-buttons">
+                      <button
+                        className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button ${
+                          preview === 'edit'
+                            ? 'bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme-light'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                        onClick={() => setPreview('edit')}
+                        title="编辑模式"
+                      >
+                        <i className="ri-edit-line text-sm"></i>
+                        <span className="ml-1 hidden sm:inline text-xs">编辑</span>
+                      </button>
+                      <button
+                        className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button ${
+                          preview === 'preview'
+                            ? 'bg-success/10 dark:bg-success/20 text-success dark:text-success-light'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                        onClick={() => setPreview('preview')}
+                        title="预览模式"
+                      >
+                        <i className="ri-eye-line text-sm"></i>
+                        <span className="ml-1 hidden sm:inline text-xs">预览</span>
+                      </button>
+                      <button
+                        className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button ${
+                          preview === 'comparison'
+                            ? 'bg-info/10 dark:bg-info/20 text-info dark:text-info-light'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                        onClick={() => setPreview('comparison')}
+                        title="对比模式"
+                      >
+                        <i className="ri-layout-column-line text-sm"></i>
+                        <span className="ml-1 hidden sm:inline text-xs">对比</span>
+                      </button>
+                    </div>
+
+                    {/* 右侧：紧凑状态信息 */}
+                    <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400 mobile-stats-info">
+                      {/* 紧凑统计信息 */}
+                      <div className="flex items-center space-x-1.5 mobile-stats-compact">
+                        <span className="flex items-center">
+                          <i className="ri-character-recognition-line text-xs mr-0.5"></i>
+                          <span className="font-medium text-xs">{wordCount}</span>
+                        </span>
+                        <span className="text-gray-300 dark:text-gray-600">•</span>
+                        <span className="flex items-center">
+                          <i className="ri-time-line text-xs mr-0.5"></i>
+                          <span className="font-medium text-xs">{writingStats.readingTime}min</span>
+                        </span>
+                        <span className="text-gray-300 dark:text-gray-600">•</span>
+                        {/* 保存状态图标 */}
+                        <div className={`flex items-center ${
+                          saveStatus === t('save')
+                            ? 'text-success dark:text-success-light'
+                            : 'text-warning dark:text-warning-light'
+                        }`}>
+                          <i className={`text-xs ${saveStatus === t('save') ? 'ri-checkbox-circle-line' : 'ri-edit-line'}`}></i>
                         </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {t('uploading')} {dragDropHandlers.uploadingFiles.length} {t('files')}
-                          </p>
-                          <div className="w-32 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full mt-1">
-                            <div
-                              className="h-1.5 bg-gradient-to-r from-pink-500 to-theme rounded-full transition-all duration-300"
-                              style={{ width: `${dragDropHandlers.uploadProgress}%` }}
-                            />
-                          </div>
+                      </div>
+
+                      {/* 专注模式按钮 - 仅图标 */}
+                      <button
+                        onClick={() => setFocusMode(!focusMode)}
+                        className={`px-1.5 py-1 rounded-md transition-all duration-200 mobile-focus-button ${focusMode
+                          ? 'bg-info/10 dark:bg-info/20 text-info dark:text-info-light'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                        title={focusMode ? '退出专注模式' : '进入专注模式'}
+                      >
+                        <i className="ri-focus-3-line text-sm"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* 区域2：工具栏 - Grid第2行，移动端可隐藏，遵循容器间距 */}
+                <div
+                  className={`px-4 py-0.5 transition-all duration-300 ${focusMode ? 'mobile-toolbar-hidden' : 'opacity-100'}`}
+                  style={{ gridRow: '2' }}
+                >
+                  <div className="pb-0.5 border-b border-neutral-200/60 dark:border-neutral-700/60">
+                    {/* @ts-ignore */}
+                    <MarkdownToolbar editor={editorRef.current} />
+                  </div>
+                </div>
+
+                {/* 区域3：标签区域 - Grid第3行，移动端紧凑，遵循容器间距 */}
+                <div className="px-4 py-0.5" style={{ gridRow: '3' }}>
+                  <div className="flex items-center gap-1 sm:gap-2 pb-0.5 border-b border-neutral-200/60 dark:border-neutral-700/60">
+                    <TagManager tags={tags} setTags={setTags} />
+                  </div>
+                </div>
+
+                {/* 区域4：标题区域 - Grid第4行，移动端紧凑，遵循容器间距 */}
+                <div className="px-4 py-0.5 sm:py-1" style={{ gridRow: '4' }}>
+                  <ArticleInfoEditor title={title} setTitle={setTitle} />
+                </div>
+
+                {/* 编辑器和预览区域 - Grid第5行，占据剩余空间 */}
+                <div
+                  className={`${preview === 'comparison' ? "flex" : ""} relative bg-white/50 dark:bg-gray-800/50 overflow-hidden`}
+                  style={{
+                    gridRow: '5',
+                    minHeight: '0' // 重要：允许Grid子项收缩
+                  }}
+                >
+                  {/* 编辑器区域 */}
+                  <div
+                    className={`${preview === 'preview' ? "hidden" : ""} ${preview === 'comparison' ? "w-1/2" : "w-full"} relative h-full overflow-hidden`}
+                    onDragOver={dragDropHandlers.handleDragOver}
+                    onDragLeave={dragDropHandlers.handleDragLeave}
+                    onDrop={dragDropHandlers.handleDrop}
+                    onPaste={handlePasteProxy}
+                  >
+                    {/* 拖放提示 - 不影响布局 */}
+                    {dragDropHandlers.isDragging && (
+                      <div className="absolute inset-0 z-50 flex items-center justify-center bg-blue-50/90 dark:bg-blue-900/20 backdrop-blur-sm border-2 border-dashed border-blue-400 rounded-lg pointer-events-none">
+                        <div className="text-center">
+                          <i className="ri-upload-cloud-2-line text-4xl text-blue-500 mb-2"></i>
+                          <p className="text-blue-600 dark:text-blue-400 font-medium">{t('upload.drop_files_here')}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="w-full h-full">
+                      <Editor
+                        onMount={(editor, _) => {
+                          editorRef.current = editor;
+                          configureEditorWithHistory(editor);
+                        }}
+                        height="100%"
+                        width="100%"
+                        defaultLanguage="markdown"
+                        value={content}
+                        onChange={(data, _) => handleContentChange(data)}
+                        theme={colorMode === "dark" ? "vs-dark" : "light"}
+                        options={{
+                          wordWrap: "on",
+                          fontSize: focusMode ? 16 : 14,
+                          lineNumbers: focusMode ? "off" : "on",
+                          lineNumbersMinChars: 3,
+                          minimap: { enabled: !focusMode },
+                          scrollBeyondLastLine: false,
+                          automaticLayout: true,
+                          overviewRulerLanes: 0,
+                          hideCursorInOverviewRuler: true,
+                          overviewRulerBorder: false,
+                          scrollbar: {
+                            verticalScrollbarSize: 8,
+                            horizontalScrollbarSize: 8,
+                            alwaysConsumeMouseWheel: false
+                          },
+                          padding: {
+                            top: focusMode ? 30 : 15,
+                            bottom: 0, // 完全移除底部padding
+                            left: focusMode ? 20 : 10,
+                            right: focusMode ? 20 : 10
+                          },
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 预览区域 */}
+                  {preview !== 'edit' && (
+                    <div className={`${preview === 'comparison' ? "w-1/2 border-l border-neutral-200/60 dark:border-neutral-700/60" : "w-full"} h-full`}>
+                      <div
+                        ref={previewRef}
+                        onScroll={handlePreviewScroll}
+                        className="h-full overflow-auto p-4 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm"
+                      >
+                        <div className="prose prose-lg dark:prose-invert max-w-none">
+                          <Markdown content={content ? content : `> ${t('content.writing_placeholder')}`} />
                         </div>
                       </div>
                     </div>
                   )}
-                  
-                  {/* @ts-ignore - 忽略MarkdownToolbar组件类型问题 */}
-                  <MarkdownToolbar 
-                    editor={editorRef.current} 
-                    setDraftDialogOpen={setDraftDialogOpen} 
-                    setHistoryDialogOpen={setHistoryDialogOpen} 
-                    manualSaveHistory={manualSaveHistory}
-                    setFileSelectorOpen={setFileSelectorOpen}
-                  />
-                  
-                  <div className="flex-grow relative h-0">
-                    <Editor
-                      onMount={(editor, _) => {
-                        editorRef.current = editor;
-                        // 配置编辑器快捷键，现在使用新的历史记录配置函数
-                        configureEditorWithHistory(editor);
+                </div>
+              </div>
+            </div>
+
+            {/* 右侧功能面板 - 与其他页面侧边栏样式统一 */}
+            <div className="w-full lg:w-[320px] lg:flex-shrink-0 writing-sidebar">
+              <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden flex flex-col mobile-function-panel"
+                style={{
+                  height: 'calc(100vh - 200px)', // 与左侧编辑器完全相同的高度
+                  minHeight: '400px', // 移动端最小高度调整
+                  maxHeight: 'calc(100vh - 150px)' // 与左侧编辑器完全相同的最大高度
+                }}
+              >
+                {/* 高级工具区域 - 响应式设计 */}
+                <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/30 dark:to-indigo-900/30 backdrop-blur-sm p-2.5 sm:p-3 flex-shrink-0">
+                  <div className="flex items-center mb-2 sm:mb-3">
+                    <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-1.5 shadow-sm">
+                      <i className="ri-tools-fill text-xs text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 text-xs sm:text-sm">高级工具</h3>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-1.5 sm:gap-2 mobile-tool-grid">
+                    <button
+                      onClick={() => setDraftDialogOpen(true)}
+                      className="flex flex-col items-center p-1.5 sm:p-2 bg-blue-50/80 dark:bg-blue-900/30 backdrop-blur-sm rounded-lg hover:bg-blue-100/80 dark:hover:bg-blue-900/40 transition-all duration-200 border border-blue-200/40 dark:border-blue-800/40 mobile-tool-button min-h-[44px] touch-manipulation"
+                    >
+                      <i className="ri-draft-fill text-sm sm:text-base text-blue-600 dark:text-blue-400 mb-0.5"></i>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">草稿</span>
+                    </button>
+
+                    <button
+                      onClick={() => setHistoryDialogOpen(true)}
+                      className="flex flex-col items-center p-1.5 sm:p-2 bg-green-50/80 dark:bg-green-900/30 backdrop-blur-sm rounded-lg hover:bg-green-100/80 dark:hover:bg-green-900/40 transition-all duration-200 border border-green-200/40 dark:border-green-800/40 mobile-tool-button min-h-[44px] touch-manipulation"
+                    >
+                      <i className="ri-history-fill text-sm sm:text-base text-green-600 dark:text-green-400 mb-0.5"></i>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">历史</span>
+                    </button>
+
+                    <button
+                      onClick={manualSaveHistory}
+                      className="flex flex-col items-center p-1.5 sm:p-2 bg-purple-50/80 dark:bg-purple-900/30 backdrop-blur-sm rounded-lg hover:bg-purple-100/80 dark:hover:bg-purple-900/40 transition-all duration-200 border border-purple-200/40 dark:border-purple-800/40 mobile-tool-button min-h-[44px] touch-manipulation"
+                    >
+                      <i className="ri-save-fill text-sm sm:text-base text-purple-600 dark:text-purple-400 mb-0.5"></i>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">快照</span>
+                    </button>
+
+                    <button
+                      onClick={() => setFileSelectorOpen(true)}
+                      className="flex flex-col items-center p-1.5 sm:p-2 bg-orange-50/80 dark:bg-orange-900/30 backdrop-blur-sm rounded-lg hover:bg-orange-100/80 dark:hover:bg-orange-900/40 transition-all duration-200 border border-orange-200/40 dark:border-orange-800/40 mobile-tool-button min-h-[44px] touch-manipulation"
+                    >
+                      <i className="ri-file-add-fill text-sm sm:text-base text-orange-600 dark:text-orange-400 mb-0.5"></i>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">文件</span>
+                    </button>
+
+                    <button
+                      onClick={() => setShowTemplateDialog(true)}
+                      className="flex flex-col items-center p-1.5 sm:p-2 bg-pink-50/80 dark:bg-pink-900/30 backdrop-blur-sm rounded-lg hover:bg-pink-100/80 dark:hover:bg-pink-900/40 transition-all duration-200 border border-pink-200/40 dark:border-pink-800/40 mobile-tool-button min-h-[44px] touch-manipulation"
+                    >
+                      <i className="ri-layout-fill text-sm sm:text-base text-pink-600 dark:text-pink-400 mb-0.5"></i>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">模板</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        // 预留功能：可以添加AI写作助手、导出功能等
+                        console.log('更多功能待开发');
                       }}
-                      height="100%"
-                      defaultLanguage="markdown"
-                      className=""
-                      value={content}
-                      onChange={(data, _) => handleContentChange(data)}
-                      theme={colorMode === "dark" ? "vs-dark" : "light"}
-                      options={{
-                        wordWrap: "on",
-                        fontSize: 14,
-                        lineNumbers: "on",
-                        dragAndDrop: true,
-                        pasteAs: { enabled: false },
-                        quickSuggestions: {
-                          other: true,
-                          comments: false,
-                          strings: false
-                        },
-                        // 添加额外选项以增强编辑体验
-                        tabSize: 2,
-                        insertSpaces: true,
-                        autoIndent: "full",
-                        formatOnType: true,
-                      }}
-                    />
+                      className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50/80 dark:bg-gray-700/30 backdrop-blur-sm rounded-lg hover:bg-gray-100/80 dark:hover:bg-gray-700/40 transition-all duration-200 border border-gray-200/40 dark:border-gray-700/40 mobile-tool-button min-h-[44px] touch-manipulation"
+                    >
+                      <i className="ri-more-fill text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-0.5"></i>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">更多</span>
+                    </button>
                   </div>
                 </div>
-                
-                <div
-                  className={`${preview !== 'edit' ? "" : "hidden"} ${preview === 'comparison' ? "w-1/2" : "w-full"} border-l dark:border-gray-700 editor-container`}
-                >
-                  <div 
-                    ref={previewRef}
-                    onScroll={handlePreviewScroll}
-                    style={{height: '100%', overflow: 'auto'}} 
-                  >
-                    <Markdown content={content ? content : `> ${t('content.writing_placeholder')}`} />
+
+                {/* 发布设置区域 - 响应式设计 */}
+                <div className="bg-gradient-to-br from-green-50/80 to-emerald-50/80 dark:from-green-900/30 dark:to-emerald-900/30 backdrop-blur-sm p-2.5 sm:p-3 flex-1 flex flex-col mobile-publish-settings">
+                  <div className="flex items-center mb-2 sm:mb-3">
+                    <div className="w-5 h-5 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-1.5 shadow-sm">
+                      <i className="ri-settings-3-fill text-xs text-green-600 dark:text-green-400"></i>
+                    </div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 text-xs sm:text-sm">发布设置</h3>
+                  </div>
+
+                  {/* 均匀分布的设置区域 */}
+                  <div className="flex-1 flex flex-col space-y-2.5">
+                    {/* 别名设置卡片 */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2.5 shadow-sm flex-1 min-h-0 flex flex-col justify-center">
+                      <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center mb-1.5">
+                        <i className="ri-link mr-1.5 text-blue-600 dark:text-blue-400"></i>
+                        <span className="hidden sm:inline">文章别名</span>
+                        <span className="sm:hidden">别名</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={alias}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAlias(e.target.value)}
+                        placeholder="about"
+                        className="w-full px-2.5 py-1.5 sm:py-2 text-sm sm:text-base border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent mobile-publish-input min-h-[44px] touch-manipulation"
+                      />
+                    </div>
+
+                    {/* 可见性设置卡片 */}
+                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-2.5 shadow-sm flex-1 min-h-0 flex flex-col justify-center">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center">
+                            <i className="ri-eye-close-line mr-1.5 text-purple-600 dark:text-purple-400 text-sm"></i>
+                            <span className="hidden sm:inline">仅自己可见</span>
+                            <span className="sm:hidden">私密</span>
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={draft}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDraft(e.target.checked)}
+                            className="w-3.5 h-3.5 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center">
+                            <i className="ri-list-settings-line mr-1.5 text-purple-600 dark:text-purple-400 text-sm"></i>
+                            <span className="hidden sm:inline">显示在文章列表</span>
+                            <span className="sm:hidden">列表显示</span>
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={listed}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setListed(e.target.checked)}
+                            className="w-3.5 h-3.5 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 发布时间卡片 */}
+                    <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-2.5 shadow-sm flex-1 min-h-0 flex flex-col justify-center">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                          <i className="ri-calendar-fill mr-1.5 text-orange-600 dark:text-orange-400 text-sm"></i>
+                          <span className="hidden sm:inline">发布时间</span>
+                          <span className="sm:hidden">时间</span>
+                        </span>
+                      </div>
+                      <Calendar
+                        value={createdAt}
+                        onChange={(e: any) => setCreatedAt(e.value as Date)}
+                        showTime
+                        touchUI
+                        hourFormat="24"
+                        dateFormat="yy/mm/dd"
+                        className="w-full text-xs"
+                        inputClassName="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-left"
+                      />
+                    </div>
+
+                    {/* 操作按钮卡片 */}
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2.5 shadow-sm flex-1 min-h-0">
+                      <div className="space-y-2 h-full flex flex-col justify-center">
+                        <button
+                          onClick={publishButton}
+                          disabled={publishing}
+                          className="w-full bg-success hover:bg-success-dark disabled:bg-gray-400 text-white py-2.5 sm:py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base mobile-publish-button min-h-[48px] touch-manipulation"
+                        >
+                          {publishing ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              <span>发布中...</span>
+                            </>
+                          ) : (
+                            <>
+                              <i className="ri-send-plane-fill text-sm sm:text-base"></i>
+                              <span>发布文章</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={saveCurrentAsDraft}
+                          className="w-full bg-white/80 dark:bg-gray-700/80 backdrop-blur-md hover:bg-gray-50/80 dark:hover:bg-gray-600/80 text-gray-700 dark:text-gray-300 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 border border-neutral-200/60 dark:border-neutral-700/60 text-sm sm:text-base mobile-publish-button min-h-[44px] touch-manipulation"
+                        >
+                          <i className="ri-save-fill text-sm sm:text-base"></i>
+                          <span>保存草稿</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </PageContainer>
-          </div>
-          <div className="visible md:hidden flex flex-row justify-center mt-8">
-            <button
-              onClick={publishButton}
-              className="basis-1/2 bg-gradient-to-r from-pink-500 to-theme text-white py-4 rounded-full shadow-enhanced-xl hover:shadow-enhanced-2xl hover:scale-[0.98] active:scale-[0.96] transition-all duration-300 flex flex-row justify-center items-center space-x-2"
-            >
-              {publishing ? (
-                <div className="flex items-center">
-                  <InlineSpinner size="small" className="mr-2" />
-                  <span>{t('publishing')}</span>
-                </div>
-              ) : (
-                <>
-                  <i className="ri-send-plane-fill mr-1" />
-                  <span>{t('publish.title')}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-        <div className="hidden md:visible max-w-96 md:flex flex-col">
-          {MetaInput({ className: "bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced-xl hover:shadow-enhanced-2xl transition-all duration-300 p-4 w-full border border-neutral-200/60 dark:border-neutral-700/60" })}
-          <div className="flex flex-row justify-center mt-8">
-            <Button
-              title={publishing ? t('publishing') : t('publish.title')}
-              onClick={publishButton}
-            />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* 对话框组件 */}
       <AlertUI />
       {/* 历史记录对话框 */}
-      <HistoryDialog 
+      <HistoryDialog
         isOpen={historyDialogOpen}
         onClose={() => setHistoryDialogOpen(false)}
         history={history}
@@ -1631,7 +2322,7 @@ export function WritingPage({ id }: { id?: number }) {
         onDelete={deleteHistoryItem}
         onClear={clearHistory}
       />
-      
+
       {/* 草稿管理对话框 */}
       <DraftDialog
         isOpen={draftDialogOpen}
@@ -1642,6 +2333,7 @@ export function WritingPage({ id }: { id?: number }) {
         onClear={clearAllDrafts}
         onSaveCurrent={saveCurrentAsDraft}
       />
+
       {/* 文件选择弹窗 */}
       <FileSelectorDialog
         isOpen={fileSelectorOpen}
@@ -1650,7 +2342,403 @@ export function WritingPage({ id }: { id?: number }) {
         allowedTypes={undefined} // 后续可根据需要传递类型
         title="选择要插入的文件"
       />
+
+      {/* 模板对话框 - 重新设计 */}
+      {showTemplateDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 max-w-5xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">选择模板</h3>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setShowSaveTemplateForm(!showSaveTemplateForm)}
+                  className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  <i className="ri-add-line mr-1"></i>
+                  保存模板
+                </button>
+                <button
+                  onClick={() => setShowTemplateDialog(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <i className="ri-close-line text-xl"></i>
+                </button>
+              </div>
+            </div>
+
+            {/* 保存自定义模板表单 */}
+            {showSaveTemplateForm && (
+              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">保存选中文本为模板</h4>
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="text"
+                    value={newTemplateName}
+                    onChange={(e) => setNewTemplateName(e.target.value)}
+                    placeholder="输入模板名称"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    onClick={saveCustomTemplate}
+                    disabled={!newTemplateName.trim()}
+                    className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    保存
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowSaveTemplateForm(false);
+                      setNewTemplateName('');
+                    }}
+                    className="px-4 py-2 text-sm bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    取消
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  请先在编辑器中选择要保存为模板的文本，然后输入模板名称并保存
+                </p>
+              </div>
+            )}
+
+            {/* 自定义模板区域 */}
+            {customTemplates.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                  <i className="ri-star-line mr-2 text-yellow-500"></i>
+                  我的模板
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {customTemplates.map((template, index) => (
+                    <div
+                      key={index}
+                      className="group relative p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-yellow-300 dark:hover:border-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 cursor-pointer transition-all"
+                      onClick={() => {
+                        if (editorRef.current) {
+                          const selection = editorRef.current.getSelection();
+                          if (selection) {
+                            editorRef.current.executeEdits('', [{
+                              range: selection,
+                              text: template.content
+                            }]);
+                            editorRef.current.focus();
+                          }
+                        }
+                        setShowTemplateDialog(false);
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          <i className="ri-file-text-line text-xl text-yellow-600 dark:text-yellow-400 mr-2"></i>
+                          <h5 className="font-medium text-gray-900 dark:text-gray-100 text-sm">{template.name}</h5>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteCustomTemplate(index);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-1 transition-opacity"
+                          title="删除模板"
+                        >
+                          <i className="ri-delete-bin-line text-sm"></i>
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                        {template.content.substring(0, 60)}...
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 预设模板区域 */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                <i className="ri-layout-grid-line mr-2 text-blue-500"></i>
+                预设模板
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* 文章模板 */}
+              <div
+                onClick={() => {
+                  const template = `# 文章标题
+
+## 简介
+在这里写文章的简介...
+
+## 主要内容
+
+### 第一部分
+内容描述...
+
+### 第二部分
+内容描述...
+
+## 总结
+总结文章要点...
+`;
+                  if (editorRef.current) {
+                    const selection = editorRef.current.getSelection();
+                    if (selection) {
+                      editorRef.current.executeEdits('', [{
+                        range: selection,
+                        text: template
+                      }]);
+                      editorRef.current.focus();
+                    }
+                  }
+                  setShowTemplateDialog(false);
+                }}
+                className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-all"
+              >
+                <div className="flex items-center mb-3">
+                  <i className="ri-article-line text-2xl text-blue-600 dark:text-blue-400 mr-3"></i>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">文章模板</h4>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">标准文章结构，包含简介、主要内容和总结</p>
+              </div>
+
+              {/* 技术文档模板 */}
+              <div
+                onClick={() => {
+                  const template = `# 技术文档
+
+## 概述
+项目/技术概述...
+
+## 环境要求
+- Node.js >= 16
+- 其他依赖...
+
+## 安装步骤
+\`\`\`bash
+npm install
+\`\`\`
+
+## 使用方法
+\`\`\`javascript
+// 代码示例
+function hello() {
+  console.log("Hello World!");
+}
+\`\`\`
+
+## API 文档
+### 方法名
+- 参数：
+- 返回值：
+
+## 常见问题
+Q: 问题描述
+A: 解决方案
+`;
+                  if (editorRef.current) {
+                    const selection = editorRef.current.getSelection();
+                    if (selection) {
+                      editorRef.current.executeEdits('', [{
+                        range: selection,
+                        text: template
+                      }]);
+                      editorRef.current.focus();
+                    }
+                  }
+                  setShowTemplateDialog(false);
+                }}
+                className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-green-300 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer transition-all"
+              >
+                <div className="flex items-center mb-3">
+                  <i className="ri-code-line text-2xl text-green-600 dark:text-green-400 mr-3"></i>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">技术文档</h4>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">API文档结构，包含安装、使用和常见问题</p>
+              </div>
+
+              {/* 日记模板 */}
+              <div
+                onClick={() => {
+                  const today = new Date().toLocaleDateString('zh-CN');
+                  const template = `# ${today} 日记
+
+## 今日天气
+☀️ 晴朗
+
+## 今日心情
+😊 愉快
+
+## 今日事件
+- 事件1
+- 事件2
+- 事件3
+
+## 今日感悟
+今天的感悟和思考...
+
+## 明日计划
+- [ ] 计划1
+- [ ] 计划2
+- [ ] 计划3
+`;
+                  if (editorRef.current) {
+                    const selection = editorRef.current.getSelection();
+                    if (selection) {
+                      editorRef.current.executeEdits('', [{
+                        range: selection,
+                        text: template
+                      }]);
+                      editorRef.current.focus();
+                    }
+                  }
+                  setShowTemplateDialog(false);
+                }}
+                className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-purple-300 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer transition-all"
+              >
+                <div className="flex items-center mb-3">
+                  <i className="ri-calendar-line text-2xl text-purple-600 dark:text-purple-400 mr-3"></i>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">日记模板</h4>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">日常记录格式，包含天气、心情和计划</p>
+              </div>
+
+              {/* 会议记录模板 */}
+              <div
+                onClick={() => {
+                  const today = new Date().toLocaleDateString('zh-CN');
+                  const template = `# 会议记录 - ${today}
+
+## 会议信息
+- **时间**：${today}
+- **地点**：
+- **主持人**：
+- **参会人员**：
+
+## 会议议程
+1. 议题一
+2. 议题二
+3. 议题三
+
+## 讨论内容
+### 议题一
+讨论内容...
+
+### 议题二
+讨论内容...
+
+## 决议事项
+- [ ] 行动项1 - 负责人：XXX - 截止时间：
+- [ ] 行动项2 - 负责人：XXX - 截止时间：
+
+## 下次会议
+- **时间**：
+- **议题**：
+`;
+                  if (editorRef.current) {
+                    const selection = editorRef.current.getSelection();
+                    if (selection) {
+                      editorRef.current.executeEdits('', [{
+                        range: selection,
+                        text: template
+                      }]);
+                      editorRef.current.focus();
+                    }
+                  }
+                  setShowTemplateDialog(false);
+                }}
+                className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-orange-300 dark:hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 cursor-pointer transition-all"
+              >
+                <div className="flex items-center mb-3">
+                  <i className="ri-team-line text-2xl text-orange-600 dark:text-orange-400 mr-3"></i>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">会议记录</h4>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">会议纪要格式，包含议程和决议事项</p>
+              </div>
+
+              {/* 表格模板 */}
+              <div
+                onClick={() => {
+                  const template = `| 表头1 | 表头2 | 表头3 |
+| --- | --- | --- |
+| 内容1 | 内容2 | 内容3 |
+| 内容4 | 内容5 | 内容6 |
+`;
+                  if (editorRef.current) {
+                    const selection = editorRef.current.getSelection();
+                    if (selection) {
+                      editorRef.current.executeEdits('', [{
+                        range: selection,
+                        text: template
+                      }]);
+                      editorRef.current.focus();
+                    }
+                  }
+                  setShowTemplateDialog(false);
+                }}
+                className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer transition-all"
+              >
+                <div className="flex items-center mb-3">
+                  <i className="ri-table-line text-2xl text-indigo-600 dark:text-indigo-400 mr-3"></i>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">表格模板</h4>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">标准表格结构，3列示例</p>
+              </div>
+
+              {/* 代码块模板 */}
+              <div
+                onClick={() => {
+                  const template = `\`\`\`javascript
+// 代码示例
+function hello() {
+  console.log("Hello World!");
+}
+
+// 调用函数
+hello();
+\`\`\`
+`;
+                  if (editorRef.current) {
+                    const selection = editorRef.current.getSelection();
+                    if (selection) {
+                      editorRef.current.executeEdits('', [{
+                        range: selection,
+                        text: template
+                      }]);
+                      editorRef.current.focus();
+                    }
+                  }
+                  setShowTemplateDialog(false);
+                }}
+                className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-red-300 dark:hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-all"
+              >
+                <div className="flex items-center mb-3">
+                  <i className="ri-code-s-slash-line text-2xl text-red-600 dark:text-red-400 mr-3"></i>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">代码块</h4>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">代码示例模板，支持语法高亮</p>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
+}
+
+// 添加CSS动画样式
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fade-in 0.3s ease-out;
+    }
+  `;
+  if (!document.head.querySelector('style[data-writing-animations]')) {
+    style.setAttribute('data-writing-animations', 'true');
+    document.head.appendChild(style);
+  }
 }
 

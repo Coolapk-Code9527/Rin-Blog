@@ -354,7 +354,20 @@
   },
   "writing": {
     "title": "Writing",
-    "title_hint": "Please enter the main title here. No need to write a level-1 heading (# title) in the content."
+    "title_hint": "Please enter the main title here. No need to write a level-1 heading (# title) in the content.",
+    "article_info": "Article Information",
+    "article_info_desc": "Set basic information for the article",
+    "expand_metadata": "Expand Metadata",
+    "collapse_metadata": "Collapse Metadata",
+    "scroll_sync": "Scroll Sync",
+    "enter_focus_mode": "Enter Focus Mode",
+    "exit_focus_mode": "Exit Focus Mode",
+    "quick_actions": "Quick Actions",
+    "save_draft": "Save Draft",
+    "statistics": "Statistics",
+    "characters": "Characters",
+    "words": "Words",
+    "lines": "Lines"
   },
   "year$year": "{{year}}",
   "templates": {

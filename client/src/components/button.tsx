@@ -116,7 +116,7 @@ export function ToolbarButton({
     icon: string,
     onClick: () => void,
     title: string,
-    variant?: 'secondary' | 'primary' | 'success' | 'warning' | 'info' | 'purple',
+    variant?: 'secondary' | 'primary' | 'success' | 'warning' | 'info' | 'purple' | 'ghost',
     showText?: boolean,
     text?: string
 }) {
@@ -126,7 +126,8 @@ export function ToolbarButton({
         success: 'bg-green-50/70 dark:bg-green-900/25 backdrop-blur-md text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800/40 border border-green-200 dark:border-green-800 shadow-enhanced hover:shadow-enhanced-lg',
         warning: 'bg-yellow-50/70 dark:bg-yellow-900/25 backdrop-blur-md text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-800/40 border border-yellow-200 dark:border-yellow-800 shadow-enhanced hover:shadow-enhanced-lg',
         info: 'bg-blue-50/70 dark:bg-blue-900/25 backdrop-blur-md text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 border border-blue-200 dark:border-blue-800 shadow-enhanced hover:shadow-enhanced-lg',
-        purple: 'bg-purple-50/70 dark:bg-purple-900/25 backdrop-blur-md text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-800/40 border border-purple-200 dark:border-purple-800 shadow-enhanced hover:shadow-enhanced-lg'
+        purple: 'bg-purple-50/70 dark:bg-purple-900/25 backdrop-blur-md text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-800/40 border border-purple-200 dark:border-purple-800 shadow-enhanced hover:shadow-enhanced-lg',
+        ghost: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
     };
 
     return (
