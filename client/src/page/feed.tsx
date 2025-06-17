@@ -116,9 +116,18 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
   }
   React.useEffect(() => {
     if (ref.current == id) return;
+
+    // 路由跳转时重置所有状态
     setFeed(undefined);
     setError(undefined);
     setHeadImage(undefined);
+    setContentReadyState(false); // 重置内容就绪状态
+
+    // 通知父组件内容未就绪
+    if (setContentReady) {
+      setContentReady(false);
+    }
+
     client
       .feed({ id })
       .get({
@@ -143,7 +152,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
         }
       });
     ref.current = id;
-  }, [id]);
+  }, [id, setContentReady]);
 
   return (
     <Waiting for={feed || error}>
@@ -329,10 +338,14 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               </div>
               <hr className="my-4 h-1 border-0 rounded-full bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70 animate-fadeIn" />
               <div className="mt-6">
-              <Markdown 
-                content={feed.content} 
+              <Markdown
+                content={feed.content}
                 onReady={() => {
-                  setTimeout(() => setContentReady && setContentReady(true), 100);
+                  setTimeout(() => {
+                    if (setContentReady) {
+                      setContentReady(true);
+                    }
+                  }, 100);
                 }}
               />
               </div>

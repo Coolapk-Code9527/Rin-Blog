@@ -12,7 +12,7 @@ export interface TableOfContent {
     children?: TableOfContent[] // 新增：多级目录支持
 }
 
-const useTableOfContents = (selector: string, contentReadySignal?: any, articleId?: string) => {
+const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?: string) => {
     const [tableOfContents, setTableOfContents] = useState<TableOfContent[]>([])
     const [activeId, setActiveId] = useState<string | null>(null)
     const { t } = useTranslation()
@@ -34,11 +34,9 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, articleI
     }, []);
 
     const processHeaders = useCallback((headers: NodeListOf<Element>) => {
-        console.log(`[TOC] processHeaders: Processing ${headers.length} headers for selector '${selector}'.`);
-        
         // 确保所有标题都有有效ID
         ensureValidIds(headers as NodeListOf<HTMLElement>);
-        
+
         // 设置目录数据
         const tocData = Array.from(headers as NodeListOf<HTMLElement>).map<TableOfContent>((header, i) => ({
             index: i,
@@ -47,37 +45,63 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, articleI
             element: header,
             id: header.id,
         }));
-        
+
         setTableOfContents(tocData);
-        console.log(`[TOC] 设置目录数据：`, tocData);
         
-        // 创建新的IntersectionObserver
+        // 创建新的IntersectionObserver，优化性能配置
         if (io.current) io.current.disconnect();
-        
+
+        // 使用防抖优化高亮更新频率
+        let updateTimeout: NodeJS.Timeout | null = null;
+
         io.current = new IntersectionObserver((entries) => {
-            // 收集所有可见标题及其top
-            const visible: { id: string, top: number }[] = [];
-            entries.forEach((entry) => {
-                const target = entry.target as HTMLElement;
-                if (entry.isIntersecting && target.id) {
-                    visible.push({ id: target.id, top: target.getBoundingClientRect().top });
-                }
-            });
-            // 选出距离顶部最近且top<=0的标题
-            let best: { id: string, top: number } | null = null;
-            visible.forEach(v => {
-                if (v.top <= 0 && (!best || v.top > best.top)) {
-                    best = v;
-                }
-            });
-            // 若无top<=0，则取最靠近顶部的
-            if (!best && visible.length > 0) {
-                best = visible.reduce((a, b) => (Math.abs(a.top) < Math.abs(b.top) ? a : b));
+            // 清除之前的更新计划
+            if (updateTimeout) {
+                clearTimeout(updateTimeout);
             }
-            if (best) setActiveId(best.id);
+
+            // 防抖处理，减少频繁更新
+            updateTimeout = setTimeout(() => {
+                // 收集所有可见标题及其位置信息
+                const visibleHeaders: { id: string, top: number, ratio: number }[] = [];
+
+                entries.forEach((entry) => {
+                    const target = entry.target as HTMLElement;
+                    if (target.id) {
+                        const rect = target.getBoundingClientRect();
+                        visibleHeaders.push({
+                            id: target.id,
+                            top: rect.top,
+                            ratio: entry.intersectionRatio
+                        });
+                    }
+                });
+
+                // 优化的高亮选择算法
+                let bestHeader: { id: string, top: number, ratio: number } | null = null;
+
+                // 首先查找完全可见且在视口上方的标题
+                const aboveViewport = visibleHeaders.filter(h => h.top <= 80 && h.ratio > 0);
+                if (aboveViewport.length > 0) {
+                    bestHeader = aboveViewport.reduce((a, b) => a.top > b.top ? a : b);
+                } else {
+                    // 如果没有在视口上方的，选择最接近顶部的可见标题
+                    const visibleInViewport = visibleHeaders.filter(h => h.ratio > 0);
+                    if (visibleInViewport.length > 0) {
+                        bestHeader = visibleInViewport.reduce((a, b) =>
+                            Math.abs(a.top) < Math.abs(b.top) ? a : b
+                        );
+                    }
+                }
+
+                if (bestHeader && bestHeader.id !== activeId) {
+                    setActiveId(bestHeader.id);
+                }
+            }, 50); // 50ms防抖延迟
         }, {
-            rootMargin: "-60px 0px -60px 0px",
-            threshold: [0, 0.25, 0.5]
+            // 优化的观察配置
+            rootMargin: "-80px 0px -40% 0px", // 更精确的边距设置
+            threshold: [0, 0.1, 0.5, 1.0] // 更细粒度的阈值
         });
         
         // 观察所有标题
@@ -121,15 +145,12 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, articleI
     };
 
     useEffect(() => {
-        console.log(`[TOC] useEffect 触发，选择器: '${selector}'，contentReadySignal:`, contentReadySignal, '，articleId:', articleId);
-
-        // 清理目录数据，但保持activeId让高亮功能正常工作
-        setTableOfContents([]);
-
-        // 清理之前的IntersectionObserver
+        // 清理之前的状态
         if (io.current) {
             io.current.disconnect();
         }
+        setTableOfContents([]); // 重置目录
+        setActiveId(null); // 重置高亮状态
 
         // 增加最大重试次数，防止死循环
         let retryCount = 0;
@@ -139,26 +160,16 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, articleI
         const checkContentExistence = () => {
             const contentElement = document.querySelector(selector);
             if (contentElement) {
-                console.log(`[TOC] 首次检查已找到 '${selector}' 的内容元素`);
-
-                // 优先尝试从remark-toc生成的目录树中提取目录数据
-                if (tryGetTocFromRemark()) {
-                    console.log('[TOC] 成功从remark-toc获取目录');
-                    return;
-                }
-
                 // 如果内容元素存在，但没有标题，设置一个更长的延迟
                 const headers = contentElement.querySelectorAll('h1, h2, h3, h4, h5, h6');
                 if (headers.length === 0) {
                     if (retryCount < MAX_RETRY) {
                         retryCount++;
-                        console.log(`[TOC] 内容元素存在但没有标题，等待Markdown渲染完成...（第${retryCount}次）`);
                         setTimeout(() => {
                             checkContentExistence();
                         }, 500);
                     } else {
                         setTableOfContents([]); // 明确无目录
-                        console.log('[TOC] 内容渲染完毕但无标题，停止检测');
                     }
                 } else {
                     // 内容和标题都已存在，立即处理
@@ -177,22 +188,37 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, articleI
         // 延迟一点启动，确保页面有时间加载内容
         setTimeout(checkContentExistence, 200);
 
+        // 在processHeaders前优先尝试remark-toc目录
+        if (tryGetTocFromRemark()) return;
+
         return () => {
-            console.log(`[TOC] 清理选择器: '${selector}' 的资源`);
             if (io.current) {
                 io.current.disconnect();
             }
         };
-    }, [selector, contentReadySignal, articleId, processHeaders]);
+    }, [selector, contentReadySignal, routeId, processHeaders]);
 
-    // 目录高亮项自动滚动到可视区域
+    // 优化的目录高亮项自动滚动
     useEffect(() => {
         if (!activeId || !tocListRef.current) return;
-        // 查找当前高亮li
-        const activeLi = tocListRef.current.querySelector('li.text-theme.font-medium');
-        if (activeLi && typeof activeLi.scrollIntoView === 'function') {
-            activeLi.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
+
+        // 使用更精确的选择器和防抖优化
+        const scrollTimeout = setTimeout(() => {
+            const activeLi = tocListRef.current?.querySelector(`li[data-toc-id="${activeId}"]`) ||
+                            tocListRef.current?.querySelector('li.text-theme.font-medium');
+
+            if (activeLi && typeof activeLi.scrollIntoView === 'function') {
+                requestAnimationFrame(() => {
+                    activeLi.scrollIntoView({
+                        block: 'nearest',
+                        behavior: 'smooth',
+                        inline: 'nearest'
+                    });
+                });
+            }
+        }, 100); // 防抖延迟
+
+        return () => clearTimeout(scrollTimeout);
     }, [activeId]);
 
     return {
@@ -212,6 +238,7 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, articleI
                         return (
                             <li
                                 key={`toc$${item.index}`}
+                                data-toc-id={item.id}
                                 className={
                                     isActive
                                         ? "text-theme font-medium py-[0.2rem] hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2 text-sm"
@@ -221,17 +248,22 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, articleI
                                 }
                                 style={{ marginLeft: item.marginLeft }}
                                 onClick={() => {
-                                    if (item.element && item.element.id) {
-                                        const element = document.getElementById(item.element.id);
-                                        if (element) {
-                                            const yOffset = -80;
-                                            const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
-                                            window.scrollTo({ top: y, behavior: 'smooth' });
-                                        }
-                                    } else {
+                                    // 优化的滚动逻辑，使用现代API
+                                    const targetElement = item.element && item.element.id
+                                        ? document.getElementById(item.element.id)
+                                        : item.element;
+
+                                    if (targetElement) {
                                         const yOffset = -80;
-                                        const y = item.element.getBoundingClientRect().top + window.scrollY + yOffset;
-                                        window.scrollTo({ top: y, behavior: 'smooth' });
+                                        const y = targetElement.getBoundingClientRect().top + window.scrollY + yOffset;
+
+                                        // 使用requestAnimationFrame优化性能
+                                        requestAnimationFrame(() => {
+                                            window.scrollTo({
+                                                top: y,
+                                                behavior: 'smooth'
+                                            });
+                                        });
                                     }
                                 }}
                             >
