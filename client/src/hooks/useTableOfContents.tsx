@@ -12,7 +12,7 @@ export interface TableOfContent {
     children?: TableOfContent[] // 新增：多级目录支持
 }
 
-const useTableOfContents = (selector: string, contentReadySignal?: any) => {
+const useTableOfContents = (selector: string, contentReadySignal?: any, articleId?: string) => {
     const [tableOfContents, setTableOfContents] = useState<TableOfContent[]>([])
     const [activeId, setActiveId] = useState<string | null>(null)
     const { t } = useTranslation()
@@ -121,13 +121,15 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
     };
 
     useEffect(() => {
-        console.log(`[TOC] useEffect 触发，选择器: '${selector}'，contentReadySignal:`, contentReadySignal);
-        
-        // 清理之前的状态
+        console.log(`[TOC] useEffect 触发，选择器: '${selector}'，contentReadySignal:`, contentReadySignal, '，articleId:', articleId);
+
+        // 清理目录数据，但保持activeId让高亮功能正常工作
+        setTableOfContents([]);
+
+        // 清理之前的IntersectionObserver
         if (io.current) {
             io.current.disconnect();
         }
-        setTableOfContents([]); // 重置目录
 
         // 增加最大重试次数，防止死循环
         let retryCount = 0;
@@ -138,6 +140,13 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
             const contentElement = document.querySelector(selector);
             if (contentElement) {
                 console.log(`[TOC] 首次检查已找到 '${selector}' 的内容元素`);
+
+                // 优先尝试从remark-toc生成的目录树中提取目录数据
+                if (tryGetTocFromRemark()) {
+                    console.log('[TOC] 成功从remark-toc获取目录');
+                    return;
+                }
+
                 // 如果内容元素存在，但没有标题，设置一个更长的延迟
                 const headers = contentElement.querySelectorAll('h1, h2, h3, h4, h5, h6');
                 if (headers.length === 0) {
@@ -168,16 +177,13 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
         // 延迟一点启动，确保页面有时间加载内容
         setTimeout(checkContentExistence, 200);
 
-        // 在processHeaders前优先尝试remark-toc目录
-        if (tryGetTocFromRemark()) return;
-
         return () => {
             console.log(`[TOC] 清理选择器: '${selector}' 的资源`);
             if (io.current) {
                 io.current.disconnect();
             }
         };
-    }, [selector, contentReadySignal, processHeaders]);
+    }, [selector, contentReadySignal, articleId, processHeaders]);
 
     // 目录高亮项自动滚动到可视区域
     useEffect(() => {
@@ -219,12 +225,12 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
                                         const element = document.getElementById(item.element.id);
                                         if (element) {
                                             const yOffset = -80;
-                                            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                                            const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
                                             window.scrollTo({ top: y, behavior: 'smooth' });
                                         }
                                     } else {
                                         const yOffset = -80;
-                                        const y = item.element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                                        const y = item.element.getBoundingClientRect().top + window.scrollY + yOffset;
                                         window.scrollTo({ top: y, behavior: 'smooth' });
                                     }
                                 }}

@@ -35,7 +35,7 @@ function BackToTop() {
   
   useEffect(() => {
     const toggleVisibility = () => {
-      if (window.pageYOffset > 500) {
+      if (window.scrollY > 500) {
         setVisible(true);
       } else {
         setVisible(false);
@@ -319,14 +319,13 @@ function RouteMe({ path, children, headerComponent, paddingClassName }:
 
 function RouteWithIndex({ path, children, contentReady }:
   { path: PathPattern, children: (params: DefaultParams, TOC: () => JSX.Element) => React.ReactNode, contentReady?: boolean }) {
-  const paramsRef = useRef<DefaultParams | null>(null);
-  const [routeMatch, params] = useRoute(path);
-  
-  if (routeMatch && (!paramsRef.current || paramsRef.current.id !== params.id)) {
-    paramsRef.current = params;
-  }
-  // 以contentReady为依赖，确保目录监听时机正确
-  const { TOC } = useTableOfContents(".toc-content", contentReady);
+  const [, params] = useRoute(path);
+
+  // 获取文章ID，支持feed/:id和/:alias两种路由格式
+  const articleId = params.id || params.alias || '';
+
+  // 以contentReady和articleId为依赖，确保目录监听时机正确且文章变化时重置
+  const { TOC } = useTableOfContents(".toc-content", contentReady, articleId);
   return (<RouteMe path={path} headerComponent={TOCHeader({ TOC: TOC })} paddingClassName=''>
     {params => {
       return children(params, TOC)
