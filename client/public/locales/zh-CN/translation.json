@@ -314,8 +314,19 @@
     "import_success$success$skipped": "导入成功，{{success}} 篇文章导入成功，{{skipped}} 篇文章跳过",
     "login": {
       "enable": {
-        "desc": "开启/关闭右上角登录按钮，关闭后可通过「双击」底部文字 \"© 2024 Powered by\" 「三次」触发登录入口",
+        "desc": "开启/关闭右上角登录按钮，关闭后可通过「双击」底部文字 \"© 2025 Powered by\" 「三次」触发登录入口",
         "title": "启用右上角登录按钮"
+      }
+    },
+    "background": {
+      "title": "页面背景",
+      "enable": {
+        "title": "启用背景图片",
+        "desc": "为整个网站设置自定义背景图片"
+      },
+      "url": {
+        "title": "背景图片链接",
+        "desc": "设置背景图片的URL地址，支持网络图片链接"
       }
     },
     "other": {

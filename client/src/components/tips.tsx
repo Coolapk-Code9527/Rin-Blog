@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "./button";
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 
 export function Tips({ value, type = 'tips' }: { value: string, type?: 'note' | 'tips' | 'warn' | 'error' | 'info' | 'important' }) {
     const { t } = useTranslation();
@@ -37,9 +38,13 @@ export function Tips({ value, type = 'tips' }: { value: string, type?: 'note' | 
 
 export function TipsPage({ children }: { children: React.ReactNode }) {
     const { t } = useTranslation();
+
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
+
     return (
         <div className="w-full flex flex-row justify-center ani-show">
-            <div className="flex flex-col wauto rounded-2xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md m-2 p-6 items-center justify-center space-y-2 shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60">
+            <div className={`flex flex-col wauto rounded-2xl ${glassClass} m-2 p-6 items-center justify-center space-y-2 shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60`}>
                 <h1 className="text-xl font-bold t-primary"> Oops! </h1>
                 {children}
                 <Button

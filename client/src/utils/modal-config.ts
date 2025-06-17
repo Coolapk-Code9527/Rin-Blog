@@ -117,12 +117,10 @@ export const macOSFullscreenModalStyles = {
 
 // 统一的弹窗容器样式类名
 export const MODAL_CONTAINER_CLASSES = {
-  // 标准弹窗容器
+  // 标准弹窗容器 - 使用统一的毛玻璃系统
   standard: `
-    bg-white/75 dark:bg-gray-800/75
-    backdrop-blur-xl
+    glass-layer-3
     shadow-enhanced-2xl
-    border border-neutral-200/60 dark:border-neutral-700/60
     rounded-2xl
     p-6
     w-full
@@ -133,13 +131,11 @@ export const MODAL_CONTAINER_CLASSES = {
     ease-out
   `,
 
-  // 大尺寸弹窗容器
+  // 大尺寸弹窗容器 - 使用统一的毛玻璃系统
   large: `
-    bg-white/80 dark:bg-gray-800/80
-    backdrop-blur-xl
+    glass-layer-3
     rounded-2xl
     shadow-enhanced-2xl
-    border border-neutral-200/60 dark:border-neutral-700/60
     overflow-hidden
     flex
     flex-col

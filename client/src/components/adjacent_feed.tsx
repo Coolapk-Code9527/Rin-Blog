@@ -3,6 +3,7 @@ import {client} from "../main.tsx";
 import {timeago} from "../utils/timeago.ts";
 import {Link} from "wouter";
 import {useTranslation} from "react-i18next";
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 
 export type AdjacentFeed = {
     id: number;
@@ -78,6 +79,9 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     const [loading, setLoading] = React.useState<boolean>(true);
     const {t} = useTranslation();
 
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
+
     React.useEffect(() => {
         setLoading(true);
         client.feed
@@ -133,7 +137,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     
     return (
         <div className="w-full mt-6 mb-6">
-            <div className="rounded-2xl overflow-hidden bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 grid grid-cols-2 divide-x divide-neutral-200/60 dark:divide-neutral-700/60 border border-neutral-200/60 dark:border-neutral-700/60">
+            <div className={`rounded-2xl overflow-hidden ${glassClass} shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 grid grid-cols-2 divide-x divide-neutral-200/60 dark:divide-neutral-700/60 border border-neutral-200/60 dark:border-neutral-700/60`}>
                 <AdjacentCard 
                     data={adjacentFeeds?.previousFeed}
                     type="previous"

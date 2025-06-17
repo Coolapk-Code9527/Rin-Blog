@@ -18,17 +18,32 @@ export function NotFoundPage() {
       </Helmet>
 
       <PageContainer>
-        <div className="text-center max-w-md">
+        {/* 页面标题区域 - 与文章列表页面保持一致 */}
+        <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <h1 className="text-2xl font-bold t-primary relative group">
+              {t("error.not_found")}
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
+            </h1>
+          </div>
+        </div>
+
+        {/* 上方分隔线 - 与文章列表页面保持一致 */}
+        <div className="w-full mb-2">
+          <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+        </div>
+
+        <div className="text-center max-w-md mx-auto">
           <div className="mb-6 text-theme text-8xl sm:text-9xl animate-pulse">
             <i className="ri-ghost-line"></i>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white mb-4">
             404
-          </h1>
+          </h2>
 
           <p className="text-xl sm:text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
-            {t("error.not_found")}
+            {t("error.page_not_exist")}
           </p>
 
           <p className="text-gray-600 dark:text-gray-400 mb-8">
@@ -59,6 +74,8 @@ export function NotFoundPage() {
             </button>
           </div>
         </div>
+
+
       </PageContainer>
     </>
   );

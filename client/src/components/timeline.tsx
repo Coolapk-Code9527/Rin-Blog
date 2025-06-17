@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { HashTag } from "./hashtag";
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 
 // TimelineItem: 单条事件（内容丰富版）
 export function TimelineItem({ id, title, createdAt, summary, hashtags, avatar }: {
@@ -15,6 +16,9 @@ export function TimelineItem({ id, title, createdAt, summary, hashtags, avatar }
   // 新增：图片加载失败状态
   const [imgError, setImgError] = useState(false);
   const showImage = typeof avatar === 'string' && avatar.trim() !== '' && !imgError;
+
+  // 使用智能毛玻璃效果
+  const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
   // 动态渐变背景，与FeedCard一致
   const generateGradient = useMemo(() => {
@@ -55,7 +59,7 @@ export function TimelineItem({ id, title, createdAt, summary, hashtags, avatar }
         </div>
       </div>
       {/* 内容卡片 - 响应式布局：移动端垂直，桌面端水平 */}
-      <div className="flex-1 ml-8 md:ml-12 rounded-xl m-1 duration-300 flex flex-col sm:flex-row overflow-hidden bg-white/90 dark:bg-gray-800/90 shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:border-theme/40 group-hover:bg-white dark:group-hover:bg-gray-800 transition-all backdrop-blur-sm">
+      <div className={`flex-1 ml-8 md:ml-12 rounded-xl m-1 duration-300 flex flex-col sm:flex-row overflow-hidden ${glassClass} shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:border-theme/40 transition-all`}>
         {/* 封面图/占位符区域，始终有高度 */}
         <div className="relative w-full h-32 sm:w-20 sm:h-auto md:w-24 lg:w-32 xl:w-36 sm:flex-shrink-0 overflow-hidden">
           {/* 渐变背景层 */}

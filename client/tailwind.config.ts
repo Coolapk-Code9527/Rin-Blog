@@ -89,6 +89,19 @@ export default {
       },
     },
   },
+  safelist: [
+    // 确保主题色透明度变体被生成
+    'bg-theme/10',
+    'bg-theme/20',
+    'text-theme',
+    'border-theme/30',
+    'border-theme/25',
+    'hover:text-theme',
+    'dark:hover:text-theme',
+    'hover:bg-theme/10',
+    'dark:bg-theme/20',
+    'dark:border-theme/25',
+  ],
   plugins: [
     require('@tailwindcss/typography'),
   ],

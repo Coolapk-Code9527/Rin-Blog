@@ -87,6 +87,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 )
 Modal.setAppElement('#root');
 
+// 初始化系统主题监听
+listenSystemMode();
+
 // 开发环境下挂载stagewise工具栏
 if (isDev) {
   const toolbarConfig = { plugins: [] };

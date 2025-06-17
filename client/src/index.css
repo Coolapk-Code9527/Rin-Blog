@@ -102,15 +102,20 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* 增强的毛玻璃效果 - macOS风格 */
+/* 统一的毛玻璃效果系统 - macOS风格 */
 .backdrop-blur-sm {
-  backdrop-filter: blur(12px) saturate(180%) brightness(1.1);
-  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.1);
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
 }
 
 .backdrop-blur-md {
-  backdrop-filter: blur(20px) saturate(200%) brightness(1.1);
-  -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.1);
+  backdrop-filter: blur(16px) saturate(200%) brightness(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(200%) brightness(1.08);
+}
+
+.backdrop-blur-lg {
+  backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
 }
 
 .backdrop-blur-xl {
@@ -161,16 +166,16 @@ body {
     0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-/* 增强的毛玻璃卡片效果 - 更明显的透明度 */
+/* 统一的毛玻璃卡片效果 - 基础层级 */
 .glass-card {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(24px) saturate(200%) brightness(1.1);
-  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.60);
+  backdrop-filter: blur(16px) saturate(180%) brightness(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 [data-color-mode="dark"] .glass-card {
-  background: rgba(13, 17, 23, 0.75);
+  background: rgba(13, 17, 23, 0.60);
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -201,30 +206,30 @@ body {
   left: 100%;
 }
 
-/* 增强的导航栏毛玻璃效果 - 更明显的透明度 */
+/* 统一的导航栏毛玻璃效果 - 强化层级 */
 .nav-glass {
-  background: rgba(255, 255, 255, 0.80);
-  backdrop-filter: blur(32px) saturate(220%) brightness(1.1);
-  -webkit-backdrop-filter: blur(32px) saturate(220%) brightness(1.1);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 [data-color-mode="dark"] .nav-glass {
-  background: rgba(13, 17, 23, 0.80);
+  background: rgba(13, 17, 23, 0.55);
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* 增强的标签毛玻璃效果 */
+/* 统一的标签毛玻璃效果 - 轻量层级 */
 .tag-enhanced {
   position: relative;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px) saturate(180%) brightness(1.05);
-  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.05);
+  background: rgba(255, 255, 255, 0.70);
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
   border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 [data-color-mode="dark"] .tag-enhanced {
-  background: rgba(33, 38, 45, 0.85);
+  background: rgba(33, 38, 45, 0.70);
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
@@ -245,35 +250,124 @@ body {
     0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* 增强的毛玻璃背景类 - 用于组件优化 */
-.glass-bg-light {
-  background: rgba(255, 255, 255, 0.75) !important;
-  backdrop-filter: blur(20px) saturate(200%) brightness(1.1);
-  -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.1);
+/* 统一的分层毛玻璃背景系统 - 高透明度层级 */
+.glass-layer-1 {
+  background: rgba(255, 255, 255, 0.70) !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
-[data-color-mode="dark"] .glass-bg-light {
+[data-color-mode="dark"] .glass-layer-1 {
+  background: rgba(13, 17, 23, 0.70) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass-layer-2 {
+  background: rgba(255, 255, 255, 0.60) !important;
+  backdrop-filter: blur(16px) saturate(200%) brightness(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(200%) brightness(1.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+[data-color-mode="dark"] .glass-layer-2 {
+  background: rgba(13, 17, 23, 0.60) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.glass-layer-3 {
+  background: rgba(255, 255, 255, 0.50) !important;
+  backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+[data-color-mode="dark"] .glass-layer-3 {
+  background: rgba(13, 17, 23, 0.50) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* 背景图片激活时的适配层级 - 提升不透明度确保可读性 */
+.glass-layer-1-bg {
+  background: rgba(255, 255, 255, 0.80) !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+}
+
+[data-color-mode="dark"] .glass-layer-1-bg {
+  background: rgba(13, 17, 23, 0.80) !important;
+}
+
+.glass-layer-2-bg {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(16px) saturate(200%) brightness(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(200%) brightness(1.08);
+}
+
+[data-color-mode="dark"] .glass-layer-2-bg {
   background: rgba(13, 17, 23, 0.75) !important;
 }
 
-.glass-bg-medium {
+.glass-layer-3-bg {
   background: rgba(255, 255, 255, 0.70) !important;
-  backdrop-filter: blur(24px) saturate(220%) brightness(1.15);
-  -webkit-backdrop-filter: blur(24px) saturate(220%) brightness(1.15);
+  backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
 }
 
-[data-color-mode="dark"] .glass-bg-medium {
+[data-color-mode="dark"] .glass-layer-3-bg {
   background: rgba(13, 17, 23, 0.70) !important;
 }
 
-.glass-bg-strong {
-  background: rgba(255, 255, 255, 0.65) !important;
-  backdrop-filter: blur(32px) saturate(250%) brightness(1.2);
-  -webkit-backdrop-filter: blur(32px) saturate(250%) brightness(1.2);
+/* 智能毛玻璃系统 - 根据背景状态自动切换，高透明度 */
+:root[style*="--background-active: 1"] .glass-card {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(16px) saturate(180%) brightness(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08);
 }
 
-[data-color-mode="dark"] .glass-bg-strong {
-  background: rgba(13, 17, 23, 0.65) !important;
+:root[style*="--background-active: 1"] [data-color-mode="dark"] .glass-card {
+  background: rgba(13, 17, 23, 0.75) !important;
+}
+
+:root[style*="--background-active: 1"] .nav-glass {
+  background: rgba(255, 255, 255, 0.70) !important;
+  backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
+}
+
+:root[style*="--background-active: 1"] [data-color-mode="dark"] .nav-glass {
+  background: rgba(13, 17, 23, 0.70) !important;
+}
+
+:root[style*="--background-active: 1"] .tag-enhanced {
+  background: rgba(255, 255, 255, 0.80) !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+}
+
+:root[style*="--background-active: 1"] [data-color-mode="dark"] .tag-enhanced {
+  background: rgba(33, 38, 45, 0.80) !important;
+}
+
+/* 性能优化：减少毛玻璃效果的重复计算 */
+.glass-optimized {
+  will-change: backdrop-filter;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* 禁用毛玻璃效果的类（用于性能敏感区域） */
+.glass-disabled {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 移动端性能优化：在低端设备上使用简化的毛玻璃效果 */
+@media (max-width: 768px) and (max-resolution: 1.5dppx) {
+  .glass-mobile-optimized {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+  }
 }
 
 /* 英文内容字体 */
@@ -1725,9 +1819,9 @@ i[class^="ri-"]::before, i[class*=" ri-"]::before {
   @apply text-gray-700 dark:text-gray-300;
 }
 
-/* 水平线样式优化 */
+/* 水平线样式优化 - 增加粗细 */
 .wmde-markdown hr, .toc-content hr, .markdown-body hr {
-  @apply my-8 h-px border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent;
+  @apply my-8 h-0.5 border-0 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent;
 }
 
 /* 代码块样式优化 */

@@ -11,6 +11,7 @@ import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { useTranslation } from "react-i18next";
 import { PageContainer } from "../components/container"
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect"
 
 type FeedsData = {
     size: number,
@@ -30,6 +31,9 @@ function LazyFeedCard({ id, ...props }: any) {
     const [isIntersecting, setIsIntersecting] = React.useState(false); // 新增状态跟踪元素是否在视口内
     const cardRef = React.useRef<HTMLDivElement>(null);
     const { t } = useTranslation();
+
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
     
     // 为占位符生成渐变背景
     const generatePlaceholderGradient = () => {
@@ -88,7 +92,7 @@ function LazyFeedCard({ id, ...props }: any) {
             {isVisible ? (
                 <FeedCard id={id} {...props} />
             ) : (
-                <div className={`block w-full rounded-2xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm h-full overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced flex flex-col min-h-[260px] xs:min-h-[280px] transition-opacity duration-300 ${isIntersecting ? 'opacity-100' : 'opacity-40'}`}>
+                <div className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced flex flex-col min-h-[260px] xs:min-h-[280px] transition-opacity duration-300 ${isIntersecting ? 'opacity-100' : 'opacity-40'}`}>
                     {/* 占位符卡片顶部 */}
                     <div className={`w-full h-40 xs:h-48 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`}>
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -145,6 +149,11 @@ export function FeedsPage() {
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = React.useRef("")
+
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
+    const tagGlassClass = useGlassEffect('tag-enhanced');
+    const buttonGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
     
     // 使用useCallback优化函数
     const fetchFeeds = React.useCallback((type: FeedType) => {
@@ -191,16 +200,16 @@ export function FeedsPage() {
             </Helmet>
             <PageContainer>
                 <div className="flex flex-col space-y-3 mb-3">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-2 sm:gap-3">
-                        {/* 左侧：标题和文章数量 */}
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
+                        {/* 左侧：标题和文章数量 - 优化移动端布局 */}
+                        <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+                            <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
                                 {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                             </h1>
-                            <div className="py-1.5 sm:px-3 sm:py-1.5 bg-neutral-100/80 dark:bg-neutral-800/80 rounded-xl text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium backdrop-blur-sm border border-neutral-200/40 dark:border-neutral-700/40">
-                                <i className="ri-article-line text-theme"></i>
-                                <span className="ml-1.5">{t('article.total$count', { count: feeds[listState]?.size })}</span>
+                            <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
+                                <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
+                                <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: feeds[listState]?.size })}</span>
                             </div>
                         </div>
                         
@@ -216,16 +225,16 @@ export function FeedsPage() {
                                     <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'}
                                         className={`flex-1 sm:flex-none h-9 xs:h-auto px-3 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
                                         ${listState === 'draft'
-                                        ? "bg-theme/12 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced-lg backdrop-blur-sm"
-                                        : "bg-white/95 dark:bg-gray-800/95 text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme backdrop-blur-sm"}`}>
+                                        ? "bg-theme/12 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced-lg"
+                                        : `${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme`}`}>
                                         <i className="ri-draft-line"></i>
                                         <span className="hidden xs:inline ml-1.5 md:ml-2">{t('draft_bin')}</span>
                                     </Link>
                                     <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'}
                                         className={`flex-1 sm:flex-none h-9 xs:h-auto px-3 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
                                         ${listState === 'unlisted'
-                                        ? "bg-theme/12 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced-lg backdrop-blur-sm"
-                                        : "bg-white/95 dark:bg-gray-800/95 text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme backdrop-blur-sm"}`}>
+                                        ? "bg-theme/12 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced-lg"
+                                        : `${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme`}`}>
                                         <i className="ri-eye-off-line"></i>
                                         <span className="hidden xs:inline ml-1.5 md:ml-2">{t('unlisted')}</span>
                                     </Link>
@@ -234,14 +243,14 @@ export function FeedsPage() {
                         )}
                     </div>
                     
-                    {/* 上方渐变分割线 */}
+                    {/* 上方渐变分割线 - 增加粗细 */}
                     <div className="w-full mb-2">
-                        <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+                        <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                     </div>
                     
                     <div className="flex justify-between items-center -mt-1 sm:mt-0">
                         {(listState === 'draft' || listState === 'unlisted') && (
-                            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-3 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700/20 max-w-full sm:max-w-md">
+                            <div className={`text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-3 py-2 ${buttonGlassClass} rounded-lg shadow-sm border border-neutral-200/60 dark:border-neutral-700/60 max-w-full sm:max-w-md`}>
                                 {listState === 'draft' 
                                     ? t('draft_description') 
                                     : t('unlisted_description')
@@ -272,17 +281,13 @@ export function FeedsPage() {
                                     className="gap-2"
                                 />
                             </div>
-                            
-                            {/* 底部分隔线 */}
-                            <div className="w-full mb-6">
-                                <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
-                            </div>
+
                         </>
                     ) : status === 'loading' ? (
                         // 加载状态显示骨架屏
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full">
                             {Array(6).fill(0).map((_, i) => (
-                                <div key={`skeleton-${i}`} className="block w-full rounded-2xl bg-white dark:bg-gray-800 h-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px]">
+                                <div key={`skeleton-${i}`} className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px]`}>
                                     {/* 骨架屏卡片顶部 */}
                                     <div className="w-full h-36 xs:h-40 sm:h-44 md:h-48 overflow-hidden rounded-t-xl relative bg-gray-200 dark:bg-gray-700 animate-pulse">
                                     </div>

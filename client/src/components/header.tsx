@@ -12,6 +12,7 @@ import { Padding } from "./padding";
 import { ClientConfigContext } from "../state/config";
 import { useConfirm } from "./dialog";
 import React from 'react';
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 
 
 export function Header({ children }: { children?: React.ReactNode }) {
@@ -188,9 +189,13 @@ function MobileMenu() {
     const lastScrollY = React.useRef(0);
     const searchInputRef = React.useRef<HTMLInputElement>(null);
     const searchContainerRef = React.useRef<HTMLDivElement>(null);
-    
+
     // 深色模式状态
     const [isDarkMode, setIsDarkMode] = useState(false);
+
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.STRONG);
+    const searchGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
     
     // 检测深色模式
     useEffect(() => {
@@ -382,8 +387,8 @@ function MobileMenu() {
                             height: '100vh'
                         }}
                     >
-                        <div 
-                            className={`fixed top-0 right-0 w-[300px] max-w-[85vw] h-[100dvh] backdrop-blur-md transition-all duration-300 ease-out overflow-hidden`}
+                        <div
+                            className={`fixed top-0 right-0 w-[300px] max-w-[85vw] h-[100dvh] ${glassClass} transition-all duration-300 ease-out overflow-hidden shadow-enhanced-xl border-l border-neutral-200/60 dark:border-neutral-700/60`}
                             onClick={handleMenuClick} // 阻止冒泡，防止点击菜单内容时关闭
                             aria-modal="true"
                             role="dialog"
@@ -394,9 +399,6 @@ function MobileMenu() {
                                 }
                             }}
                             style={{
-                                boxShadow: 'var(--shadow-enhanced-xl)',
-                                borderLeft: isDarkMode ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
-                                backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                                 transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
                                 opacity: isOpen ? 1 : 0,
                             }}
@@ -459,9 +461,9 @@ function MobileMenu() {
                                         {/* 搜索栏 */}
                                         <div ref={searchContainerRef} className="relative flex items-center mb-3" role="search">
                                             {!isSearchExpanded ? (
-                                                <button 
+                                                <button
                                                     onClick={() => setIsSearchExpanded(true)}
-                                                    className="flex items-center w-full p-2 text-xs text-gray-700 dark:text-gray-300 bg-white/75 dark:bg-gray-800/75 backdrop-blur-md rounded-full border border-theme/30 dark:border-theme/40 hover:border-theme dark:hover:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200"
+                                                    className={`flex items-center w-full p-2 text-xs text-gray-700 dark:text-gray-300 ${searchGlassClass} rounded-full border border-theme/30 dark:border-theme/40 hover:border-theme dark:hover:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200`}
                                                     aria-label={t('article.search.title')}
                                                 >
                                                     <i className="ri-search-line text-theme/60 mr-2 text-sm"></i>
@@ -478,7 +480,7 @@ function MobileMenu() {
                                                         onChange={(e) => setSearchValue(e.target.value)}
                                                         onKeyDown={(e) => e.key === 'Enter' && onSearch()}
                                                         placeholder={t('article.search.placeholder')}
-                                                        className="w-full py-2 pl-8 pr-9 bg-white/75 dark:bg-gray-800/75 backdrop-blur-md border border-theme/30 dark:border-theme/40 rounded-full text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:shadow-enhanced-lg focus:outline-none transition-all duration-200 text-xs"
+                                                        className={`w-full py-2 pl-8 pr-9 ${searchGlassClass} border border-theme/30 dark:border-theme/40 rounded-full text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:shadow-enhanced-lg focus:outline-none transition-all duration-200 text-xs`}
                                                         aria-controls={searchHistory.length > 0 ? "mobile-search-history" : undefined}
                                                         aria-expanded={isSearchExpanded}
                                                         autoComplete="off"
@@ -760,7 +762,10 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
     const label = t('article.search.title') || '搜索'
     const searchInputRef = React.useRef<HTMLInputElement>(null);
     const searchContainerRef = React.useRef<HTMLDivElement>(null);
-    
+
+    // 使用智能毛玻璃效果
+    const searchGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
+
     // 监听窗口大小变化
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -939,7 +944,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={getTranslatedText('article.search.placeholder', '搜索文章...')}
-                            className={`${getSearchInputWidthClass()} py-2 pl-8 pr-9 bg-white/75 dark:bg-gray-800/75 backdrop-blur-md border border-theme/30 dark:border-theme/40 rounded-full text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:shadow-enhanced-lg transition-all duration-200 text-xs`}
+                            className={`${getSearchInputWidthClass()} py-2 pl-8 pr-9 ${searchGlassClass} border border-theme/30 dark:border-theme/40 rounded-full text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-theme/30 focus:border-theme dark:focus:border-theme shadow-enhanced hover:shadow-enhanced-lg focus:shadow-enhanced-lg transition-all duration-200 text-xs`}
                             aria-expanded={isExpanded}
                             autoComplete="off"
                             aria-autocomplete="list"

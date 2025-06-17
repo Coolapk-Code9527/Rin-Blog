@@ -25,6 +25,7 @@ import { Pagination } from "../components/pagination";
 import { RecentPosts } from "../components/recent_posts";
 import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 
 type Feed = {
   id: number;
@@ -54,6 +55,9 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
   const [feed, setFeed] = React.useState<Feed>();
   const [error, setError] = React.useState<string>();
   const [headImage, setHeadImage] = React.useState<string>();
+
+  // 使用智能毛玻璃效果
+  const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
   const ref = React.useRef("");
   const [, setLocation] = useLocation();
   const { showAlert, AlertUI } = useAlert();
@@ -371,13 +375,17 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
         {/* 侧边栏，仅大屏显示 */}
         <aside className="hidden lg:flex flex-col w-[260px] flex-shrink-0 gap-6 mt-5">
           <section className="sticky top-[5.5rem]">
-            <div className="mb-6 rounded-2xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md p-4 shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60">
-              <h3 className="text-lg font-bold mb-3 flex items-center gap-2 mt-0">
-                <i className="ri-list-unordered text-theme"></i>
-                {t('toc.title', { defaultValue: '目录' })}
-              </h3>
-              <div className="custom-scrollbar max-h-[40vh] overflow-y-auto pr-1">
-                <TOC />
+            <div className={`mb-6 rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden`}>
+              <div className="px-4 py-3 border-b border-neutral-200/60 dark:border-neutral-700/60">
+                <h3 className="text-lg font-bold flex items-center gap-2 mt-0 mb-0">
+                  <i className="ri-list-unordered text-theme"></i>
+                  {t('toc.title', { defaultValue: '目录' })}
+                </h3>
+              </div>
+              <div className="p-4">
+                <div className="custom-scrollbar max-h-[40vh] overflow-y-auto pr-1">
+                  <TOC />
+                </div>
               </div>
             </div>
             <RecentPosts />
@@ -393,6 +401,9 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
 export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
   const [isOpened, setIsOpened] = React.useState(false);
   const { t } = useTranslation();
+
+  // 使用智能毛玻璃效果
+  const glassClass = useGlassEffect(GLASS_LAYERS.STRONG);
 
   return (
     <div className="lg:hidden">
@@ -431,7 +442,7 @@ export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
         }}
         onRequestClose={() => setIsOpened(false)}
       >
-        <div className="w-[85vw] sm:w-[60vw] lg:w-[40vw] overflow-hidden relative t-primary bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl p-5 max-h-[70vh] overflow-y-auto shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60">
+        <div className={`w-[85vw] sm:w-[60vw] lg:w-[40vw] overflow-hidden relative t-primary ${glassClass} rounded-2xl p-5 max-h-[70vh] overflow-y-auto shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60`}>
           <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">
             <h3 className="font-medium flex items-center gap-2">
               <i className="ri-list-unordered text-theme"></i>
@@ -477,7 +488,10 @@ function CommentInput({
   const [submitting, setSubmitting] = React.useState(false);
   const { showAlert, AlertUI } = useAlert();
   const profile = React.useContext(ProfileContext);
-  const { LoginModal, setIsOpened } = useLoginModal()
+  const { LoginModal, setIsOpened } = useLoginModal();
+
+  // 使用智能毛玻璃效果
+  const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
   
   // 邮箱格式验证函数
   function validateEmail(email: string): boolean {
@@ -557,8 +571,8 @@ function CommentInput({
   }
   
   return (
-    <div className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60">
-      <div className="bg-neutral-50/80 dark:bg-gray-750/80 backdrop-blur-sm px-5 py-3.5 border-b border-neutral-200/60 dark:border-neutral-700/60 flex justify-between items-center">
+    <div className={`w-full ${glassClass} rounded-2xl shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60`}>
+      <div className="px-5 py-3.5 border-b border-neutral-200/60 dark:border-neutral-700/60 flex justify-between items-center">
         <h3 className="text-base font-medium flex items-center gap-2">
           <i className={`${parentId ? "ri-reply-line" : "ri-chat-new-line"} text-theme`}></i>
           {parentId ? `回复 ${replyTo}` : (isAnonymous ? t("comment.anonymous.title") : t("comment.title"))}
@@ -719,6 +733,9 @@ function Comments({ id }: { id: string }) {
   const [totalComments, setTotalComments] = React.useState(0);
   const commentsPerPage = 5; // 每页显示5条评论
 
+  // 使用智能毛玻璃效果
+  const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
+
   function loadComments() {
     setLoading(true);
     setError(undefined);
@@ -779,14 +796,14 @@ function Comments({ id }: { id: string }) {
           <CommentInput id={id} onRefresh={loadComments} />
           
           {loading ? (
-            <div className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl p-8 flex justify-center shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
+            <div className={`w-full ${glassClass} rounded-2xl p-8 flex justify-center shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}>
               <div className="flex items-center space-x-3">
                 <MacOSSpinner size="small" />
                 <p className="text-gray-500 dark:text-gray-300 text-sm">{t("loading")}</p>
               </div>
             </div>
           ) : error ? (
-            <div className="w-full rounded-2xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md p-6 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
+            <div className={`w-full rounded-2xl ${glassClass} p-6 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}>
               <div className="flex flex-col items-center">
                 <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-3">
                   <i className="ri-error-warning-line text-xl text-red-500 dark:text-red-400"></i>
@@ -805,8 +822,8 @@ function Comments({ id }: { id: string }) {
             <>
               {comments.length > 0 ? (
                 <div className="w-full space-y-4">
-                  <div className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60">
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-750 dark:to-gray-800 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                  <div className={`w-full ${glassClass} rounded-2xl shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60`}>
+                    <div className="px-6 py-4 border-b border-neutral-200/60 dark:border-neutral-700/60">
                       <div className="flex justify-between items-center">
                         <h3 className="text-lg font-semibold flex items-center gap-3 text-gray-900 dark:text-gray-100">
                           <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
@@ -854,7 +871,7 @@ function Comments({ id }: { id: string }) {
                   )}
                 </div>
               ) : (
-                <div className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl p-8 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
+                <div className={`w-full ${glassClass} rounded-2xl p-8 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}>
                   <div className="flex flex-col items-center">
                     <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
                       <i className="ri-chat-1-line text-xl text-gray-400 dark:text-gray-500"></i>
@@ -889,6 +906,9 @@ function CommentItem({
   const [showReplyForm, setShowReplyForm] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
   const [showAllReplies, setShowAllReplies] = React.useState(false);
+
+  // 使用智能毛玻璃效果
+  const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
   // 默认折叠策略 - 保持评论区简洁
   const INITIAL_REPLIES_COUNT = depth === 0 ? 1 : 0; // 主评论只显示1条，其他默认折叠
@@ -965,47 +985,40 @@ function CommentItem({
   const canDelete = profile && 
     (profile.permission || (!isAnonymous && comment.user && profile.id === comment.user.id));
 
-  // 计算缩进和样式
+  // 计算缩进和样式 - 响应式优化
   const getCommentStyles = () => {
     if (depth === 0) {
       return {
-        container: 'bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced hover:shadow-enhanced-lg hover:border-theme/30 transition-all duration-300',
+        container: `${glassClass} rounded-xl border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced hover:shadow-enhanced-lg hover:border-theme/30 transition-all duration-300`,
         indent: '',
-        padding: 'p-6'
+        padding: 'p-4 sm:p-6'
       };
     }
 
-    // 多层回复的视觉设计 - 更明显的层级区分
-    const indentLevel = Math.min(depth, 4); // 最大4层缩进，避免过度缩进
-    const indentClass = `ml-${indentLevel * 3} pl-4`; // 每层3个单位缩进，更紧凑
+    // 响应式缩进策略 - 移动端友好
+    const maxDepth = 3; // 移动端最多3层，避免过度缩进
+    const effectiveDepth = Math.min(depth, maxDepth);
 
-    // 不同深度使用不同的边框颜色和背景
+    // 响应式缩进：移动端更小的缩进
+    const indentClass = `ml-2 sm:ml-4 md:ml-${effectiveDepth * 2} pl-2 sm:pl-3 md:pl-4`;
+
+    // 响应式层级样式配置 - 移动端友好
     const styleConfigs = [
       {
-        border: 'border-l-4 border-blue-400 dark:border-blue-500',
-        bg: 'bg-blue-50/80 dark:bg-blue-900/20',
+        border: 'border-l-2 sm:border-l-4 border-blue-400 dark:border-blue-500',
+        bg: `${glassClass}`,
         accent: 'blue'
       }, // 第1层
       {
-        border: 'border-l-4 border-green-400 dark:border-green-500',
-        bg: 'bg-green-50/80 dark:bg-green-900/20',
+        border: 'border-l-2 sm:border-l-4 border-green-400 dark:border-green-500',
+        bg: `${glassClass}`,
         accent: 'green'
       }, // 第2层
       {
-        border: 'border-l-4 border-purple-400 dark:border-purple-500',
-        bg: 'bg-purple-50/80 dark:bg-purple-900/20',
+        border: 'border-l-2 sm:border-l-4 border-purple-400 dark:border-purple-500',
+        bg: `${glassClass}`,
         accent: 'purple'
-      }, // 第3层
-      {
-        border: 'border-l-4 border-orange-400 dark:border-orange-500',
-        bg: 'bg-orange-50/80 dark:bg-orange-900/20',
-        accent: 'orange'
-      }, // 第4层
-      {
-        border: 'border-l-4 border-gray-400 dark:border-gray-500',
-        bg: 'bg-gray-50/80 dark:bg-gray-900/20',
-        accent: 'gray'
-      }  // 第5层及以上
+      } // 第3层及以上
     ];
 
     const config = styleConfigs[Math.min(depth - 1, styleConfigs.length - 1)];
@@ -1013,7 +1026,7 @@ function CommentItem({
     return {
       container: `${config.bg} rounded-lg ${config.border}`,
       indent: indentClass,
-      padding: depth > 2 ? 'p-3' : 'p-4', // 深层回复使用更小的内边距
+      padding: depth > 1 ? 'p-2 sm:p-3' : 'p-3 sm:p-4', // 移动端更紧凑的内边距
       accent: config.accent
     };
   };
@@ -1031,13 +1044,13 @@ function CommentItem({
       <div className={styles.padding}>
         {/* 用户信息头部 */}
         <div className="flex items-start justify-between mb-3">
-          <div className="flex items-start space-x-3 flex-1">
+          <div className="flex items-start space-x-2 sm:space-x-3 flex-1 min-w-0">
             {/* 头像 - 根据深度调整大小 */}
             <div className="flex-shrink-0">
               {!isAnonymous && comment.user ? (
                 <div className="relative">
                   <img
-                    className={`${depth === 0 ? 'w-10 h-10' : depth === 1 ? 'w-9 h-9' : 'w-8 h-8'} rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-700`}
+                    className={`${depth === 0 ? 'w-8 h-8 sm:w-10 sm:h-10' : depth === 1 ? 'w-7 h-7 sm:w-9 sm:h-9' : 'w-6 h-6 sm:w-8 sm:h-8'} rounded-full object-cover ring-1 sm:ring-2 ring-gray-100 dark:ring-gray-700`}
                     src={comment.user.avatar || "/avatar.png"}
                     alt={comment.user.username}
                   />
@@ -1048,89 +1061,95 @@ function CommentItem({
                   )}
                 </div>
               ) : (
-                <div className={`${depth === 0 ? 'w-10 h-10' : depth === 1 ? 'w-9 h-9' : 'w-8 h-8'} rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center`}>
-                  <i className={`ri-user-line text-white ${depth === 0 ? 'text-lg' : depth === 1 ? 'text-base' : 'text-sm'}`}></i>
+                <div className={`${depth === 0 ? 'w-8 h-8 sm:w-10 sm:h-10' : depth === 1 ? 'w-7 h-7 sm:w-9 sm:h-9' : 'w-6 h-6 sm:w-8 sm:h-8'} rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center`}>
+                  <i className={`ri-user-line text-white ${depth === 0 ? 'text-sm sm:text-lg' : depth === 1 ? 'text-xs sm:text-base' : 'text-xs sm:text-sm'}`}></i>
                 </div>
               )}
             </div>
 
             {/* 用户信息 */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2 mb-1">
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                   {!isAnonymous && comment.user ? comment.user.username : displayName}
                 </h4>
                 {isAnonymous && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                    <i className="ri-user-line mr-1"></i>
-                    {t("comment.anonymous.tag")}
+                  <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 flex-shrink-0">
+                    <i className="ri-user-line mr-0.5 sm:mr-1"></i>
+                    <span className="hidden sm:inline">{t("comment.anonymous.tag")}</span>
+                    <span className="sm:hidden">匿名</span>
                   </span>
                 )}
               </div>
 
-              {/* 回复路径和时间 */}
-              <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
+              {/* 回复路径和时间 - 移动端优化 */}
+              <div className="flex items-center space-x-1 sm:space-x-3 text-xs text-gray-500 dark:text-gray-400 overflow-hidden">
                 {depth > 0 && (
-                  <div className="flex items-center space-x-1">
-                    <div className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                  <div className="flex items-center space-x-1 flex-shrink-0">
+                    <div className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-medium ${
                       depth === 1 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
                       depth === 2 ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' :
-                      depth === 3 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' :
-                      'bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-300'
+                      'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
                     }`}>
-                      <i className="ri-reply-line mr-1"></i>
+                      <i className="ri-reply-line mr-0.5 sm:mr-1"></i>
                       L{depth}
                     </div>
                   </div>
                 )}
                 {displayEmail && (
                   <>
-                    {depth > 0 && <span className="text-gray-300 dark:text-gray-600">•</span>}
-                    <div className="flex items-center">
+                    {depth > 0 && <span className="text-gray-300 dark:text-gray-600 hidden sm:inline">•</span>}
+                    <div className="flex items-center min-w-0 hidden sm:flex">
                       <i className="ri-mail-line mr-1"></i>
-                      <span className="truncate max-w-32">{displayEmail}</span>
+                      <span className="truncate max-w-20 sm:max-w-32">{displayEmail}</span>
                     </div>
                   </>
                 )}
-                <time className="flex items-center">
-                  {(depth > 0 || displayEmail) && <span className="text-gray-300 dark:text-gray-600 mr-2">•</span>}
-                  <i className="ri-time-line mr-1"></i>
-                  {formatDistance(new Date(comment.createdAt), new Date(), { addSuffix: true })}
+                <time className="flex items-center min-w-0 truncate">
+                  {(depth > 0 || displayEmail) && <span className="text-gray-300 dark:text-gray-600 mr-1 sm:mr-2 hidden sm:inline">•</span>}
+                  <i className="ri-time-line mr-0.5 sm:mr-1 flex-shrink-0"></i>
+                  <span className="truncate">
+                    {formatDistance(new Date(comment.createdAt), new Date(), { addSuffix: true })}
+                  </span>
                 </time>
               </div>
             </div>
           </div>
 
-          {/* 操作按钮 */}
-          <div className={`flex items-center space-x-1 transition-opacity duration-200 ${
+          {/* 操作按钮 - 移动端优化 */}
+          <div className={`flex items-center space-x-0.5 sm:space-x-1 transition-opacity duration-200 flex-shrink-0 ${
             isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
           }`}>
             {/* 回复按钮 */}
-            <IconButton
-              icon="ri-reply-line"
+            <button
               onClick={() => setShowReplyForm(!showReplyForm)}
               title={`回复 ${isAnonymous ? displayName : comment.user?.username || 'Unknown'}`}
-              variant={showReplyForm ? 'info' : 'secondary'}
-              size="small"
-            />
+              className={`p-1.5 sm:p-2 rounded-lg text-xs sm:text-sm transition-all duration-200 ${
+                showReplyForm
+                  ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
+            >
+              <i className="ri-reply-line"></i>
+            </button>
 
             {/* 点赞按钮（预留功能） */}
-            <IconButton
-              icon="ri-heart-line"
+            <button
               onClick={() => {}}
               title="点赞"
-              variant="secondary"
-              size="small"
-            />
+              className="p-1.5 sm:p-2 rounded-lg text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200"
+            >
+              <i className="ri-heart-line"></i>
+            </button>
 
             {canDelete && (
-              <IconButton
-                icon="ri-delete-bin-line"
+              <button
                 onClick={deleteComment}
                 title={t("delete.title")}
-                variant="danger"
-                size="small"
-              />
+                className="p-1.5 sm:p-2 rounded-lg text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200"
+              >
+                <i className="ri-delete-bin-line"></i>
+              </button>
             )}
           </div>
         </div>
@@ -1143,7 +1162,7 @@ function CommentItem({
 
       {/* 回复表单 */}
       {showReplyForm && (
-        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-b-xl -mx-4 px-4 pb-4">
+        <div className={`mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 ${glassClass} rounded-b-xl -mx-4 px-4 pb-4`}>
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
               <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-2">
@@ -1217,25 +1236,23 @@ function CommentItem({
           <div className={`space-y-${depth === 0 ? '4' : '3'}`}>
             {displayedReplies?.map((reply, index) => (
               <div key={reply.id} className="relative">
-                {/* 简化的连接线系统 */}
+                {/* 简化的连接线系统 - 移动端友好 */}
                 {index < displayedReplies.length - 1 && (
-                  <div className={`absolute left-4 top-12 w-px h-full ${
+                  <div className={`absolute left-2 sm:left-4 top-8 sm:top-12 w-px h-full ${
                     depth === 0 ? 'bg-blue-200 dark:bg-blue-600' :
                     depth === 1 ? 'bg-green-200 dark:bg-green-600' :
-                    depth === 2 ? 'bg-purple-200 dark:bg-purple-600' :
-                    'bg-gray-200 dark:bg-gray-600'
+                    'bg-purple-200 dark:bg-purple-600'
                   }`}></div>
                 )}
 
-                {/* 连接点 */}
-                <div className={`absolute left-3 top-6 w-2 h-2 rounded-full border-2 border-white dark:border-gray-800 ${
+                {/* 连接点 - 移动端更小 */}
+                <div className={`absolute left-1.5 sm:left-3 top-4 sm:top-6 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full border border-white dark:border-gray-800 ${
                   depth === 0 ? 'bg-blue-400 dark:bg-blue-500' :
                   depth === 1 ? 'bg-green-400 dark:bg-green-500' :
-                  depth === 2 ? 'bg-purple-400 dark:bg-purple-500' :
-                  'bg-gray-400 dark:bg-gray-500'
+                  'bg-purple-400 dark:bg-purple-500'
                 }`}></div>
 
-                <div className="ml-6">
+                <div className="ml-4 sm:ml-6">
                   <CommentItem
                     comment={reply}
                     onRefresh={onRefresh}

@@ -7,6 +7,8 @@ import { Header } from './components/header'
 import { Padding } from './components/padding'
 import useTableOfContents from './hooks/useTableOfContents.tsx'
 import { client } from './main'
+import { BackgroundProvider } from './context/BackgroundContext'
+import { BackgroundManager, GlassOverlay } from './components/BackgroundManager'
 import { CallbackPage } from './page/callback'
 import { FeedPage, TOCHeader } from './page/feed'
 import { FeedsPage } from './page/feeds'
@@ -72,24 +74,42 @@ function App() {
   const [profile, setProfile] = useState<Profile | undefined>()
   const [config, setConfig] = useState<ConfigWrapper>(new ConfigWrapper({}, new Map()))
   const [contentReady, setContentReady] = useState(false);
+
+
+
   // 加载配置的函数
-  const loadConfig = () => {
+  const loadConfig = (forceFromServer = false) => {
+    // 页面初始加载时从服务器获取最新配置
+    if (forceFromServer) {
+      loadConfigFromServer();
+      return;
+    }
+
     const config = sessionStorage.getItem('config')
     if (config) {
-      const configObj = JSON.parse(config)
-      if (!('S3_ACCESS_HOST' in configObj)) configObj.S3_ACCESS_HOST = '';
-      const configWrapper = new ConfigWrapper(configObj, defaultClientConfig)
-      setConfig(configWrapper)
+      try {
+        const configObj = JSON.parse(config)
+        if (!('S3_ACCESS_HOST' in configObj)) configObj.S3_ACCESS_HOST = '';
+        const configWrapper = new ConfigWrapper(configObj, defaultClientConfig)
+        setConfig(configWrapper)
+      } catch (error) {
+        loadConfigFromServer();
+      }
     } else {
-      client.config({ type: "client" }).get().then(({ data }) => {
-        if (data && typeof data !== 'string') {
-          if (!('S3_ACCESS_HOST' in data)) data.S3_ACCESS_HOST = '';
-          sessionStorage.setItem('config', JSON.stringify(data))
-          const config = new ConfigWrapper(data, defaultClientConfig)
-          setConfig(config)
-        }
-      })
+      loadConfigFromServer();
     }
+  }
+
+  // 从服务器加载配置
+  const loadConfigFromServer = () => {
+    client.config({ type: "client" }).get().then(({ data }) => {
+      if (data && typeof data !== 'string') {
+        if (!('S3_ACCESS_HOST' in data)) data.S3_ACCESS_HOST = '';
+        sessionStorage.setItem('config', JSON.stringify(data))
+        const config = new ConfigWrapper(data, defaultClientConfig)
+        setConfig(config)
+      }
+    })
   }
 
   useEffect(() => {
@@ -108,25 +128,37 @@ function App() {
         }
       })
     }
-    loadConfig()
+    // 页面初始加载时强制从服务器获取最新配置
+    loadConfig(true)
     ref.current = true
   }, [])
 
   // 监听配置更新事件
   useEffect(() => {
-    const handleConfigUpdate = () => {
-      loadConfig()
+    const handleConfigUpdate = () => loadConfig()
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'config') loadConfig()
     }
+
     window.addEventListener('configUpdated', handleConfigUpdate)
-    return () => window.removeEventListener('configUpdated', handleConfigUpdate)
+    window.addEventListener('storage', handleStorageChange)
+
+    return () => {
+      window.removeEventListener('configUpdated', handleConfigUpdate)
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
   const favicon = `${process.env.API_URL}/favicon`;
+
   return (
-    <ToastProvider>
-      {/* @ts-ignore - 忽略Provider的类型检查 */}
-      <ClientConfigContext.Provider value={config}>
-        {/* @ts-ignore - 忽略Provider的类型检查 */}  
-        <ProfileContext.Provider value={profile}>
+    <BackgroundProvider>
+      <BackgroundManager />
+      <div className="min-h-screen">
+      <ToastProvider>
+        {/* @ts-ignore - 忽略Provider的类型检查 */}
+        <ClientConfigContext.Provider value={config}>
+          {/* @ts-ignore - 忽略Provider的类型检查 */}
+          <ProfileContext.Provider value={profile}>
           <Helmet>
             {favicon &&
               <link rel="icon" href={favicon} />}
@@ -239,27 +271,46 @@ function App() {
               <NotFoundPage />
             </RouteMe>
           </Switch>
-        </ProfileContext.Provider>
-      </ClientConfigContext.Provider>
-      <BackToTop />
-    </ToastProvider>
+          </ProfileContext.Provider>
+        </ClientConfigContext.Provider>
+        <BackToTop />
+      </ToastProvider>
+      </div>
+    </BackgroundProvider>
   )
 }
 
 function RouteMe({ path, children, headerComponent, paddingClassName }:
   { path: PathPattern, children: React.ReactNode | ((params: DefaultParams) => React.ReactNode), headerComponent?: React.ReactNode, paddingClassName?: string }) {
+
   return (
     <Route path={path} >
-      {params => {
-        return (<>
-          <Header>
-            {headerComponent}
-          </Header>
-          <Padding className={paddingClassName}>
-            {typeof children === 'function' ? children(params) : children}
-          </Padding>
-          <Footer />
-        </>)
+      {(params: any) => {
+        return (
+          <div className="min-h-screen flex flex-col relative">
+            <GlassOverlay />
+
+            <Header>
+              {headerComponent}
+            </Header>
+            <main className="flex-1 relative z-10">
+              <Padding className={paddingClassName}>
+                {typeof children === 'function' ? children(params) : children}
+              </Padding>
+            </main>
+
+            {/* 页脚分隔线 - 统一在所有页面的页脚上方，添加适当间距 */}
+            <div className="w-full mt-8 mb-6 relative z-10">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
+                <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+              </div>
+            </div>
+
+            <div className="relative z-10">
+              <Footer />
+            </div>
+          </div>
+        )
       }}
     </Route>
   )

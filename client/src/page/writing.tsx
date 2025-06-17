@@ -19,6 +19,7 @@ import {headersWithAuth} from "../utils/auth";
 import {Cache, useCache} from '../utils/cache';
 import {siteName} from "../utils/constants";
 import {useColorMode} from "../utils/darkModeUtils";
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 
 import { HistoryDialog } from "../components/history_dialog";
 import { useEditorHistory, HistoryItem } from "../utils/history";
@@ -79,9 +80,142 @@ const scrollbarStyles = `
     background-color: rgba(155, 155, 155, 0.5) !important;
     border-radius: 20px !important;
   }
-  
+
   .dark .monaco-editor .scrollbar .slider {
     background-color: rgba(100, 100, 100, 0.5) !important;
+  }
+
+  /* Monaco编辑器透明背景 - 全面覆盖 */
+  .monaco-editor {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .monaco-editor-background {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .editor-widget {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .view-overlays {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .margin {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .monaco-scrollable-element {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .view-lines {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .view-line {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .decorationsOverviewRuler {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .monaco-mouse-cursor-text {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .current-line {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .selected-text {
+    background-color: rgba(0, 122, 255, 0.2) !important;
+  }
+
+  /* Monaco编辑器Minimap强制透明 - 最高优先级 */
+  .monaco-editor .minimap,
+  .monaco-editor .minimap-background,
+  .monaco-editor .minimap > div,
+  .monaco-editor .minimap canvas {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    opacity: 1 !important; /* 保持内容清晰 */
+  }
+
+  /* 强制覆盖所有可能的Minimap背景样式 */
+  .monaco-editor .minimap * {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .minimap .minimap-slider {
+    background-color: rgba(0, 122, 255, 0.1) !important; /* 滑块稍微可见 */
+  }
+
+  .monaco-editor .minimap .minimap-slider:hover {
+    background-color: rgba(0, 122, 255, 0.2) !important; /* 悬停时更明显 */
+  }
+
+  .monaco-editor .minimap-shadow-visible {
+    background-color: transparent !important;
+  }
+
+  .monaco-editor .minimap-shadow-hidden {
+    background-color: transparent !important;
+  }
+
+  /* Minimap内容保持清晰可见 */
+  .monaco-editor .minimap-decorations-layer {
+    opacity: 1 !important; /* 文字内容完全清晰 */
+  }
+
+  /* Minimap文字内容清晰显示 */
+  .monaco-editor .minimap .minimap-char {
+    opacity: 1 !important;
+  }
+
+  /* 移除所有可能的边框和焦点样式 */
+  .monaco-editor {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .monaco-editor:focus,
+  .monaco-editor:focus-within {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .monaco-editor .monaco-editor-background {
+    border: none !important;
+    outline: none !important;
+  }
+
+  .monaco-editor .view-overlays {
+    border: none !important;
+  }
+
+  .monaco-editor .inputarea {
+    border: none !important;
+    outline: none !important;
+  }
+
+  /* 保持编辑器容器的阴影，只移除边框 */
+  .editor-container {
+    border: none !important;
+    outline: none !important;
+  }
+
+  /* 焦点时保持阴影效果，只移除边框 */
+  .editor-container:focus,
+  .editor-container:focus-within {
+    border: none !important;
+    outline: none !important;
   }
   
   /* 动画效果 */
@@ -334,7 +468,7 @@ function ArticleInfoEditor({ title, setTitle }: {
   return (
     <div className="w-full">
       {/* 标题区域 - 减小高度和内边距 */}
-      <div className="relative bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600 rounded-lg p-2">
+      <div className="relative border border-gray-200 dark:border-gray-600 rounded-lg p-2">
         <input
           type="text"
           value={title}
@@ -402,7 +536,7 @@ function TagManager({ tags, setTags }: {
       {tagArray.map((tag, index) => (
         <span
           key={index}
-          className={`inline-flex items-center px-3 py-2 rounded-lg text-xs border ${getTagColor(tag)} shadow-sm backdrop-blur-sm h-8 font-medium`}
+          className={`inline-flex items-center px-3 py-2 rounded-lg text-xs border ${getTagColor(tag)} shadow-sm h-8 font-medium`}
         >
           <i className="ri-price-tag-3-fill mr-1.5 text-xs"></i>
           {tag}
@@ -451,7 +585,7 @@ function TagManager({ tags, setTags }: {
       ) : (
         <button
           onClick={() => setShowTagInput(true)}
-          className="inline-flex items-center px-3 py-2 rounded-lg text-xs border border-dashed border-orange-300/60 dark:border-orange-600/60 text-orange-500 hover:border-orange-400 dark:hover:border-orange-500 hover:bg-orange-50/80 dark:hover:bg-orange-900/20 transition-all shadow-sm backdrop-blur-sm h-8 font-medium hover:shadow-md"
+          className="inline-flex items-center px-3 py-2 rounded-lg text-xs border border-dashed border-orange-300/60 dark:border-orange-600/60 text-orange-500 hover:border-orange-400 dark:hover:border-orange-500 hover:bg-orange-50/80 dark:hover:bg-orange-900/20 transition-all shadow-sm h-8 font-medium hover:shadow-md"
         >
           <i className="ri-add-line mr-1.5 text-xs"></i>
           添加标签
@@ -1490,6 +1624,10 @@ export function WritingPage({ id }: { id?: number }) {
   const cache = Cache.with(id);
   const editorRef = useRef<editor.IStandaloneCodeEditor>();
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // 使用智能毛玻璃效果
+  const editorGlassClass = useGlassEffect(GLASS_LAYERS.CARD);
+  const sidebarGlassClass = useGlassEffect(GLASS_LAYERS.CARD);
   const [title, setTitle] = cache.useCache("title", "");
   const [summary, setSummary] = cache.useCache("summary", "");
   const [tags, setTags] = cache.useCache("tags", "");
@@ -1959,7 +2097,7 @@ export function WritingPage({ id }: { id?: number }) {
             <div className="flex-1 lg:flex-[3] writing-main-area">
               {/* 编辑器卡片 - 统一卡片样式，高度与右侧面板对齐 */}
               <div
-                className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden editor-container mobile-editor-card h-full"
+                className={`${editorGlassClass} rounded-2xl shadow-enhanced overflow-hidden editor-container mobile-editor-card h-full`}
                 style={{
                   height: 'calc(100vh - 200px)', // 与右侧面板相同的高度
                   minHeight: '400px', // 移动端最小高度调整
@@ -2088,7 +2226,7 @@ export function WritingPage({ id }: { id?: number }) {
 
                 {/* 编辑器和预览区域 - Grid第5行，占据剩余空间 */}
                 <div
-                  className={`${preview === 'comparison' ? "flex" : ""} relative bg-white/50 dark:bg-gray-800/50 overflow-hidden`}
+                  className={`${preview === 'comparison' ? "flex" : ""} relative overflow-hidden`}
                   style={{
                     gridRow: '5',
                     minHeight: '0' // 重要：允许Grid子项收缩
@@ -2114,16 +2252,85 @@ export function WritingPage({ id }: { id?: number }) {
 
                     <div className="w-full h-full">
                       <Editor
-                        onMount={(editor, _) => {
+                        onMount={(editor, monaco) => {
                           editorRef.current = editor;
                           configureEditorWithHistory(editor);
+
+                          // 定义透明主题
+                          monaco.editor.defineTheme('transparent-light', {
+                            base: 'vs',
+                            inherit: true,
+                            rules: [],
+                            colors: {
+                              'editor.background': '#00000000',
+                              'editor.lineHighlightBackground': '#00000000',
+                              'editorLineNumber.foreground': '#999999',
+                              'editorLineNumber.activeForeground': '#666666',
+                              'editorGutter.background': '#00000000',
+                              'editorWidget.background': '#00000000',
+                              'editorWidget.border': '#00000000',
+                              'editorHoverWidget.background': '#ffffff',
+                              'editorSuggestWidget.background': '#ffffff',
+                              // Minimap透明配置
+                              'minimap.background': '#00000000',
+                              'minimapSlider.background': 'rgba(0, 122, 255, 0.1)',
+                              'minimapSlider.hoverBackground': 'rgba(0, 122, 255, 0.2)',
+                              'minimapSlider.activeBackground': 'rgba(0, 122, 255, 0.3)',
+                            }
+                          });
+
+                          monaco.editor.defineTheme('transparent-dark', {
+                            base: 'vs-dark',
+                            inherit: true,
+                            rules: [],
+                            colors: {
+                              'editor.background': '#00000000',
+                              'editor.lineHighlightBackground': '#00000000',
+                              'editorLineNumber.foreground': '#666666',
+                              'editorLineNumber.activeForeground': '#999999',
+                              'editorGutter.background': '#00000000',
+                              'editorWidget.background': '#00000000',
+                              'editorWidget.border': '#00000000',
+                              'editorHoverWidget.background': '#1e1e1e',
+                              'editorSuggestWidget.background': '#1e1e1e',
+                              // Minimap透明配置
+                              'minimap.background': '#00000000',
+                              'minimapSlider.background': 'rgba(0, 122, 255, 0.1)',
+                              'minimapSlider.hoverBackground': 'rgba(0, 122, 255, 0.2)',
+                              'minimapSlider.activeBackground': 'rgba(0, 122, 255, 0.3)',
+                            }
+                          });
+
+                          // 应用透明主题
+                          const theme = colorMode === "dark" ? "transparent-dark" : "transparent-light";
+                          monaco.editor.setTheme(theme);
+
+                          // 动态设置编辑器容器样式
+                          setTimeout(() => {
+                            const editorElement = document.querySelector('.monaco-editor');
+                            if (editorElement) {
+                              (editorElement as HTMLElement).style.backgroundColor = 'transparent';
+                              // 查找并设置所有相关元素为透明
+                              const backgrounds = editorElement.querySelectorAll('.monaco-editor-background, .view-overlays, .margin, .monaco-scrollable-element, .view-lines');
+                              backgrounds.forEach((el: Element) => {
+                                (el as HTMLElement).style.backgroundColor = 'transparent';
+                              });
+
+                              // 强制设置Minimap背景透明
+                              const minimapElements = editorElement.querySelectorAll('.minimap, .minimap-background');
+                              minimapElements.forEach((el: Element) => {
+                                (el as HTMLElement).style.backgroundColor = 'transparent !important';
+                                (el as HTMLElement).style.background = 'transparent !important';
+                              });
+                            }
+                          }, 100);
                         }}
                         height="100%"
                         width="100%"
                         defaultLanguage="markdown"
                         value={content}
                         onChange={(data, _) => handleContentChange(data)}
-                        theme={colorMode === "dark" ? "vs-dark" : "light"}
+                        theme={colorMode === "dark" ? "transparent-dark" : "transparent-light"}
                         options={{
                           wordWrap: "on",
                           fontSize: focusMode ? 16 : 14,
@@ -2157,7 +2364,7 @@ export function WritingPage({ id }: { id?: number }) {
                       <div
                         ref={previewRef}
                         onScroll={handlePreviewScroll}
-                        className="h-full overflow-auto p-4 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm"
+                        className="h-full overflow-auto p-4"
                       >
                         <div className="prose prose-lg dark:prose-invert max-w-none">
                           <Markdown content={content ? content : `> ${t('content.writing_placeholder')}`} />
@@ -2171,7 +2378,7 @@ export function WritingPage({ id }: { id?: number }) {
 
             {/* 右侧功能面板 - 与其他页面侧边栏样式统一 */}
             <div className="w-full lg:w-[320px] lg:flex-shrink-0 writing-sidebar">
-              <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden flex flex-col mobile-function-panel"
+              <div className={`${sidebarGlassClass} rounded-2xl shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden flex flex-col mobile-function-panel`}
                 style={{
                   height: 'calc(100vh - 200px)', // 与左侧编辑器完全相同的高度
                   minHeight: '400px', // 移动端最小高度调整

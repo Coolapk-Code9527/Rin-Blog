@@ -17,4 +17,4 @@ export function PageContainer({ children, className = '', maxWidth = 'max-w-6xl'
       {children}
     </div>
   );
-} 
+}

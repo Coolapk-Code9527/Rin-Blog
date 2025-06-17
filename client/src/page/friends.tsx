@@ -15,6 +15,7 @@ import { shuffleArray } from "../utils/array";
 import { headersWithAuth } from "../utils/auth";
 import { siteName } from "../utils/constants";
 import { PageContainer } from "../components/container";
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 
 
 type FriendItem = {
@@ -77,6 +78,9 @@ export function FriendsPage() {
     const [status, setStatus] = useState<'idle' | 'loading'>('loading')
     const ref = useRef(false)
     const { showAlert, AlertUI } = useAlert()
+
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
     useEffect(() => {
         if (ref.current) return
         client.friend.index.get({
@@ -114,9 +118,27 @@ export function FriendsPage() {
         </Helmet>
         <Waiting for={friendsAvailable.length !== 0 || friendsUnavailable.length !== 0 || status === "idle"}>
             <PageContainer className="t-primary">
-                <div className="w-full t-primary flex text-start text-2xl font-bold mt-8">
-                    {t('friends.title')}
-                    <span className="ml-3 text-base font-medium t-secondary">{t('friends.total$count', { count: friendsAvailable.length })}</span>
+                {/* 页面标题区域 - 与文章列表页面保持一致 */}
+                {/* 页面标题区域 - 与文章列表页面保持一致 */}
+                <div className="flex flex-col space-y-3 mb-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
+                        {/* 左侧：标题和友链数量 - 优化移动端布局 */}
+                        <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+                            <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
+                                {t('friends.title')}
+                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
+                            </h1>
+                            <div className="py-1.5 px-2.5 sm:px-3 bg-neutral-100/80 dark:bg-neutral-800/80 rounded-xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium backdrop-blur-sm border border-neutral-200/40 dark:border-neutral-700/40 flex-shrink-0">
+                                <i className="ri-user-heart-line text-theme text-xs sm:text-sm"></i>
+                                <span className="ml-1 sm:ml-1.5">{t('friends.total$count', { count: friendsAvailable.length })}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 上方渐变分割线 */}
+                    <div className="w-full mb-2">
+                        <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+                    </div>
                 </div>
                 <FriendList title={t('friends.title')} show={friendsAvailable.length > 0} friends={friendsAvailable} />
                 <FriendList title={t('friends.left')} show={friendsUnavailable.length > 0} friends={friendsUnavailable} />
@@ -124,8 +146,8 @@ export function FriendsPage() {
                 <FriendList title={t('friends.review.rejected')} show={refusedList.length > 0} friends={refusedList} />
                 <FriendList title={t('friends.my_apply')} show={profile?.permission !== true && apply !== undefined} friends={apply ? [apply] : []} />
                 {profile && (profile.permission || config.get("friend_apply_enable")) &&
-                    <div className="w-full t-primary flex text-start text-2xl font-bold mt-8">
-                        <div className="w-full md:basis-1/2 bg-white/75 dark:bg-gray-800/75 backdrop-blur-md rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
+                    <div className="w-full t-primary flex text-start text-2xl font-bold mt-6">
+                        <div className={`w-full md:basis-1/2 ${glassClass} rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}>
                             <p>
                                 {profile.permission ? t('friends.create') : t('friends.apply')}
                             </p>
@@ -141,6 +163,8 @@ export function FriendsPage() {
                         </div>
                     </div>
                 }
+
+
             </PageContainer>
         </Waiting>
         <AlertUI />
@@ -178,6 +202,10 @@ function Friend(props: any) {
     const { showConfirm, ConfirmUI } = useConfirm()
     const { showAlert, AlertUI } = useAlert()
     const friend = props;
+
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
+    const modalGlassClass = useGlassEffect(GLASS_LAYERS.STRONG);
 
     const deleteFriend = useCallback(() => {
         showConfirm(
@@ -240,7 +268,7 @@ function Friend(props: any) {
 
     return (
         <>
-            <a title={friend.name} href={friend.url} target="_blank" className="bg-white/75 dark:bg-gray-800/75 backdrop-blur-md w-full rounded-xl p-4 flex flex-col justify-center items-center relative shadow-enhanced hover:shadow-enhanced-lg hover:-translate-y-1 transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
+            <a title={friend.name} href={friend.url} target="_blank" className={`${glassClass} w-full rounded-xl p-4 flex flex-col justify-center items-center relative shadow-enhanced hover:shadow-enhanced-lg hover:-translate-y-1 transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}>
                 <div className="w-16 h-16 relative flex items-center justify-center">
                     <img className={"rounded-xl w-full h-full object-cover " + (friend.health.length > 0 ? "grayscale" : "")} src={friend.avatar} alt={friend.name} style={{zIndex:1, position:'relative'}} />
                     {modalIsOpen && <div className="absolute inset-0 rounded-xl bg-black/40 pointer-events-none flex items-center justify-center" style={{zIndex:2}}></div>}
@@ -289,7 +317,7 @@ function Friend(props: any) {
                 onRequestClose={() => setIsOpen(false)}
                 contentLabel={t('update$sth', { sth: friend.name })}
             >
-                <div className="w-[80vw] sm:w-[60vw] md:w-[50vw] lg:w-[40vw] xl:w-[30vw] bg-white/75 dark:bg-gray-800/75 backdrop-blur-xl rounded-xl p-4 flex flex-col justify-start items-center relative shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60">
+                <div className={`w-[80vw] sm:w-[60vw] md:w-[50vw] lg:w-[40vw] xl:w-[30vw] ${modalGlassClass} rounded-xl p-4 flex flex-col justify-start items-center relative shadow-enhanced-xl border border-neutral-200/60 dark:border-neutral-700/60`}>
                     <div className="w-16 h-16 relative flex items-center justify-center">
                         <img className={"rounded-xl w-full h-full object-cover " + (friend.health.length > 0 ? "grayscale" : "")} src={friend.avatar} alt={friend.name} style={{zIndex:1, position:'relative'}} />
                         {modalIsOpen && <div className="absolute inset-0 rounded-xl bg-black/40 pointer-events-none flex items-center justify-center" style={{zIndex:2}}></div>}

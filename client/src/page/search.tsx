@@ -11,6 +11,7 @@ import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { PageContainer } from "../components/container"
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect"
 
 type FeedsData = {
     size: number,
@@ -26,6 +27,9 @@ export function SearchPage({ keyword }: { keyword: string }) {
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = useRef("")
+
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
     function fetchFeeds() {
         if (!keyword) return
         client.search({ keyword }).get({
@@ -62,14 +66,25 @@ export function SearchPage({ keyword }: { keyword: string }) {
             <PageContainer>
                 <Waiting for={status === 'idle'}>
                     <main className="w-full flex flex-col justify-center items-center mb-8">
-                        <div className="wauto text-start text-black dark:text-white py-4 text-4xl font-bold">
-                            <p>
-                                {t('article.search.title')}
-                            </p>
-                            <div className="flex flex-row justify-between">
-                                <p className="text-sm mt-4 text-neutral-500 font-normal">
-                                    {t('article.total$count', { count: feeds?.size })}
-                                </p>
+                        {/* 页面标题区域 - 与文章列表页面保持一致 */}
+                        <div className="flex flex-col space-y-3 mb-3">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
+                                {/* 左侧：标题和搜索结果数量 - 优化移动端布局 */}
+                                <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+                                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
+                                        {t('article.search.title')}
+                                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
+                                    </h1>
+                                    <div className={`py-1.5 px-2.5 sm:px-3 ${glassClass} rounded-xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/40 dark:border-neutral-700/40 flex-shrink-0`}>
+                                        <i className="ri-search-line text-theme text-xs sm:text-sm"></i>
+                                        <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: feeds?.size })}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 上方渐变分割线 */}
+                            <div className="w-full mb-2">
+                                <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                             </div>
                         </div>
                         <Waiting for={status === 'idle'}>
@@ -88,6 +103,8 @@ export function SearchPage({ keyword }: { keyword: string }) {
                                 />
                             )}
                         </Waiting>
+
+
                     </main>
                 </Waiting>
             </PageContainer>

@@ -283,8 +283,19 @@
     "import_success$success$skipped": "匯入成功，{{success}} 篇文章匯入成功，{{skipped}} 篇文章跳過",
     "login": {
       "enable": {
-        "desc": "開啟/關閉右上角登入按钮，關閉後可通過「雙擊」底部文字 \"© 2024 Powered by\" 「三次」觸發登入入口",
+        "desc": "開啟/關閉右上角登入按钮，關閉後可通過「雙擊」底部文字 \"© 2025 Powered by\" 「三次」觸發登入入口",
         "title": "啟用右上角登入按钮"
+      }
+    },
+    "background": {
+      "title": "頁面背景",
+      "enable": {
+        "title": "啟用背景圖片",
+        "desc": "為整個網站設定自訂背景圖片"
+      },
+      "url": {
+        "title": "背景圖片連結",
+        "desc": "設定背景圖片的URL地址，支援網路圖片連結"
       }
     },
     "other": {

@@ -237,7 +237,7 @@ const useTableOfContents = (selector: string, contentReadySignal?: any) => {
                 </ul>
             );
             return (
-                <div className='rounded-2xl bg-w py-1 px-1 t-primary'>
+                <div className='py-1 px-1 t-primary'>
                     {tableOfContents.length === 0 ? (
                         <li className="text-gray-500 italic py-2 text-sm">{t("index.empty.title")}</li>
                     ) : (

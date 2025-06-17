@@ -75,8 +75,8 @@ export function HashTag({ name }: { name: string }) {
             title={t("hashtag.view_title", { name })}
             role="link"
         >
-            <div className="flex gap-0.5 items-center">
-                <div className={`text-xs sm:text-sm font-medium opacity-90 italic transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`}>#</div>
+            <div className="flex gap-1 items-center">
+                <i className={`ri-price-tag-3-fill text-xs sm:text-sm opacity-90 transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`}></i>
                 <div className="text-xs sm:text-sm font-medium">
                     {displayName}
                 </div>

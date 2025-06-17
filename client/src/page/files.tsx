@@ -5,7 +5,7 @@ import { FileManager } from '../components/file_manager/FileManager';
 import { PageContainer } from '../components/container';
 // @ts-ignore - 忽略类型错误
 import { useDocumentTitle } from '../utils/documentTitle';
-import { CapacityInfo } from '../components/CapacityInfo';
+import { CapacityInfoInline } from '../components/CapacityInfo';
 
 /**
  * 文件管理页面
@@ -18,14 +18,30 @@ export function FilesPage() {
 
   return (
     <PageContainer>
-      <div className="mb-2">
-        <h1 className="text-2xl font-bold">{pageTitle}</h1>
-        <CapacityInfo />
+      {/* 页面标题区域 - 与其他页面保持一致 */}
+      <div className="flex flex-col space-y-3 mb-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
+          {/* 左侧：标题和容量信息 - 优化移动端布局 */}
+          <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
+              {pageTitle}
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
+            </h1>
+            <CapacityInfoInline />
+          </div>
+        </div>
+
+        {/* 上方渐变分割线 */}
+        <div className="w-full mb-2">
+          <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+        </div>
       </div>
 
       <div className="w-full">
         <FileManager />
       </div>
+
+
     </PageContainer>
   );
 } 

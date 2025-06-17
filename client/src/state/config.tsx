@@ -5,7 +5,9 @@ export const defaultClientConfig = new Map(Object.entries({
     "friend_apply_enable": true,
     "comment.enabled": true,
     "login.enabled": true,
-    "S3_ACCESS_HOST": ""
+    "S3_ACCESS_HOST": "",
+    "background.enabled": false,
+    "background.url": ""
 }))
 
 export const defaultServerConfig = new Map(Object.entries({
@@ -23,7 +25,12 @@ export class ConfigWrapper {
     }
     get<T>(key: string) {
         const value = this.config[key];
-        if (value !== undefined && value !== "") {
+        // 修复：正确处理 false 值，只有当值为 undefined 或空字符串时才使用默认值
+        if (value !== undefined && value !== null && value !== "") {
+            return value as T;
+        }
+        // 特殊处理布尔值 false
+        if (value === false) {
             return value as T;
         }
         if (this.defaultConfig.has(key)) {

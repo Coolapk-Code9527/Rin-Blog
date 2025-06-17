@@ -18,7 +18,8 @@
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "allowImportingTsExtensions": true,
     "noImplicitAny": false,
-    "strictNullChecks": false
+    "strictNullChecks": false,
+    "skipLibCheck": true
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

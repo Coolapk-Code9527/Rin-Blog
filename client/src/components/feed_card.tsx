@@ -5,6 +5,7 @@ import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
 import React, { useMemo } from "react";
 import { useLocation } from "wouter";
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 
 export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt }:
     {
@@ -17,7 +18,9 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     const { t } = useTranslation();
     const [imageLoaded, setImageLoaded] = React.useState(false);
     const [imageError, setImageError] = React.useState(false);
-    const [, setLocation] = useLocation();
+
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
     // 预处理 summary，移除 Markdown 图片链接
     const cleanedSummary = summary ? summary.replace(/!\[.*?\]\(.*?\)/g, "") : ""; 
@@ -88,11 +91,10 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     return (
             <Link href={`/feed/${id}`}
             className={`group block w-full rounded-2xl h-full duration-300 overflow-hidden hover:shadow-enhanced-xl transition-all transform hover:-translate-y-2 border ${top === 1
-                ? 'bg-white/80 dark:bg-gray-800/80 border-theme/40 dark:border-theme/30 shadow-enhanced-lg ring-2 ring-theme/15 backdrop-blur-md'
-                : 'bg-white/75 dark:bg-gray-800/75 border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced hover:border-neutral-400/80 dark:hover:border-neutral-500/80 backdrop-blur-md hover:backdrop-blur-xl'}
+                ? `${glassClass} border-theme/40 dark:border-theme/30 shadow-enhanced-lg ring-2 ring-theme/15`
+                : `${glassClass} border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced hover:border-neutral-400/80 dark:hover:border-neutral-500/80`}
                 flex flex-col min-h-[250px] xs:min-h-[270px] sm:min-h-[290px]
                 focus:outline-none focus:ring-2 focus:ring-theme/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900
-                hover:bg-white/85 dark:hover:bg-gray-800/85
             `}
             aria-labelledby={`article-title-${id}`}
             onMouseEnter={prefetchArticle}
@@ -211,8 +213,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     </div>
                 </div>
                     
-                {/* 标签区域 - 统一分割线样式和对齐方式 */}
-                <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/30">
+                {/* 标签区域 - 优化分割线粗细和对齐方式 */}
+                <div className="mt-2 pt-2 border-t-2 border-gray-100 dark:border-gray-700/40">
                     {hashtags.length > 0 ? (
                         <div className="flex flex-row flex-wrap items-center gap-1.5 sm:gap-2">
                             {hashtags.map(({id, name}) => (

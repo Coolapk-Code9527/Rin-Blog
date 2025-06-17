@@ -8,6 +8,7 @@ import { client } from "../main";
 import { siteName } from "../utils/constants";
 import React from "react";
 import { PageContainer } from "../components/container";
+import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 
 import type { Hashtag } from "../types/api";
 
@@ -21,6 +22,10 @@ export function HashtagsPage() {
     const [hashtags, setHashtags] = useState<Hashtag[]>([]);
     const [sort, setSort] = useState<'count' | 'alpha'>('count');
     const ref = useRef(false);
+
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
+    const tagGlassClass = useGlassEffect('tag-enhanced');
     useEffect(() => {
         if (ref.current) return;
         client.tag.index.get().then(({ data }) => {
@@ -63,30 +68,37 @@ export function HashtagsPage() {
             </Helmet>
             <PageContainer maxWidth="max-w-6xl" className="w-full">
                 <Waiting for={hashtags}>
-                    <main className="w-full flex flex-col justify-center items-center mb-3 ani-show">
-                        <div className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 gap-2 sm:gap-3">
-                          <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold t-primary relative group">
-                              {t('hashtags')}
-                              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
-                            </h1>
-                            <div className="py-1.5 px-3 bg-neutral-100/80 dark:bg-neutral-800/80 rounded-xl text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium backdrop-blur-sm border border-neutral-200/40 dark:border-neutral-700/40">
-                              <i className="ri-hashtag mr-1.5 text-theme"></i>
-                              {t('article.total$count', { count: hashtags.length })}
+                    <main className="w-full flex flex-col mb-3 ani-show">
+                        {/* 页面标题区域 - 与文章列表页面保持一致 */}
+                        <div className="flex flex-col space-y-3 mb-3">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
+                            {/* 左侧：标题和标签数量 - 优化移动端布局 */}
+                            <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+                              <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
+                                {t('hashtags')}
+                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
+                              </h1>
+                              <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
+                                <i className="ri-hashtag text-theme text-xs sm:text-sm"></i>
+                                <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: hashtags.length })}</span>
+                              </div>
                             </div>
                           </div>
+
+                          {/* 上方渐变分割线 */}
+                          <div className="w-full mb-2">
+                            <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+                          </div>
                         </div>
-                        {/* 渐变分割线 */}
-                        <div className="w-full mb-2">
-                          <hr className="h-px border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
-                        </div>
+
+
                         {/* 排序切换 */}
-                        <div className="mb-6 flex gap-3 items-center w-full">
+                        <div className="mb-6 flex gap-3 items-center w-full wauto">
                           <span className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">{t('排序')}:</span>
                           {SORT_OPTIONS.map(opt => (
                             <button
                               key={opt.value}
-                              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] ${sort === opt.value ? 'bg-theme/12 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced backdrop-blur-sm' : 'bg-white/95 dark:bg-gray-800/95 text-neutral-600 dark:text-neutral-300 border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme backdrop-blur-sm shadow-enhanced'}`}
+                              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] ${sort === opt.value ? 'bg-theme/10 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced backdrop-blur-sm' : `${glassClass} text-neutral-600 dark:text-neutral-300 border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme shadow-enhanced`}`}
                               onClick={() => setSort(opt.value as any)}
                             >
                               {opt.label}
@@ -100,7 +112,7 @@ export function HashtagsPage() {
                             <div className="text-lg font-medium">{t('暂无标签')}</div>
                           </div>
                         ) : (
-                          <div className="w-full flex flex-row flex-wrap gap-4 items-start justify-start md:justify-start sm:gap-4 md:gap-5 lg:gap-6">
+                          <div className="w-full flex flex-row flex-wrap gap-4 items-start justify-center sm:gap-4 md:gap-5 lg:gap-6">
                             {sortedTags.map((hashtag, index) => (
                               <div key={index} className="relative group flex flex-col items-center min-w-[90px] max-w-full">
                                 <Link href={`/hashtag/${hashtag.name}`} className="inline-block w-full">
@@ -119,6 +131,8 @@ export function HashtagsPage() {
                             ))}
                           </div>
                         )}
+
+
                     </main>
                 </Waiting>
             </PageContainer>

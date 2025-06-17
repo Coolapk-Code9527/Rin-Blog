@@ -297,8 +297,19 @@
     "import_success$success$skipped": "Import successful, {{success}} articles imported, {{skipped}} articles skipped",
     "login": {
       "enable": {
-        "desc": "Turn on/off the login button in the upper right corner. After turning it off, you can trigger the login entrance by double-clicking the bottom text \"© 2024 Powered by\" three times",
+        "desc": "Turn on/off the login button in the upper right corner. After turning it off, you can trigger the login entrance by double-clicking the bottom text \"© 2025 Powered by\" three times",
         "title": "Enable the login button in the upper right corner"
+      }
+    },
+    "background": {
+      "title": "Page Background",
+      "enable": {
+        "title": "Enable Background Image",
+        "desc": "Set a custom background image for the entire website"
+      },
+      "url": {
+        "title": "Background Image URL",
+        "desc": "Set the URL address of the background image, supports web image links"
       }
     },
     "other": {
