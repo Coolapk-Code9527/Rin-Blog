@@ -1474,8 +1474,8 @@ async function uploadFileWithThumbnail(file: File, onSuccess: (url: string, thum
         const thumbnailBlob = await generateVideoThumbnail(file, 1, 400, 300, 0.8);
         console.log('缩略图生成成功，大小:', thumbnailBlob.size, 'bytes');
 
-        // 创建缩略图文件，使用与后端一致的命名规则
-        const thumbnailFile = new File([thumbnailBlob], `thumb_video_${Date.now()}.jpg`, {
+        // 创建缩略图文件，使用规范的命名规则
+        const thumbnailFile = new File([thumbnailBlob], `thumb_video_${Date.now()}_${Math.random().toString(36).substring(2, 11)}.jpg`, {
           type: 'image/jpeg'
         });
         console.log('缩略图文件创建成功:', thumbnailFile.name);

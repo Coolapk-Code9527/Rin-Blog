@@ -74,17 +74,28 @@ export async function generateVideoThumbnail(
         drawY = (height - drawHeight) / 2;
       }
 
-      // 设置截取时间点，但不超过视频总长度
-      // 如果视频很短，使用视频中间位置；否则使用指定时间点
+      // 设置截取时间点，使用更智能的策略避免黑色帧
       let seekTime = timeOffset;
-      if (video.duration < timeOffset * 2) {
+      if (video.duration < 2) {
+        // 很短的视频：使用中间位置
         seekTime = video.duration / 2;
+      } else if (video.duration < 5) {
+        // 短视频：使用1/3位置，避开开头和结尾
+        seekTime = video.duration / 3;
+      } else if (video.duration < 10) {
+        // 中等长度：使用2秒位置
+        seekTime = 2;
       } else {
-        seekTime = Math.min(timeOffset, video.duration - 0.5);
+        // 长视频：使用指定时间点，但至少2秒，最多留1秒缓冲
+        seekTime = Math.max(2, Math.min(timeOffset, video.duration - 1));
       }
       console.log('设置视频时间点:', seekTime, '总时长:', video.duration);
       video.currentTime = seekTime;
     };
+
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryTimePoints = [1, 0.25, 0.5, 0.75]; // 尝试不同的时间点
 
     const onSeeked = () => {
       console.log('视频定位完成，开始生成缩略图');
@@ -96,12 +107,52 @@ export async function generateVideoThumbnail(
         // 绘制视频帧
         ctx.drawImage(video, drawX, drawY, drawWidth, drawHeight);
 
+        // 检查是否生成了有效的图像（避免全黑图像）
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const pixels = imageData.data;
+        let nonBlackPixels = 0;
+        let totalBrightness = 0;
+
+        // 检查更多像素，获得更准确的判断
+        const sampleSize = Math.min(pixels.length, 16000); // 检查前4000个像素
+        for (let i = 0; i < sampleSize; i += 4) {
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          const brightness = (r + g + b) / 3;
+          totalBrightness += brightness;
+
+          if (brightness > 40) { // 提高阈值，更严格地检测非黑色像素
+            nonBlackPixels++;
+          }
+        }
+
+        const avgBrightness = totalBrightness / (sampleSize / 4);
+        const nonBlackRatio = nonBlackPixels / (sampleSize / 4);
+
+        console.log(`图像分析: 非黑色像素比例=${(nonBlackRatio * 100).toFixed(1)}%, 平均亮度=${avgBrightness.toFixed(1)}`);
+
+        // 如果图像太黑且还有重试机会，尝试其他时间点
+        if ((nonBlackRatio < 0.1 || avgBrightness < 30) && retryCount < maxRetries && video.duration > 2) {
+          retryCount++;
+          console.warn(`检测到黑色帧，尝试第${retryCount}次重试`);
+
+          // 使用预定义的时间点
+          const timeRatio = retryTimePoints[retryCount] || Math.random() * 0.8 + 0.1;
+          const newSeekTime = video.duration * timeRatio;
+
+          if (Math.abs(newSeekTime - video.currentTime) > 0.3) {
+            video.currentTime = newSeekTime;
+            return; // 等待新的seeked事件
+          }
+        }
+
         // 转换为Blob
         canvas.toBlob((blob) => {
           clearTimeout(timeout);
           cleanup();
           if (blob) {
-            console.log('缩略图生成成功');
+            console.log(`缩略图生成成功，大小: ${blob.size} bytes, 重试次数: ${retryCount}`);
             resolve(blob);
           } else {
             reject(new Error('无法生成缩略图'));
@@ -120,6 +171,12 @@ export async function generateVideoThumbnail(
       console.error('视频加载失败:', error, video.error);
       reject(new Error(`视频加载失败: ${video.error?.message || '未知错误'}`));
     };
+
+    // 添加更多调试信息
+    video.addEventListener('loadstart', () => console.log('视频开始加载'));
+    video.addEventListener('progress', () => console.log('视频加载进度更新'));
+    video.addEventListener('canplay', () => console.log('视频可以播放'));
+    video.addEventListener('canplaythrough', () => console.log('视频可以完整播放'));
 
     // 设置事件监听器
     video.addEventListener('loadedmetadata', onLoadedMetadata);

@@ -76,8 +76,8 @@ export async function uploadFile(
 
         onProgress?.(70);
 
-        // 创建缩略图文件，使用与后端一致的命名规则
-        const thumbnailFile = new File([thumbnailBlob], `thumb_video_${Date.now()}.jpg`, {
+        // 创建缩略图文件，使用规范的命名规则
+        const thumbnailFile = new File([thumbnailBlob], `thumb_video_${Date.now()}_${Math.random().toString(36).substring(2, 11)}.jpg`, {
           type: 'image/jpeg'
         });
 
