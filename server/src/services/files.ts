@@ -1109,22 +1109,7 @@ export function FileService() {
                 })
 
                 // 直接上传缩略图到R2（统一逻辑）
-                .options('/upload-thumbnail', ({ set }) => {
-                    set.headers = {
-                        'Access-Control-Allow-Origin': '*',
-                        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Thumbnail-Key, X-Content-Type',
-                    };
-                    return '';
-                })
                 .post('/upload-thumbnail', async ({ headers, body, uid, set }) => {
-                    // 设置CORS头
-                    set.headers = {
-                        'Access-Control-Allow-Origin': '*',
-                        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Thumbnail-Key, X-Content-Type',
-                    };
-
                     if (!uid) {
                         set.status = 401;
                         return { error: 'Unauthorized' };
