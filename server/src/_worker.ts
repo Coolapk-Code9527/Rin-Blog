@@ -11,9 +11,6 @@ import { CacheImpl } from "./utils/cache";
 import { dbToken, envToken } from "./utils/di";
 export type DB = DrizzleD1Database<typeof import("./db/schema")>
 
-// 优化：创建全局Elysia实例，避免每次请求都实例化
-let globalApp: any = null;
-
 export default {
     async fetch(
         request: Request,
@@ -30,13 +27,9 @@ export default {
             Container.set("client.config", new CacheImpl("client.config"));
         }
 
-        // 优化：使用全局Elysia实例，避免每次请求都重新创建
-        if (!globalApp) {
-            globalApp = new Elysia({ aot: false })
-                .use(app());
-        }
-
-        return await globalApp.handle(request)
+        return await new Elysia({ aot: false })
+            .use(app())
+            .handle(request)
     },
     async scheduled(
         _controller: ScheduledController | null,

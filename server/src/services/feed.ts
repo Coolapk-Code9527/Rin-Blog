@@ -1,7 +1,17 @@
-import {and, asc, count, desc, eq, gt, like, lt, or, inArray, sql} from "drizzle-orm";
+import {and, asc, count, desc, eq, gt, like, lt, or, inArray} from "drizzle-orm";
 import Elysia, {t} from "elysia";
 import {XMLParser} from "fast-xml-parser";
 import html2md from 'html-to-md';
+
+// 单例XMLParser，避免重复实例化
+let xmlParserInstance: XMLParser | null = null;
+
+function getXMLParser(): XMLParser {
+    if (!xmlParserInstance) {
+        xmlParserInstance = new XMLParser();
+    }
+    return xmlParserInstance;
+}
 import type {DB} from "../_worker";
 import {feeds, visits, files, feedFiles} from "../db/schema";
 import {setup} from "../setup";
@@ -79,7 +89,7 @@ export function FeedService() {
                             orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
                             limit: maxLimit,
                         })).map(({ content, hashtags, summary, ...other }) => {
-                            // 保持查询限制，但不限制内容处理长度
+                            // 保留查询限制，移除字符限制
                             const avatar = extractImage(content);
                             return {
                                 summary: summary.length > 0 ? summary : markdownToPlainText(content, 150),
@@ -162,7 +172,6 @@ export function FeedService() {
                     const db: DB = getDB();
                     const where = and(eq(feeds.draft, 0), eq(feeds.listed, 1));
 
-                    // 移除限制，查询所有时间线数据
                     return (await db.query.feeds.findMany({
                         where: where,
                         columns: {
@@ -290,33 +299,16 @@ export function FeedService() {
                     let uv = 0;
                     if (enableVisit) {
                         const ip = headers['cf-connecting-ip'] || headers['x-real-ip'] || "UNK"
-
-                        // 优化：使用缓存避免重复插入和查询
-                        const visitCacheKey = `visit_${feed.id}_${ip}`;
-                        const recentVisit = await cache.get(visitCacheKey);
-
-                        if (!recentVisit) {
-                            // 只有在缓存中没有记录时才插入新访问记录
-                            await db.insert(visits).values({
-                                feedId: feed.id,
-                                ip: ip,
-                            });
-                            // 缓存5分钟，避免同一IP短时间内重复记录
-                            await cache.set(visitCacheKey, 'visited');
-                        }
-
-                        // 优化：使用聚合查询代替全量查询，避免CPU超时
-                        const visitStats = await db
-                            .select({
-                                pv: sql<number>`count(*)`,
-                                uv: sql<number>`count(distinct ${visits.ip})`
-                            })
-                            .from(visits)
-                            .where(eq(visits.feedId, feed.id));
-
-                        const stats = visitStats[0];
-                        pv = Number(stats?.pv || 0);
-                        uv = Number(stats?.uv || 0);
+                        await db.insert(visits).values({
+                            feedId: feed.id,
+                            ip: ip,
+                        });
+                        const visit = await db.query.visits.findMany({
+                            where: eq(visits.feedId, feed.id),
+                            columns: { id: true, ip: true }
+                        });
+                        pv = visit.length;
+                        uv = new Set(visit.map((v) => v.ip)).size;
                     }
                     const data = {
                         ...other,
@@ -556,8 +548,6 @@ export function FeedService() {
             const cache = PublicCache();
             const page_num = (page ? page > 0 ? page : 1 : 1) - 1;
             const limit_num = limit ? +limit > 50 ? 50 : +limit : 20;
-
-            // 优化：添加关键词长度限制，避免过长搜索导致CPU超时
             if (keyword === undefined || keyword.trim().length === 0) {
                 return {
                     size: 0,
@@ -566,7 +556,7 @@ export function FeedService() {
                 }
             }
 
-            // 限制搜索关键词长度
+            // 优化：限制搜索关键词长度，避免复杂查询
             if (keyword.length > 100) {
                 keyword = keyword.slice(0, 100);
             }
@@ -574,14 +564,17 @@ export function FeedService() {
             const cacheKey = `search_${keyword}`;
             const searchKeyword = `%${keyword}%`;
 
-            // 优化：优先搜索标题和摘要，减少全文搜索的CPU消耗
+            // 优化：简化搜索条件，优先搜索标题和摘要，减少content搜索的CPU消耗
             const whereClause = or(
                 like(feeds.title, searchKeyword),
                 like(feeds.summary, searchKeyword),
-                like(feeds.alias, searchKeyword),
-                // 将content搜索放在最后，减少CPU消耗
-                like(feeds.content, searchKeyword)
+                like(feeds.alias, searchKeyword)
+                // 移除content搜索以减少CPU消耗
             );
+
+            // 优化：添加搜索结果限制，避免返回过多数据
+            const maxSearchResults = 200;
+
             const feed_list = (await cache.getOrSet(cacheKey, () => db.query.feeds.findMany({
                 where: admin ? whereClause : and(whereClause, eq(feeds.draft, 0)),
                 columns: admin ? undefined : {
@@ -600,6 +593,7 @@ export function FeedService() {
                         columns: { id: true, username: true, avatar: true }
                     }
                 },
+                limit: maxSearchResults, // 添加搜索结果限制
                 orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
             }))).map(({ content, hashtags, summary, ...other }) => {
                 return {
@@ -644,23 +638,33 @@ export function FeedService() {
                 return 'Data is required';
             }
             const xml = await data.text();
-            const parser = new XMLParser();
+            const parser = getXMLParser(); // 使用单例XMLParser
             const result = await parser.parse(xml)
             const items = result.rss.channel.item;
             if (!items) {
                 set.status = 404;
                 return 'No items found';
             }
-            const feedItems: FeedItem[] = items?.map((item: any) => {
+            // 优化：限制导入数量，避免CPU超时
+            const maxImportItems = 100;
+            const limitedItems = Array.isArray(items) ? items.slice(0, maxImportItems) : [items];
+
+            const feedItems: FeedItem[] = limitedItems?.map((item: any) => {
                 const createdAt = new Date(item?.['wp:post_date']);
                 const updatedAt = new Date(item?.['wp:post_modified']);
                 const draft = item?.['wp:status'] !== 'publish';
                 const contentHtml = item?.['content:encoded'];
-                const content = html2md(contentHtml);
+
+                // 优化：限制内容长度，避免处理过大的文章
+                const limitedContentHtml = contentHtml && contentHtml.length > 50000
+                    ? contentHtml.slice(0, 50000) + '...'
+                    : contentHtml;
+
+                const content = html2md(limitedContentHtml || '');
                 const summary = markdownToPlainText(content, 150);
                 let tags = item?.['category'];
                 if (tags && Array.isArray(tags)) {
-                    tags = tags.map((tag: any) => tag + '');
+                    tags = tags.map((tag: any) => tag + '').slice(0, 10); // 限制标签数量
                 } else if (tags && typeof tags === 'string') {
                     tags = [tags];
                 }
@@ -674,37 +678,56 @@ export function FeedService() {
                     tags
                 };
             });
+
             let success = 0;
             let skipped = 0;
             let skippedList: { title: string, reason: string }[] = [];
+
+            // 添加超时保护
+            const importStartTime = Date.now();
+            const maxImportTime = 25000; // 25秒超时
+
             for (const item of feedItems) {
+                // 检查是否超时
+                if (Date.now() - importStartTime > maxImportTime) {
+                    console.warn('WordPress导入超时，停止处理剩余文章');
+                    break;
+                }
+
                 if (!item.content) {
                     skippedList.push({ title: item.title, reason: "no content" });
                     skipped++;
                     continue;
                 }
-                const exist = await db.query.feeds.findFirst({
-                    where: eq(feeds.content, item.content)
-                });
-                if (exist) {
-                    skippedList.push({ title: item.title, reason: "content exists" });
+
+                try {
+                    const exist = await db.query.feeds.findFirst({
+                        where: eq(feeds.content, item.content)
+                    });
+                    if (exist) {
+                        skippedList.push({ title: item.title, reason: "content exists" });
+                        skipped++;
+                        continue;
+                    }
+                    const result = await db.insert(feeds).values({
+                        title: item.title,
+                        content: item.content,
+                        summary: item.summary,
+                        uid: 1,
+                        listed: 1,
+                        draft: item.draft ? 1 : 0,
+                        createdAt: item.createdAt,
+                        updatedAt: item.updatedAt
+                    }).returning({ insertedId: feeds.id });
+                    if (item.tags) {
+                        await bindTagToPost(db, result[0].insertedId, item.tags);
+                    }
+                    success++;
+                } catch (e) {
+                    console.error(`WordPress导入文章失败: ${item.title}`, e);
+                    skippedList.push({ title: item.title, reason: "import error" });
                     skipped++;
-                    continue;
                 }
-                const result = await db.insert(feeds).values({
-                    title: item.title,
-                    content: item.content,
-                    summary: item.summary,
-                    uid: 1,
-                    listed: 1,
-                    draft: item.draft ? 1 : 0,
-                    createdAt: item.createdAt,
-                    updatedAt: item.updatedAt
-                }).returning({ insertedId: feeds.id });
-                if (item.tags) {
-                    await bindTagToPost(db, result[0].insertedId, item.tags);
-                }
-                success++;
             }
             PublicCache().deletePrefix('feeds_');
             return {
@@ -772,7 +795,7 @@ function extractFileReferences(content: string): string[] {
   return references;
 }
 
-// 辅助函数：同步文件引用到files/feed_files
+// 优化：同步文件引用到files/feed_files，添加限制避免CPU超时
 async function syncFeedFileReferences(db: any, feedId: number, content: string, userId: number) {
   if (!feedId || typeof feedId !== 'number' || !Number.isFinite(feedId)) {
     throw new Error('syncFeedFileReferences: feedId 无效，当前值为 ' + String(feedId));
@@ -781,12 +804,13 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
   const filesTable = files;
   const feedFilesTable = feedFiles;
   try {
-    const env = getEnv();
-    const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => f.replace(/^\/+/g, '') + '/');
     let refs = extractFileReferences(content).filter(Boolean);
     let filteredRefs = refs.map(ref => normalizePath(ref)).filter(x => x && !x.startsWith('http://') && !x.startsWith('https://'));
     // 跳过缩略图对象
     filteredRefs = filteredRefs.filter(x => !x.split('/').pop()?.startsWith('thumb_'));
+
+    // 处理所有文件引用（移除数量限制）
+
     if (filteredRefs.length === 0) return;
     // 查询已存在的files（只查标准化后的路径）
     const allPaths = filteredRefs;

@@ -10,7 +10,6 @@ import { createS3Client } from "../utils/s3";
 import { syncFeedFileReferences } from './feed';
 import { listAllR2Files, getR2FileMeta, normalizePath, setR2FileMeta } from '../utils/s3';
 import { generateThumbnail } from '../utils/image';
-import { PublicCache } from '../utils/cache';
 
 // 定义引用接口
 interface FileReference {
@@ -94,23 +93,11 @@ export function FileService() {
                     const page = typeof pageRaw === 'string' ? parseInt(pageRaw) : pageRaw;
                     const limit = typeof limitRaw === 'string' ? parseInt(limitRaw) : limitRaw;
                     const offset = (page - 1) * limit;
-
                     try {
                         // 管理员可查所有用户文件
                         const userFilter = (admin && all === '1') ? undefined : eq(files.userId, uid);
                         let resultData: any[] = [];
                         let count = 0;
-
-                        // 优化：为根目录添加简单缓存（无搜索和过滤时）
-                        if (path === '/' && !type && !search) {
-                            const cache = PublicCache();
-                            const cacheKey = `files_root_${sort}_${order}_${page}_${limit}_${uid}_${all || '0'}`;
-                            const cached = await cache.get(cacheKey);
-                            if (cached) {
-                                return cached;
-                            }
-                        }
-
                         if (path === '/') {
                             const env = getEnv();
                             const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean);
@@ -170,27 +157,22 @@ export function FileService() {
                             .from(files)
                             .where(
                                 and(
-                                    // 优化：将最具选择性的条件放在前面
-                                    eq(files.parentPath, path), // 最具选择性
-                                    ...(userFilter ? [userFilter] : []), // 用户过滤
-                                    sql`not (${files.name} like 'thumb_%')`, // 排除缩略图
-                                    ...(type ? [like(files.mimeType, `${type}/%`)] : []), // 类型过滤
-                                    ...(search ? [like(files.name, `%${search}%`)] : []) // 搜索过滤
+                                    ...(userFilter ? [userFilter] : []),
+                                    eq(files.parentPath, path),
+                                    sql`not (${files.name} like 'thumb_%')`,
+                                    ...(type ? [like(files.mimeType, `${type}/%`)] : []),
+                                    ...(search ? [like(files.name, `%${search}%`)] : [])
                                 )
                             )
-                            // 优化：使用数据库级排序，文件夹优先
                             .orderBy(
-                                desc(files.isFolder), // 文件夹优先
-                                sort === 'name' ? (order === 'desc' ? desc(files.name) : asc(files.name)) :
-                                sort === 'size' ? (order === 'desc' ? desc(files.size) : asc(files.size)) :
-                                sort === 'date' ? (order === 'desc' ? desc(files.modifiedAt) : asc(files.modifiedAt)) :
-                                sort === 'createdAt' ? (order === 'desc' ? desc(files.createdAt) : asc(files.createdAt)) :
-                                sort === 'modifiedAt' ? (order === 'desc' ? desc(files.modifiedAt) : asc(files.modifiedAt)) :
-                                asc(files.name) // 默认按名称排序
+                                sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
+                                sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
+                                sort === 'date' ? (order === 'asc' ? asc(files.modifiedAt) : desc(files.modifiedAt)) :
+                                asc(files.name)
                             )
                             .limit(limit)
                             .offset(offset);
-                            resultData = result;
+                            resultData = await result;
                             const countQ = await db
                             .select({ count: sql<number>`count(*)` })
                             .from(files)
@@ -215,51 +197,13 @@ export function FileService() {
                                 .groupBy(feedFiles.fileId);
                             refs.forEach((r: any) => { referencesMap[r.fileId] = r.count; });
                         }
-                        // 移除重复的返回逻辑，统一在下面处理
-
-                        // 优化：为根目录结果设置缓存（5分钟）
-                        if (path === '/' && !type && !search) {
-                            const cache = PublicCache();
-                            const cacheKey = `files_root_${sort}_${order}_${page}_${limit}_${uid}_${all || '0'}`;
-                            await cache.set(cacheKey, {
-                                data: resultData.map(file => ({
-                                    ...file,
-                                    createdAt: file.createdAt ?
-                                        (typeof file.createdAt === 'object' ?
-                                           Math.floor(file.createdAt.getTime() / 1000) :
-                                           file.createdAt) :
-                                        Math.floor(Date.now() / 1000),
-                                    modifiedAt: file.modifiedAt ?
-                                        (typeof file.modifiedAt === 'object' ?
-                                           Math.floor(file.modifiedAt.getTime() / 1000) :
-                                           file.modifiedAt) :
-                                        Math.floor(Date.now() / 1000),
-                                    referencesCount: Number(referencesMap[file.id] || 0),
-                                    url: file.path ? `${accessHost}${file.path}` : undefined,
-                                    thumbUrl: file.thumbnailHash
-                                        ? (file.parentPath && file.parentPath !== '/'
-                                            ? `${accessHost}${file.parentPath}/thumb_${file.thumbnailHash}`
-                                            : `${accessHost}/thumb_${file.thumbnailHash}`)
-                                        : undefined,
-                                })),
-                                total: count,
-                                page,
-                                limit
-                            });
-                        }
-
                         return {
-                            data: resultData.map(file => ({
+                            files: resultData.map((file: any) => ({
                                 ...file,
-                                createdAt: file.createdAt ?
-                                    (typeof file.createdAt === 'object' ?
-                                       Math.floor(file.createdAt.getTime() / 1000) :
-                                       file.createdAt) :
-                                    Math.floor(Date.now() / 1000),
-                                modifiedAt: file.modifiedAt ?
-                                    (typeof file.modifiedAt === 'object' ?
-                                       Math.floor(file.modifiedAt.getTime() / 1000) :
-                                       file.modifiedAt) :
+                                modifiedAt: file.modifiedAt ? 
+                                    (typeof file.modifiedAt === 'object' ? 
+                                       Math.floor(file.modifiedAt.getTime() / 1000) : 
+                                       file.modifiedAt) : 
                                     Math.floor(Date.now() / 1000),
                                 referencesCount: Number(referencesMap[file.id] || 0),
                                 url: file.path ? `${accessHost}${file.path}` : undefined,
@@ -570,7 +514,7 @@ export function FileService() {
                             };
                         }
 
-                        // 移除引用数量限制，查询所有引用
+                        // 获取引用此文件的文章
                         const references = await db
                             .select({
                                 id: feeds.id,
@@ -867,7 +811,7 @@ export function FileService() {
                         set.status = 500;
                         return { error: 'Database connection not available' };
                     }
-                    // 移除数量限制，处理所有文章
+                    // 扫描所有文章内容（移除数量和超时限制）
                     const allFeeds = await db.select({ id: feeds.id, content: feeds.content }).from(feeds);
                     let total = 0, success = 0, failed = 0;
                     const failedDetails: any[] = [];

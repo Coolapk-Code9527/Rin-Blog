@@ -149,7 +149,7 @@ export async function rssCrontab(env: Env) {
         const { summary, content, user, ...other } = f;
 
         try {
-            // 保持超时保护，但不限制内容长度
+            // 保留超时保护，移除字符限制
             const file = await unified()
                 .use(remarkParse)
                 .use(remarkGfm)

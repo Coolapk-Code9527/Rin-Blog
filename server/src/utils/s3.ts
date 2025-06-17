@@ -2,13 +2,12 @@ import { S3Client, ListObjectsV2Command, HeadObjectCommand, PutObjectCommand, Ge
 import type { Env } from "../db/db";
 import { getEnv } from "./di";
 
-// 优化：全局S3客户端实例，避免重复创建
-let globalS3Client: S3Client | null = null;
+// 单例S3客户端，避免重复实例化
+let s3ClientInstance: S3Client | null = null;
 
 export function createS3Client() {
-    // 优化：使用单例模式，避免重复创建S3客户端
-    if (globalS3Client) {
-        return globalS3Client;
+    if (s3ClientInstance) {
+        return s3ClientInstance;
     }
 
     const env: Env = getEnv();
@@ -18,7 +17,7 @@ export function createS3Client() {
     const secretAccessKey = env.S3_SECRET_ACCESS_KEY;
     const forcePathStyle = env.S3_FORCE_PATH_STYLE === "true";
 
-    globalS3Client = new S3Client({
+    s3ClientInstance = new S3Client({
         region: region,
         endpoint: endpoint,
         forcePathStyle: forcePathStyle,
@@ -28,12 +27,17 @@ export function createS3Client() {
         },
     });
 
-    return globalS3Client;
+    return s3ClientInstance;
+}
+
+// 重置S3客户端实例（用于测试或配置更改）
+export function resetS3Client() {
+    s3ClientInstance = null;
 }
 
 export async function listAllR2Files(): Promise<string[]> {
     const env: Env = getEnv();
-    const s3 = createS3Client();
+    const s3 = createS3Client(); // 使用单例S3客户端
     const bucket = env.S3_BUCKET;
     let files: string[] = [];
     let ContinuationToken: string | undefined = undefined;
@@ -63,7 +67,7 @@ export async function listAllR2Files(): Promise<string[]> {
 // 新增：轻量级R2文件列表函数，用于关键操作
 export async function listR2FilesLimited(maxFiles: number = 500): Promise<string[]> {
     const env: Env = getEnv();
-    const s3 = createS3Client();
+    const s3 = createS3Client(); // 使用单例S3客户端
     const bucket = env.S3_BUCKET;
 
     try {
@@ -98,7 +102,7 @@ export async function getR2FileMeta(path: string): Promise<{size?: number, mimeT
     try {
         path = normalizePath(path);
         const env: Env = getEnv();
-        const s3 = createS3Client();
+        const s3 = createS3Client(); // 使用单例S3客户端
         const bucket = env.S3_BUCKET;
         const key = path.startsWith('/') ? path.slice(1) : path;
         const res: any = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
