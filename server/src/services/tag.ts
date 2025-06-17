@@ -30,10 +30,19 @@ export function TagService() {
                 })
                 .get('/:name', async ({ admin, set, params: { name } }) => {
                     const nameDecoded = decodeURI(name)
+
+                    // 优化：限制标签名长度，避免过长查询
+                    if (nameDecoded.length > 50) {
+                        set.status = 400;
+                        return { error: 'Tag name too long' };
+                    }
+
                     const tag = await db.query.hashtags.findFirst({
                         where: eq(hashtags.name, nameDecoded),
                         with: {
                             feeds: {
+                                // 优化：限制返回的文章数量，避免CPU超时
+                                limit: 100,
                                 with: {
                                     feed: {
                                         columns: {
@@ -107,14 +116,29 @@ export function TagService() {
 
 
 export async function bindTagToPost(db: DB, feedId: number, tags: string[]) {
+    // 优化：限制标签数量，避免过多标签导致CPU超时
+    const maxTags = 20;
+    const limitedTags = tags.slice(0, maxTags);
+
     await db.delete(feedHashtags).where(
         eq(feedHashtags.feedId, feedId));
-    for (const tag of tags) {
-        const tagId = await getTagIdOrCreate(db, tag);
-        await db.insert(feedHashtags).values({
+
+    // 优化：批量处理标签，减少数据库操作次数
+    const tagIds: number[] = [];
+    for (const tag of limitedTags) {
+        if (tag && tag.trim().length > 0 && tag.length <= 50) { // 限制标签长度
+            const tagId = await getTagIdOrCreate(db, tag.trim());
+            tagIds.push(tagId);
+        }
+    }
+
+    // 批量插入标签关联
+    if (tagIds.length > 0) {
+        const values = tagIds.map(tagId => ({
             feedId: feedId,
             hashtagId: tagId
-        });
+        }));
+        await db.insert(feedHashtags).values(values);
     }
 }
 

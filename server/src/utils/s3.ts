@@ -2,14 +2,23 @@ import { S3Client, ListObjectsV2Command, HeadObjectCommand, PutObjectCommand, Ge
 import type { Env } from "../db/db";
 import { getEnv } from "./di";
 
+// 优化：全局S3客户端实例，避免重复创建
+let globalS3Client: S3Client | null = null;
+
 export function createS3Client() {
+    // 优化：使用单例模式，避免重复创建S3客户端
+    if (globalS3Client) {
+        return globalS3Client;
+    }
+
     const env: Env = getEnv();
     const region = env.S3_REGION;
     const endpoint = env.S3_ENDPOINT;
     const accessKeyId = env.S3_ACCESS_KEY_ID;
     const secretAccessKey = env.S3_SECRET_ACCESS_KEY;
     const forcePathStyle = env.S3_FORCE_PATH_STYLE === "true";
-    return new S3Client({
+
+    globalS3Client = new S3Client({
         region: region,
         endpoint: endpoint,
         forcePathStyle: forcePathStyle,
@@ -18,6 +27,8 @@ export function createS3Client() {
             secretAccessKey: secretAccessKey
         },
     });
+
+    return globalS3Client;
 }
 
 export async function listAllR2Files(): Promise<string[]> {

@@ -94,36 +94,48 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                 } else if (data && typeof data !== "string") {
                     setAdjacentFeeds(data);
                     
-                    // 为每个相邻文章获取缩略图
+                    // 优化：并发获取相邻文章缩略图，减少API调用
                     const extractedThumbnails: Record<string, string> = {};
-                    
-                    // 处理上一篇文章
+
+                    // 并发处理上一篇和下一篇文章
+                    const thumbnailPromises: Promise<void>[] = [];
+
                     if (data.previousFeed) {
-                        // 先尝试从摘要中提取图片
-                        let thumbnail = extractImageUrl(data.previousFeed.summary);
-                        
-                        // 如果摘要中没有图片，获取完整文章信息
-                        if (!thumbnail) {
-                            thumbnail = await fetchFullArticle(data.previousFeed.id);
-                        }
-                        
-                        extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
-                        console.log(`Previous article (ID:${data.previousFeed.id}) thumbnail:`, extractedThumbnails[`prev-${data.previousFeed.id}`]);
+                        thumbnailPromises.push(
+                            (async () => {
+                                // 先尝试从摘要中提取图片
+                                let thumbnail = extractImageUrl(data.previousFeed.summary);
+
+                                // 如果摘要中没有图片，获取完整文章信息
+                                if (!thumbnail) {
+                                    thumbnail = await fetchFullArticle(data.previousFeed.id);
+                                }
+
+                                extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
+                                console.log(`Previous article (ID:${data.previousFeed.id}) thumbnail:`, extractedThumbnails[`prev-${data.previousFeed.id}`]);
+                            })()
+                        );
                     }
-                    
-                    // 处理下一篇文章
+
                     if (data.nextFeed) {
-                        // 先尝试从摘要中提取图片
-                        let thumbnail = extractImageUrl(data.nextFeed.summary);
-                        
-                        // 如果摘要中没有图片，获取完整文章信息
-                        if (!thumbnail) {
-                            thumbnail = await fetchFullArticle(data.nextFeed.id);
-                        }
-                        
-                        extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
-                        console.log(`Next article (ID:${data.nextFeed.id}) thumbnail:`, extractedThumbnails[`next-${data.nextFeed.id}`]);
+                        thumbnailPromises.push(
+                            (async () => {
+                                // 先尝试从摘要中提取图片
+                                let thumbnail = extractImageUrl(data.nextFeed.summary);
+
+                                // 如果摘要中没有图片，获取完整文章信息
+                                if (!thumbnail) {
+                                    thumbnail = await fetchFullArticle(data.nextFeed.id);
+                                }
+
+                                extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
+                                console.log(`Next article (ID:${data.nextFeed.id}) thumbnail:`, extractedThumbnails[`next-${data.nextFeed.id}`]);
+                            })()
+                        );
                     }
+
+                    // 等待所有缩略图获取完成
+                    await Promise.all(thumbnailPromises);
                     
                     setThumbnails(extractedThumbnails);
                 }

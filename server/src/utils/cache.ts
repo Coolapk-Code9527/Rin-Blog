@@ -17,7 +17,8 @@ export class CacheImpl {
     cacheUrl: string;
     type: string;
     loaded: boolean = false;
-    s3 = createS3Client();
+    // 优化：延迟初始化S3客户端，避免构造函数中重复创建
+    private _s3: any = null;
 
     constructor(type: string = "cache") {
         this.type = type;
@@ -26,6 +27,14 @@ export class CacheImpl {
         this.cache = new Map<string, any>();
         const slash = this.env.S3_ACCESS_HOST.endsWith('/') ? '' : '/';
         this.cacheUrl = this.env.S3_ACCESS_HOST + slash + path.join(this.env.S3_CACHE_FOLDER || 'cache', `${type}.json`);
+    }
+
+    // 优化：延迟初始化S3客户端的getter
+    private get s3() {
+        if (!this._s3) {
+            this._s3 = createS3Client();
+        }
+        return this._s3;
     }
 
     async load() {

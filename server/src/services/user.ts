@@ -24,16 +24,30 @@ export function UserService() {
                     console.log('state', state.value)
                     console.log('p_state', query.state)
 
-                    const gh_token = await oauth2.authorize("GitHub");
-                    // request https://api.github.com/user for user info
-                    const response = await fetch("https://api.github.com/user", {
-                        headers: {
-                            Authorization: `Bearer ${gh_token.accessToken}`,
-                            Accept: "application/json",
-                            "User-Agent": "elysia"
-                        },
-                    });
-                    const user: any = await response.json();
+                    try {
+                        // 优化：添加超时保护，避免GitHub API调用超时
+                        const gh_token = await Promise.race([
+                            oauth2.authorize("GitHub"),
+                            new Promise((_, reject) =>
+                                setTimeout(() => reject(new Error('GitHub OAuth超时')), 10000)
+                            )
+                        ]) as any;
+
+                        // request https://api.github.com/user for user info
+                        const response = await Promise.race([
+                            fetch("https://api.github.com/user", {
+                                headers: {
+                                    Authorization: `Bearer ${gh_token.accessToken}`,
+                                    Accept: "application/json",
+                                    "User-Agent": "elysia"
+                                },
+                            }),
+                            new Promise((_, reject) =>
+                                setTimeout(() => reject(new Error('GitHub API超时')), 8000)
+                            )
+                        ]) as Response;
+
+                        const user: any = await response.json();
                     const profile: {
                         openid: string;
                         username: string;
@@ -83,6 +97,11 @@ export function UserService() {
                         'Content-Type': 'text/html',
                     }
                     set.redirect = redirect_url
+                    } catch (error: any) {
+                        console.error('GitHub OAuth error:', error);
+                        set.status = 500;
+                        return 'Authentication failed: ' + error.message;
+                    }
                 }, {
                     query: t.Object({
                         state: t.String(),

@@ -149,15 +149,13 @@ export async function rssCrontab(env: Env) {
         const { summary, content, user, ...other } = f;
 
         try {
-            // 优化：限制内容长度，减少处理时间
-            const limitedContent = content.length > 5000 ? content.slice(0, 5000) + '...' : content;
-
+            // 保持超时保护，但不限制内容长度
             const file = await unified()
                 .use(remarkParse)
                 .use(remarkGfm)
                 .use(remarkRehype)
                 .use(rehypeStringify)
-                .process(limitedContent);
+                .process(content);
             let contentHtml = file.toString();
 
             feed.addItem({
@@ -168,12 +166,12 @@ export async function rssCrontab(env: Env) {
                 description:
                     summary.length > 0
                         ? summary
-                        : limitedContent.length > 100
-                          ? limitedContent.slice(0, 100)
-                          : limitedContent,
+                        : content.length > 100
+                          ? content.slice(0, 100)
+                          : content,
                 content: contentHtml,
                 author: [{ name: user.username }],
-                image: extractImage(limitedContent),
+                image: extractImage(content),
             });
         } catch (e) {
             console.error(`RSS处理文章失败 ${other.id}:`, e);

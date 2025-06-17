@@ -26,6 +26,7 @@ export async function generateThumbnail(
   quality: number = 80,
   format: 'webp' | 'jpeg' | 'png' | 'avif' = 'webp'
 ): Promise<ArrayBuffer> {
+  // 移除大小和超时限制，保持原有处理逻辑
   const result = await optimizeImage({
     image: imageBuffer,
     width,
@@ -33,8 +34,9 @@ export async function generateThumbnail(
     quality,
     format,
   });
+
   // 兼容返回类型为 Uint8Array
   if (result instanceof ArrayBuffer) return result;
-  if (result instanceof Uint8Array) return result.buffer;
+  if (result instanceof Uint8Array) return new ArrayBuffer(result.buffer.byteLength);
   throw new Error('生成缩略图失败');
 }

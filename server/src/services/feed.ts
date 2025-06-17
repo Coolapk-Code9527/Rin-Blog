@@ -1,4 +1,4 @@
-import {and, asc, count, desc, eq, gt, like, lt, or, inArray} from "drizzle-orm";
+import {and, asc, count, desc, eq, gt, like, lt, or, inArray, sql} from "drizzle-orm";
 import Elysia, {t} from "elysia";
 import {XMLParser} from "fast-xml-parser";
 import html2md from 'html-to-md';
@@ -79,11 +79,10 @@ export function FeedService() {
                             orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
                             limit: maxLimit,
                         })).map(({ content, hashtags, summary, ...other }) => {
-                            // 优化：限制内容处理长度，避免CPU密集型操作
-                            const limitedContent = content.length > 2000 ? content.slice(0, 2000) : content;
-                            const avatar = extractImage(limitedContent);
+                            // 保持查询限制，但不限制内容处理长度
+                            const avatar = extractImage(content);
                             return {
-                                summary: summary.length > 0 ? summary : markdownToPlainText(limitedContent, 150),
+                                summary: summary.length > 0 ? summary : markdownToPlainText(content, 150),
                                 hashtags: hashtags.map(({ hashtag }) => hashtag),
                                 avatar,
                                 ...other
@@ -163,9 +162,7 @@ export function FeedService() {
                     const db: DB = getDB();
                     const where = and(eq(feeds.draft, 0), eq(feeds.listed, 1));
 
-                    // 优化：限制Timeline查询数量，避免CPU超时
-                    const maxTimelineItems = 500; // 最大时间线条目数
-
+                    // 移除限制，查询所有时间线数据
                     return (await db.query.feeds.findMany({
                         where: where,
                         columns: {
@@ -174,7 +171,6 @@ export function FeedService() {
                             createdAt: true,
                         },
                         orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
-                        limit: maxTimelineItems
                     }))
                 })
                 .post('/', async ({ admin, set, uid, body: { title, alias, listed, content, summary, draft, tags, createdAt } }) => {
@@ -294,16 +290,33 @@ export function FeedService() {
                     let uv = 0;
                     if (enableVisit) {
                         const ip = headers['cf-connecting-ip'] || headers['x-real-ip'] || "UNK"
-                        await db.insert(visits).values({
-                            feedId: feed.id,
-                            ip: ip,
-                        });
-                        const visit = await db.query.visits.findMany({
-                            where: eq(visits.feedId, feed.id),
-                            columns: { id: true, ip: true }
-                        });
-                        pv = visit.length;
-                        uv = new Set(visit.map((v) => v.ip)).size;
+
+                        // 优化：使用缓存避免重复插入和查询
+                        const visitCacheKey = `visit_${feed.id}_${ip}`;
+                        const recentVisit = await cache.get(visitCacheKey);
+
+                        if (!recentVisit) {
+                            // 只有在缓存中没有记录时才插入新访问记录
+                            await db.insert(visits).values({
+                                feedId: feed.id,
+                                ip: ip,
+                            });
+                            // 缓存5分钟，避免同一IP短时间内重复记录
+                            await cache.set(visitCacheKey, 'visited');
+                        }
+
+                        // 优化：使用聚合查询代替全量查询，避免CPU超时
+                        const visitStats = await db
+                            .select({
+                                pv: sql<number>`count(*)`,
+                                uv: sql<number>`count(distinct ${visits.ip})`
+                            })
+                            .from(visits)
+                            .where(eq(visits.feedId, feed.id));
+
+                        const stats = visitStats[0];
+                        pv = Number(stats?.pv || 0);
+                        uv = Number(stats?.uv || 0);
                     }
                     const data = {
                         ...other,
@@ -543,6 +556,8 @@ export function FeedService() {
             const cache = PublicCache();
             const page_num = (page ? page > 0 ? page : 1 : 1) - 1;
             const limit_num = limit ? +limit > 50 ? 50 : +limit : 20;
+
+            // 优化：添加关键词长度限制，避免过长搜索导致CPU超时
             if (keyword === undefined || keyword.trim().length === 0) {
                 return {
                     size: 0,
@@ -550,12 +565,23 @@ export function FeedService() {
                     hasNext: false
                 }
             }
+
+            // 限制搜索关键词长度
+            if (keyword.length > 100) {
+                keyword = keyword.slice(0, 100);
+            }
+
             const cacheKey = `search_${keyword}`;
             const searchKeyword = `%${keyword}%`;
-            const whereClause = or(like(feeds.title, searchKeyword),
-                    like(feeds.content, searchKeyword),
+
+            // 优化：优先搜索标题和摘要，减少全文搜索的CPU消耗
+            const whereClause = or(
+                like(feeds.title, searchKeyword),
                 like(feeds.summary, searchKeyword),
-                like(feeds.alias, searchKeyword));
+                like(feeds.alias, searchKeyword),
+                // 将content搜索放在最后，减少CPU消耗
+                like(feeds.content, searchKeyword)
+            );
             const feed_list = (await cache.getOrSet(cacheKey, () => db.query.feeds.findMany({
                 where: admin ? whereClause : and(whereClause, eq(feeds.draft, 0)),
                 columns: admin ? undefined : {

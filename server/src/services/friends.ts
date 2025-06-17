@@ -162,12 +162,11 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
     const friend_list = await db.query.friends.findMany()
     console.info(`total friends: ${friend_list.length}`)
 
-    // 优化：限制并发数量和总处理数量，避免CPU超时
+    // 优化：限制并发数量，保持超时保护，但处理所有友情链接
     const maxConcurrent = 3; // 最大并发数
-    const maxTotal = 10; // 最大处理数量
     const timeout = 5000; // 5秒超时
 
-    const limitedFriends = friend_list.slice(0, maxTotal);
+    const limitedFriends = friend_list; // 处理所有友情链接
     let health = 0
     let unhealthy = 0
 
@@ -217,5 +216,5 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
         });
     }
 
-    console.info(`friend crontab finished: ${health} healthy, ${unhealthy} unhealthy (processed ${limitedFriends.length}/${friend_list.length})`)
+    console.info(`friend crontab finished: ${health} healthy, ${unhealthy} unhealthy (processed ${limitedFriends.length} friends)`)
 }
