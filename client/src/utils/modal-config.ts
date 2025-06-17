@@ -160,36 +160,119 @@ export const MODAL_CONTAINER_CLASSES = {
   `
 };
 
-// 统一的键盘事件处理
+// 增强的键盘事件处理
 export const useModalKeyboard = (
   isOpen: boolean,
   onClose: () => void,
   onConfirm?: () => void,
-  disabled?: boolean
+  disabled?: boolean,
+  options?: {
+    enableTabNavigation?: boolean;
+    enableArrowNavigation?: boolean;
+    trapFocus?: boolean;
+  }
 ) => {
+  const {
+    enableTabNavigation = true,
+    enableArrowNavigation = false,
+    trapFocus = true
+  } = options || {};
+
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isOpen || disabled) return;
 
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        event.stopPropagation();
-        onClose();
-      } else if (event.key === 'Enter' && onConfirm) {
-        event.preventDefault();
-        event.stopPropagation();
-        onConfirm();
+      switch (event.key) {
+        case 'Escape':
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+          break;
+
+        case 'Enter':
+          if (onConfirm && !event.shiftKey && !event.ctrlKey && !event.altKey) {
+            // 只有在没有修饰键的情况下才触发确认
+            const target = event.target as HTMLElement;
+            // 避免在文本区域或可编辑元素中触发
+            if (target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+              event.preventDefault();
+              event.stopPropagation();
+              onConfirm();
+            }
+          }
+          break;
+
+        case 'Tab':
+          if (enableTabNavigation && trapFocus) {
+            // 焦点陷阱：确保Tab键只在弹窗内循环
+            const modal = document.querySelector('[role="dialog"], .ReactModal__Content');
+            if (modal) {
+              const focusableElements = modal.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+              );
+              const firstElement = focusableElements[0] as HTMLElement;
+              const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+              if (event.shiftKey) {
+                // Shift+Tab：向前导航
+                if (document.activeElement === firstElement) {
+                  event.preventDefault();
+                  lastElement?.focus();
+                }
+              } else {
+                // Tab：向后导航
+                if (document.activeElement === lastElement) {
+                  event.preventDefault();
+                  firstElement?.focus();
+                }
+              }
+            }
+          }
+          break;
+
+        case 'ArrowUp':
+        case 'ArrowDown':
+          if (enableArrowNavigation) {
+            event.preventDefault();
+            // 箭头键导航逻辑
+            const focusableElements = Array.from(
+              document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+            ) as HTMLElement[];
+
+            const currentIndex = focusableElements.indexOf(document.activeElement as HTMLElement);
+            if (currentIndex !== -1) {
+              const nextIndex = event.key === 'ArrowDown'
+                ? (currentIndex + 1) % focusableElements.length
+                : (currentIndex - 1 + focusableElements.length) % focusableElements.length;
+              focusableElements[nextIndex]?.focus();
+            }
+          }
+          break;
       }
     };
 
     if (isOpen) {
       // 使用捕获阶段确保事件被正确处理
       document.addEventListener('keydown', handleKeyDown, true);
+
+      // 设置初始焦点
+      if (trapFocus) {
+        const modal = document.querySelector('[role="dialog"], .ReactModal__Content');
+        const firstFocusable = modal?.querySelector(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        ) as HTMLElement;
+
+        // 延迟设置焦点，确保弹窗已完全渲染
+        setTimeout(() => {
+          firstFocusable?.focus();
+        }, 100);
+      }
+
       return () => {
         document.removeEventListener('keydown', handleKeyDown, true);
       };
     }
-  }, [isOpen, onClose, onConfirm, disabled]);
+  }, [isOpen, onClose, onConfirm, disabled, enableTabNavigation, enableArrowNavigation, trapFocus]);
 };
 
 // 弹窗打开时的body处理
@@ -208,3 +291,56 @@ export const useModalBodyLock = (isOpen: boolean) => {
     }
   }, [isOpen]);
 };
+
+// macOS风格的弹窗动画配置
+export const MODAL_ANIMATIONS = {
+  // 标准弹窗动画（从中心缩放）
+  MODAL: {
+    enter: 'animate-modalEnter',
+    exit: 'animate-modalExit'
+  },
+  // 下拉菜单动画（从上方滑入）
+  DROPDOWN: {
+    enter: 'animate-slideDown',
+    exit: 'animate-slideUp'
+  },
+  // 侧边栏动画（从侧边滑入）
+  DRAWER: {
+    enter: 'animate-slideInRight',
+    exit: 'animate-slideOutRight'
+  },
+  // Toast通知动画（从右侧滑入）
+  TOAST: {
+    enter: 'animate-slideInRight',
+    exit: 'animate-slideOutRight'
+  },
+  // 淡入淡出动画（用于遮罩层）
+  FADE: {
+    enter: 'animate-fadeIn',
+    exit: 'animate-fadeOut'
+  },
+  // 弹性动画（用于重要提示）
+  BOUNCE: {
+    enter: 'animate-bounceIn',
+    exit: 'animate-bounceOut'
+  }
+} as const;
+
+// 动画持续时间配置（毫秒）
+export const ANIMATION_DURATION = {
+  FAST: 150,
+  NORMAL: 250,
+  SLOW: 350,
+  EXTRA_SLOW: 500
+} as const;
+
+// 缓动函数配置
+export const EASING = {
+  // macOS标准缓动
+  EASE_OUT: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+  EASE_IN_OUT: 'cubic-bezier(0.645, 0.045, 0.355, 1)',
+  // 弹性缓动
+  SPRING: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+  // 快速缓动
+  SHARP: 'cubic-bezier(0.4, 0, 0.2, 1)'
+} as const;

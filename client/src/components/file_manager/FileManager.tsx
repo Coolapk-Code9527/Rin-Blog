@@ -10,6 +10,7 @@ import { saveAs } from 'file-saver';
 import { Pagination } from '../pagination';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../dialog';
+import { useNotification } from '../../hooks/useNotification';
 import { ClientConfigContext } from '../../state/config';
 import { FilePreview } from './FilePreview';
 import { FileTypeSvgIcon } from './FileTypeSvgIcon';
@@ -87,6 +88,7 @@ export function FileManager({
   const { t } = useTranslation();
   const { showToast } = useToast();
   const { showConfirm, ConfirmUI } = useConfirm();
+  const notification = useNotification();
   const config = useContext(ClientConfigContext);
   const S3_FOLDER = config?.get<string>('S3_FOLDER') || 'images';
   const S3_CACHE_FOLDER = config?.get<string>('S3_CACHE_FOLDER') || 'cache';
@@ -421,6 +423,9 @@ export function FileManager({
     setUploading(true);
     setUploadError(null);
 
+    // 显示上传进度通知
+    let uploadToastId: number | null = null;
+
     try {
       // 使用新的上传工具
       await uploadFiles(
@@ -431,19 +436,43 @@ export function FileManager({
         },
         (fileIndex, progress) => {
           setUploadingIndex(fileIndex + 1);
-          // 单个文件进度不更新总进度，由总进度回调处理
+          const currentFile = fileArray[fileIndex];
+          if (currentFile) {
+            // 更新单个文件的进度通知
+            uploadToastId = notification.uploadProgress(
+              currentFile.name,
+              progress,
+              () => {
+                // 取消上传逻辑（如果需要）
+                console.log('用户取消上传');
+              }
+            );
+          }
         },
         (overallProgress) => {
           setUploadingPercent(overallProgress);
+          // 更新总体进度通知
+          if (fileArray.length > 1) {
+            notification.batchProgress(
+              '文件上传',
+              Math.floor((overallProgress / 100) * fileArray.length),
+              fileArray.length
+            );
+          }
         }
       );
 
-      showToast(t('files.upload_success'), 'success');
+      notification.success(t('files.upload_success'));
       loadFiles(); // 刷新文件列表
     } catch (error: any) {
       console.error('文件上传失败:', error);
       setUploadError(error.message);
-      showToast(t('files.upload_failed', { error: error.message }), 'error');
+      notification.error(t('files.upload_failed', { error: error.message }), {
+        action: {
+          label: '重试',
+          onClick: () => handleFileUpload(event)
+        }
+      });
     }
 
     setUploadingPercent(100);
@@ -453,6 +482,10 @@ export function FileManager({
       setUploadingIndex(0);
       setUploadingPercent(0);
       setUploadError(null);
+      // 清理进度通知
+      if (uploadToastId) {
+        notification.removeToast(uploadToastId);
+      }
     }, 1200);
 
     if (uploadInputRef.current) {
@@ -530,17 +563,39 @@ export function FileManager({
   // 同步处理函数
   const handleSyncFiles = async () => {
     if (!window.confirm(t('files.sync_confirm'))) return;
+
     setIsSyncing(true);
     setSyncResult(null);
     setSyncDetailList([]);
+
+    // 显示同步进度通知
+    const syncToastId = notification.loading('正在同步文件...');
+
     try {
       const res = await fetch(`${endpoint}/files/sync`, {
         method: 'POST',
         headers: headersWithAuth(),
       });
       const data = await res.json();
+
+      // 移除加载通知
+      notification.removeToast(syncToastId);
+
       if (res.ok) {
-        setSyncResult(t('files.sync_success', { total: data.total, success: data.success, failed: data.failed }));
+        const successMessage = t('files.sync_success', { total: data.total, success: data.success, failed: data.failed });
+        setSyncResult(successMessage);
+
+        if (data.failed > 0) {
+          notification.warning(successMessage, {
+            action: {
+              label: '查看详情',
+              onClick: () => setSyncDetailOpen(true)
+            }
+          });
+        } else {
+          notification.success(successMessage);
+        }
+
         if (data.failedDetails && data.failedDetails.length > 0) {
           setSyncDetailList(data.failedDetails);
           setSyncDetailOpen(true);
@@ -549,12 +604,19 @@ export function FileManager({
         }
         loadFiles(true); // 同步后自动刷新
       } else {
-        setSyncResult(t('files.sync_failed', { error: data.error || res.status }));
+        const errorMessage = t('files.sync_failed', { error: data.error || res.status });
+        setSyncResult(errorMessage);
         setSyncDetailOpen(true);
+        notification.error(errorMessage);
       }
     } catch (e: any) {
-      setSyncResult(t('files.sync_failed', { error: e.message }));
+      // 移除加载通知
+      notification.removeToast(syncToastId);
+
+      const errorMessage = t('files.sync_failed', { error: e.message });
+      setSyncResult(errorMessage);
       setSyncDetailOpen(true);
+      notification.networkError(errorMessage);
     }
     setIsSyncing(false);
   };

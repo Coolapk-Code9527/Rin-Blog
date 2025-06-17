@@ -1,6 +1,9 @@
 /* 引入基础Tailwind样式 */
 @import "./base.css";
 
+/* 引入弹窗动画样式 */
+@import "./styles/modal-animations.css";
+
 /* 优化的字体方案 */
 :root {
   /* 无衬线字体优先级 */
@@ -69,6 +72,10 @@
   --neutral-700: #374151;
   --neutral-800: #1F2937;
   --neutral-900: #111827;
+
+  /* 弹窗系统z-index变量 */
+  --modal-z-index: 10300;
+  --lightbox-z-index: 10800;
 }
 
 /* 深色模式颜色 - 遵循苹果深色模式指南 */
@@ -1377,7 +1384,7 @@ button[role="option"] > * {
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  z-index: 10300 !important; /* 使用统一的MODAL层级 */
+  z-index: var(--modal-z-index, 10300) !important; /* 使用统一的MODAL层级 */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;

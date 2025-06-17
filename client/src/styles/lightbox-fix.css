@@ -1,6 +1,6 @@
 /* Lightbox 弹窗层级与交互修正 - 使用统一层级管理 */
 .rin-lightbox-fix, .rin-lightbox-fix * {
-  z-index: 10700 !important; /* 使用统一的LIGHTBOX层级 */
+  z-index: var(--lightbox-z-index, 10700) !important; /* 使用统一的LIGHTBOX层级 */
   pointer-events: auto !important;
 }
 .rin-lightbox-fix {

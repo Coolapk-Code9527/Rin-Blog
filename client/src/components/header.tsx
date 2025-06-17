@@ -13,6 +13,7 @@ import { ClientConfigContext } from "../state/config";
 import { useConfirm } from "./dialog";
 import React from 'react';
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
+import { MODAL_Z_INDEX } from "../utils/modal-config";
 
 
 export function Header({ children }: { children?: React.ReactNode }) {
@@ -40,7 +41,8 @@ export function Header({ children }: { children?: React.ReactNode }) {
                 if (!mask) {
                     const div = document.createElement('div');
                     div.id = 'global-header-mask';
-                    div.className = 'fixed inset-0 bg-black bg-opacity-40 z-[10500] pointer-events-none';
+                    div.className = `fixed inset-0 bg-black bg-opacity-40 pointer-events-none`;
+                    div.style.zIndex = MODAL_Z_INDEX.DRAWER.toString();
                     document.body.appendChild(div);
                 }
             } else {
@@ -374,7 +376,7 @@ function MobileMenu() {
                 <>
                     {/* 背景遮罩 - 使用优化的毛玻璃效果 */}
                     <div
-                        className={`fixed inset-0 mobile-menu-overlay z-[9990] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                        className={`fixed inset-0 mobile-menu-overlay transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                         onClick={onClose} // 点击遮罩层关闭菜单
                         aria-hidden="true"
                         style={{
@@ -384,7 +386,8 @@ function MobileMenu() {
                             right: 0,
                             bottom: 0,
                             width: '100vw',
-                            height: '100vh'
+                            height: '100vh',
+                            zIndex: MODAL_Z_INDEX.DRAWER
                         }}
                     >
                         <div
@@ -713,10 +716,11 @@ function LanguageSwitch({ className }: { className?: string }) {
             
             {isOpen && (
                 <div
-                    className="absolute top-full right-0 mt-2 glass-dropdown rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/60 dark:border-gray-700/60 z-50 animate-slideDown"
+                    className="absolute top-full right-0 mt-2 glass-dropdown rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/60 dark:border-gray-700/60 animate-slideDown"
                     style={{
                         maxHeight: '300px',
-                        overflowY: 'auto'
+                        overflowY: 'auto',
+                        zIndex: MODAL_Z_INDEX.DROPDOWN
                     }}
                     role="menu"
                     aria-orientation="vertical"
@@ -985,12 +989,13 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                     {isExpanded && searchHistory.length > 0 && (
                         <div 
                             id="search-history-dropdown"
-                            className={`absolute top-full mt-2 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg z-50 overflow-hidden animate-slideDown ${getHistoryDropdownPositionClass()}`}
+                            className={`absolute top-full mt-2 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg overflow-hidden animate-slideDown ${getHistoryDropdownPositionClass()}`}
                             role="listbox"
                             style={{
                                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)',
                                 backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                                WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
+                                WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
+                                zIndex: MODAL_Z_INDEX.DROPDOWN
                             }}
                         >
                             <div className="max-h-48 overflow-y-auto">
@@ -1106,7 +1111,8 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                     
                     {isOpen && (
                         <div
-                            className="absolute top-full right-0 mt-2 glass-dropdown rounded-xl shadow-xl p-2 w-64 border border-gray-200/60 dark:border-gray-700/60 z-20 animate-slideDown"
+                            className="absolute top-full right-0 mt-2 glass-dropdown rounded-xl shadow-xl p-2 w-64 border border-gray-200/60 dark:border-gray-700/60 animate-slideDown"
+                            style={{ zIndex: MODAL_Z_INDEX.DROPDOWN }}
                             role="menu"
                             aria-orientation="vertical"
                             aria-labelledby="user-menu"
@@ -1187,7 +1193,10 @@ function CollapsedMenu() {
             </button>
             
             {isOpen && (
-                <div className="absolute right-0 mt-2 py-2 w-48 glass-dropdown rounded-lg shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60 z-20 animate-slideDown">
+                <div
+                    className="absolute right-0 mt-2 py-2 w-48 glass-dropdown rounded-lg shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60 animate-slideDown"
+                    style={{ zIndex: MODAL_Z_INDEX.DROPDOWN }}
+                >
                     <NavBar menu={true} onClick={() => setIsOpen(false)} />
                 </div>
             )}

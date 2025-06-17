@@ -1,0 +1,298 @@
+/**
+ * macOS风格弹窗动画
+ * 统一的动画效果，确保所有弹窗都有一致的视觉体验
+ */
+
+/* 动画变量定义 */
+:root {
+  --modal-animation-fast: 150ms;
+  --modal-animation-normal: 250ms;
+  --modal-animation-slow: 350ms;
+  --modal-animation-extra-slow: 500ms;
+  
+  --modal-easing-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --modal-easing-ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --modal-easing-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --modal-easing-sharp: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 标准弹窗动画 - 从中心缩放 */
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalExit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+}
+
+.animate-modalEnter {
+  animation: modalEnter var(--modal-animation-normal) var(--modal-easing-ease-out) forwards;
+}
+
+.animate-modalExit {
+  animation: modalExit var(--modal-animation-fast) var(--modal-easing-sharp) forwards;
+}
+
+/* 下拉菜单动画 - 从上方滑入 */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown var(--modal-animation-fast) var(--modal-easing-ease-out) forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp var(--modal-animation-fast) var(--modal-easing-sharp) forwards;
+}
+
+/* 侧边栏动画 - 从右侧滑入 */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+.animate-slideInRight {
+  animation: slideInRight var(--modal-animation-normal) var(--modal-easing-ease-out) forwards;
+}
+
+.animate-slideOutRight {
+  animation: slideOutRight var(--modal-animation-fast) var(--modal-easing-sharp) forwards;
+}
+
+/* 淡入淡出动画 - 用于遮罩层 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn var(--modal-animation-normal) var(--modal-easing-ease-out) forwards;
+}
+
+.animate-fadeOut {
+  animation: fadeOut var(--modal-animation-fast) var(--modal-easing-sharp) forwards;
+}
+
+/* 弹性动画 - 用于重要提示 */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounceOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+
+.animate-bounceIn {
+  animation: bounceIn var(--modal-animation-slow) var(--modal-easing-spring) forwards;
+}
+
+.animate-bounceOut {
+  animation: bounceOut var(--modal-animation-normal) var(--modal-easing-sharp) forwards;
+}
+
+/* Toast通知特殊动画 - 从右侧滑入并带有轻微弹性 */
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+}
+
+.animate-toastSlideIn {
+  animation: toastSlideIn var(--modal-animation-normal) var(--modal-easing-ease-out) forwards;
+}
+
+.animate-toastSlideOut {
+  animation: toastSlideOut var(--modal-animation-fast) var(--modal-easing-sharp) forwards;
+}
+
+/* 进度条动画 */
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+}
+
+.animate-progressFill {
+  animation: progressFill var(--modal-animation-slow) var(--modal-easing-ease-out) forwards;
+}
+
+/* 响应式动画调整 */
+@media (max-width: 768px) {
+  :root {
+    --modal-animation-fast: 120ms;
+    --modal-animation-normal: 200ms;
+    --modal-animation-slow: 280ms;
+    --modal-animation-extra-slow: 400ms;
+  }
+  
+  /* 移动端弹窗从底部滑入 */
+  @keyframes mobileModalEnter {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes mobileModalExit {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+  }
+  
+  .animate-modalEnter {
+    animation: mobileModalEnter var(--modal-animation-normal) var(--modal-easing-ease-out) forwards;
+  }
+  
+  .animate-modalExit {
+    animation: mobileModalExit var(--modal-animation-fast) var(--modal-easing-sharp) forwards;
+  }
+}
+
+/* 减少动画偏好设置支持 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --modal-animation-fast: 0ms;
+    --modal-animation-normal: 0ms;
+    --modal-animation-slow: 0ms;
+    --modal-animation-extra-slow: 0ms;
+  }
+  
+  .animate-modalEnter,
+  .animate-modalExit,
+  .animate-slideDown,
+  .animate-slideUp,
+  .animate-slideInRight,
+  .animate-slideOutRight,
+  .animate-fadeIn,
+  .animate-fadeOut,
+  .animate-bounceIn,
+  .animate-bounceOut,
+  .animate-toastSlideIn,
+  .animate-toastSlideOut {
+    animation: none !important;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .animate-modalEnter,
+  .animate-slideDown,
+  .animate-slideInRight,
+  .animate-fadeIn,
+  .animate-bounceIn,
+  .animate-toastSlideIn {
+    animation-duration: var(--modal-animation-fast) !important;
+  }
+}
