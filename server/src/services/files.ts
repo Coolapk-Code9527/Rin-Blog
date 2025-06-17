@@ -1,5 +1,5 @@
-import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
-import { eq, sql, and, like, desc, asc, or, isNull, inArray } from "drizzle-orm";
+import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { eq, sql, and, like, desc, asc, or, isNull, isNotNull, inArray } from "drizzle-orm";
 import Elysia, { t } from "elysia";
 import path from "node:path";
 import type { Env } from "../db/db";
@@ -209,8 +209,8 @@ export function FileService() {
                                 url: file.path ? `${accessHost}${file.path}` : undefined,
                                 thumbUrl: file.thumbnailHash
                                     ? (file.parentPath && file.parentPath !== '/'
-                                        ? `${accessHost}${file.parentPath}/${file.thumbnailHash}`
-                                        : `${accessHost}/${file.thumbnailHash}`)
+                                        ? `${accessHost}${file.parentPath}/thumb_${file.thumbnailHash}`
+                                        : `${accessHost}/thumb_${file.thumbnailHash}`)
                                     : undefined,
                             })),
                             total: count,
@@ -383,9 +383,9 @@ export function FileService() {
                         }));
                         const filePath = normalizePath((parentPath === '/' ? '' : parentPath) + '/' + hash);
                         let thumbnailHash: string | undefined = undefined;
-                        // 仅对图片类型生成缩略图
+                        // 仅对图片类型生成缩略图，排除视频文件
                         const mimeType = file.type || getMimeTypeFromFileName(name || file.name);
-                        if (mimeType.startsWith('image/')) {
+                        if (mimeType.startsWith('image/') && !mimeType.startsWith('video/')) {
                             try {
                                 let arrBuf: ArrayBuffer;
                                 if (!isRealArrayBuffer(fileBuffer)) {
@@ -575,31 +575,20 @@ export function FileService() {
                             const r2Key = file.path.replace(/^\//, '');
                             await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
 
-                            // 删除缩略图对象
+                            // 统一删除缩略图（thumb_ + thumbnailHash）
                             if (file.thumbnailHash) {
-                                // 对于图片文件，缩略图使用 thumb_ 前缀，只存储在R2
-                                if (file.mimeType && file.mimeType.startsWith('image/')) {
+                                console.log('开始删除缩略图，thumbnailHash:', file.thumbnailHash);
+
+                                try {
+                                    // 统一的缩略图路径：thumb_ + hash
                                     const thumbKey = (file.parentPath && file.parentPath !== '/')
                                       ? file.parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
                                       : 'thumb_' + file.thumbnailHash;
-                                    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
-                                } else {
-                                    // 对于视频文件，需要通过thumbnailHash查找缩略图文件记录
-                                    try {
-                                        const thumbnailFile = await db.select().from(files).where(eq(files.hash, file.thumbnailHash)).limit(1);
-                                        if (thumbnailFile.length > 0) {
-                                            const thumbFile = thumbnailFile[0];
-                                            // 删除R2中的缩略图文件
-                                            const thumbKey = thumbFile.path.replace(/^\//, '');
-                                            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
 
-                                            // 删除缩略图在files表中的记录
-                                            await db.delete(files).where(eq(files.id, thumbFile.id));
-                                            console.log('成功删除视频缩略图:', thumbFile.name);
-                                        }
-                                    } catch (e) {
-                                        console.warn('删除视频缩略图失败:', e);
-                                    }
+                                    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
+                                    console.log('成功删除缩略图:', thumbKey);
+                                } catch (e) {
+                                    console.log('缩略图不存在或删除失败:', e);
                                 }
                             }
                         } catch (e) {
@@ -691,60 +680,27 @@ export function FileService() {
                                 }));
                                 await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldR2Key }));
                             } catch (e) {}
-                            // 同步移动缩略图
+                            // 统一移动缩略图（thumb_ + thumbnailHash）
                             if (file.thumbnailHash) {
-                                // 对于图片文件，缩略图使用 thumb_ 前缀，只存储在R2
-                                if (file.mimeType && file.mimeType.startsWith('image/')) {
-                                    const oldThumbKey = (file.parentPath && file.parentPath !== '/')
-                                      ? file.parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
-                                      : 'thumb_' + file.thumbnailHash;
-                                    const newThumbKey = (parentPath && parentPath !== '/')
-                                      ? parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
-                                      : 'thumb_' + file.thumbnailHash;
-                                    try {
-                                        const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
-                                        await s3.send(new PutObjectCommand({
-                                            Bucket: bucket,
-                                            Key: newThumbKey,
-                                            Body: obj.Body,
-                                            ContentType: 'image/webp',
-                                        }));
-                                        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
-                                    } catch (e) { /* 忽略异常 */ }
-                                } else {
-                                    // 对于视频文件，需要移动缩略图文件记录和R2文件
-                                    try {
-                                        const thumbnailFile = await db.select().from(files).where(eq(files.hash, file.thumbnailHash)).limit(1);
-                                        if (thumbnailFile.length > 0) {
-                                            const thumbFile = thumbnailFile[0];
-                                            const oldThumbKey = thumbFile.path.replace(/^\//, '');
-                                            const newThumbPath = normalizePath((parentPath === '/' ? '' : parentPath) + '/' + thumbFile.name);
-                                            const newThumbKey = newThumbPath.replace(/^\//, '');
+                                const oldThumbKey = (file.parentPath && file.parentPath !== '/')
+                                  ? file.parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
+                                  : 'thumb_' + file.thumbnailHash;
+                                const newThumbKey = (parentPath && parentPath !== '/')
+                                  ? parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
+                                  : 'thumb_' + file.thumbnailHash;
 
-                                            // 移动R2中的缩略图文件
-                                            const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
-                                            await s3.send(new PutObjectCommand({
-                                                Bucket: bucket,
-                                                Key: newThumbKey,
-                                                Body: obj.Body,
-                                                ContentType: 'image/jpeg',
-                                            }));
-                                            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
-
-                                            // 更新缩略图文件记录的路径
-                                            await db.update(files)
-                                                .set({
-                                                    path: newThumbPath,
-                                                    parentPath: parentPath,
-                                                    modifiedAt: new Date()
-                                                })
-                                                .where(eq(files.id, thumbFile.id));
-
-                                            console.log('成功移动视频缩略图:', thumbFile.name, '到', newThumbPath);
-                                        }
-                                    } catch (e) {
-                                        console.warn('移动视频缩略图失败:', e);
-                                    }
+                                try {
+                                    const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
+                                    await s3.send(new PutObjectCommand({
+                                        Bucket: bucket,
+                                        Key: newThumbKey,
+                                        Body: obj.Body,
+                                        ContentType: obj.ContentType || 'image/jpeg',
+                                    }));
+                                    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
+                                    console.log('成功移动缩略图:', oldThumbKey, '到', newThumbKey);
+                                } catch (e) {
+                                    console.warn('移动缩略图失败:', e);
                                 }
                             }
                             // 更新自身 path 和 parentPath
@@ -992,31 +948,20 @@ export function FileService() {
                             const r2Key = file.path.replace(/^ /, '');
                             try {
                                 await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
-                                // 删除缩略图对象
+                                // 统一删除缩略图（thumb_ + thumbnailHash）
                                 if (file.thumbnailHash) {
-                                    // 对于图片文件，缩略图使用 thumb_ 前缀，只存储在R2
-                                    if (file.mimeType && file.mimeType.startsWith('image/')) {
+                                    console.log('批量删除：开始删除缩略图，thumbnailHash:', file.thumbnailHash);
+
+                                    try {
+                                        // 统一的缩略图路径：thumb_ + hash
                                         const thumbKey = (file.parentPath && file.parentPath !== '/')
                                           ? file.parentPath.replace(/^\//, '') + '/thumb_' + file.thumbnailHash
                                           : 'thumb_' + file.thumbnailHash;
-                                        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
-                                    } else {
-                                        // 对于视频文件，需要通过thumbnailHash查找缩略图文件记录
-                                        try {
-                                            const thumbnailFile = await db.select().from(files).where(eq(files.hash, file.thumbnailHash)).limit(1);
-                                            if (thumbnailFile.length > 0) {
-                                                const thumbFile = thumbnailFile[0];
-                                                // 删除R2中的缩略图文件
-                                                const thumbKey = thumbFile.path.replace(/^\//, '');
-                                                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
 
-                                                // 删除缩略图在files表中的记录
-                                                await db.delete(files).where(eq(files.id, thumbFile.id));
-                                                console.log('批量删除：成功删除视频缩略图:', thumbFile.name);
-                                            }
-                                        } catch (e) {
-                                            console.warn('批量删除：删除视频缩略图失败:', e);
-                                        }
+                                        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
+                                        console.log('批量删除：成功删除缩略图:', thumbKey);
+                                    } catch (e) {
+                                        console.log('批量删除：缩略图不存在或删除失败:', e);
                                     }
                                 }
                             } catch (e) { errors.push({ id: fileId, error: String(e) }); }
@@ -1163,6 +1108,58 @@ export function FileService() {
                     })
                 })
 
+                // 直接上传缩略图到R2（统一逻辑）
+                .options('/upload-thumbnail', ({ set }) => {
+                    set.headers = {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Thumbnail-Key, X-Content-Type',
+                    };
+                    return '';
+                })
+                .post('/upload-thumbnail', async ({ headers, body, uid, set }) => {
+                    // 设置CORS头
+                    set.headers = {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Thumbnail-Key, X-Content-Type',
+                    };
+
+                    if (!uid) {
+                        set.status = 401;
+                        return { error: 'Unauthorized' };
+                    }
+
+                    const thumbnailKey = headers['x-thumbnail-key'];
+                    const contentType = headers['x-content-type'] || 'image/jpeg';
+
+                    if (!thumbnailKey) {
+                        set.status = 400;
+                        return { error: 'Missing thumbnail key' };
+                    }
+
+                    try {
+                        const env = getEnv();
+                        const s3 = createS3Client();
+                        const bucket = env.S3_BUCKET;
+
+                        // 直接上传到R2
+                        await s3.send(new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: thumbnailKey,
+                            Body: new Uint8Array(body as ArrayBuffer),
+                            ContentType: contentType,
+                        }));
+
+                        console.log('缩略图上传成功:', thumbnailKey);
+                        return { success: true, key: thumbnailKey };
+                    } catch (error: any) {
+                        console.error('Error uploading thumbnail:', error);
+                        set.status = 500;
+                        return { error: error.message || 'Internal server error' };
+                    }
+                })
+
                 // 清理幽灵缩略图数据
                 .post('/cleanup-thumbnails', async ({ uid, admin, set }) => {
                     if (!admin) {
@@ -1182,33 +1179,46 @@ export function FileService() {
                         let cleaned = 0;
                         let errors = [];
 
-                        // 查找所有孤儿缩略图文件（在files表中但没有被任何文件引用）
-                        const orphanThumbnails = await db
-                            .select()
+                        // 查找所有孤儿缩略图（R2中存在但没有被任何文件引用的thumb_文件）
+                        console.log('开始扫描孤儿缩略图...');
+
+                        // 获取所有有thumbnailHash的文件
+                        const filesWithThumbnails = await db
+                            .select({ thumbnailHash: files.thumbnailHash })
                             .from(files)
-                            .where(
-                                and(
-                                    like(files.name, 'thumb_%'),
-                                    sql`${files.hash} NOT IN (SELECT thumbnail_hash FROM files WHERE thumbnail_hash IS NOT NULL)`
-                                )
-                            );
+                            .where(isNotNull(files.thumbnailHash));
 
-                        console.log(`发现 ${orphanThumbnails.length} 个孤儿缩略图文件`);
+                        const referencedHashes = new Set(filesWithThumbnails.map(f => f.thumbnailHash));
+                        console.log(`发现 ${referencedHashes.size} 个被引用的缩略图hash`);
 
-                        for (const thumbnail of orphanThumbnails) {
-                            try {
-                                // 删除R2中的文件
-                                const r2Key = thumbnail.path.replace(/^\//, '');
-                                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
+                        // 扫描R2中的所有thumb_文件
+                        try {
+                            const listCommand = new ListObjectsV2Command({ Bucket: bucket });
+                            const response = await s3.send(listCommand);
+                            const allObjects = (response as any).Contents || [];
 
-                                // 删除数据库记录
-                                await db.delete(files).where(eq(files.id, thumbnail.id));
+                            for (const obj of allObjects) {
+                                const key = obj.Key || '';
+                                const fileName = key.split('/').pop() || '';
 
-                                cleaned++;
-                                console.log(`清理孤儿缩略图: ${thumbnail.name}`);
-                            } catch (e) {
-                                errors.push({ id: thumbnail.id, name: thumbnail.name, error: String(e) });
+                                if (fileName.startsWith('thumb_')) {
+                                    const thumbHash = fileName.replace('thumb_', '');
+
+                                    // 如果这个hash没有被任何文件引用，就是孤儿缩略图
+                                    if (!referencedHashes.has(thumbHash)) {
+                                        try {
+                                            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+                                            cleaned++;
+                                            console.log(`清理孤儿缩略图: ${fileName}`);
+                                        } catch (e) {
+                                            errors.push({ key, error: String(e) });
+                                        }
+                                    }
+                                }
                             }
+                        } catch (e) {
+                            console.error('扫描R2文件失败:', e);
+                            errors.push({ error: `扫描R2失败: ${String(e)}` });
                         }
 
                         return {

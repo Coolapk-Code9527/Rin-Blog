@@ -76,39 +76,38 @@ export async function uploadFile(
 
         onProgress?.(70);
 
-        // 创建缩略图文件，使用规范的命名规则
-        const thumbnailFile = new File([thumbnailBlob], `thumb_video_${Date.now()}_${Math.random().toString(36).substring(2, 11)}.jpg`, {
-          type: 'image/jpeg'
-        });
+        // 计算缩略图hash（统一逻辑）
+        const thumbnailBuffer = await thumbnailBlob.arrayBuffer();
+        const thumbnailHashArray = await crypto.subtle.digest('SHA-1', thumbnailBuffer);
+        const thumbnailHash = Array.from(new Uint8Array(thumbnailHashArray))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
 
-        // 上传缩略图
-        const thumbnailResponse = await client.files.index.post(
-          {
-            file: thumbnailFile,
-            name: thumbnailFile.name,
-            parentPath,
-          },
-          {
-            headers: headersWithAuth(),
-          }
-        );
+        // 构造缩略图key（统一命名规则：thumb_ + hash）
+        const thumbnailKey = parentPath === '/'
+          ? `thumb_${thumbnailHash}`
+          : `${parentPath.replace(/^\//, '')}/thumb_${thumbnailHash}`;
 
-        onProgress?.(85);
+        // 直接上传缩略图到R2（统一逻辑）
+        try {
+          const { endpoint } = await import('../main');
+          const uploadResponse = await fetch(`${endpoint}/files/upload-thumbnail`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/octet-stream',
+              'X-Thumbnail-Key': thumbnailKey,
+              'X-Content-Type': 'image/jpeg',
+              ...headersWithAuth()
+            },
+            body: thumbnailBuffer
+          });
 
-        if (thumbnailResponse.data && typeof thumbnailResponse.data === 'object') {
-          const thumbnailData = thumbnailResponse.data as any;
-          thumbnailUrl = thumbnailData.url || thumbnailData.path || '';
-          
-          // 获取缩略图的hash，关联到主文件
-          const thumbnailHash = thumbnailData.hash;
-          const mainFileId = fileData.id;
-          
-          if (thumbnailHash && mainFileId) {
-            console.log('关联缩略图到主文件:', mainFileId, thumbnailHash);
-            
-            // 调用API关联缩略图
-            try {
-              const { endpoint } = await import('../main');
+          if (uploadResponse.ok) {
+            console.log('缩略图上传成功:', thumbnailKey);
+
+            // 关联缩略图到主文件
+            const mainFileId = fileData.id;
+            if (mainFileId) {
               const linkResponse = await fetch(`${endpoint}/files/${mainFileId}/thumbnail`, {
                 method: 'PATCH',
                 headers: {
@@ -117,17 +116,23 @@ export async function uploadFile(
                 },
                 body: JSON.stringify({ thumbnailHash })
               });
-              
+
               if (linkResponse.ok) {
                 console.log('缩略图关联成功');
+                // 构造缩略图URL
+                thumbnailUrl = `${endpoint.replace('/api', '')}/${thumbnailKey}`;
               } else {
                 console.warn('缩略图关联失败:', await linkResponse.text());
               }
-            } catch (linkError) {
-              console.warn('缩略图关联失败:', linkError);
             }
+          } else {
+            console.warn('缩略图上传失败:', await uploadResponse.text());
           }
+        } catch (error) {
+          console.error('缩略图处理失败:', error);
         }
+
+        onProgress?.(85);
       } catch (error) {
         console.error('视频缩略图生成失败:', error);
         // 缩略图生成失败不影响主流程
