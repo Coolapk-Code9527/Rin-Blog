@@ -30,6 +30,7 @@ import type { Feed } from '../types/api';  // 根据实际路径调整
 import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialog';
 import type { FileItem } from '../types/api';
 import { MODAL_Z_INDEX } from "../utils/modal-config";
+import { generateVideoThumbnail, isVideoFile } from '../utils/videoThumbnail';
 
 // 处理process.env问题
 declare const process: {
@@ -1103,34 +1104,62 @@ const useEditorDragDrop = (editorRef: React.RefObject<editor.IStandaloneCodeEdit
         setUploadProgress(Math.round((i / files.length) * 100));
 
         await new Promise<void>((resolve, reject) => {
-          uploadImage(file, (url) => {
-            const currentValue = editor.getModel()?.getValue();
-            let insertText = '';
+          // 对视频文件使用新的上传函数，其他文件使用原有函数
+          if (isVideoFile(file)) {
+            uploadFileWithThumbnail(file, (url, thumbnailUrl) => {
+              const currentValue = editor.getModel()?.getValue();
+              let insertText = '';
 
-            if (file.type.startsWith('image/')) {
-              insertText = `![${file.name}](${url})\n`;
-            } else if (file.type.startsWith('audio/')) {
-              insertText = `<audio src="${url}" controls></audio>\n`;
-            } else if (file.type.startsWith('video/')) {
-              insertText = `<video src="${url}" controls></video>\n`;
-            } else {
-              insertText = `[${file.name}](${url})\n`;
-            }
+              if (thumbnailUrl) {
+                // 如果有缩略图，使用poster属性
+                insertText = `<video src="${url}" poster="${thumbnailUrl}" controls></video>\n`;
+              } else {
+                // 没有缩略图，使用普通video标签
+                insertText = `<video src="${url}" controls></video>\n`;
+              }
 
-            if (currentValue && currentValue.includes(insertText.trim())) {
+              if (currentValue && currentValue.includes(insertText.trim())) {
+                resolve();
+                return;
+              }
+
+              editor.executeEdits(undefined, [{
+                range: selection,
+                text: insertText,
+              }]);
               resolve();
-              return;
-            }
+            }, (error) => {
+              showAlert(error);
+              reject(new Error(error));
+            });
+          } else {
+            uploadImage(file, (url) => {
+              const currentValue = editor.getModel()?.getValue();
+              let insertText = '';
 
-            editor.executeEdits(undefined, [{
-              range: selection,
-              text: insertText,
-            }]);
-            resolve();
-          }, (error) => {
-            showAlert(error);
-            reject(new Error(error));
-          });
+              if (file.type.startsWith('image/')) {
+                insertText = `![${file.name}](${url})\n`;
+              } else if (file.type.startsWith('audio/')) {
+                insertText = `<audio src="${url}" controls></audio>\n`;
+              } else {
+                insertText = `[${file.name}](${url})\n`;
+              }
+
+              if (currentValue && currentValue.includes(insertText.trim())) {
+                resolve();
+                return;
+              }
+
+              editor.executeEdits(undefined, [{
+                range: selection,
+                text: insertText,
+              }]);
+              resolve();
+            }, (error) => {
+              showAlert(error);
+              reject(new Error(error));
+            });
+          }
         });
       }
       setUploadProgress(100);
@@ -1395,6 +1424,129 @@ async function update({
     window.dispatchEvent(new CustomEvent('file-upload-success'));
   }
   }
+
+// 上传文件并为视频生成缩略图
+async function uploadFileWithThumbnail(file: File, onSuccess: (url: string, thumbnailUrl?: string) => void, showAlert: ShowAlertType) {
+  const t = i18n.t;
+  try {
+    const config = JSON.parse(sessionStorage.getItem('config') || '{}');
+    const S3_FOLDER = config.S3_FOLDER || 'images';
+
+    // 上传主文件
+    const response = await client.files.index.post(
+      {
+        file,
+        name: file.name,
+        parentPath: '/' + S3_FOLDER,
+      },
+      {
+        headers: headersWithAuth(),
+      }
+    );
+
+    if (response.error) {
+      let errMsg = typeof response.error.value === 'object'
+        ? JSON.stringify(response.error.value)
+        : response.error.value;
+      showAlert(t("upload.failed", { error: errMsg }));
+      return;
+    }
+
+    let fileUrl = '';
+    if (response.data && typeof response.data === 'object') {
+      fileUrl = response.data.url || response.data.path || '';
+    }
+    if (!fileUrl && typeof response.data === 'string') {
+      fileUrl = response.data;
+    }
+
+    if (!fileUrl) {
+      showAlert(t("upload.failed", { error: 'No url returned' }));
+      return;
+    }
+
+    // 如果是视频文件，生成缩略图
+    let thumbnailUrl: string | undefined;
+    if (isVideoFile(file)) {
+      try {
+        console.log('开始为视频生成缩略图:', file.name);
+        // 生成视频缩略图
+        const thumbnailBlob = await generateVideoThumbnail(file, 1, 400, 300, 0.8);
+        console.log('缩略图生成成功，大小:', thumbnailBlob.size, 'bytes');
+
+        // 计算缩略图hash（统一逻辑）
+        const thumbnailBuffer = await thumbnailBlob.arrayBuffer();
+        const thumbnailHashArray = await crypto.subtle.digest('SHA-1', thumbnailBuffer);
+        const thumbnailHash = Array.from(new Uint8Array(thumbnailHashArray))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+
+        // 构造缩略图key（统一命名规则：thumb_ + hash）
+        const thumbnailKey = `${S3_FOLDER}/thumb_${thumbnailHash}`;
+
+        // 直接上传缩略图到R2（统一逻辑）
+        try {
+          const { endpoint } = await import('../main');
+          const uploadResponse = await fetch(`${endpoint}/files/upload-thumbnail`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/octet-stream',
+              'X-Thumbnail-Key': thumbnailKey,
+              'X-Content-Type': 'image/jpeg',
+              ...headersWithAuth()
+            },
+            body: thumbnailBuffer
+          });
+
+          if (uploadResponse.ok) {
+            console.log('缩略图上传成功:', thumbnailKey);
+
+            // 关联缩略图到主文件
+            const mainFileId = (response.data as any).id;
+            if (mainFileId) {
+              const linkResponse = await fetch(`${endpoint}/files/${mainFileId}/thumbnail`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...headersWithAuth()
+                },
+                body: JSON.stringify({ thumbnailHash })
+              });
+
+              if (linkResponse.ok) {
+                console.log('缩略图关联成功');
+                // 构造缩略图URL
+                thumbnailUrl = `${endpoint.replace('/api', '')}/${thumbnailKey}`;
+              } else {
+                console.warn('缩略图关联失败:', await linkResponse.text());
+              }
+            }
+          } else {
+            console.warn('缩略图上传失败:', await uploadResponse.text());
+          }
+        } catch (error) {
+          console.error('缩略图处理失败:', error);
+        }
+
+        console.log('最终缩略图URL:', thumbnailUrl);
+      } catch (error) {
+        console.error('视频缩略图生成失败:', error);
+        // 缩略图生成失败不影响主流程
+      }
+    }
+
+    // 调用成功回调
+    onSuccess(fileUrl, thumbnailUrl);
+
+    // 上传成功后刷新文件管理（如有）
+    if (window.dispatchEvent) {
+      window.dispatchEvent(new CustomEvent('file-upload-success'));
+    }
+  } catch (e: any) {
+    console.error(e);
+    showAlert(t("upload.failed", { error: e.message || JSON.stringify(e) || 'Server error' }));
+  }
+}
 
 // 修改uploadImage函数，处理API响应类型
 async function uploadImage(file: File, onSuccess: (url: string) => void, showAlert: ShowAlertType) {
@@ -2048,6 +2200,9 @@ export function WritingPage({ id }: { id?: number }) {
       } else if (file.mimeType.startsWith('audio/')) {
         block = `<audio src=\"${file.url}\" controls></audio>`;
       } else if (file.mimeType.startsWith('video/')) {
+        // 对于文件选择器插入的视频，暂时不添加poster属性
+        // 因为我们无法确定缩略图是否存在
+        // TODO: 后续可以通过API查询缩略图信息
         block = `<video src=\"${file.url}\" controls></video>`;
       } else {
         block = `[${file.name}](${file.url})`;
