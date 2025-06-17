@@ -94,8 +94,8 @@ export async function generateVideoThumbnail(
     };
 
     let retryCount = 0;
-    const maxRetries = 3;
-    const retryTimePoints = [1, 0.25, 0.5, 0.75]; // 尝试不同的时间点
+    const maxRetries = 2; // 优化：减少重试次数从3到2，降低CPU消耗
+    const retryTimePoints = [1, 0.25, 0.5]; // 优化：减少重试时间点
 
     const onSeeked = () => {
       console.log('视频定位完成，开始生成缩略图');
@@ -113,8 +113,8 @@ export async function generateVideoThumbnail(
         let nonBlackPixels = 0;
         let totalBrightness = 0;
 
-        // 检查更多像素，获得更准确的判断
-        const sampleSize = Math.min(pixels.length, 16000); // 检查前4000个像素
+        // 优化：减少像素采样以降低CPU消耗（从16000减少到4000，减少75%计算量）
+        const sampleSize = Math.min(pixels.length, 4000); // 检查前1000个像素（4000字节）
         for (let i = 0; i < sampleSize; i += 4) {
           const r = pixels[i];
           const g = pixels[i + 1];
@@ -132,8 +132,8 @@ export async function generateVideoThumbnail(
 
         console.log(`图像分析: 非黑色像素比例=${(nonBlackRatio * 100).toFixed(1)}%, 平均亮度=${avgBrightness.toFixed(1)}`);
 
-        // 如果图像太黑且还有重试机会，尝试其他时间点
-        if ((nonBlackRatio < 0.1 || avgBrightness < 30) && retryCount < maxRetries && video.duration > 2) {
+        // 优化：提高重试阈值，减少不必要的重试（降低CPU消耗）
+        if ((nonBlackRatio < 0.05 || avgBrightness < 20) && retryCount < maxRetries && video.duration > 2) {
           retryCount++;
           console.warn(`检测到黑色帧，尝试第${retryCount}次重试`);
 

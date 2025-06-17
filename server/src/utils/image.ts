@@ -13,17 +13,17 @@ export function extractImage(content: string) {
 /**
  * 生成图片缩略图
  * @param imageBuffer 原始图片 ArrayBuffer
- * @param width 缩略图宽度，默认 200
- * @param height 缩略图高度，默认 200
- * @param quality 质量 1-100，默认 80
+ * @param width 缩略图宽度，默认 150（优化：从200降到150，减少处理时间）
+ * @param height 缩略图高度，默认 150（优化：从200降到150，减少处理时间）
+ * @param quality 质量 1-100，默认 60（优化：从80降到60，减少CPU消耗）
  * @param format 输出格式，默认 webp
  * @returns 缩略图 ArrayBuffer
  */
 export async function generateThumbnail(
   imageBuffer: ArrayBuffer,
-  width: number = 200,
-  height: number = 200,
-  quality: number = 80,
+  width: number = 150,
+  height: number = 150,
+  quality: number = 60,
   format: 'webp' | 'jpeg' | 'png' | 'avif' = 'webp'
 ): Promise<ArrayBuffer> {
   const result = await optimizeImage({

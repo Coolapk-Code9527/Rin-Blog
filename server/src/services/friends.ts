@@ -170,9 +170,10 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
     let health = 0
     let unhealthy = 0
 
-    // 分批并发处理
+    // 深度优化：分批并发处理，减少slice操作
     for (let i = 0; i < limitedFriends.length; i += maxConcurrent) {
-        const batch = limitedFriends.slice(i, i + maxConcurrent);
+        const batchEnd = Math.min(i + maxConcurrent, limitedFriends.length);
+        const batch = limitedFriends.slice(i, batchEnd);
 
         const promises = batch.map(async (friend) => {
             console.info(`checking ${friend.name}: ${friend.url}`)

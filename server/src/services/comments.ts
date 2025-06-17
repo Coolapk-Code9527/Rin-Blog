@@ -55,49 +55,50 @@ export function CommentService() {
                             return comment;
                         });
 
-                        // 优化：构建树形结构，添加深度限制
+                        // 深度优化：单次遍历构建树形结构，显著减少CPU消耗
                         const buildCommentTree = (comments: any[]) => {
                             const commentMap = new Map();
                             const rootComments: any[] = [];
                             const maxDepth = 5; // 最大嵌套深度
+                            const maxRepliesPerLevel = 50; // 每层最大回复数
 
-                            // 首先创建所有评论的映射
-                            comments.forEach(comment => {
-                                commentMap.set(comment.id, { ...comment, replies: [], depth: 0 });
-                            });
+                            // 深度优化：单次遍历同时创建映射和构建树结构
+                            for (const comment of comments) {
+                                // 创建评论节点
+                                const commentNode = { ...comment, replies: [], depth: 0 };
+                                commentMap.set(comment.id, commentNode);
 
-                            // 然后构建树形结构，限制深度
-                            comments.forEach(comment => {
-                                const commentWithReplies = commentMap.get(comment.id);
+                                // 立即尝试构建父子关系
                                 if (comment.parentId) {
                                     const parent = commentMap.get(comment.parentId);
-                                    if (parent && parent.depth < maxDepth) {
-                                        commentWithReplies.depth = parent.depth + 1;
-                                        parent.replies.push(commentWithReplies);
+                                    if (parent && parent.depth < maxDepth && parent.replies.length < maxRepliesPerLevel) {
+                                        // 设置深度并添加到父评论
+                                        commentNode.depth = parent.depth + 1;
+                                        parent.replies.push(commentNode);
                                     } else {
-                                        // 超过最大深度，作为根评论处理
-                                        rootComments.push(commentWithReplies);
+                                        // 超过深度限制或父评论回复数量限制，作为根评论
+                                        rootComments.push(commentNode);
                                     }
                                 } else {
-                                    rootComments.push(commentWithReplies);
+                                    // 根评论
+                                    rootComments.push(commentNode);
                                 }
-                            });
+                            }
 
-                            // 优化：非递归排序回复，避免深度递归
-                            const sortReplies = (comment: any) => {
+                            // 深度优化：使用队列进行非递归排序，避免深度递归和栈溢出
+                            const sortQueue = [...rootComments];
+                            while (sortQueue.length > 0) {
+                                const comment = sortQueue.shift()!;
                                 if (comment.replies && comment.replies.length > 0) {
-                                    // 限制每层回复数量
-                                    const maxRepliesPerLevel = 50;
-                                    comment.replies = comment.replies
-                                        .slice(0, maxRepliesPerLevel)
-                                        .sort((a: any, b: any) =>
-                                            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-                                        );
-                                    comment.replies.forEach(sortReplies);
+                                    // 按时间排序回复
+                                    comment.replies.sort((a: any, b: any) =>
+                                        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                                    );
+                                    // 将子回复加入排序队列
+                                    sortQueue.push(...comment.replies);
                                 }
-                            };
+                            }
 
-                            rootComments.forEach(sortReplies);
                             return rootComments;
                         };
 

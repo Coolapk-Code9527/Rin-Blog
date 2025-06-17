@@ -11,6 +11,32 @@ import { syncFeedFileReferences } from './feed';
 import { listAllR2Files, getR2FileMeta, normalizePath, setR2FileMeta } from '../utils/s3';
 import { generateThumbnail } from '../utils/image';
 
+// 优化：哈希计算缓存，避免重复计算
+const hashCache = new Map<string, string>();
+
+// 优化：计算文件哈希的工具函数，支持缓存
+async function calculateFileHash(fileBuffer: ArrayBuffer | Uint8Array | Buffer, cacheKey?: string): Promise<string> {
+    if (cacheKey && hashCache.has(cacheKey)) {
+        return hashCache.get(cacheKey)!;
+    }
+
+    const hashArray = await crypto.subtle.digest({ name: 'SHA-1' }, fileBuffer);
+    const hash = buf2hex(hashArray);
+
+    if (cacheKey) {
+        hashCache.set(cacheKey, hash);
+        // 限制缓存大小，避免内存泄漏
+        if (hashCache.size > 100) {
+            const firstKey = hashCache.keys().next().value;
+            if (firstKey) {
+                hashCache.delete(firstKey);
+            }
+        }
+    }
+
+    return hash;
+}
+
 // 定义引用接口
 interface FileReference {
     id: number;
@@ -25,33 +51,45 @@ function buf2hex(buffer: ArrayBuffer) {
         .join('');
 }
 
-// 从文件名获取MIME类型的辅助函数
+// 深度优化：MIME类型映射表移到函数外，避免重复创建
+const MIME_TYPE_MAP: Record<string, string> = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'svg': 'image/svg+xml',
+    'mp4': 'video/mp4',
+    'webm': 'video/webm',
+    'mp3': 'audio/mpeg',
+    'wav': 'audio/wav',
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'ppt': 'application/vnd.ms-powerpoint',
+    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'txt': 'text/plain',
+    'md': 'text/markdown',
+    'json': 'application/json',
+};
+
+// 深度优化：从文件名获取MIME类型，减少字符串操作
 function getMimeTypeFromFileName(fileName: string): string {
-    const extension = fileName.split('.').pop()?.toLowerCase() || '';
-    const mimeTypes: Record<string, string> = {
-        'jpg': 'image/jpeg',
-        'jpeg': 'image/jpeg',
-        'png': 'image/png',
-        'gif': 'image/gif',
-        'webp': 'image/webp',
-        'svg': 'image/svg+xml',
-        'mp4': 'video/mp4',
-        'webm': 'video/webm',
-        'mp3': 'audio/mpeg',
-        'wav': 'audio/wav',
-        'pdf': 'application/pdf',
-        'doc': 'application/msword',
-        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'xls': 'application/vnd.ms-excel',
-        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'ppt': 'application/vnd.ms-powerpoint',
-        'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'txt': 'text/plain',
-        'md': 'text/markdown',
-        'json': 'application/json',
-    };
-    
-    return mimeTypes[extension] || 'application/octet-stream';
+    if (!fileName) return 'application/octet-stream';
+
+    // 深度优化：限制文件名长度，避免处理过长文件名
+    if (fileName.length > 255) {
+        fileName = fileName.slice(-255); // 取后255个字符，保留扩展名
+    }
+
+    // 深度优化：使用lastIndexOf替代split，减少数组创建
+    const lastDotIndex = fileName.lastIndexOf('.');
+    if (lastDotIndex === -1) return 'application/octet-stream';
+
+    const extension = fileName.slice(lastDotIndex + 1).toLowerCase();
+    return MIME_TYPE_MAP[extension] || 'application/octet-stream';
 }
 
 // 工具函数：判断字符串是否为hash
@@ -187,15 +225,26 @@ export function FileService() {
                             );
                             count = countQ[0].count;
                         }
-                        const fileIds = resultData.map((f: any) => f.id).filter((id: number) => id > 0);
+                        // 深度优化：合并数组操作，减少遍历次数
+                        const fileIds: number[] = [];
+                        for (const f of resultData) {
+                            if (f.id > 0 && fileIds.length < 20) { // 限制数量并合并过滤逻辑
+                                fileIds.push(f.id);
+                            }
+                        }
                         let referencesMap: Record<number, number> = {};
-                        if (fileIds.length > 0) {
-                            const refs = await db
-                                .select({ fileId: feedFiles.fileId, count: sql<number>`count(*)` })
-                                .from(feedFiles)
-                                .where(fileIds.length === 1 ? eq(feedFiles.fileId, fileIds[0]) : inArray(feedFiles.fileId, fileIds))
-                                .groupBy(feedFiles.fileId);
-                            refs.forEach((r: any) => { referencesMap[r.fileId] = r.count; });
+                        if (fileIds.length > 0) { // 只对有效文件查询引用计数
+                            try {
+                                const refs = await db
+                                    .select({ fileId: feedFiles.fileId, count: sql<number>`count(*)` })
+                                    .from(feedFiles)
+                                    .where(fileIds.length === 1 ? eq(feedFiles.fileId, fileIds[0]) : inArray(feedFiles.fileId, fileIds))
+                                    .groupBy(feedFiles.fileId);
+                                refs.forEach((r: any) => { referencesMap[r.fileId] = r.count; });
+                            } catch (e) {
+                                // 引用计数查询失败不影响主要功能
+                                console.warn('引用计数查询失败:', e);
+                            }
                         }
                         return {
                             files: resultData.map((file: any) => ({
@@ -358,11 +407,9 @@ export function FileService() {
                         } else {
                             throw new Error('Unsupported file type for hash calculation: ' + Object.prototype.toString.call(file));
                         }
-                        const hashArray = await crypto.subtle.digest(
-                            { name: 'SHA-1' },
-                            fileBuffer
-                        );
-                        const hash = buf2hex(hashArray);
+                        // 优化：使用缓存的哈希计算，避免重复计算
+                        const cacheKey = `file_${file.size}_${file.name}`;
+                        const hash = await calculateFileHash(fileBuffer, cacheKey);
                         let s3Key = (parentPath === '/' ? '' : parentPath.replace(/^\//, '') + '/') + hash;
                         // 修复：文本类型Content-Type加charset，防止中文乱码
                         let uploadMimeType = file.type || getMimeTypeFromFileName(name || file.name);
@@ -398,10 +445,11 @@ export function FileService() {
                                 } else {
                                     arrBuf = fileBuffer as ArrayBuffer;
                                 }
-                                const thumbBuffer = await generateThumbnail(arrBuf, 200, 200, 80, 'webp');
-                                // 计算缩略图 hash
-                                const thumbHashArray = await crypto.subtle.digest({ name: 'SHA-1' }, thumbBuffer);
-                                const thumbHash = buf2hex(thumbHashArray);
+                                // 优化：使用默认参数（150x150, 质量60）减少CPU消耗
+                                const thumbBuffer = await generateThumbnail(arrBuf);
+                                // 优化：使用缓存的哈希计算，避免重复计算缩略图哈希
+                                const thumbCacheKey = `thumb_${hash}_150_60`;
+                                const thumbHash = await calculateFileHash(thumbBuffer, thumbCacheKey);
                                 let thumbKey = (parentPath === '/' ? '' : parentPath.replace(/^\//, '') + '/') + 'thumb_' + thumbHash;
                                 await s3.send(new PutObjectCommand({
                                     Bucket: bucket,

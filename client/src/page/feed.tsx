@@ -205,7 +205,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
         {feed && !error && (
           <main className="w-full mt-5">
             <article
-              className="w-full rounded-2xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md pt-5 sm:pt-6 pb-5 sm:pb-6 px-4 sm:px-6 md:px-8 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60"
+              className={`w-full rounded-2xl ${glassClass} pt-5 sm:pt-6 pb-5 sm:pb-6 px-4 sm:px-6 md:px-8 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}
               aria-label={feed.title ?? "Unnamed"}
             >
               <div className="relative mb-3">
@@ -304,7 +304,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               </div>
               <div className="flex justify-center mb-2">
                 <div className="flex flex-wrap gap-2 justify-center w-full">
-                  <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 py-1 rounded-xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60 text-gray-500 dark:text-gray-400 text-[15px] font-medium w-full sm:w-auto">
+                  <div className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 py-1 rounded-xl ${glassClass} shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60 text-gray-500 dark:text-gray-400 text-[15px] font-medium w-full sm:w-auto`}>
                     <div className="flex items-center gap-1">
                       <i className="ri-calendar-line text-blue-500 mr-1"></i>
                       <span>{t("published_at")} {timeago(feed.createdAt)}</span>

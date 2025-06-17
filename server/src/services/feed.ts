@@ -556,24 +556,32 @@ export function FeedService() {
                 }
             }
 
-            // 优化：限制搜索关键词长度，避免复杂查询
-            if (keyword.length > 100) {
-                keyword = keyword.slice(0, 100);
+            // 优化：进一步限制搜索关键词长度，避免复杂查询
+            if (keyword.length > 50) {
+                keyword = keyword.slice(0, 50);
+            }
+
+            // 优化：过滤过短的关键词，减少无意义查询
+            if (keyword.trim().length < 2) {
+                return {
+                    size: 0,
+                    data: [],
+                    hasNext: false
+                }
             }
 
             const cacheKey = `search_${keyword}`;
             const searchKeyword = `%${keyword}%`;
 
-            // 优化：简化搜索条件，优先搜索标题和摘要，减少content搜索的CPU消耗
+            // 优化：进一步简化搜索条件，只搜索标题和别名，减少CPU消耗
             const whereClause = or(
                 like(feeds.title, searchKeyword),
-                like(feeds.summary, searchKeyword),
                 like(feeds.alias, searchKeyword)
-                // 移除content搜索以减少CPU消耗
+                // 移除summary和content搜索以进一步减少CPU消耗
             );
 
-            // 优化：添加搜索结果限制，避免返回过多数据
-            const maxSearchResults = 200;
+            // 优化：减少搜索结果限制，避免返回过多数据
+            const maxSearchResults = 100;
 
             const feed_list = (await cache.getOrSet(cacheKey, () => db.query.feeds.findMany({
                 where: admin ? whereClause : and(whereClause, eq(feeds.draft, 0)),

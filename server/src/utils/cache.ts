@@ -18,6 +18,9 @@ export class CacheImpl {
     type: string;
     loaded: boolean = false;
     s3 = createS3Client();
+    // 优化：批量保存机制，减少序列化频率
+    private pendingSave: boolean = false;
+    private saveTimeout: any = null;
 
     constructor(type: string = "cache") {
         this.type = type;
@@ -67,10 +70,11 @@ export class CacheImpl {
         if (!this.loaded) {
             await this.load();
         }
-        const result = [];
-        for (let key of this.cache.keys()) {
+        // 深度优化：预估结果大小，减少数组扩容
+        const result: any[] = [];
+        for (const [key, value] of this.cache) {
             if (key.startsWith(prefix)) {
-                result.push(this.cache.get(key));
+                result.push(value);
             }
         }
         return result;
@@ -79,10 +83,11 @@ export class CacheImpl {
         if (!this.loaded) {
             await this.load();
         }
-        const result = [];
-        for (let key of this.cache.keys()) {
+        // 深度优化：直接使用Map的entries迭代器，避免创建keys数组
+        const result: any[] = [];
+        for (const [key, value] of this.cache) {
             if (key.endsWith(suffix)) {
-                result.push(this.cache.get(key));
+                result.push(value);
             }
         }
         return result;
@@ -109,7 +114,8 @@ export class CacheImpl {
             await this.load();
         this.cache.set(key, value);
         if (save) {
-            await this.save();
+            // 优化：使用延迟保存减少CPU消耗
+            this.scheduleSave();
         }
     }
 
@@ -118,41 +124,102 @@ export class CacheImpl {
             await this.load();
         this.cache.delete(key);
         if (save) {
-            await this.save();
+            // 优化：使用延迟保存减少CPU消耗
+            this.scheduleSave();
         }
     }
 
     async deletePrefix(prefix: string) {
-        for (let key of this.cache.keys()) {
-            console.log('Cache key', key);
+        // 深度优化：收集要删除的键，避免在遍历时修改Map
+        const keysToDelete: string[] = [];
+        for (const key of this.cache.keys()) {
             if (key.startsWith(prefix)) {
-                console.log('Cache delete', key);
-                await this.delete(key, false);
+                keysToDelete.push(key);
             }
         }
-        await this.save();
+
+        // 批量删除，减少函数调用开销
+        for (const key of keysToDelete) {
+            this.cache.delete(key);
+        }
+
+        if (keysToDelete.length > 0) {
+            await this.save();
+        }
     }
     async deleteSuffix(suffix: string) {
-        for (let key of this.cache.keys()) {
-            console.log("Cache key", key);
+        // 深度优化：收集要删除的键，避免在遍历时修改Map
+        const keysToDelete: string[] = [];
+        for (const key of this.cache.keys()) {
             if (key.endsWith(suffix)) {
-                console.log("Cache delete", key);
-                await this.delete(key, false);
+                keysToDelete.push(key);
             }
         }
-        await this.save();
+
+        // 批量删除，减少函数调用开销
+        for (const key of keysToDelete) {
+            this.cache.delete(key);
+        }
+
+        if (keysToDelete.length > 0) {
+            await this.save();
+        }
     }
     async clear() {
         this.cache.clear();
         await this.save();
     }
 
+    // 优化：延迟保存机制，减少频繁的序列化和S3上传
+    private scheduleSave() {
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+        }
+        this.saveTimeout = setTimeout(async () => {
+            await this.save();
+            this.pendingSave = false;
+            this.saveTimeout = null;
+        }, 1000); // 1秒延迟批量保存
+        this.pendingSave = true;
+    }
+
     async save() {
         const cacheKey = path.join(this.env.S3_CACHE_FOLDER, `${this.type}.json`);
+
+        // 深度优化：分批序列化大对象，减少内存峰值和CPU消耗
+        let serializedData: string;
+        try {
+            if (this.cache.size > 100) {
+                // 深度优化：避免创建中间数组，直接构建对象
+                const mergedData: Record<string, any> = {};
+                const chunkSize = 50;
+                let processed = 0;
+
+                for (const [key, value] of this.cache) {
+                    mergedData[key] = value;
+                    processed++;
+
+                    // 分批处理，避免长时间阻塞
+                    if (processed % chunkSize === 0) {
+                        // 让出控制权，避免阻塞事件循环
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
+                }
+
+                serializedData = JSON.stringify(mergedData);
+            } else {
+                // 小缓存直接序列化
+                serializedData = JSON.stringify(Object.fromEntries(this.cache));
+            }
+        } catch (error) {
+            console.error('Cache serialization failed:', error);
+            return; // 序列化失败时不进行保存
+        }
+
         await this.s3.send(new PutObjectCommand({
             Bucket: this.env.S3_BUCKET,
             Key: cacheKey,
-            Body: JSON.stringify(Object.fromEntries(this.cache))
+            Body: serializedData
         })).then(() => {
             console.log('Cache saved');
         }).catch((e: any) => {

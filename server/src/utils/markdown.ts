@@ -11,37 +11,46 @@
 export function markdownToPlainText(markdown: string, maxLength: number = 150): string {
   if (!markdown) return '';
 
-  // 优化：提前截断，避免处理过长的文本
-  const inputLimit = maxLength * 10; // 处理长度限制为输出长度的10倍
+  // 深度优化：进一步减少输入长度限制，避免处理过长文本
+  const inputLimit = maxLength * 5; // 从10倍减少到5倍，减少处理量
   const limitedMarkdown = markdown.length > inputLimit ? markdown.slice(0, inputLimit) : markdown;
 
-  let text = limitedMarkdown
-    // 优化：合并相似的正则表达式，减少遍历次数
-    // 移除图片和代码块（最耗时的操作优先）
-    .replace(/!\[.*?\]\(.*?\)|```[\s\S]*?```/g, (match) => {
-      return match.startsWith('```') ? '[代码块]' : '';
-    })
-    // 提取链接文本并移除其他Markdown语法
-    .replace(/\[([^\]]+)\]\(([^)]+)\)|(\*\*|__)(.*?)\3|(\*|_)(.*?)\5|~~(.*?)~~|`([^`]+)`/g,
-      (match, linkText, _linkUrl, _boldMarker1, boldText, _italicMarker, italicText, strikeText, codeText) => {
-        if (linkText) return linkText;
-        if (boldText) return boldText;
-        if (italicText) return italicText;
-        if (strikeText) return strikeText;
-        if (codeText) return codeText;
-        return match;
-      })
-    // 移除标题符号和列表符号
-    .replace(/^#{1,6}\s+|^\s*[-*+]\s+|^\s*\d+\.\s+|^\s*>\s+/gm, '')
-    // 移除水平分割线
-    .replace(/^(\s*[*-]){3,}\s*$/gm, '')
-    // 移除HTML标签
-    .replace(/<[^>]*>/g, '')
-    // 统一处理空白字符
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  let text = limitedMarkdown;
 
-  // 如果指定了最大长度，截断文本
+  // 深度优化：分解复杂正则表达式，避免回溯问题
+  // 第一步：移除代码块（最CPU密集的操作）
+  text = text.replace(/```[\s\S]*?```/g, '[代码块]');
+
+  // 第二步：移除图片（简化正则，避免贪婪匹配）
+  text = text.replace(/!\[[^\]]*\]\([^)]*\)/g, '');
+
+  // 第三步：提取链接文本（简化正则）
+  text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+
+  // 第四步：移除格式化标记（分别处理，避免复杂分组）
+  text = text.replace(/\*\*([^*]+)\*\*/g, '$1'); // 粗体
+  text = text.replace(/__([^_]+)__/g, '$1'); // 粗体
+  text = text.replace(/\*([^*]+)\*/g, '$1'); // 斜体
+  text = text.replace(/_([^_]+)_/g, '$1'); // 斜体
+  text = text.replace(/~~([^~]+)~~/g, '$1'); // 删除线
+  text = text.replace(/`([^`]+)`/g, '$1'); // 行内代码
+
+  // 第五步：移除标题和列表符号（合并相似操作）
+  text = text.replace(/^#{1,6}\s+/gm, '');
+  text = text.replace(/^\s*[-*+]\s+/gm, '');
+  text = text.replace(/^\s*\d+\.\s+/gm, '');
+  text = text.replace(/^\s*>\s+/gm, '');
+
+  // 第六步：移除水平分割线（简化正则）
+  text = text.replace(/^[-*]{3,}\s*$/gm, '');
+
+  // 第七步：移除HTML标签（保持简单）
+  text = text.replace(/<[^>]*>/g, '');
+
+  // 第八步：清理空白字符（最后处理）
+  text = text.replace(/\n{3,}/g, '\n\n').trim();
+
+  // 深度优化：提前截断，避免后续不必要的处理
   if (maxLength && text.length > maxLength) {
     text = text.slice(0, maxLength) + '...';
   }

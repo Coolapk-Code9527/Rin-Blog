@@ -86,15 +86,39 @@ export async function listR2FilesLimited(maxFiles: number = 500): Promise<string
     }
 }
 
-// 统一路径标准化函数，所有文件相关操作必须调用，避免/与无/混用导致重复
+// 深度优化：路径标准化函数，减少正则表达式使用，提升性能
 export function normalizePath(path: string): string {
     if (!path) return '';
-    // 去除域名
-    path = path.replace(/^https?:\/\/(?:[\w.-]+)\/?/, '');
-    // 去除多余前缀/
-    path = path.replace(/^\/+/g, '');
+
+    // 深度优化：提前限制输入长度，避免处理过长路径
+    if (path.length > 1000) {
+        path = path.slice(0, 1000);
+    }
+
+    // 深度优化：使用字符串方法替代正则表达式，减少CPU消耗
+    // 去除域名（优化：使用indexOf和slice替代正则）
+    const protocolIndex = path.indexOf('://');
+    if (protocolIndex !== -1) {
+        const slashIndex = path.indexOf('/', protocolIndex + 3);
+        if (slashIndex !== -1) {
+            path = path.slice(slashIndex);
+        } else {
+            path = '';
+        }
+    }
+
+    // 去除多余前缀/（优化：使用while循环替代正则）
+    while (path.startsWith('/')) {
+        path = path.slice(1);
+    }
+
     // 保证所有路径前面都有一个/
-    if (!path.startsWith('/')) path = '/' + path;
+    if (path && !path.startsWith('/')) {
+        path = '/' + path;
+    } else if (!path) {
+        path = '/';
+    }
+
     return path;
 }
 
