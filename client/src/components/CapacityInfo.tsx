@@ -1,12 +1,10 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { endpoint } from '../main';
 import { headersWithAuth } from '../utils/auth';
-import { ProfileContext } from '../state/profile';
 
 export function CapacityInfo() {
   const { t } = useTranslation();
-  const profile = useContext(ProfileContext);
   const [r2Usage, setR2Usage] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,13 +43,8 @@ export function CapacityInfo() {
   };
 
   useEffect(() => {
-    // 只有管理员才能获取容量信息
-    if (profile && profile.permission) {
-      fetchCapacityInfo();
-    } else {
-      setLoading(false);
-    }
-  }, [profile]);
+    fetchCapacityInfo();
+  }, []);
 
   function formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 B';
@@ -73,11 +66,6 @@ export function CapacityInfo() {
     const cleanFormatted = parseFloat(formatted).toString();
 
     return `${cleanFormatted} ${sizes[i]}`;
-  }
-
-  // 如果不是管理员，不显示容量信息
-  if (!profile || !profile.permission) {
-    return null;
   }
 
   if (loading) return (
@@ -114,7 +102,6 @@ export function CapacityInfo() {
 // 内联版本的容量信息组件，用于与标题并排显示
 export function CapacityInfoInline() {
   const { t } = useTranslation();
-  const profile = useContext(ProfileContext);
   const [r2Usage, setR2Usage] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -153,13 +140,8 @@ export function CapacityInfoInline() {
   };
 
   useEffect(() => {
-    // 只有管理员才能获取容量信息
-    if (profile && profile.permission) {
-      fetchCapacityInfo();
-    } else {
-      setLoading(false);
-    }
-  }, [profile]);
+    fetchCapacityInfo();
+  }, []);
 
   function formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 B';
@@ -181,11 +163,6 @@ export function CapacityInfoInline() {
     const cleanFormatted = parseFloat(formatted).toString();
 
     return `${cleanFormatted} ${sizes[i]}`;
-  }
-
-  // 如果不是管理员，不显示容量信息
-  if (!profile || !profile.permission) {
-    return null;
   }
 
   if (loading) return (
