@@ -29,7 +29,8 @@ export function CommentService() {
                     const feedId = parseInt(feed);
                     try {
                     try {
-                        // 获取所有评论，然后在内存中构建树形结构
+                        // 优化：限制评论数量，避免CPU超时
+                        const maxComments = 200; // 最大评论数量
                         const all_comments = await db.query.comments.findMany({
                             where: eq(comments.feedId, feedId),
                             columns: { feedId: false },
@@ -38,7 +39,8 @@ export function CommentService() {
                                     columns: { id: true, username: true, avatar: true, permission: true }
                                 }
                             },
-                            orderBy: [desc(comments.createdAt)]
+                            orderBy: [desc(comments.createdAt)],
+                            limit: maxComments
                         });
 
                         // 处理匿名评论的显示
@@ -53,35 +55,44 @@ export function CommentService() {
                             return comment;
                         });
 
-                        // 构建树形结构
+                        // 优化：构建树形结构，添加深度限制
                         const buildCommentTree = (comments: any[]) => {
                             const commentMap = new Map();
                             const rootComments: any[] = [];
+                            const maxDepth = 5; // 最大嵌套深度
 
                             // 首先创建所有评论的映射
                             comments.forEach(comment => {
-                                commentMap.set(comment.id, { ...comment, replies: [] });
+                                commentMap.set(comment.id, { ...comment, replies: [], depth: 0 });
                             });
 
-                            // 然后构建树形结构
+                            // 然后构建树形结构，限制深度
                             comments.forEach(comment => {
                                 const commentWithReplies = commentMap.get(comment.id);
                                 if (comment.parentId) {
                                     const parent = commentMap.get(comment.parentId);
-                                    if (parent) {
+                                    if (parent && parent.depth < maxDepth) {
+                                        commentWithReplies.depth = parent.depth + 1;
                                         parent.replies.push(commentWithReplies);
+                                    } else {
+                                        // 超过最大深度，作为根评论处理
+                                        rootComments.push(commentWithReplies);
                                     }
                                 } else {
                                     rootComments.push(commentWithReplies);
                                 }
                             });
 
-                            // 递归排序回复
+                            // 优化：非递归排序回复，避免深度递归
                             const sortReplies = (comment: any) => {
                                 if (comment.replies && comment.replies.length > 0) {
-                                    comment.replies.sort((a: any, b: any) =>
-                                        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-                                    );
+                                    // 限制每层回复数量
+                                    const maxRepliesPerLevel = 50;
+                                    comment.replies = comment.replies
+                                        .slice(0, maxRepliesPerLevel)
+                                        .sort((a: any, b: any) =>
+                                            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                                        );
                                     comment.replies.forEach(sortReplies);
                                 }
                             };

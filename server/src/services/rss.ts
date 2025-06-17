@@ -123,40 +123,62 @@ export async function rssCrontab(env: Env) {
 
     const feed = new Feed(feedConfig);
 
+    // 优化：减少处理的文章数量，避免CPU超时
     const feed_list = await db.query.feeds.findMany({
         where: and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
         orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
-        limit: 20,
+        limit: 10, // 从20减少到10
         with: {
             user: {
                 columns: { id: true, username: true, avatar: true },
             },
         },
     });
+
+    // 添加超时保护
+    const processStartTime = Date.now();
+    const maxProcessTime = 8000; // 8秒超时
+
     for (const f of feed_list) {
+        // 检查是否超时
+        if (Date.now() - processStartTime > maxProcessTime) {
+            console.warn('RSS生成超时，停止处理剩余文章');
+            break;
+        }
+
         const { summary, content, user, ...other } = f;
-        const file = await unified()
-            .use(remarkParse)
-            .use(remarkGfm)
-            .use(remarkRehype)
-            .use(rehypeStringify)
-            .process(content);
-        let contentHtml = file.toString();
-        feed.addItem({
-            title: other.title || "No title",
-            id: other.id?.toString() || "0",
-            link: `${frontendUrl}/feed/${other.id}`,
-            date: other.createdAt,
-            description:
-                summary.length > 0
-                    ? summary
-                    : content.length > 100
-                      ? content.slice(0, 100)
-                      : content,
-            content: contentHtml,
-            author: [{ name: user.username }],
-            image: extractImage(content),
-        });
+
+        try {
+            // 优化：限制内容长度，减少处理时间
+            const limitedContent = content.length > 5000 ? content.slice(0, 5000) + '...' : content;
+
+            const file = await unified()
+                .use(remarkParse)
+                .use(remarkGfm)
+                .use(remarkRehype)
+                .use(rehypeStringify)
+                .process(limitedContent);
+            let contentHtml = file.toString();
+
+            feed.addItem({
+                title: other.title || "No title",
+                id: other.id?.toString() || "0",
+                link: `${frontendUrl}/feed/${other.id}`,
+                date: other.createdAt,
+                description:
+                    summary.length > 0
+                        ? summary
+                        : limitedContent.length > 100
+                          ? limitedContent.slice(0, 100)
+                          : limitedContent,
+                content: contentHtml,
+                author: [{ name: user.username }],
+                image: extractImage(limitedContent),
+            });
+        } catch (e) {
+            console.error(`RSS处理文章失败 ${other.id}:`, e);
+            // 继续处理下一篇文章
+        }
     }
     // save rss.xml to s3
     console.log("save rss.xml to s3");

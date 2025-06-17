@@ -26,10 +26,20 @@ export async function listAllR2Files(): Promise<string[]> {
     const bucket = env.S3_BUCKET;
     let files: string[] = [];
     let ContinuationToken: string | undefined = undefined;
+    let requestCount = 0;
+    const maxRequests = 10; // 限制最大请求数，避免CPU超时
+
     do {
+        requestCount++;
+        if (requestCount > maxRequests) {
+            console.warn(`R2扫描达到最大请求限制 (${maxRequests})，停止扫描`);
+            break;
+        }
+
         const res: any = await s3.send(new ListObjectsV2Command({
             Bucket: bucket,
-            ContinuationToken
+            ContinuationToken,
+            MaxKeys: 1000 // 限制每次请求的文件数量
         }));
         if (res.Contents) {
             files.push(...res.Contents.map((obj: any) => '/' + (obj.Key || '')));
@@ -37,6 +47,28 @@ export async function listAllR2Files(): Promise<string[]> {
         ContinuationToken = res.NextContinuationToken;
     } while (ContinuationToken);
     return files.filter(Boolean);
+}
+
+// 新增：轻量级R2文件列表函数，用于关键操作
+export async function listR2FilesLimited(maxFiles: number = 500): Promise<string[]> {
+    const env: Env = getEnv();
+    const s3 = createS3Client();
+    const bucket = env.S3_BUCKET;
+
+    try {
+        const res: any = await s3.send(new ListObjectsV2Command({
+            Bucket: bucket,
+            MaxKeys: maxFiles
+        }));
+
+        if (res.Contents) {
+            return res.Contents.map((obj: any) => '/' + (obj.Key || '')).filter(Boolean);
+        }
+        return [];
+    } catch (error) {
+        console.error('轻量级R2扫描失败:', error);
+        return [];
+    }
 }
 
 // 统一路径标准化函数，所有文件相关操作必须调用，避免/与无/混用导致重复

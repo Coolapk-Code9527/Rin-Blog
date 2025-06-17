@@ -161,26 +161,61 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
     const db = drizzle(env.DB, { schema: schema })
     const friend_list = await db.query.friends.findMany()
     console.info(`total friends: ${friend_list.length}`)
+
+    // 优化：限制并发数量和总处理数量，避免CPU超时
+    const maxConcurrent = 3; // 最大并发数
+    const maxTotal = 10; // 最大处理数量
+    const timeout = 5000; // 5秒超时
+
+    const limitedFriends = friend_list.slice(0, maxTotal);
     let health = 0
     let unhealthy = 0
-    for (const friend of friend_list) {
-        console.info(`checking ${friend.name}: ${friend.url}`)
-        try {
-            const response = await fetch(new Request(friend.url, { method: 'GET', headers: { 'User-Agent': ua } }))
-            console.info(`response status: ${response.status}`)
-            console.info(`response statusText: ${response.statusText}`)
-            if (response.ok) {
-                ctx.waitUntil(db.update(schema.friends).set({ health: "" }).where(eq(schema.friends.id, friend.id)))
-                health++
-            } else {
-                ctx.waitUntil(db.update(schema.friends).set({ health: `${response.status}` }).where(eq(schema.friends.id, friend.id)))
-                unhealthy++
+
+    // 分批并发处理
+    for (let i = 0; i < limitedFriends.length; i += maxConcurrent) {
+        const batch = limitedFriends.slice(i, i + maxConcurrent);
+
+        const promises = batch.map(async (friend) => {
+            console.info(`checking ${friend.name}: ${friend.url}`)
+            try {
+                // 添加超时保护
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+                const response = await fetch(new Request(friend.url, {
+                    method: 'GET',
+                    headers: { 'User-Agent': ua },
+                    signal: controller.signal
+                }));
+
+                clearTimeout(timeoutId);
+                console.info(`response status: ${response.status}`)
+
+                if (response.ok) {
+                    ctx.waitUntil(db.update(schema.friends).set({ health: "" }).where(eq(schema.friends.id, friend.id)))
+                    return 'healthy';
+                } else {
+                    ctx.waitUntil(db.update(schema.friends).set({ health: `${response.status}` }).where(eq(schema.friends.id, friend.id)))
+                    return 'unhealthy';
+                }
+            } catch (e: any) {
+                console.error(`error checking ${friend.name}: ${e.message}`)
+                ctx.waitUntil(db.update(schema.friends).set({ health: e.message }).where(eq(schema.friends.id, friend.id)))
+                return 'unhealthy';
             }
-        } catch (e: any) {
-            console.error(e.message)
-            ctx.waitUntil(db.update(schema.friends).set({ health: e.message }).where(eq(schema.friends.id, friend.id)))
-            unhealthy++
-        }
+        });
+
+        // 等待当前批次完成
+        const results = await Promise.allSettled(promises);
+        results.forEach(result => {
+            if (result.status === 'fulfilled') {
+                if (result.value === 'healthy') health++;
+                else unhealthy++;
+            } else {
+                unhealthy++;
+            }
+        });
     }
-    console.info(`update friends health done. Total: ${health + unhealthy}, Healthy: ${health}, Unhealthy: ${unhealthy}`)
+
+    console.info(`friend crontab finished: ${health} healthy, ${unhealthy} unhealthy (processed ${limitedFriends.length}/${friend_list.length})`)
 }

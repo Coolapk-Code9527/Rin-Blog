@@ -55,6 +55,9 @@ export function FeedService() {
                             )
                         );
                         
+                        // 优化：添加限制和超时保护
+                        const maxLimit = Math.min(limit_num + 1, 50); // 限制最大查询数量
+
                         feed_list = (await db.query.feeds.findMany({
                             where: and(where, cursorCondition),
                             columns: admin ? undefined : {
@@ -74,11 +77,13 @@ export function FeedService() {
                                 }
                             },
                             orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
-                            limit: limit_num + 1,
+                            limit: maxLimit,
                         })).map(({ content, hashtags, summary, ...other }) => {
-                            const avatar = extractImage(content);
+                            // 优化：限制内容处理长度，避免CPU密集型操作
+                            const limitedContent = content.length > 2000 ? content.slice(0, 2000) : content;
+                            const avatar = extractImage(limitedContent);
                             return {
-                                summary: summary.length > 0 ? summary : markdownToPlainText(content, 150),
+                                summary: summary.length > 0 ? summary : markdownToPlainText(limitedContent, 150),
                                 hashtags: hashtags.map(({ hashtag }) => hashtag),
                                 avatar,
                                 ...other
@@ -157,6 +162,10 @@ export function FeedService() {
                 .get('/timeline', async () => {
                     const db: DB = getDB();
                     const where = and(eq(feeds.draft, 0), eq(feeds.listed, 1));
+
+                    // 优化：限制Timeline查询数量，避免CPU超时
+                    const maxTimelineItems = 500; // 最大时间线条目数
+
                     return (await db.query.feeds.findMany({
                         where: where,
                         columns: {
@@ -165,6 +174,7 @@ export function FeedService() {
                             createdAt: true,
                         },
                         orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
+                        limit: maxTimelineItems
                     }))
                 })
                 .post('/', async ({ admin, set, uid, body: { title, alias, listed, content, summary, draft, tags, createdAt } }) => {
