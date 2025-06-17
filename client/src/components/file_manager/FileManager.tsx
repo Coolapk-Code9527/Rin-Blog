@@ -22,6 +22,7 @@ import {
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
+import { uploadFiles } from '../../utils/fileUpload';
 
 // 文件大小格式化工具
 function formatFileSize(bytes: number): string {
@@ -269,6 +270,20 @@ export function FileManager({
       // 修复：根目录下virtualFolders不参与分页，files=virtualFolders+dbItems（分页），totalItems=total-virtualFolders.length
       let filesData = data.files || [];
       let total = data.total || 0;
+
+      // 过滤缩略图文件（不在文件管理界面显示）
+      filesData = filesData.filter((f: any) => {
+        // 过滤以 thumb_ 开头的文件
+        if (!f.isFolder && f.name && f.name.startsWith('thumb_')) {
+          return false;
+        }
+        // 过滤视频缩略图文件（以 _thumbnail 结尾的文件）
+        if (!f.isFolder && f.name && f.name.includes('_thumbnail.')) {
+          return false;
+        }
+        return true;
+      });
+
       if (currentPath === '/' && filesData.length > 0) {
         // virtualFolders: id为负数的文件夹
         const virtualFolders = filesData.filter((f:any) => f.isFolder && f.id < 0);
@@ -394,61 +409,43 @@ export function FileManager({
     }
   };
 
-  // 处理文件上传
+  // 处理文件上传 - 使用新的上传工具支持视频缩略图
   const handleFileUpload = async (event: any) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
-    setUploadingFiles(Array.from(files));
+
+    const fileArray = Array.from(files) as File[];
+    setUploadingFiles(fileArray);
     setUploadingIndex(0);
     setUploadingPercent(0);
     setUploading(true);
     setUploadError(null);
-    for (let i = 0; i < files.length; i++) {
-      setUploadingIndex(i + 1);
-      setUploadingPercent(Math.round(((i) / files.length) * 100));
-      const file = files[i];
-      try {
-        const response = await client.files.index.post({
-          file,
-          name: file.name,
-          parentPath: currentPath || '/'
-        }, {
-          headers: headersWithAuth()
-        });
-        if (response.error) {
-          let msg = '';
-          if (typeof response.error === 'object') {
-            if ('message' in response.error && typeof (response.error as any).message === 'string') {
-              msg = (response.error as any).message;
-            } else if ('value' in response.error) {
-              if (typeof (response.error as any).value === 'string') {
-                msg = (response.error as any).value;
-              } else if (typeof (response.error as any).value === 'object' && (response.error as any).value !== null) {
-                const val = (response.error as any).value;
-                msg = typeof val.message === 'string' ? val.message : JSON.stringify(val);
-              } else {
-                msg = JSON.stringify((response.error as any).value);
-              }
-            } else {
-              msg = JSON.stringify(response.error);
-            }
-          } else {
-            msg = response.error;
-          }
-          setUploadError(msg);
-          showToast(msg, 'error');
-          continue;
-        } else if ((response as any).reusedMsg) {
-          showToast((response as any).reusedMsg, 'info');
-        } else {
-          showToast(t('files.upload_success'), 'info');
+
+    try {
+      // 使用新的上传工具
+      await uploadFiles(
+        fileArray,
+        {
+          parentPath: currentPath || '/',
+          generateThumbnail: true
+        },
+        (fileIndex, progress) => {
+          setUploadingIndex(fileIndex + 1);
+          // 单个文件进度不更新总进度，由总进度回调处理
+        },
+        (overallProgress) => {
+          setUploadingPercent(overallProgress);
         }
-        loadFiles();
-      } catch (error: any) {
-        setUploadError(error.message);
-        showToast(t('files.upload_failed', { error: error.message }), 'error');
-      }
+      );
+
+      showToast(t('files.upload_success'), 'success');
+      loadFiles(); // 刷新文件列表
+    } catch (error: any) {
+      console.error('文件上传失败:', error);
+      setUploadError(error.message);
+      showToast(t('files.upload_failed', { error: error.message }), 'error');
     }
+
     setUploadingPercent(100);
     setUploading(false);
     setTimeout(() => {
@@ -457,6 +454,7 @@ export function FileManager({
       setUploadingPercent(0);
       setUploadError(null);
     }, 1200);
+
     if (uploadInputRef.current) {
       uploadInputRef.current.value = '';
     }
@@ -811,9 +809,9 @@ export function FileManager({
               onClick={isPreviewable(file) ? (e) => { e.stopPropagation(); handlePreviewClick(file); } : undefined}
               style={{ cursor: isPreviewable(file) ? 'pointer' : 'default' }}
             >
-              {file.thumbnailHash && !file.isFolder ? (
+              {file.thumbnailHash && !file.isFolder && file.thumbUrl ? (
                 <img
-                  src={file.thumbUrl || `thumb_${file.thumbnailHash}`}
+                  src={file.thumbUrl}
                   alt={file.name}
                   loading="lazy"
                   className="w-24 h-24 object-cover rounded shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
@@ -997,9 +995,9 @@ export function FileManager({
                   onClick={isPreviewable(file) ? (e) => { e.stopPropagation(); handlePreviewClick(file); } : undefined}
                   style={{ cursor: isPreviewable(file) ? 'pointer' : 'default' }}
                 >
-                  {file.thumbnailHash && !file.isFolder ? (
+                  {file.thumbnailHash && !file.isFolder && file.thumbUrl ? (
                     <img
-                      src={file.thumbUrl || `thumb_${file.thumbnailHash}`}
+                      src={file.thumbUrl}
                       alt={file.name}
                       loading="lazy"
                       className="w-8 h-8 object-cover rounded shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 mr-2"

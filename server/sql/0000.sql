@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `friends` (
 CREATE TABLE IF NOT EXISTS `hashtags` (
 	`id` integer PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
+	`description` text,
 	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL
 );
