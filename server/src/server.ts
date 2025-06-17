@@ -20,9 +20,7 @@ export const app = () => new Elysia({ aot: false })
         methods: '*',
         allowedHeaders: [
             'authorization',
-            'content-type',
-            'x-thumbnail-key',
-            'x-content-type'
+            'content-type'
         ],
         maxAge: 600,
         credentials: true,
