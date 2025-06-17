@@ -370,6 +370,26 @@ body {
   }
 }
 
+/* 统一的下拉菜单毛玻璃效果 - 替代内联样式 */
+.glass-dropdown {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(40px) saturate(250%) brightness(1.2);
+  -webkit-backdrop-filter: blur(40px) saturate(250%) brightness(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+[data-color-mode="dark"] .glass-dropdown {
+  background: rgba(13, 17, 23, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* 移动侧边栏优化 - 简化背景遮罩模糊效果 */
+.mobile-menu-overlay {
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(1px) !important;
+  -webkit-backdrop-filter: blur(1px) !important;
+}
+
 /* 英文内容字体 */
 :lang(en) {
   font-family: var(--font-sans) !important;

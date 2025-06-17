@@ -51,7 +51,7 @@ export const macOSModalStyles = {
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    backdropFilter: 'blur(12px)',
+    // 移除 backdropFilter 避免与内容的毛玻璃效果冲突
     zIndex: MODAL_Z_INDEX.MODAL,
     display: 'flex',
     alignItems: 'center',

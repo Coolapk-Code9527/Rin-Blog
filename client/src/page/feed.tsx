@@ -219,12 +219,11 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <button
                         aria-label={top > 0 ? t("untop.title") : t("top.title")}
                         onClick={topFeed}
-                        className={`w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border transition-all duration-200
+                        className={`w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border transition-all duration-200 backdrop-blur-sm
                           ${top > 0
                             ? "bg-blue-50/80 dark:bg-blue-900/40 text-blue-600 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-800"
                             : "bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"}
                           hover:scale-105 active:scale-95`}
-                        style={{backdropFilter: 'blur(4px)'}}
                       >
                         <i className="ri-skip-up-line text-lg"></i>
                       </button>
@@ -237,7 +236,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                         aria-label={t("edit")}
                         href={`/writing/${feed.id}`}
                         className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200"
-                        style={{backdropFilter: 'blur(4px)'}}
+
                       >
                         <i className="ri-edit-2-line text-lg"></i>
                       </Link>
@@ -249,8 +248,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <button
                         aria-label={t("delete.title")}
                         onClick={deleteFeed}
-                        className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-red-500 border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 active:scale-95 transition-all duration-200"
-                        style={{backdropFilter: 'blur(4px)'}}
+                        className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-red-500 border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 active:scale-95 transition-all duration-200 backdrop-blur-sm"
                       >
                         <i className="ri-delete-bin-7-line text-lg"></i>
                       </button>
@@ -279,8 +277,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <Link
                         aria-label={t("edit")}
                         href={`/writing/${feed.id}`}
-                        className="w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200"
-                        style={{backdropFilter: 'blur(4px)'}}
+                        className="w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200 backdrop-blur-sm"
                       >
                         <i className="ri-edit-2-line text-base"></i>
                       </Link>

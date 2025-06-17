@@ -372,18 +372,18 @@ function MobileMenu() {
             {/* 移动菜单及遮罩（渲染为全局覆盖） */}
             {typeof document !== 'undefined' && isOpen && (
                 <>
-                    {/* 背景遮罩 */}
-                    <div 
-                        className={`fixed inset-0 bg-black/60 backdrop-blur-[2px] z-[9990] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                    {/* 背景遮罩 - 使用优化的毛玻璃效果 */}
+                    <div
+                        className={`fixed inset-0 mobile-menu-overlay z-[9990] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                         onClick={onClose} // 点击遮罩层关闭菜单
                         aria-hidden="true"
                         style={{
-                            position: 'fixed', 
-                            top: 0, 
-                            left: 0, 
-                            right: 0, 
-                            bottom: 0, 
-                            width: '100vw', 
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            width: '100vw',
                             height: '100vh'
                         }}
                     >
@@ -712,11 +712,9 @@ function LanguageSwitch({ className }: { className?: string }) {
             </button>
             
             {isOpen && (
-                <div 
-                    className="absolute top-full right-0 mt-2 bg-white/85 dark:bg-gray-900/85 backdrop-blur-xl rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/60 dark:border-gray-700/60 z-50 animate-slideDown"
+                <div
+                    className="absolute top-full right-0 mt-2 glass-dropdown rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/60 dark:border-gray-700/60 z-50 animate-slideDown"
                     style={{
-                        backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                        WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
                         maxHeight: '300px',
                         overflowY: 'auto'
                     }}
@@ -1107,12 +1105,8 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                     </button>
                     
                     {isOpen && (
-                        <div 
-                            className="absolute top-full right-0 mt-2 bg-white/85 dark:bg-gray-900/85 backdrop-blur-xl rounded-xl shadow-xl p-2 w-64 border border-gray-200/60 dark:border-gray-700/60 z-20 animate-slideDown"
-                            style={{
-                                backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                                WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
-                            }}
+                        <div
+                            className="absolute top-full right-0 mt-2 glass-dropdown rounded-xl shadow-xl p-2 w-64 border border-gray-200/60 dark:border-gray-700/60 z-20 animate-slideDown"
                             role="menu"
                             aria-orientation="vertical"
                             aria-labelledby="user-menu"
@@ -1193,11 +1187,7 @@ function CollapsedMenu() {
             </button>
             
             {isOpen && (
-                <div className="absolute right-0 mt-2 py-2 w-48 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl rounded-lg shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60 z-20 animate-slideDown"
-                    style={{
-                        backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                        WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
-                    }}>
+                <div className="absolute right-0 mt-2 py-2 w-48 glass-dropdown rounded-lg shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60 z-20 animate-slideDown">
                     <NavBar menu={true} onClick={() => setIsOpen(false)} />
                 </div>
             )}
