@@ -388,3 +388,4 @@ All functions and constants are documented in both Chinese and English for multi
 - **Accessibility Preservation**: Background system maintains full keyboard navigation and screen reader compatibility
 - **Content Readability**: Intelligent glassmorphism overlay ensures optimal content readability across various background images
 - **Zero-flicker Experience**: Advanced preloading and state management eliminate visual artifacts during background transitions
+
