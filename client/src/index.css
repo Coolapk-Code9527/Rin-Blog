@@ -496,12 +496,17 @@ html.dark body .glass-file-card,
   background: rgba(17, 24, 39, 0.35) !important;
 }
 
-/* 移动侧边栏优化 - 简化背景遮罩模糊效果 */
+/* 移动侧边栏优化 - 遵循glassmorphism-system.md规范 */
 .mobile-menu-overlay {
-  background: rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(1px) !important;
+  background: rgba(0, 0, 0, 0.5) !important; /* 50%透明度，符合文档规范 */
+  backdrop-filter: blur(1px) !important; /* 1px模糊，性能优化 */
   -webkit-backdrop-filter: blur(1px) !important;
   z-index: 10450; /* 使用MOBILE_MENU层级 */
+  /* 增强移动端滚动锁定 */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* 统一的层级管理CSS类 */
@@ -515,6 +520,10 @@ html.dark body .glass-file-card,
 
 .z-mobile-menu {
   z-index: 10450; /* MOBILE_MENU层级 */
+}
+
+.z-mobile-menu-panel {
+  z-index: 10451; /* MOBILE_MENU_PANEL层级，高于背景遮罩 */
 }
 
 .z-drawer {
@@ -552,6 +561,10 @@ html.dark body .glass-file-card,
     z-index: 1200; /* 移动端MOBILE_MENU层级 */
   }
 
+  .z-mobile-menu-panel {
+    z-index: 1201; /* 移动端MOBILE_MENU_PANEL层级，高于背景遮罩 */
+  }
+
   .z-drawer {
     z-index: 1300; /* 移动端DRAWER层级 */
   }
@@ -572,10 +585,33 @@ html.dark body .glass-file-card,
     z-index: 1700; /* 移动端CRITICAL层级 */
   }
 
-  /* 移动端性能优化：简化毛玻璃效果 */
+  /* 移动端性能优化：遵循glassmorphism-system.md规范 */
   .mobile-menu-overlay {
+    background: rgba(0, 0, 0, 0.5) !important; /* 移动端50%透明度 */
+    backdrop-filter: blur(1px) !important; /* 移动端1px模糊，性能优化 */
+    -webkit-backdrop-filter: blur(1px) !important;
     z-index: 1200; /* 使用移动端MOBILE_MENU层级 */
+    /* 移动端增强滚动锁定 */
+    touch-action: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
   }
+
+  /* 移动端硬编码z-index修复 */
+  .template-panel {
+    z-index: 1400; /* 移动端MODAL层级 */
+  }
+
+  .modal-content {
+    z-index: 1400 !important; /* 移动端MODAL层级 */
+  }
+
+  .fixed[aria-modal="true"] .relative .max-h-60 {
+    z-index: 1450; /* 移动端高于MODAL的层级 */
+  }
+
+
 }
 
 /* 英文内容字体 */
@@ -1597,7 +1633,7 @@ button[role="option"] > * {
   /* 不强制覆盖transform，让动画自然进行 */
   margin: 0 !important;
   /* 保留必要的样式 */
-  z-index: 10301 !important;
+  z-index: 10300 !important; /* 使用统一的MODAL层级 */
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: auto !important;
   flex-shrink: 0;
@@ -1809,7 +1845,7 @@ a.toc-link {
 
 /* 模板面板样式调整 */
 .template-panel {
-  z-index: 1000;
+  z-index: 10300; /* 使用统一的MODAL层级 */
   transition: opacity 0.2s, transform 0.2s;
 }
 
@@ -1924,7 +1960,7 @@ i[class^="ri-"]::before, i[class*=" ri-"]::before {
 .markdown-body thead, .wmde-markdown thead {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 10; /* 提高层级，确保在内容上方显示 */
   background: #f3f4f6;
 }
 [data-color-mode="dark"] .markdown-body thead, [data-color-mode="dark"] .wmde-markdown thead {
@@ -2286,7 +2322,7 @@ button img.rounded-full:hover {
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 30;
+  z-index: 10400; /* 使用DIALOG层级，确保在模态框内正确显示 */
   max-height: 300px; /* 限制最大高度 */
 }
 

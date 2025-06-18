@@ -7,6 +7,7 @@ import { Profile, ProfileContext } from "../state/profile";
 import { ClientConfigContext } from "../state/config";
 import { useConfirm } from "./dialog";
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { MODAL_Z_INDEX } from "../utils/modal-config";
 
@@ -194,8 +195,9 @@ function MobileMenu() {
     // 深色模式状态
     const [isDarkMode, setIsDarkMode] = useState(false);
 
-    // 使用智能毛玻璃效果
+    // 使用智能毛玻璃效果 - 应用glassmorphism-system.md优化
     const glassClass = useGlassEffect(GLASS_LAYERS.STRONG);
+    // 遵循glassmorphism-system.md：使用轻量级背景遮罩，避免双重毛玻璃效果
     const searchGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
     
     // 检测深色模式
@@ -289,14 +291,22 @@ function MobileMenu() {
         const html = document.documentElement;
 
         if (isOpen) {
-            // Lock scroll
+            // Simplified scroll lock - avoid position: fixed to prevent jumping
             body.style.overflow = 'hidden';
-            html.style.overflow = 'hidden'; // Also on html element for robustness
+            html.style.overflow = 'hidden';
+            body.style.touchAction = 'none'; // Prevent touch scrolling on mobile
+            html.style.touchAction = 'none';
+            // Store scroll position without changing layout
+            body.style.paddingRight = `${window.innerWidth - document.documentElement.clientWidth}px`; // Prevent layout shift
         } else {
             // Unlock scroll
             body.style.overflow = '';
             html.style.overflow = '';
-            // Restore scroll position smoothly
+            body.style.touchAction = '';
+            html.style.touchAction = '';
+            body.style.paddingRight = '';
+
+            // Restore scroll position immediately without animation to avoid jumping
             window.scrollTo(0, lastScrollY.current);
         }
 
@@ -304,6 +314,9 @@ function MobileMenu() {
             // Ensure styles are reset on component unmount
             body.style.overflow = '';
             html.style.overflow = '';
+            body.style.touchAction = '';
+            html.style.touchAction = '';
+            body.style.paddingRight = '';
         };
     }, [isOpen]);
 
@@ -370,31 +383,33 @@ function MobileMenu() {
                 <i className="ri-menu-3-line text-xl" />
             </button>
 
-            {/* 移动菜单及遮罩（渲染为全局覆盖） */}
-            {typeof document !== 'undefined' && isOpen && (
+            {/* 移动菜单及遮罩（使用Portal渲染到body，避免Header层叠上下文限制） */}
+            {typeof document !== 'undefined' && isOpen && document.body && createPortal(
                 <>
-                    {/* 背景遮罩 - 使用优化的毛玻璃效果和统一层级管理 */}
+                    {/* 背景遮罩 - Portal渲染，确保全屏覆盖 */}
                     <div
                         className={`fixed inset-0 mobile-menu-overlay z-mobile-menu transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                         onClick={onClose} // 点击遮罩层关闭菜单
                         aria-hidden="true"
+                    />
+
+                    {/* 侧边面板 - Portal渲染，使用更高的层级 */}
+                    <div
+                        className={`fixed top-0 right-0 w-[300px] max-w-[85vw] h-[100dvh] ${glassClass} z-mobile-menu-panel transition-all duration-300 ease-out overflow-hidden shadow-enhanced-xl border-l border-neutral-200/60 dark:border-neutral-700/60`}
+                        onClick={handleMenuClick} // 阻止冒泡，防止点击菜单内容时关闭
+                        aria-modal="true"
+                        role="dialog"
+                        tabIndex={-1}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                                onClose();
+                            }
+                        }}
+                        style={{
+                            transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+                            opacity: isOpen ? 1 : 0,
+                        }}
                     >
-                        <div
-                            className={`fixed top-0 right-0 w-[300px] max-w-[85vw] h-[100dvh] ${glassClass} transition-all duration-300 ease-out overflow-hidden shadow-enhanced-xl border-l border-neutral-200/60 dark:border-neutral-700/60`}
-                            onClick={handleMenuClick} // 阻止冒泡，防止点击菜单内容时关闭
-                            aria-modal="true"
-                            role="dialog"
-                            tabIndex={-1}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Escape') {
-                                    onClose();
-                                }
-                            }}
-                            style={{
-                                transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-                                opacity: isOpen ? 1 : 0,
-                            }}
-                        >
                             {/* 关闭按钮 */}
                             <button 
                                 onClick={onClose} 
@@ -609,9 +624,9 @@ function MobileMenu() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
                     </div>
-                </>
+                </>,
+                document.body
             )}
         </div>
     );
@@ -682,9 +697,9 @@ function LanguageSwitch({ className }: { className?: string }) {
     
     return (
         <div ref={langMenuRef} className={(className || "") + " relative flex items-center"}>
-            <button 
-                onClick={() => setIsOpen(!isOpen)} 
-                title={label} 
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                title={label}
                 aria-label={label}
                 aria-expanded={isOpen}
                 aria-haspopup="true"
@@ -903,9 +918,9 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
     return (
         <div ref={searchContainerRef} className={`${className || ""} search-container relative flex items-center`} role="search">
             {!isExpanded ? (
-                <button 
-                    onClick={() => setIsExpanded(true)} 
-                    title={label} 
+                <button
+                    onClick={() => setIsExpanded(true)}
+                    title={label}
                     aria-label={label}
                     className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
                 >
@@ -1110,9 +1125,9 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                     )}
                 </>
             ) : (
-                <button 
-                    onClick={() => setIsOpened(true)} 
-                    title={label} 
+                <button
+                    onClick={() => setIsOpened(true)}
+                    title={label}
                     aria-label={label}
                     className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
                 >
@@ -1153,7 +1168,7 @@ function CollapsedMenu() {
     
     return (
         <div ref={menuRef}>
-            <button 
+            <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-theme dark:hover:text-theme focus:outline-none focus:ring-2 focus:ring-theme/30 transition-all duration-200 transform hover:scale-105"
                 aria-expanded={isOpen}
