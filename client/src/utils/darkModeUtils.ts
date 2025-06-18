@@ -1,21 +1,64 @@
 import { useState, useEffect } from "react";
 
+// 立即应用主题的函数，在页面加载时调用
+export function initializeTheme() {
+  const mode = localStorage.getItem("theme");
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+  function applyMode(targetMode: 'light' | 'dark') {
+    document.documentElement.setAttribute('data-color-mode', targetMode);
+    if (targetMode === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+  }
+
+  if (mode === "dark") {
+    applyMode("dark");
+  } else if (mode === "light") {
+    applyMode("light");
+  } else {
+    // mode === null || mode === "system"
+    if (mediaQuery.matches) {
+      applyMode("dark");
+    } else {
+      applyMode("light");
+    }
+  }
+}
+
 export function listenSystemMode() {
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
+  function applyMode(targetMode: 'light' | 'dark') {
+    document.documentElement.setAttribute('data-color-mode', targetMode);
+    if (targetMode === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+    window.dispatchEvent(new Event("colorSchemeChange"));
+  }
+
   function darkModeHandler() {
     const mode = localStorage.getItem("theme");
-    if (mode === null || mode === "system") {
+
+    if (mode === "dark") {
+      applyMode("dark");
+    } else if (mode === "light") {
+      applyMode("light");
+    } else {
+      // mode === null || mode === "system"
       if (mediaQuery.matches) {
-        document.documentElement.setAttribute("data-color-mode", "dark");
-        document.documentElement.classList.add("dark");
-        document.documentElement.classList.remove("light");
+        applyMode("dark");
       } else {
-        document.documentElement.setAttribute("data-color-mode", "light");
-        document.documentElement.classList.add("light");
-        document.documentElement.classList.remove("dark");
+        applyMode("light");
       }
-      window.dispatchEvent(new Event("colorSchemeChange"));
     }
   }
 
@@ -32,6 +75,8 @@ export function getCurrentColorMode(): "light" | "dark" {
       | "dark") || "light"
   );
 }
+
+
 
 export function useColorMode() {
   const [colorMode, setColorMode] = useState<"light" | "dark">(

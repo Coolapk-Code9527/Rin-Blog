@@ -181,9 +181,11 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-[data-color-mode="dark"] .glass-card {
-  background: rgba(13, 17, 23, 0.60);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+html[data-color-mode="dark"] .glass-card {
+  background: rgba(13, 17, 23, 0.60) !important;
+  backdrop-filter: blur(16px) saturate(180%) brightness(1.08) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 /* 增强的按钮效果 */
@@ -218,12 +220,24 @@ body {
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
   -webkit-backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
 
-[data-color-mode="dark"] .nav-glass {
-  background: rgba(13, 17, 23, 0.55);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+html[data-color-mode="dark"] body .nav-glass,
+html.dark body .nav-glass,
+[data-color-mode="dark"] .nav-glass,
+.dark .nav-glass {
+  background: rgba(13, 17, 23, 0.90) !important;
+  backdrop-filter: blur(25px) saturate(160%) brightness(0.8) !important;
+  -webkit-backdrop-filter: blur(25px) saturate(160%) brightness(0.8) !important;
+}
+
+/* 非滚动状态的导航栏透明效果 - 完全透明，与页面融合 */
+.nav-glass-transparent {
+  background: rgba(255, 255, 255, 0) !important;
+}
+
+[data-color-mode="dark"] .nav-glass-transparent {
+  background: rgba(13, 17, 23, 0) !important;
 }
 
 /* 统一的标签毛玻璃效果 - 轻量层级 */
@@ -267,6 +281,8 @@ body {
 
 [data-color-mode="dark"] .glass-layer-1 {
   background: rgba(13, 17, 23, 0.70) !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -279,6 +295,8 @@ body {
 
 [data-color-mode="dark"] .glass-layer-2 {
   background: rgba(13, 17, 23, 0.60) !important;
+  backdrop-filter: blur(16px) saturate(200%) brightness(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(200%) brightness(1.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -291,6 +309,8 @@ body {
 
 [data-color-mode="dark"] .glass-layer-3 {
   background: rgba(13, 17, 23, 0.50) !important;
+  backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
@@ -303,6 +323,8 @@ body {
 
 [data-color-mode="dark"] .glass-layer-1-bg {
   background: rgba(13, 17, 23, 0.80) !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
 }
 
 .glass-layer-2-bg {
@@ -313,6 +335,8 @@ body {
 
 [data-color-mode="dark"] .glass-layer-2-bg {
   background: rgba(13, 17, 23, 0.75) !important;
+  backdrop-filter: blur(16px) saturate(200%) brightness(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(200%) brightness(1.08);
 }
 
 .glass-layer-3-bg {
@@ -323,6 +347,8 @@ body {
 
 [data-color-mode="dark"] .glass-layer-3-bg {
   background: rgba(13, 17, 23, 0.70) !important;
+  backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
 }
 
 /* 智能毛玻璃系统 - 根据背景状态自动切换，高透明度 */
@@ -342,8 +368,10 @@ body {
   -webkit-backdrop-filter: blur(20px) saturate(220%) brightness(1.1);
 }
 
-:root[style*="--background-active: 1"] [data-color-mode="dark"] .nav-glass {
-  background: rgba(13, 17, 23, 0.70) !important;
+:root[style*="--background-active: 1"] html[data-color-mode="dark"] .nav-glass {
+  background: rgba(13, 17, 23, 0.95) !important;
+  backdrop-filter: blur(30px) saturate(150%) brightness(0.7) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(150%) brightness(0.7) !important;
 }
 
 :root[style*="--background-active: 1"] .tag-enhanced {
@@ -354,6 +382,23 @@ body {
 
 :root[style*="--background-active: 1"] [data-color-mode="dark"] .tag-enhanced {
   background: rgba(33, 38, 45, 0.80) !important;
+}
+
+/* 文件管理器背景适配 */
+:root[style*="--background-active: 1"] .glass-file-card {
+  background: rgba(255, 255, 255, 0.80) !important;
+}
+
+:root[style*="--background-active: 1"] [data-color-mode="dark"] .glass-file-card {
+  background: rgba(13, 17, 23, 0.80) !important;
+}
+
+:root[style*="--background-active: 1"] .glass-file-button {
+  background: rgba(255, 255, 255, 0.90) !important;
+}
+
+:root[style*="--background-active: 1"] [data-color-mode="dark"] .glass-file-button {
+  background: rgba(13, 17, 23, 0.90) !important;
 }
 
 /* 性能优化：减少毛玻璃效果的重复计算 */
@@ -390,11 +435,147 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+/* 文件管理器专用毛玻璃效果 */
+.glass-file-card {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(16px) saturate(180%) brightness(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+html[data-color-mode="dark"] body .glass-file-card,
+html.dark body .glass-file-card,
+[data-color-mode="dark"] .glass-file-card,
+.dark .glass-file-card {
+  background: rgba(13, 17, 23, 0.65) !important;
+  backdrop-filter: blur(16px) saturate(180%) brightness(1.08) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+
+
+.glass-file-button {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(4px) saturate(150%);
+  -webkit-backdrop-filter: blur(4px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+[data-color-mode="dark"] .glass-file-button {
+  background: rgba(13, 17, 23, 0.85) !important;
+  backdrop-filter: blur(4px) saturate(150%);
+  -webkit-backdrop-filter: blur(4px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Toast通知专用毛玻璃效果 */
+.glass-toast {
+  backdrop-filter: blur(16px) saturate(200%) brightness(1.1) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(200%) brightness(1.1) !important;
+}
+
+/* 背景管理器专用毛玻璃效果 */
+.glass-background-mobile {
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+[data-color-mode="dark"] .glass-background-mobile {
+  background: rgba(17, 24, 39, 0.3) !important;
+}
+
+.glass-background-desktop {
+  background: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+[data-color-mode="dark"] .glass-background-desktop {
+  background: rgba(17, 24, 39, 0.35) !important;
+}
+
 /* 移动侧边栏优化 - 简化背景遮罩模糊效果 */
 .mobile-menu-overlay {
   background: rgba(0, 0, 0, 0.5) !important;
   backdrop-filter: blur(1px) !important;
   -webkit-backdrop-filter: blur(1px) !important;
+  z-index: 10450; /* 使用MOBILE_MENU层级 */
+}
+
+/* 统一的层级管理CSS类 */
+.z-header {
+  z-index: 10050; /* HEADER层级 */
+}
+
+.z-dropdown {
+  z-index: 10200; /* DROPDOWN层级 */
+}
+
+.z-mobile-menu {
+  z-index: 10450; /* MOBILE_MENU层级 */
+}
+
+.z-drawer {
+  z-index: 10500; /* DRAWER层级 */
+}
+
+.z-modal {
+  z-index: 10300; /* MODAL层级 */
+}
+
+.z-toast {
+  z-index: 10100; /* TOAST层级 */
+}
+
+.z-loading {
+  z-index: 10900; /* LOADING层级 */
+}
+
+.z-critical {
+  z-index: 11000; /* CRITICAL层级 */
+}
+
+/* 响应式层级管理 - 移动端优化 */
+@media (max-width: 767px) {
+  /* 移动端使用较低的z-index值以优化性能 */
+  .z-header {
+    z-index: 1000; /* 移动端HEADER层级 */
+  }
+
+  .z-dropdown {
+    z-index: 1100; /* 移动端DROPDOWN层级 */
+  }
+
+  .z-mobile-menu {
+    z-index: 1200; /* 移动端MOBILE_MENU层级 */
+  }
+
+  .z-drawer {
+    z-index: 1300; /* 移动端DRAWER层级 */
+  }
+
+  .z-modal {
+    z-index: 1400; /* 移动端MODAL层级 */
+  }
+
+  .z-toast {
+    z-index: 1500; /* 移动端TOAST层级 */
+  }
+
+  .z-loading {
+    z-index: 1600; /* 移动端LOADING层级 */
+  }
+
+  .z-critical {
+    z-index: 1700; /* 移动端CRITICAL层级 */
+  }
+
+  /* 移动端性能优化：简化毛玻璃效果 */
+  .mobile-menu-overlay {
+    z-index: 1200; /* 使用移动端MOBILE_MENU层级 */
+  }
 }
 
 /* 英文内容字体 */
@@ -3264,3 +3445,5 @@ main h1, [role="complementary"] h3, aside h3 {
 .markdown-body pre code {
   box-shadow: none !important;
 }
+
+

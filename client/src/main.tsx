@@ -10,7 +10,7 @@ import App from './App'
 import './index.css'
 import './components.css'
 import { siteName } from './utils/constants'
-import { listenSystemMode } from './utils/darkModeUtils'
+import { listenSystemMode, initializeTheme } from './utils/darkModeUtils'
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { ApiClient } from './types/api';
 import { StagewiseToolbar } from '@stagewise/toolbar-react';
@@ -44,7 +44,8 @@ export const client = treaty<ServerType>(endpoint) as unknown as ApiClient;
 console.log('Current environment:', isDev ? 'Development' : 'Production');
 console.log('API endpoint:', endpoint);
 
-listenSystemMode()
+// 立即初始化主题，确保在React渲染前应用正确的主题
+initializeTheme();
 
 // 初始化i18n
 // 使用变量中转来避免类型问题
@@ -89,6 +90,8 @@ Modal.setAppElement('#root');
 
 // 初始化系统主题监听
 listenSystemMode();
+
+
 
 // 开发环境下挂载stagewise工具栏
 if (isDev) {

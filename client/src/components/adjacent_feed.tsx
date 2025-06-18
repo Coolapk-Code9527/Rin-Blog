@@ -168,18 +168,21 @@ export function AdjacentCard({
 }) {
     const direction = type === "previous" ? "text-start" : "text-end";
     const {t} = useTranslation();
-    
+
+    // 注意：父容器已经有毛玻璃效果，子组件不需要重复添加
+    // 避免双重毛玻璃效果冲突
+
     if (!data) {
         return (
-            <div className="h-full w-full block p-4 sm:p-6 duration-300 bg-neutral-50/80 dark:bg-neutral-800/40 backdrop-blur-sm flex items-center justify-center min-h-[5.5rem] sm:min-h-[8rem]">
+            <div className="h-full w-full block p-4 sm:p-6 duration-300 flex items-center justify-center min-h-[5.5rem] sm:min-h-[8rem] bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20 transition-colors">
                 <span className="text-xs sm:text-sm text-neutral-400 dark:text-neutral-500 font-medium">{t('no_more')}</span>
             </div>
         );
     }
-    
+
     return (
         <Link href={`/feed/${data.id}`}
-              className={`h-full w-full block p-0 duration-300 hover:bg-neutral-50/80 dark:hover:bg-neutral-800/60 relative group overflow-hidden backdrop-blur-sm transition-all ease-out ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>
+              className={`h-full w-full block p-0 duration-300 hover:bg-white/10 dark:hover:bg-black/10 relative group overflow-hidden transition-all ease-out ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>
             <div className={`flex flex-row ${type === "next" ? "flex-row-reverse" : "flex-row"} items-stretch w-full h-20 sm:h-32`}>
                 {/* 图片区 */}
                 <div className={`flex-shrink-0 w-16 sm:w-32 h-full overflow-hidden bg-gray-200 dark:bg-gray-700 relative ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>

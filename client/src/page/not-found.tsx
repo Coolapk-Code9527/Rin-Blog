@@ -4,9 +4,13 @@ import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import { siteName } from "../utils/constants";
 import { PageContainer } from "../components/container";
+import { useGlassEffect, GLASS_LAYERS } from '../hooks/useGlassEffect';
 
 export function NotFoundPage() {
   const { t } = useTranslation();
+  const glassClass = useGlassEffect('card');
+  const buttonGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
+  const buttonHoverGlassClass = useGlassEffect(GLASS_LAYERS.MEDIUM);
 
   return (
     <>
@@ -33,7 +37,7 @@ export function NotFoundPage() {
           <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
         </div>
 
-        <div className="text-center max-w-md mx-auto">
+        <div className={`text-center max-w-md mx-auto p-8 rounded-xl ${glassClass} border border-gray-200/60 dark:border-gray-700/60 shadow-enhanced`}>
           <div className="mb-6 text-theme text-8xl sm:text-9xl animate-pulse">
             <i className="ri-ghost-line"></i>
           </div>
@@ -67,7 +71,7 @@ export function NotFoundPage() {
                   window.location.href = '/';
                 }
               }}
-              className="px-6 py-3 bg-gray-100/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 rounded-lg shadow-enhanced hover:shadow-enhanced-lg hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-[0.98] active:scale-[0.96] transition-all duration-300 flex items-center justify-center font-medium"
+              className={`px-6 py-3 ${buttonGlassClass} text-gray-700 dark:text-gray-300 rounded-lg shadow-enhanced hover:shadow-enhanced-lg hover:${buttonHoverGlassClass} hover:scale-[0.98] active:scale-[0.96] transition-all duration-300 flex items-center justify-center font-medium`}
             >
               <i className="ri-arrow-left-line mr-2"></i>
               {t("error.go_back")}

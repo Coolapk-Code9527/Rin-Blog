@@ -206,16 +206,16 @@ function App() {
               }}
             </RouteMe>
 
-            <RouteMe path="/settings" paddingClassName='mx-4'>
+            <RouteMe path="/settings">
               <Settings />
             </RouteMe>
 
 
-            <RouteMe path="/writing" paddingClassName='mx-4'>
+            <RouteMe path="/writing">
               <WritingPage />
             </RouteMe>
 
-            <RouteMe path="/writing/:id" paddingClassName='mx-4'>
+            <RouteMe path="/writing/:id">
               {({ id }) => {
                 const id_num = tryInt(0, id)
                 return (

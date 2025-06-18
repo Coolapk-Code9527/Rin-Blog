@@ -60,7 +60,7 @@ export function DraftDialog({
   
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 glass-background-desktop"
       style={{ zIndex: MODAL_Z_INDEX.MODAL }}
     >
       <div className={`${MODAL_CONTAINER_CLASSES.large} w-full max-w-4xl h-3/4`}>

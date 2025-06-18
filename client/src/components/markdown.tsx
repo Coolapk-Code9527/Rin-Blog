@@ -417,7 +417,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
                     <span className="ml-2 text-xs text-yellow-400 font-mono">未指定语言</span>
                   )}
                   <button
-                    className="code-block-action ml-auto px-3 py-1.5 bg-neutral-700/70 hover:bg-neutral-600/80 active:bg-neutral-500/80 text-neutral-200 rounded-lg text-xs flex items-center gap-1.5 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] backdrop-blur-sm"
+                    className="code-block-action ml-auto px-3 py-1.5 bg-neutral-700/70 hover:bg-neutral-600/80 active:bg-neutral-500/80 text-neutral-200 rounded-lg text-xs flex items-center gap-1.5 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] glass-layer-1"
                     onClick={() => {
                       navigator.clipboard.writeText(String(children));
                       setCopied(true);

@@ -25,6 +25,27 @@ export const useGlassEffect = (baseClass: string) => {
         case 'glass-layer-3':
           setGlassClass('glass-layer-3-bg');
           break;
+        case 'nav-glass':
+          setGlassClass('nav-glass'); // 导航栏在背景图片时保持原样，CSS会自动适配
+          break;
+        case 'nav-glass-transparent':
+          setGlassClass('nav-glass-transparent'); // 透明导航栏保持原样
+          break;
+        case 'tag-enhanced':
+          setGlassClass('tag-enhanced'); // 标签在背景图片时保持原样，CSS会自动适配
+          break;
+        case 'glass-toast':
+          setGlassClass('glass-toast'); // Toast在背景图片时保持原样，CSS会自动适配
+          break;
+        case 'glass-background-mobile':
+          setGlassClass('glass-background-mobile'); // 移动端背景遮罩保持原样
+          break;
+        case 'glass-background-desktop':
+          setGlassClass('glass-background-desktop'); // 桌面端背景遮罩保持原样
+          break;
+        case 'glass-dropdown':
+          setGlassClass('glass-dropdown'); // 下拉菜单保持原样，CSS会自动适配
+          break;
         default:
           setGlassClass(baseClass);
       }

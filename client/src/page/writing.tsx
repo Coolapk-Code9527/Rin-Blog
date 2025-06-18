@@ -31,6 +31,7 @@ import { FileSelectorDialog } from '../components/file_manager/FileSelectorDialo
 import type { FileItem } from '../types/api';
 import { MODAL_Z_INDEX } from "../utils/modal-config";
 import { generateVideoThumbnail, isVideoFile } from '../utils/videoThumbnail';
+import { PageContainer } from '../components/container';
 
 // 处理process.env问题
 declare const process: {
@@ -2242,8 +2243,8 @@ export function WritingPage({ id }: { id?: number }) {
         <style>{focusStyles}</style>
       </Helmet>
 
-      {/* 写作页面特殊处理：补偿Padding组件差异，确保与其他页面宽度一致 */}
-      <div className="max-w-6xl mx-auto w-full px-2 sm:px-6 md:px-8">
+      {/* 使用标准的PageContainer，与其他页面保持一致 */}
+      <PageContainer>
         <div className="py-6 writing-content-wrapper">
           {/* 响应式布局：移动端单列，桌面端左右分栏 */}
           <div className="flex flex-col lg:flex-row gap-6 writing-layout">
@@ -2711,7 +2712,7 @@ export function WritingPage({ id }: { id?: number }) {
             </div>
           </div>
         </div>
-      </div>
+      </PageContainer>
 
       {/* 对话框组件 */}
       <AlertUI />

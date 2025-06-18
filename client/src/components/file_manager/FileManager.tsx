@@ -10,16 +10,14 @@ import { saveAs } from 'file-saver';
 import { Pagination } from '../pagination';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../dialog';
+import Modal from 'react-modal';
+import { macOSModalStyles, MODAL_CONTAINER_CLASSES, useModalKeyboard, useModalBodyLock } from '../../utils/modal-config';
 import { useNotification } from '../../hooks/useNotification';
 import { ClientConfigContext } from '../../state/config';
 import { FilePreview } from './FilePreview';
 import { FileTypeSvgIcon } from './FileTypeSvgIcon';
-import {
-  MODAL_Z_INDEX,
-  MODAL_CONTAINER_CLASSES,
-  useModalKeyboard,
-  useModalBodyLock
-} from '../../utils/modal-config';
+import { MODAL_Z_INDEX } from '../../utils/modal-config';
+import { useGlassEffect, GLASS_LAYERS } from '../../hooks/useGlassEffect';
 
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
@@ -98,6 +96,9 @@ export function FileManager({
     showToast(msg, 'info');
     if (onConfirm) onConfirm();
   };
+
+  // 使用智能毛玻璃效果
+  const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
   
   // 状态定义
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -795,19 +796,7 @@ export function FileManager({
     }
   };
 
-  // 使用统一的键盘事件处理和body锁定 - 移动弹窗
-  useModalKeyboard(showMoveDialog, () => setShowMoveDialog(false), confirmBatchMove, moving);
-  useModalBodyLock(showMoveDialog);
-
-  // 使用统一的键盘事件处理和body锁定 - 重命名弹窗
-  useModalKeyboard(showRenameDialog, () => setShowRenameDialog(false), confirmRename);
-  useModalBodyLock(showRenameDialog);
-
-  // 使用统一的键盘事件处理和body锁定 - 其他弹窗
-  useModalBodyLock(showNewFolderDialog);
-  useModalBodyLock(!!errorMessage);
-  useModalBodyLock(refDialogOpen);
-  useModalBodyLock(syncDetailOpen);
+  // 移除重复的useModalBodyLock调用，统一在后面处理
 
   // 拖拽上传事件处理
   const handleDragEnter = (e: any) => {
@@ -850,6 +839,18 @@ export function FileManager({
       });
   }, [isAdmin]);
 
+  // 弹窗键盘事件和body锁定 - 统一管理所有弹窗状态
+  const hasAnyModalOpen = showNewFolderDialog || !!errorMessage || refDialogOpen || showMoveDialog || showRenameDialog || syncDetailOpen;
+
+  useModalKeyboard(showNewFolderDialog, () => setShowNewFolderDialog(false));
+  useModalKeyboard(!!errorMessage, () => setErrorMessage(null));
+  useModalKeyboard(refDialogOpen, () => setRefDialogOpen(false));
+  useModalKeyboard(showMoveDialog, () => setShowMoveDialog(false));
+  useModalKeyboard(showRenameDialog, () => setShowRenameDialog(false));
+  useModalKeyboard(syncDetailOpen, () => setSyncDetailOpen(false));
+
+  useModalBodyLock(hasAnyModalOpen);
+
   // 渲染网格视图
   const renderGridView = () => {
     // 文件夹优先，文件后面
@@ -862,7 +863,7 @@ export function FileManager({
         {displayFiles.map(file => (
           <div
             key={file.id}
-            className={`group relative flex flex-col items-center p-4 rounded-xl border bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-enhanced hover:shadow-enhanced-lg hover:-translate-y-1 transition-all duration-300 ${selectedFiles.some(f => f.id === file.id) ? 'border-theme ring-2 ring-theme/30 bg-pink-50/80 dark:bg-pink-900/20' : 'border-neutral-200/60 dark:border-neutral-700/60'}`}
+            className={`group relative flex flex-col items-center p-4 rounded-xl ${glassClass} shadow-enhanced hover:shadow-enhanced-lg hover:-translate-y-1 transition-all duration-300 ${selectedFiles.some(f => f.id === file.id) ? 'border-theme ring-2 ring-theme/30 bg-pink-50/80 dark:bg-pink-900/20' : ''}`}
             style={{ minWidth: 0 }}
             onClick={() => handleFileClick(file)}
           >
@@ -900,7 +901,7 @@ export function FileManager({
               {file.modifiedAt ? new Date(file.modifiedAt * 1000).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }) : ''}
             </p>
             {/* 操作按钮区，悬浮显示，半透明背景 */}
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-enhanced z-10">
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity glass-file-button rounded-lg p-1 shadow-enhanced z-10">
               {/* 下载按钮 */}
               {!file.isFolder && (
                 <button 
@@ -1202,7 +1203,7 @@ export function FileManager({
   return (
     <div
       className={
-        "relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60 w-full" +
+        `relative ${glassClass} rounded-lg shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 w-full` +
         (dragActive ? " ring-4 ring-pink-400/60 ring-inset" : "")
       }
       onDragEnter={handleDragEnter}
@@ -1414,10 +1415,12 @@ export function FileManager({
       )}
       
       {/* 新建文件夹对话框 */}
-      {showNewFolderDialog && createPortal(
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
-          style={{ zIndex: MODAL_Z_INDEX.NESTED_DIALOG }}
+      {showNewFolderDialog && (
+        <Modal
+          isOpen={showNewFolderDialog}
+          onRequestClose={() => setShowNewFolderDialog(false)}
+          style={macOSModalStyles}
+          ariaHideApp={false}
         >
           <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium mb-4">{t('files.create_folder', { defaultValue: '新建文件夹' })}</h3>
@@ -1433,15 +1436,16 @@ export function FileManager({
               <Button onClick={handleCreateFolder} title={typeof t('create_action.title') === 'string' ? t('create_action.title') : '创建'} />
             </div>
           </div>
-        </div>,
-        document.body
+        </Modal>
       )}
       
       {/* 错误信息对话框 */}
-      {errorMessage && createPortal(
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
-          style={{ zIndex: MODAL_Z_INDEX.CRITICAL }}
+      {errorMessage && (
+        <Modal
+          isOpen={!!errorMessage}
+          onRequestClose={closeErrorDialog}
+          style={macOSModalStyles}
+          ariaHideApp={false}
         >
           <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium text-red-600 mb-4">{t('alert')}</h3>
@@ -1452,15 +1456,16 @@ export function FileManager({
               <Button onClick={() => { closeErrorDialog(); window.location.href = '/'; }} title={t('index.back')} secondary />
             </div>
           </div>
-        </div>,
-        document.body
+        </Modal>
       )}
 
       {/* 引用详情弹窗 */}
-      {refDialogOpen && createPortal(
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
-          style={{ zIndex: MODAL_Z_INDEX.NESTED_DIALOG }}
+      {refDialogOpen && (
+        <Modal
+          isOpen={refDialogOpen}
+          onRequestClose={() => setRefDialogOpen(false)}
+          style={macOSModalStyles}
+          ariaHideApp={false}
         >
           <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium mb-4">{t('files.ref_detail')}</h3>
@@ -1485,20 +1490,16 @@ export function FileManager({
               <Button onClick={() => setRefDialogOpen(false)} title={t('close')} />
             </div>
           </div>
-        </div>,
-        document.body
+        </Modal>
       )}
 
       {/* 移动弹窗 */}
-      {showMoveDialog && createPortal(
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
-          style={{ zIndex: MODAL_Z_INDEX.NESTED_DIALOG }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowMoveDialog(false);
-            }
-          }}
+      {showMoveDialog && (
+        <Modal
+          isOpen={showMoveDialog}
+          onRequestClose={() => setShowMoveDialog(false)}
+          style={macOSModalStyles}
+          ariaHideApp={false}
         >
           <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium mb-4">{t('files.move_to')}</h3>
@@ -1515,20 +1516,16 @@ export function FileManager({
               <Button onClick={confirmBatchMove} title={moving ? t('files.moving') : t('files.move')} />
             </div>
           </div>
-        </div>,
-        document.body
+        </Modal>
       )}
 
       {/* 重命名弹窗 */}
-      {showRenameDialog && createPortal(
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
-          style={{ zIndex: MODAL_Z_INDEX.NESTED_DIALOG }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowRenameDialog(false);
-            }
-          }}
+      {showRenameDialog && (
+        <Modal
+          isOpen={showRenameDialog}
+          onRequestClose={() => setShowRenameDialog(false)}
+          style={macOSModalStyles}
+          ariaHideApp={false}
         >
           <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium mb-4">{t('files.rename_prompt') || '请输入新文件名'}</h3>
@@ -1544,20 +1541,16 @@ export function FileManager({
               <Button onClick={confirmRename} title={t('confirm')} />
             </div>
           </div>
-        </div>,
-        document.body
+        </Modal>
       )}
 
       {/* R2同步结果弹窗 */}
-      {syncDetailOpen && createPortal(
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
-          style={{ zIndex: MODAL_Z_INDEX.NESTED_DIALOG }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setSyncDetailOpen(false);
-            }
-          }}
+      {syncDetailOpen && (
+        <Modal
+          isOpen={syncDetailOpen}
+          onRequestClose={() => setSyncDetailOpen(false)}
+          style={macOSModalStyles}
+          ariaHideApp={false}
         >
           <div className={`${MODAL_CONTAINER_CLASSES.standard} max-w-md w-full mx-4`}>
             <h3 className="text-lg font-medium mb-4">{t('files.r2sync_result', { defaultValue: 'R2同步结果' })}</h3>
@@ -1577,8 +1570,7 @@ export function FileManager({
               <Button onClick={() => setSyncDetailOpen(false)} title={t('close')} />
             </div>
           </div>
-        </div>,
-        document.body
+        </Modal>
       )}
 
       {/* 图片预览弹窗 */}

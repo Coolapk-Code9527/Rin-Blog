@@ -1,14 +1,9 @@
 import { useContext, useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import Popup from "reactjs-popup";
 import { removeCookie } from "typescript-cookie";
 import { Link, useLocation } from "wouter";
 import { useLoginModal } from "../hooks/useLoginModal";
 import { Profile, ProfileContext } from "../state/profile";
-import { Button } from "./button";
-import { IconSmall } from "./icon";
-import { Input } from "./input";
-import { Padding } from "./padding";
 import { ClientConfigContext } from "../state/config";
 import { useConfirm } from "./dialog";
 import React from 'react';
@@ -20,6 +15,11 @@ export function Header({ children }: { children?: React.ReactNode }) {
     const profile = useContext(ProfileContext);
     const { t } = useTranslation();
     const [isScrolled, setIsScrolled] = useState(false);
+
+    // 使用智能毛玻璃效果
+    const navGlassClass = useGlassEffect(GLASS_LAYERS.STRONG); // 强化级毛玻璃
+    const navTransparentClass = 'bg-white/0 dark:bg-gray-900/0'; // 完全透明
+    const dropdownGlassClass = useGlassEffect('glass-dropdown'); // 下拉菜单毛玻璃
 
     // 监听滚动事件
     useEffect(() => {
@@ -41,8 +41,7 @@ export function Header({ children }: { children?: React.ReactNode }) {
                 if (!mask) {
                     const div = document.createElement('div');
                     div.id = 'global-header-mask';
-                    div.className = `fixed inset-0 bg-black bg-opacity-40 pointer-events-none`;
-                    div.style.zIndex = MODAL_Z_INDEX.DRAWER.toString();
+                    div.className = `fixed inset-0 bg-black bg-opacity-40 pointer-events-none z-drawer`;
                     document.body.appendChild(div);
                 }
             } else {
@@ -56,10 +55,10 @@ export function Header({ children }: { children?: React.ReactNode }) {
     return useMemo(() => (
         <>
             <div
-                className={`fixed z-[10000] w-full transition-all duration-300 ${
+                className={`fixed w-full transition-all duration-300 z-header border-b ${
                     isScrolled
-                        ? 'nav-glass shadow-enhanced-lg'
-                        : 'bg-white/0 dark:bg-gray-900/0'
+                        ? `${navGlassClass} shadow-enhanced-lg border-black/12 dark:border-white/15`
+                        : `${navTransparentClass} border-transparent`
                 }`}
             >
                 <div className="max-w-full xl:max-w-7xl 2xl:max-w-screen-2xl mx-auto px-2 sm:px-6 flex justify-between items-center py-3">
@@ -374,21 +373,11 @@ function MobileMenu() {
             {/* 移动菜单及遮罩（渲染为全局覆盖） */}
             {typeof document !== 'undefined' && isOpen && (
                 <>
-                    {/* 背景遮罩 - 使用优化的毛玻璃效果 */}
+                    {/* 背景遮罩 - 使用优化的毛玻璃效果和统一层级管理 */}
                     <div
-                        className={`fixed inset-0 mobile-menu-overlay transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                        className={`fixed inset-0 mobile-menu-overlay z-mobile-menu transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                         onClick={onClose} // 点击遮罩层关闭菜单
                         aria-hidden="true"
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            width: '100vw',
-                            height: '100vh',
-                            zIndex: MODAL_Z_INDEX.DRAWER
-                        }}
                     >
                         <div
                             className={`fixed top-0 right-0 w-[300px] max-w-[85vw] h-[100dvh] ${glassClass} transition-all duration-300 ease-out overflow-hidden shadow-enhanced-xl border-l border-neutral-200/60 dark:border-neutral-700/60`}
@@ -524,22 +513,13 @@ function MobileMenu() {
                                             
                                             {/* 搜索历史下拉 */}
                                             {isSearchExpanded && searchHistory.length > 0 && (
-                                                <div 
+                                                <div
                                                     id="mobile-search-history"
-                                                    className="absolute top-full left-0 right-0 mt-2 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg z-20 overflow-hidden animate-slideDown"
-                                                    style={{
-                                                        backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                                                        WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                                                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)'
-                                                    }}
+                                                    className="absolute top-full left-0 right-0 mt-2 glass-dropdown rounded-xl shadow-lg z-20 overflow-hidden animate-slideDown border border-gray-200/70 dark:border-gray-700/70"
                                                     role="listbox"
                                                 >
                                                     <div className="max-h-36 overflow-y-auto">
-                                                        <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl z-10 border-b border-gray-100 dark:border-gray-700"
-                                                            style={{
-                                                                backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                                                                WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
-                                                            }}>
+                                                        <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 glass-dropdown z-10 border-b border-gray-100 dark:border-gray-700">
                                                             <span className="flex items-center">
                                                                 <i className="ri-history-line mr-1.5 text-theme/70"></i>
                                                                 {t('article.search.history')}
@@ -602,11 +582,7 @@ function MobileMenu() {
                                             </button>
 
                                             <div className={`absolute top-full left-0 right-0 z-30 ${showLanguages ? 'block' : 'hidden'}`} style={{ maxHeight: '300px' }}>
-                                                <div className="bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced-lg overflow-hidden animate-slideDown mt-1"
-                                                    style={{
-                                                        backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                                                        WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
-                                                    }}>
+                                                <div className="glass-dropdown rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced-lg overflow-hidden animate-slideDown mt-1">
                                                     {languages.map(({ code, name, flag }) => (
                                                         <button 
                                                             key={code} 
@@ -668,6 +644,9 @@ function LanguageSwitch({ className }: { className?: string }) {
     const { t, i18n } = useTranslation()
     const [isOpen, setIsOpen] = useState(false);
     const langMenuRef = useRef<HTMLDivElement>(null);
+
+    // 使用智能毛玻璃效果
+    const dropdownGlassClass = useGlassEffect('glass-dropdown');
     const label = t('languages')
     const languages = [
         { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -716,12 +695,7 @@ function LanguageSwitch({ className }: { className?: string }) {
             
             {isOpen && (
                 <div
-                    className="absolute top-full right-0 mt-2 glass-dropdown rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/60 dark:border-gray-700/60 animate-slideDown"
-                    style={{
-                        maxHeight: '300px',
-                        overflowY: 'auto',
-                        zIndex: MODAL_Z_INDEX.DROPDOWN
-                    }}
+                    className={`absolute top-full right-0 mt-2 ${dropdownGlassClass} rounded-xl shadow-xl p-2 min-w-[200px] border border-gray-200/60 dark:border-gray-700/60 animate-slideDown z-dropdown max-h-[300px] overflow-y-auto`}
                     role="menu"
                     aria-orientation="vertical"
                     aria-labelledby="language-menu"
@@ -767,6 +741,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
 
     // 使用智能毛玻璃效果
     const searchGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
+    const dropdownGlassClass = useGlassEffect('glass-dropdown');
 
     // 监听窗口大小变化
     useEffect(() => {
@@ -987,23 +962,13 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                     
                     {/* 搜索历史下拉框 */}
                     {isExpanded && searchHistory.length > 0 && (
-                        <div 
+                        <div
                             id="search-history-dropdown"
-                            className={`absolute top-full mt-2 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg overflow-hidden animate-slideDown ${getHistoryDropdownPositionClass()}`}
+                            className={`absolute top-full mt-2 ${dropdownGlassClass} border border-gray-200/70 dark:border-gray-700/70 rounded-xl shadow-lg overflow-hidden animate-slideDown z-dropdown ${getHistoryDropdownPositionClass()}`}
                             role="listbox"
-                            style={{
-                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)',
-                                backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                                WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                                zIndex: MODAL_Z_INDEX.DROPDOWN
-                            }}
                         >
                             <div className="max-h-48 overflow-y-auto">
-                                <div className="px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl z-10 border-b border-gray-100 dark:border-gray-700"
-                                    style={{
-                                        backdropFilter: 'blur(40px) saturate(250%) brightness(1.2)',
-                                        WebkitBackdropFilter: 'blur(40px) saturate(250%) brightness(1.2)'
-                                    }}>
+                                <div className={`px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center justify-between sticky top-0 ${dropdownGlassClass} z-10 border-b border-gray-100 dark:border-gray-700`}>
                                     <span className="flex items-center">
                                         <i className="ri-history-line mr-1.5 text-theme/70"></i>
                                         {getTranslatedText('article.search.history', '搜索历史')}
@@ -1058,6 +1023,9 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
     const [isOpen, setIsOpen] = useState(false);
     const userMenuRef = useRef<HTMLDivElement>(null);
 
+    // 使用智能毛玻璃效果
+    const dropdownGlassClass = useGlassEffect('glass-dropdown');
+
     // 退出登录确认弹窗
     const { showConfirm, ConfirmUI } = useConfirm();
     
@@ -1111,8 +1079,7 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                     
                     {isOpen && (
                         <div
-                            className="absolute top-full right-0 mt-2 glass-dropdown rounded-xl shadow-xl p-2 w-64 border border-gray-200/60 dark:border-gray-700/60 animate-slideDown"
-                            style={{ zIndex: MODAL_Z_INDEX.DROPDOWN }}
+                            className={`absolute top-full right-0 mt-2 ${dropdownGlassClass} rounded-xl shadow-xl p-2 w-64 border border-gray-200/60 dark:border-gray-700/60 animate-slideDown z-dropdown`}
                             role="menu"
                             aria-orientation="vertical"
                             aria-labelledby="user-menu"
@@ -1164,6 +1131,9 @@ function CollapsedMenu() {
     const { t } = useTranslation();
     const [location] = useLocation();
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // 使用智能毛玻璃效果
+    const dropdownGlassClass = useGlassEffect('glass-dropdown');
     
     // 监听点击外部关闭菜单
     useEffect(() => {
@@ -1194,8 +1164,7 @@ function CollapsedMenu() {
             
             {isOpen && (
                 <div
-                    className="absolute right-0 mt-2 py-2 w-48 glass-dropdown rounded-lg shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60 animate-slideDown"
-                    style={{ zIndex: MODAL_Z_INDEX.DROPDOWN }}
+                    className={`absolute right-0 mt-2 py-2 w-48 ${dropdownGlassClass} rounded-lg shadow-enhanced-lg border border-neutral-200/60 dark:border-neutral-700/60 animate-slideDown z-dropdown`}
                 >
                     <NavBar menu={true} onClick={() => setIsOpen(false)} />
                 </div>

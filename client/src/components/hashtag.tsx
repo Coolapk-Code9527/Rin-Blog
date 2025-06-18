@@ -1,12 +1,16 @@
 import { useLocation } from "wouter"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { useGlassEffect, GLASS_LAYERS } from '../hooks/useGlassEffect'
 
 export function HashTag({ name }: { name: string }) {
     const { t } = useTranslation()
     const [_, setLocation] = useLocation()
     const [isHovered, setIsHovered] = useState(false)
     const [isVisible, setIsVisible] = useState(false)
+
+    // 使用智能毛玻璃效果
+    const tagGlassClass = useGlassEffect('tag-enhanced')
     
     useEffect(() => {
         // 添加进入动画效果
@@ -66,7 +70,7 @@ export function HashTag({ name }: { name: string }) {
             onFocus={() => setIsHovered(true)}
             onBlur={() => setIsHovered(false)}
             // onTouchStart={onTouchStart}
-            className={`text-base text-pretty overflow-hidden px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition-all duration-200 ease-out border border-transparent transform tag-enhanced
+            className={`text-base text-pretty overflow-hidden px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition-all duration-200 ease-out border border-transparent transform ${tagGlassClass}
                 ${isHovered ? '-translate-y-1 shadow-enhanced-lg scale-105 glow-on-hover' : 'shadow-enhanced'}
                 ${tagColor}
                 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}

@@ -5,12 +5,13 @@
 
 import React, { useEffect, useState } from 'react';
 import Modal from 'react-modal';
-import { 
-  macOSModalStyles, 
-  MODAL_Z_INDEX, 
-  useModalKeyboard, 
+import {
+  macOSModalStyles,
+  MODAL_Z_INDEX,
+  useModalKeyboard,
   useModalBodyLock,
-  MODAL_ANIMATIONS 
+  MODAL_ANIMATIONS,
+  useResponsiveZIndex
 } from '../utils/modal-config';
 
 interface ResponsiveModalProps {
@@ -40,6 +41,9 @@ export function ResponsiveModal({
 }: ResponsiveModalProps) {
   const [isMobile, setIsMobile] = useState(false);
 
+  // 使用响应式层级管理
+  const modalZIndex = useResponsiveZIndex('MODAL');
+
   // 检测移动端
   useEffect(() => {
     const checkMobile = () => {
@@ -60,7 +64,10 @@ export function ResponsiveModal({
   // 获取弹窗样式
   const getModalStyles = () => {
     const baseStyles = { ...macOSModalStyles };
-    
+
+    // 使用响应式层级
+    baseStyles.overlay.zIndex = modalZIndex;
+
     if (isMobile) {
       // 移动端样式：底部抽屉
       return {
@@ -81,7 +88,8 @@ export function ResponsiveModal({
         overlay: {
           ...baseStyles.overlay,
           alignItems: 'flex-end',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          zIndex: modalZIndex
         }
       };
     }

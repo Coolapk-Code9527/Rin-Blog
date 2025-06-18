@@ -28,19 +28,10 @@ function Footer() {
     useEffect(() => {
         const mode = localStorage.getItem('theme') as ThemeMode || 'system';
         setModeState(mode);
-        setMode(mode);
+        // 不再重复调用setMode，因为主题已经在main.tsx中初始化了
 
-        // 监听系统主题变化
-        if (mode === 'system') {
-            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            const handleSystemThemeChange = () => {
-                if (localStorage.getItem('theme') === 'system') {
-                    setMode('system');
-                }
-            };
-            mediaQuery.addEventListener('change', handleSystemThemeChange);
-            return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
-        }
+        // 系统主题变化监听已经在main.tsx中的listenSystemMode()处理了
+        // 这里不再重复监听，避免冲突
     }, [])
 
     const setMode = (mode: ThemeMode) => {

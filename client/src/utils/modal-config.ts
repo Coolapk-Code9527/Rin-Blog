@@ -8,12 +8,14 @@ import React from 'react';
 export const MODAL_Z_INDEX = {
   // 基础层级
   BASE: 10000,
+  HEADER: 10050,          // 全局导航栏
 
   // 弹窗层级（按优先级递增）
   TOAST: 10100,           // 轻提示
   DROPDOWN: 10200,        // 下拉菜单
   MODAL: 10300,           // 普通弹窗
   DIALOG: 10400,          // 对话框
+  MOBILE_MENU: 10450,     // 移动端菜单
   DRAWER: 10500,          // 抽屉/侧边栏（全局遮罩）
   NESTED_DIALOG: 10600,   // 嵌套弹窗（FileManager内部弹窗）
   PREVIEW: 10700,         // 文件预览
@@ -21,6 +23,9 @@ export const MODAL_Z_INDEX = {
   LOADING: 10900,         // 全局加载
   CRITICAL: 11000,        // 关键弹窗（如错误提示）
 } as const;
+
+// 定义z-index联合类型
+type ZIndexValue = typeof MODAL_Z_INDEX[keyof typeof MODAL_Z_INDEX] | typeof RESPONSIVE_Z_INDEX.MOBILE[keyof typeof RESPONSIVE_Z_INDEX.MOBILE];
 
 // macOS风格弹窗的统一样式配置
 export const macOSModalStyles = {
@@ -52,7 +57,7 @@ export const macOSModalStyles = {
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     // 移除 backdropFilter 避免与内容的毛玻璃效果冲突
-    zIndex: MODAL_Z_INDEX.MODAL,
+    zIndex: MODAL_Z_INDEX.MODAL as ZIndexValue,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -105,7 +110,7 @@ export const macOSFullscreenModalStyles = {
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
     backdropFilter: 'blur(20px)',
-    zIndex: MODAL_Z_INDEX.PREVIEW,
+    zIndex: MODAL_Z_INDEX.PREVIEW as ZIndexValue,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -344,3 +349,56 @@ export const EASING = {
   // 快速缓动
   SHARP: 'cubic-bezier(0.4, 0, 0.2, 1)'
 } as const;
+
+// 响应式层级管理配置
+export const RESPONSIVE_Z_INDEX = {
+  // 移动端专用层级（优化性能，使用较低的z-index值）
+  MOBILE: {
+    HEADER: 1000,           // 移动端导航栏
+    DROPDOWN: 1100,         // 移动端下拉菜单
+    MOBILE_MENU: 1200,      // 移动端菜单
+    DRAWER: 1300,           // 移动端抽屉
+    MODAL: 1400,            // 移动端弹窗
+    TOAST: 1500,            // 移动端提示
+    LOADING: 1600,          // 移动端加载
+    CRITICAL: 1700,         // 移动端关键弹窗
+  },
+
+  // 桌面端使用标准层级
+  DESKTOP: MODAL_Z_INDEX,
+
+  // 响应式断点
+  BREAKPOINTS: {
+    MOBILE: 768,            // 小于768px使用移动端层级
+    TABLET: 1024,           // 768-1024px使用标准层级
+    DESKTOP: 1024,          // 大于1024px使用标准层级
+  }
+} as const;
+
+// 获取当前设备类型的层级配置
+export const getCurrentZIndex = (component: keyof typeof MODAL_Z_INDEX) => {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < RESPONSIVE_Z_INDEX.BREAKPOINTS.MOBILE;
+
+  if (isMobile && component in RESPONSIVE_Z_INDEX.MOBILE) {
+    return RESPONSIVE_Z_INDEX.MOBILE[component as keyof typeof RESPONSIVE_Z_INDEX.MOBILE];
+  }
+
+  return MODAL_Z_INDEX[component];
+};
+
+// 响应式层级管理Hook
+export const useResponsiveZIndex = (component: keyof typeof MODAL_Z_INDEX) => {
+  const [zIndex, setZIndex] = React.useState(() => getCurrentZIndex(component));
+
+  React.useEffect(() => {
+    const updateZIndex = () => {
+      setZIndex(getCurrentZIndex(component));
+    };
+
+    // 监听窗口大小变化
+    window.addEventListener('resize', updateZIndex);
+    return () => window.removeEventListener('resize', updateZIndex);
+  }, [component]);
+
+  return zIndex;
+};

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useBackground } from '../context/BackgroundContext';
+import { useGlassEffect, GLASS_LAYERS } from '../hooks/useGlassEffect';
 
 // 检测设备类型
 const isMobile = () => {
@@ -70,6 +71,10 @@ export const GlassOverlay = () => {
   const { state } = useBackground();
   const [deviceType, setDeviceType] = useState<'mobile' | 'desktop'>('desktop');
 
+  // 使用智能毛玻璃效果
+  const mobileGlassClass = useGlassEffect('glass-background-mobile');
+  const desktopGlassClass = useGlassEffect('glass-background-desktop');
+
   useEffect(() => {
     const checkDevice = () => {
       setDeviceType(isMobile() ? 'mobile' : 'desktop');
@@ -93,15 +98,9 @@ export const GlassOverlay = () => {
     return null;
   }
 
-  // 优化的遮罩层 - 高透明度使重叠效果更明显
-  const mobileOverlayClass = "fixed inset-0 bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm pointer-events-none z-0";
-
-  // 桌面端使用轻量级遮罩，避免与其他毛玻璃组件叠加
-  const desktopOverlayClass = "fixed inset-0 bg-white/35 dark:bg-gray-900/35 backdrop-blur-sm backdrop-saturate-120 pointer-events-none z-0";
-
   return (
     <div
-      className={deviceType === 'mobile' ? mobileOverlayClass : desktopOverlayClass}
+      className={`fixed inset-0 pointer-events-none z-0 ${deviceType === 'mobile' ? mobileGlassClass : desktopGlassClass}`}
       style={{
         transition: 'opacity 0.3s ease-in-out',
         willChange: 'opacity'

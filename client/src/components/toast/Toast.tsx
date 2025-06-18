@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { MODAL_Z_INDEX, MODAL_ANIMATIONS } from '../../utils/modal-config';
+import { useGlassEffect, GLASS_LAYERS } from '../../hooks/useGlassEffect';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning' | 'loading' | 'progress';
 
@@ -117,6 +118,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }): JSX.
 
 // 单个Toast项组件
 function ToastItemComponent({ toast, onRemove }: { toast: ToastItem; onRemove: (id: number) => void; key?: number }) {
+  // 使用智能毛玻璃效果
+  const toastGlassClass = useGlassEffect('glass-toast');
+
   const getToastStyles = () => {
     switch (toast.type) {
       case 'success':
@@ -153,7 +157,7 @@ function ToastItemComponent({ toast, onRemove }: { toast: ToastItem; onRemove: (
 
   return (
     <div
-      className={`pointer-events-auto min-w-[220px] max-w-sm rounded-lg shadow-enhanced-lg backdrop-blur-md text-sm font-medium animate-toastSlideIn transition-all duration-300 hover:scale-[0.98] ${getToastStyles()}`}
+      className={`pointer-events-auto min-w-[220px] max-w-sm rounded-lg shadow-enhanced-lg ${toastGlassClass} text-sm font-medium animate-toastSlideIn transition-all duration-300 hover:scale-[0.98] ${getToastStyles()}`}
     >
       {/* 进度条（仅在progress类型时显示） */}
       {toast.type === 'progress' && typeof toast.progress === 'number' && (
