@@ -311,7 +311,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                     </div>
                     {feed.createdAt !== feed.updatedAt && (
                       <>
-                        <span className="hidden sm:inline mx-2 text-gray-300 dark:text-gray-600">|</span>
+                        <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
                         <div className="flex items-center gap-1">
                           <i className="ri-history-line text-purple-400 mr-1"></i>
                           <span>{t("feed_card.updated$time", { time: timeago(feed.updatedAt) })}</span>
@@ -320,11 +320,11 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                     )}
                     {counterEnabled && (
                       <>
-                        <span className="hidden sm:inline mx-2 text-gray-300 dark:text-gray-600">|</span>
+                        <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
                         <div className="flex items-center gap-1">
                           <i className="ri-eye-line text-green-500 mr-1"></i>
                           <span>{t("count.pv")} {feed.pv}</span>
-                          <span className="mx-1 text-gray-300 dark:text-gray-600">/</span>
+                          <span className="mx-1 text-gray-300 dark:text-gray-600">|</span>
                           <i className="ri-user-3-line text-pink-400 mr-1"></i>
                           <span>{t("count.uv")} {feed.uv}</span>
                         </div>

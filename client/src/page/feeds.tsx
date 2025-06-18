@@ -1,6 +1,6 @@
 import React from "react"
 import { Helmet } from 'react-helmet-async'
-import { Link, useSearch } from "wouter"
+import { Link, useSearch, useLocation } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
@@ -21,8 +21,61 @@ type FeedsData = {
 
 type FeedType = 'draft' | 'unlisted' | 'normal'
 
+type SortType = 'latest' | 'popular' | 'oldest'
+
 type FeedsMap = {
     [key in FeedType]: FeedsData
+}
+
+// 排序控件组件 - 毛玻璃风格分段控制器
+function SortControl({ currentSort, onSortChange }: { currentSort: SortType, onSortChange: (sort: SortType) => void }) {
+    const { t } = useTranslation();
+    const buttonGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
+
+    const sortOptions: { key: SortType, label: string, icon: string, tooltip?: string }[] = [
+        {
+            key: 'latest',
+            label: t('sort.latest', { defaultValue: '最新' }),
+            icon: 'ri-time-line',
+            tooltip: '按创建时间降序排列，置顶文章优先'
+        },
+        {
+            key: 'popular',
+            label: t('sort.popular', { defaultValue: '热度' }),
+            icon: 'ri-fire-line',
+            tooltip: '按热度排序，综合考虑浏览量和文章新旧程度'
+        },
+        {
+            key: 'oldest',
+            label: t('sort.oldest', { defaultValue: '倒序' }),
+            icon: 'ri-history-line',
+            tooltip: '按创建时间升序排列，显示最早的文章'
+        }
+    ];
+
+    return (
+        <div className="flex shadow-enhanced rounded-xl overflow-hidden w-full sm:w-auto">
+            {sortOptions.map((option, index) => (
+                <button
+                    key={option.key}
+                    onClick={() => onSortChange(option.key)}
+                    className={`
+                        flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center hover:-translate-y-0.5 active:translate-y-0
+                        ${index === 0 ? 'rounded-l-xl' : index === sortOptions.length - 1 ? 'rounded-r-xl' : ''}
+                        ${currentSort === option.key
+                            ? 'bg-theme/25 text-theme border-2 border-theme/40 dark:bg-theme/30 dark:border-theme/35 shadow-enhanced-lg'
+                            : `${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme`
+                        }
+                    `}
+                    aria-label={option.label}
+                    title={option.tooltip}
+                >
+                    <i className={`${option.icon} text-xs md:text-sm`}></i>
+                    <span className="ml-1 sm:ml-1.5 hidden sm:inline">{option.label}</span>
+                </button>
+            ))}
+        </div>
+    );
 }
 
 // 懒加载Feed卡片组件
@@ -30,7 +83,7 @@ function LazyFeedCard({ id, ...props }: any) {
     const [isVisible, setIsVisible] = React.useState(false);
     const [isIntersecting, setIsIntersecting] = React.useState(false); // 新增状态跟踪元素是否在视口内
     const cardRef = React.useRef<HTMLDivElement>(null);
-    const { t } = useTranslation();
+
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -138,8 +191,10 @@ function LazyFeedCard({ id, ...props }: any) {
 export function FeedsPage() {
     const { t } = useTranslation()
     const query = new URLSearchParams(useSearch());
+    const [, setLocation] = useLocation();
     const profile = React.useContext(ProfileContext);
     const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
+    const [sortType, setSortType] = React.useState<SortType>(query.get("sort") as SortType || 'latest')
     const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
     const [feeds, setFeeds] = React.useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
@@ -154,39 +209,240 @@ export function FeedsPage() {
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
     const tagGlassClass = useGlassEffect('tag-enhanced');
     const buttonGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
-    
-    // 使用useCallback优化函数
+
+    // 排序处理函数
+    const handleSortChange = React.useCallback((newSort: SortType) => {
+        setSortType(newSort);
+        // 更新URL参数
+        const newQuery = new URLSearchParams(query);
+        newQuery.set('sort', newSort);
+        if (newQuery.get('page') !== '1') {
+            newQuery.set('page', '1'); // 切换排序时重置到第一页
+        }
+        setLocation(`/?${newQuery.toString()}`);
+    }, [query, setLocation]);
+
+    // 智能热度排序算法 - 深度修复版本
+    const sortedFeeds = React.useMemo(() => {
+        if (!feeds[listState]?.data) return [];
+        const feedsData = [...feeds[listState].data];
+
+
+
+        try {
+            const sorted = feedsData.sort((a, b) => {
+                // 第一优先级：置顶文章始终在前（这是最重要的）
+                const aTop = a.top || 0;
+                const bTop = b.top || 0;
+                if (aTop !== bTop) {
+                    return bTop - aTop; // 置顶值大的在前
+                }
+
+                // 为置顶文章也计算热度分数（用于调试显示）
+                if (aTop > 0 || bTop > 0) {
+                    const aPv = a.pv || 0;
+                    const bPv = b.pv || 0;
+                    const aUv = a.uv || 0;
+                    const bUv = b.uv || 0;
+
+                    if (aPv > 0 || bPv > 0 || aUv > 0 || bUv > 0) {
+                        const aViews = aPv + aUv * 0.5;
+                        const bViews = bPv + bUv * 0.5;
+                        (a as any)._hotScore = aViews.toFixed(1);
+                        (b as any)._hotScore = bViews.toFixed(1);
+
+                        // 置顶文章内部按热度排序
+                        if (aTop === bTop && Math.abs(aViews - bViews) > 0.1) {
+                            return bViews - aViews;
+                        }
+                    }
+                }
+
+                // 第二优先级：根据排序类型进行排序
+                switch (sortType) {
+                    case 'latest':
+                        // 最新排序：创建时间降序
+                        const aTime = new Date(a.createdAt).getTime();
+                        const bTime = new Date(b.createdAt).getTime();
+                        if (aTime !== bTime) {
+                            return bTime - aTime;
+                        }
+                        // 时间相同时按ID降序
+                        return b.id - a.id;
+
+                    case 'popular':
+                        // 智能热度排序算法 - 优先使用真实浏览量数据
+                        // 1. 检查是否有真实的浏览量数据
+                        const aPv = a.pv || 0;
+                        const bPv = b.pv || 0;
+                        const aUv = a.uv || 0;
+                        const bUv = b.uv || 0;
+
+                        // 检查是否有任何真实的浏览量数据
+                        const hasRealViewData = aPv > 0 || bPv > 0 || aUv > 0 || bUv > 0;
+
+                        if (hasRealViewData) {
+                            // 使用真实浏览量数据进行排序
+                            const aViews = aPv + aUv * 0.5; // pv权重更高
+                            const bViews = bPv + bUv * 0.5;
+
+                            if (Math.abs(aViews - bViews) > 0.1) {
+                                return bViews - aViews;
+                            }
+                            // 浏览量相同时按创建时间排序
+                            const aTimeForViews = new Date(a.createdAt).getTime();
+                            const bTimeForViews = new Date(b.createdAt).getTime();
+                            return bTimeForViews - aTimeForViews;
+                        }
+
+                        // 2. 智能热度算法：综合多个指标
+                        const aCreated = new Date(a.createdAt).getTime();
+                        const bCreated = new Date(b.createdAt).getTime();
+                        const aUpdated = new Date(a.updatedAt).getTime();
+                        const bUpdated = new Date(b.updatedAt).getTime();
+
+                        // 计算文章活跃度（更新频率）
+                        const aActivity = aUpdated - aCreated;
+                        const bActivity = bUpdated - bCreated;
+
+                        // 修复热度算法：更合理的计算方式
+                        const now = Date.now();
+
+                        // 1. 时间衰减因子（30天内线性衰减）
+                        const daysSinceCreated_a = (now - aCreated) / (24 * 60 * 60 * 1000);
+                        const daysSinceCreated_b = (now - bCreated) / (24 * 60 * 60 * 1000);
+                        const aTimeFactor = Math.max(0, Math.min(1, (30 - daysSinceCreated_a) / 30));
+                        const bTimeFactor = Math.max(0, Math.min(1, (30 - daysSinceCreated_b) / 30));
+
+                        // 2. ID权重（归一化到0-1范围）
+                        const maxId = Math.max(a.id, b.id, 25); // 假设最大ID约为25
+                        const aIdFactor = a.id / maxId;
+                        const bIdFactor = b.id / maxId;
+
+                        // 3. 活跃度因子（更新频率，归一化）
+                        const maxActivity = 7 * 24 * 60 * 60 * 1000; // 7天
+                        const aActivityFactor = Math.min(1, aActivity / maxActivity);
+                        const bActivityFactor = Math.min(1, bActivity / maxActivity);
+
+                        // 综合热度分数计算（确保在0-1范围内）
+                        const aHotScore = (
+                            aTimeFactor * 0.5 +      // 时间新旧程度 50%
+                            aIdFactor * 0.3 +        // ID权重 30%
+                            aActivityFactor * 0.2    // 活跃度 20%
+                        );
+
+                        const bHotScore = (
+                            bTimeFactor * 0.5 +
+                            bIdFactor * 0.3 +
+                            bActivityFactor * 0.2
+                        );
+
+                        // 保存热度分数用于调试
+                        (a as any)._hotScore = aHotScore.toFixed(3);
+                        (b as any)._hotScore = bHotScore.toFixed(3);
+
+                        if (Math.abs(aHotScore - bHotScore) > 0.001) {
+                            return bHotScore - aHotScore;
+                        }
+
+                        // 分数相同时按ID降序
+                        return b.id - a.id;
+
+                    case 'oldest':
+                        // 倒序排序：创建时间升序
+                        const aTimeOld = new Date(a.createdAt).getTime();
+                        const bTimeOld = new Date(b.createdAt).getTime();
+                        if (aTimeOld !== bTimeOld) {
+                            return aTimeOld - bTimeOld;
+                        }
+                        // 时间相同时按ID升序
+                        return a.id - b.id;
+
+                    default:
+                        return 0;
+                }
+            });
+
+
+            return sorted;
+
+        } catch (error) {
+            return feedsData; // 发生错误时返回原始数据
+        }
+    }, [feeds, listState, sortType]);
+
+    // 获取所有数据进行全局排序
     const fetchFeeds = React.useCallback((type: FeedType) => {
+        setStatus('loading');
+
+        // 获取所有数据，不分页，以实现真正的全局排序
         client.feed.index.get({
             query: {
-                page: page,
-                limit: limit,
+                page: 1,
+                limit: 9999, // 获取所有数据，参考Timeline页面的做法
                 type: type
             },
             headers: headersWithAuth()
-        }).then(({ data }) => {
+        }).then(({ data, error }) => {
+            if (error) {
+                setStatus('idle');
+                return;
+            }
+
             if (data && typeof data !== 'string') {
                 setFeeds({
                     ...feeds,
                     [type]: data
-                })
-                
-                setStatus('idle')
+                });
+                setStatus('idle');
+            } else {
+                setStatus('idle');
             }
-        })
-    }, [page, limit, feeds]);
+        }).catch(() => {
+            setStatus('idle');
+        });
+    }, [feeds]);
+
+    // 前端分页逻辑 - 对排序后的数据进行分页
+    const paginatedFeeds = React.useMemo(() => {
+        if (!sortedFeeds.length) return [];
+
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedData = sortedFeeds.slice(startIndex, endIndex);
+
+        return paginatedData;
+    }, [sortedFeeds, page, limit]);
+
+    // 计算总页数
+    const totalPages = React.useMemo(() => {
+        if (!sortedFeeds.length) return 1;
+        return Math.ceil(sortedFeeds.length / limit);
+    }, [sortedFeeds.length, limit]);
     
     React.useEffect(() => {
-        const key = `${query.get("page")} ${query.get("type")}`
+        const key = `${query.get("type")} ${query.get("sort")}`
         if (ref.current == key) return
         const type = query.get("type") as FeedType || 'normal'
+        const sort = query.get("sort") as SortType || 'latest'
         if (type !== listState) {
             _setListState(type)
+        }
+        if (sort !== sortType) {
+            setSortType(sort)
         }
         setStatus('loading')
         fetchFeeds(type)
         ref.current = key
-    }, [query.get("page"), query.get("type"), fetchFeeds])
+    }, [query.get("type"), query.get("sort"), fetchFeeds, listState, sortType]) // 移除page依赖
+
+    // 单独处理页面变化，不重新获取数据
+    React.useEffect(() => {
+        // 页面变化时，只需要滚动到顶部
+        if (page > 1) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [page])
     
     return (
         <>
@@ -214,33 +470,39 @@ export function FeedsPage() {
                         </div>
                         
                         {/* 右侧：操作按钮组 */}
-                        {profile?.permission && (
-                            <div className="flex items-center gap-2 md:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
-                                <Link href="/writing/new"
-                                    className="flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced bg-theme text-white hover:bg-theme-hover active:bg-theme-active hover:-translate-y-0.5 active:translate-y-0 hover:shadow-enhanced-lg glow-on-hover btn-enhanced">
-                                    <i className="ri-add-line"></i>
-                                    <span className="ml-1.5">{t('new_article')}</span>
-                                </Link>
-                                <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 md:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
+                            {profile?.permission && (
+                                <>
+                                    <Link href="/writing/new"
+                                        className={`flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
+                                        ${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme`}>
+                                        <i className="ri-add-line text-xs md:text-sm"></i>
+                                        <span className="ml-1 sm:ml-1.5 hidden sm:inline">{t('new_article')}</span>
+                                    </Link>
                                     <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'}
-                                        className={`flex-1 sm:flex-none h-9 xs:h-auto px-3 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
+                                        className={`flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
                                         ${listState === 'draft'
-                                        ? "bg-theme/12 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced-lg"
+                                        ? "bg-theme/25 text-theme border-2 border-theme/40 dark:bg-theme/30 dark:border-theme/35 shadow-enhanced-lg"
                                         : `${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme`}`}>
-                                        <i className="ri-draft-line"></i>
-                                        <span className="hidden xs:inline ml-1.5 md:ml-2">{t('draft_bin')}</span>
+                                        <i className="ri-draft-line text-xs md:text-sm"></i>
+                                        <span className="ml-1 sm:ml-1.5 hidden sm:inline">{t('draft_bin')}</span>
                                     </Link>
                                     <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'}
-                                        className={`flex-1 sm:flex-none h-9 xs:h-auto px-3 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
+                                        className={`flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
                                         ${listState === 'unlisted'
-                                        ? "bg-theme/12 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced-lg"
+                                        ? "bg-theme/25 text-theme border-2 border-theme/40 dark:bg-theme/30 dark:border-theme/35 shadow-enhanced-lg"
                                         : `${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme`}`}>
-                                        <i className="ri-eye-off-line"></i>
-                                        <span className="hidden xs:inline ml-1.5 md:ml-2">{t('unlisted')}</span>
+                                        <i className="ri-eye-off-line text-xs md:text-sm"></i>
+                                        <span className="ml-1 sm:ml-1.5 hidden sm:inline">{t('unlisted')}</span>
                                     </Link>
-                                </div>
+                                </>
+                            )}
+
+                            {/* 排序控件 - 放在最右侧 */}
+                            <div className="flex-1 sm:flex-none">
+                                <SortControl currentSort={sortType} onSortChange={handleSortChange} />
                             </div>
-                        )}
+                        </div>
                     </div>
                     
                     {/* 上方渐变分割线 - 增加粗细 */}
@@ -258,30 +520,33 @@ export function FeedsPage() {
                             </div>
                         )}
                         <div className="flex space-x-2">
-                            {/* 未来可添加排序按钮、视图切换按钮等 */}
+                            {/* 预留位置，可添加其他控件 */}
                         </div>
                     </div>
                 </div>
                 
                 <Waiting for={status === 'idle'}>
-                    {feeds[listState]?.data?.length > 0 ? (
+                    {paginatedFeeds.length > 0 ? (
                         <>
+
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 w-full mt-2">
-                                {feeds[listState].data.map((feed, i) => (
-                                    <LazyFeedCard key={`feed-card-${feed.id}-${i}`} {...feed} />
+                                {paginatedFeeds.map((feed, i) => (
+                                    <LazyFeedCard key={`feed-card-${feed.id}-${i}-${sortType}`} {...feed} />
                                 ))}
                             </div>
-                            
-                            {/* 分页控制 - 改进视觉样式和交互 */}
-                            <div className="flex justify-center mt-6 mb-2 w-full">
-                                <Pagination
-                                    currentPage={page}
-                                    totalPages={Math.ceil(feeds[listState].size / limit)}
-                                    basePath={`/?type=${listState}`}
-                                    className="gap-2"
-                                />
-                            </div>
 
+                            {/* 分页控制 - 使用计算出的总页数 */}
+                            {totalPages > 1 && (
+                                <div className="flex justify-center mt-6 mb-2 w-full">
+                                    <Pagination
+                                        currentPage={page}
+                                        totalPages={totalPages}
+                                        basePath={`/?type=${listState}${sortType !== 'latest' ? `&sort=${sortType}` : ''}`}
+                                        className="gap-2"
+                                    />
+                                </div>
+                            )}
                         </>
                     ) : status === 'loading' ? (
                         // 加载状态显示骨架屏

@@ -371,5 +371,10 @@
     "error": "エラー",
     "info": "情報",
     "important": "重要"
+  },
+  "sort": {
+    "latest": "最新",
+    "popular": "人気",
+    "oldest": "古い順"
   }
 }

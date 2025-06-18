@@ -480,5 +480,10 @@
     "error": "Error",
     "info": "Info",
     "important": "Important"
+  },
+  "sort": {
+    "latest": "Latest",
+    "popular": "Popular",
+    "oldest": "Oldest"
   }
 }

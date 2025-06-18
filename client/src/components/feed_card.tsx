@@ -1,19 +1,18 @@
 import {Link} from "wouter";
 import {useTranslation} from "react-i18next";
-import {timeago} from "../utils/timeago";
 import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
-import React, { useMemo } from "react";
-import { useLocation } from "wouter";
+import React from "react";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 
-export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt }:
+export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt, pv, uv }:
     {
         id: string, avatar?: string,
         draft?: number, listed?: number, top?: number,
         title: string, summary: string,
         hashtags: { id: number, name: string }[],
-        createdAt: Date, updatedAt: Date
+        createdAt: Date, updatedAt: Date,
+        pv?: number, uv?: number
     }) {
     const { t } = useTranslation();
     const [imageLoaded, setImageLoaded] = React.useState(false);
@@ -175,29 +174,51 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     {title}
                 </h2>
                     
-                {/* 日期和状态区域 - 移动端紧凑设计 */}
+                {/* 日期、浏览量和状态区域 - 与文章详情页保持一致的格式 */}
                 <div className="flex flex-wrap justify-between items-center gap-1 mb-2 text-xs text-gray-500 dark:text-gray-400">
-                    {/* 左侧日期显示 */}
+                    {/* 左侧日期和浏览量显示 - 统一格式 */}
                     <div className="flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-2 py-0.5">
-                        <i className="ri-calendar-line mr-1"></i>
-                        {formatDate(createdAt)}
-                        {createdAt !== updatedAt &&
-                            <span className="ml-2 flex items-center" title={new Date(updatedAt).toLocaleString()}>
-                                <i className="ri-history-line mr-1"></i>
-                                {formatDate(updatedAt)}
-                            </span>
-                        }
+                        {/* 发布日期 */}
+                        <div className="flex items-center">
+                            <i className="ri-calendar-line text-blue-500 mr-1"></i>
+                            <span>{formatDate(createdAt)}</span>
+                        </div>
+
+                        {/* 更新日期 */}
+                        {createdAt !== updatedAt && (
+                            <>
+                                <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
+                                <div className="flex items-center" title={new Date(updatedAt).toLocaleString()}>
+                                    <i className="ri-history-line text-purple-400 mr-1"></i>
+                                    <span>{formatDate(updatedAt)}</span>
+                                </div>
+                            </>
+                        )}
+
+                        {/* 浏览量信息 */}
+                        {(pv !== undefined || uv !== undefined) && (pv > 0 || uv > 0) && (
+                            <>
+                                <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
+                                <div className="flex items-center">
+                                    <i className="ri-eye-line text-green-500 mr-1"></i>
+                                    <span>{pv || 0}</span>
+                                    <span className="mx-1 text-gray-300 dark:text-gray-600">|</span>
+                                    <i className="ri-user-3-line text-pink-400 mr-1"></i>
+                                    <span>{uv || 0}</span>
+                                </div>
+                            </>
+                        )}
                     </div>
-                    
+
                     {/* 右侧状态显示 - 改进草稿和未列出标签样式 */}
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                        {draft === 1 && 
+                        {draft === 1 &&
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
                                 <i className="ri-draft-line mr-1 text-theme"></i>
                                 <span>{t("draft")}</span>
                             </span>
                         }
-                        {listed === 0 && 
+                        {listed === 0 &&
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-theme/10 text-theme border border-theme/30 dark:bg-theme/20 dark:border-theme/20 shadow-sm">
                                 <i className="ri-eye-off-line mr-1 text-theme"></i>
                                 <span>{t("unlisted")}</span>

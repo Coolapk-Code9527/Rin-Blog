@@ -1,4 +1,4 @@
-import {and, asc, count, desc, eq, gt, like, lt, or, inArray} from "drizzle-orm";
+import {and, asc, count, desc, eq, gt, like, lt, or, inArray, sql} from "drizzle-orm";
 import Elysia, {t} from "elysia";
 import {XMLParser} from "fast-xml-parser";
 import html2md from 'html-to-md';
@@ -11,6 +11,97 @@ function getXMLParser(): XMLParser {
         xmlParserInstance = new XMLParser();
     }
     return xmlParserInstance;
+}
+
+// 批量获取访问统计数据 - 性能优化版本，避免N+1查询问题
+async function getBatchVisitStats(db: any, feedIds: number[]): Promise<Map<number, { pv: number, uv: number }>> {
+    if (feedIds.length === 0) {
+        return new Map();
+    }
+
+    // 限制单次查询的文章数量，避免CPU超时
+    const MAX_BATCH_SIZE = 50;
+    if (feedIds.length > MAX_BATCH_SIZE) {
+        feedIds = feedIds.slice(0, MAX_BATCH_SIZE);
+    }
+
+    const cache = PublicCache();
+    const statsMap = new Map<number, { pv: number, uv: number }>();
+    const uncachedIds: number[] = [];
+
+    // 先尝试从缓存获取，检查过期时间
+    const CACHE_EXPIRE_TIME = 5 * 60 * 1000; // 5分钟过期
+    for (const feedId of feedIds) {
+        const cacheKey = `visit_stats_${feedId}`;
+        const cached = await cache.get(cacheKey);
+        if (cached && cached.timestamp && (Date.now() - cached.timestamp < CACHE_EXPIRE_TIME)) {
+            // 缓存有效，使用缓存数据
+            statsMap.set(feedId, { pv: cached.pv, uv: cached.uv });
+        } else {
+            // 缓存过期或不存在，需要重新查询
+            uncachedIds.push(feedId);
+        }
+    }
+
+    // 如果所有数据都在缓存中，直接返回
+    if (uncachedIds.length === 0) {
+        return statsMap;
+    }
+
+    try {
+        // 只查询未缓存的数据
+        const stats = await db.all(sql`
+            SELECT
+                feedId,
+                COUNT(*) as pv,
+                COUNT(DISTINCT ip) as uv
+            FROM visits
+            WHERE feedId IN (${sql.join(uncachedIds.map(id => sql`${id}`), sql`, `)})
+            GROUP BY feedId
+        `);
+
+        // 处理查询结果并缓存
+        for (const stat of stats) {
+            const feedId = stat.feedId as number;
+            const visitStats = {
+                pv: stat.pv as number,
+                uv: stat.uv as number,
+                timestamp: Date.now() // 添加时间戳用于过期检查
+            };
+
+            statsMap.set(feedId, { pv: visitStats.pv, uv: visitStats.uv });
+
+            // 缓存访问统计，减少数据库压力
+            const cacheKey = `visit_stats_${feedId}`;
+            await cache.set(cacheKey, visitStats);
+        }
+
+        // 为没有访问记录的文章设置默认值并缓存
+        for (const feedId of uncachedIds) {
+            if (!statsMap.has(feedId)) {
+                const defaultStats = {
+                    pv: 0,
+                    uv: 0,
+                    timestamp: Date.now()
+                };
+                statsMap.set(feedId, { pv: 0, uv: 0 });
+
+                // 缓存默认值
+                const cacheKey = `visit_stats_${feedId}`;
+                await cache.set(cacheKey, defaultStats);
+            }
+        }
+
+        return statsMap;
+    } catch (error) {
+        // 发生错误时返回默认值
+        for (const feedId of uncachedIds) {
+            if (!statsMap.has(feedId)) {
+                statsMap.set(feedId, { pv: 0, uv: 0 });
+            }
+        }
+        return statsMap;
+    }
 }
 import type {DB} from "../_worker";
 import {feeds, visits, files, feedFiles} from "../db/schema";
@@ -55,8 +146,9 @@ export function FeedService() {
                     }
                     
                     if (cursor) {
+                        // 游标分页不使用缓存，因为数据是动态的
                         const [cursorTimestamp, cursorId] = cursor.split('|').map(val => parseInt(val));
-                        
+
                         const cursorCondition = or(
                             lt(feeds.createdAt, new Date(cursorTimestamp)),
                             and(
@@ -64,11 +156,11 @@ export function FeedService() {
                                 lt(feeds.id, cursorId)
                             )
                         );
-                        
+
                         // 优化：添加限制和超时保护
                         const maxLimit = Math.min(limit_num + 1, 50); // 限制最大查询数量
 
-                        feed_list = (await db.query.feeds.findMany({
+                        const feedsData = await db.query.feeds.findMany({
                             where: and(where, cursorCondition),
                             columns: admin ? undefined : {
                                 draft: false,
@@ -88,13 +180,25 @@ export function FeedService() {
                             },
                             orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
                             limit: maxLimit,
-                        })).map(({ content, hashtags, summary, ...other }) => {
+                        });
+
+                        // 批量获取访问统计数据，避免N+1查询问题
+                        const feedIds = feedsData.map(f => f.id);
+                        const visitStatsMap = await getBatchVisitStats(db, feedIds);
+
+                        feed_list = feedsData.map(({ content, hashtags, summary, ...other }) => {
                             // 保留查询限制，移除字符限制
                             const avatar = extractImage(content);
+
+                            // 从批量查询结果中获取访问统计
+                            const stats = visitStatsMap.get(other.id) || { pv: 0, uv: 0 };
+
                             return {
                                 summary: summary.length > 0 ? summary : markdownToPlainText(content, 150),
                                 hashtags: hashtags.map(({ hashtag }) => hashtag),
                                 avatar,
+                                pv: stats.pv,
+                                uv: stats.uv,
                                 ...other
                             }
                         });
@@ -107,7 +211,7 @@ export function FeedService() {
                             return cached;
                         }
                         
-                        feed_list = (await db.query.feeds.findMany({
+                        const feedsData2 = await db.query.feeds.findMany({
                         where: where,
                         columns: admin ? undefined : {
                             draft: false,
@@ -128,12 +232,24 @@ export function FeedService() {
                             orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
                         offset: page_num * limit_num,
                         limit: limit_num + 1,
-                    })).map(({ content, hashtags, summary, ...other }) => {
+                    });
+
+                    // 批量获取访问统计数据，避免N+1查询问题
+                    const feedIds2 = feedsData2.map(f => f.id);
+                    const visitStatsMap2 = await getBatchVisitStats(db, feedIds2);
+
+                    feed_list = feedsData2.map(({ content, hashtags, summary, ...other }) => {
                         const avatar = extractImage(content);
+
+                        // 从批量查询结果中获取访问统计
+                        const stats = visitStatsMap2.get(other.id) || { pv: 0, uv: 0 };
+
                         return {
                             summary: summary.length > 0 ? summary : markdownToPlainText(content, 150),
                             hashtags: hashtags.map(({ hashtag }) => hashtag),
                             avatar,
+                            pv: stats.pv,
+                            uv: stats.uv,
                             ...other
                         }
                     });
