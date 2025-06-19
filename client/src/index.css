@@ -509,6 +509,51 @@ html.dark body .glass-file-card,
   user-select: none;
 }
 
+/* 透明毛玻璃效果 - 用于分页等需要透明背景的组件 */
+.glass-transparent {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+[data-color-mode="dark"] .glass-transparent {
+  background: rgba(13, 17, 23, 0.15) !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* 完全透明毛玻璃效果 - 只有模糊，无背景色 */
+.glass-clear {
+  background: transparent !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-color-mode="dark"] .glass-clear {
+  background: transparent !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 背景图片状态下的glass-clear适配 - 确保透明效果 */
+:root[style*="--background-active: 1"] .glass-clear {
+  background: transparent !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+:root[style*="--background-active: 1"] [data-color-mode="dark"] .glass-clear {
+  background: transparent !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 /* 统一的层级管理CSS类 */
 .z-header {
   z-index: 10050; /* HEADER层级 */
@@ -1710,22 +1755,22 @@ button[role="option"] > * {
   .table.responsive {
     display: block !important;
   }
-  
+
   .table.responsive thead {
     display: none;
   }
-  
-  .table.responsive tbody, 
-  .table.responsive tr, 
+
+  .table.responsive tbody,
+  .table.responsive tr,
   .table.responsive td {
     display: block;
     width: 100%;
   }
-  
+
   .table.responsive tr {
     @apply overflow-hidden;
   }
-  
+
   .table.responsive td {
     @apply py-3 px-4;
     display: flex;
@@ -1734,23 +1779,68 @@ button[role="option"] > * {
     text-align: left;
     gap: 8px;
   }
-  
+
   .table.responsive td::before {
     content: attr(data-label);
     @apply font-medium text-gray-700 dark:text-gray-300 text-left min-w-[80px] max-w-[80px];
     flex-shrink: 0;
   }
-  
+
   .table.responsive td::after {
     display: none;
   }
-  
+
   /* URL表格在手机端的特殊处理 */
   .url-table.responsive td {
     flex-direction: column;
     @apply py-2;
   }
-  
+
+  /* 文件管理器移动端优化 */
+  .file-manager-container {
+    /* 移动端触控优化 */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  /* 移动端按钮最小触控区域 */
+  .file-manager-container button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* 移动端文件卡片优化 */
+  .file-manager-container .group {
+    /* 增强触控反馈 */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+
+  /* 移动端操作按钮始终显示 */
+  .file-manager-container .group .opacity-0 {
+    opacity: 1 !important;
+  }
+
+  /* 移动端工具栏按钮优化 */
+  .file-manager-container select,
+  .file-manager-container input {
+    min-height: 44px;
+    font-size: 16px; /* 防止iOS缩放 */
+  }
+
+  /* 移动端面包屑滚动优化 */
+  .file-manager-container .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .file-manager-container .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* URL表格在手机端的特殊处理 */
   .url-table.responsive td::before {
     @apply mb-1 max-w-full min-w-full;
   }
@@ -3489,6 +3579,139 @@ main h1, [role="complementary"] h3, aside h3 {
 
 .timeline-card .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
+}
+
+/* ========================================
+   统一容器高度系统 - Unified Container Height System
+   ======================================== */
+
+/* 统一容器高度工具类 */
+.unified-container-height {
+  height: calc(100vh - 200px);
+  min-height: 400px;
+  max-height: calc(100vh - 150px);
+}
+
+/* 移动端优化的容器高度 */
+.unified-container-height-mobile {
+  height: calc(100vh - 180px);
+  min-height: 350px;
+  max-height: calc(100vh - 130px);
+}
+
+/* 响应式统一容器高度 */
+.unified-container-responsive {
+  /* 移动端：更紧凑的间距 */
+  height: calc(100vh - 180px);
+  min-height: 350px;
+  max-height: calc(100vh - 130px);
+}
+
+/* 平板端和桌面端：标准间距 */
+@media (min-width: 768px) {
+  .unified-container-responsive {
+    height: calc(100vh - 200px);
+    min-height: 400px;
+    max-height: calc(100vh - 150px);
+  }
+}
+
+/* 大屏幕优化 */
+@media (min-width: 1280px) {
+  .unified-container-responsive {
+    height: calc(100vh - 220px);
+    min-height: 450px;
+    max-height: calc(100vh - 170px);
+  }
+}
+
+/* 超大屏幕优化 */
+@media (min-width: 1536px) {
+  .unified-container-responsive {
+    height: calc(100vh - 240px);
+    min-height: 500px;
+    max-height: calc(100vh - 180px);
+  }
+}
+
+/* 小屏幕设备优化 */
+@media (max-width: 480px) {
+  .unified-container-responsive {
+    height: calc(100vh - 160px);
+    min-height: 300px;
+    max-height: calc(100vh - 120px);
+  }
+
+  .unified-container-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .unified-container-footer {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* 横屏模式优化 */
+@media (max-height: 600px) and (orientation: landscape) {
+  .unified-container-responsive {
+    height: calc(100vh - 120px);
+    min-height: 250px;
+    max-height: calc(100vh - 80px);
+  }
+}
+
+/* 高分辨率设备优化 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .unified-container-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .unified-container-scroll::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+  }
+}
+
+/* 容器内部滚动区域 */
+.unified-container-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 容器内容区域 */
+.unified-container-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 容器标题区域 */
+.unified-container-header {
+  flex-shrink: 0;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .unified-container-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 容器主体区域 */
+.unified-container-body {
+  flex: 1;
+  min-height: 0; /* 重要：允许flex子项收缩 */
+  overflow: hidden;
+}
+
+/* 容器底部区域 */
+.unified-container-footer {
+  flex-shrink: 0;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .unified-container-footer {
+  border-top-color: rgba(255, 255, 255, 0.1);
 }
 
 .timeline-card .custom-scrollbar::-webkit-scrollbar-track {

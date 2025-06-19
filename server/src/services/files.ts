@@ -1,4 +1,4 @@
-import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { eq, sql, and, like, desc, asc, or, isNull, inArray } from "drizzle-orm";
 import Elysia, { t } from "elysia";
 import path from "node:path";
@@ -10,6 +10,7 @@ import { createS3Client } from "../utils/s3";
 import { syncFeedFileReferences } from './feed';
 import { listAllR2Files, getR2FileMeta, normalizePath, setR2FileMeta } from '../utils/s3';
 import { generateThumbnail } from '../utils/image';
+import { Container } from 'typedi';
 
 // 优化：哈希计算缓存，避免重复计算（扩大缓存容量）
 const hashCache = new Map<string, string>();
@@ -931,7 +932,7 @@ export function FileService() {
                     return { total, success, failed, failedDetails };
                 })
 
-                // r2sync接口分页重构（limit最大5，默认3，避免CPU超时）
+                // r2sync接口分页重构（limit最大3，默认2，进一步避免CPU超时）
                 .post('/r2sync', async ({ uid, admin, set, query }) => {
                     if (!admin) {
                         set.status = 403;
@@ -946,12 +947,12 @@ export function FileService() {
                         const r2Files = await Promise.race([
                             listAllR2Files(),
                             new Promise((_, reject) =>
-                                setTimeout(() => reject(new Error('R2扫描超时')), 8000)
+                                setTimeout(() => reject(new Error('R2扫描超时')), 6000) // 减少超时时间
                             )
                         ]) as string[];
-                    // 分页参数
-                    let limit = Number(query?.limit) || 5;
-                    if (limit > 10) limit = 10;
+                    // 分页参数 - 进一步减少批处理大小
+                    let limit = Number(query?.limit) || 2; // 默认改为2个文件
+                    if (limit > 3) limit = 3; // 最大改为3个文件
                     const cursor = Number(query?.cursor) || 0;
                     const filesSlice = r2Files.slice(cursor, cursor + limit);
                     let total = r2Files.length, inserted = 0, skipped = 0, failed = 0, failedList = [];
@@ -976,9 +977,11 @@ export function FileService() {
                             if (!meta) { failed++; failedList.push({ path, error: 'R2无元信息' }); continue; }
                             let name = meta.filename;
                             if (!name) {
-                                if (exist && exist.length > 0 && exist[0].name && !isHash(exist[0].name)) {
+                                if (exist && exist.length > 0 && exist[0].name) {
+                                    // 优先保留数据库中的原始文件名，即使它看起来像哈希值
                                     name = exist[0].name;
                                 } else {
+                                    // 只有在数据库中没有记录时才使用哈希值作为文件名
                                     name = hashName;
                                 }
                             }
@@ -986,15 +989,22 @@ export function FileService() {
                             const size = meta.size || 0;
                             const hash = meta.hash || '';
                             if (exist && exist.length > 0) {
-                                await db.update(files).set({
-                                    name,
+                                // 构建更新数据，保护现有文件名
+                                const updateData: any = {
                                     size,
                                     mimeType,
                                     userId: 1,
                                     parentPath,
                                     hash,
                                     modifiedAt: new Date(),
-                                }).where(eq(files.id, exist[0].id));
+                                };
+
+                                // 只有当R2有filename元信息且与数据库不同时才更新name
+                                if (meta.filename && meta.filename !== exist[0].name) {
+                                    updateData.name = meta.filename;
+                                }
+
+                                await db.update(files).set(updateData).where(eq(files.id, exist[0].id));
                                 skipped++;
                                 continue;
                             }
@@ -1127,44 +1137,130 @@ export function FileService() {
                     query: t.Object({ url: t.String() })
                 })
 
-                // stat接口 - 计算R2总容量
-                .get('/stat', async ({ admin, set }) => {
+                // stat接口 - 优化容量计算（添加缓存机制）
+                .get('/stat', async ({ admin, set, query }) => {
                     if (!admin) {
                         set.status = 403;
                         return { error: 'Permission denied' };
                     }
 
                     try {
-                        // 使用数据库统计代替R2全量扫描，避免CPU超时
-                        const db = getDB();
+                        const useCache = query?.useCache !== 'false'; // 默认使用缓存
+                        const maxRequests = Math.min(Number(query?.maxRequests) || 5, 10); // 限制最大请求数，避免CPU超时
+                        const CACHE_TTL = 30 * 60 * 1000; // 30分钟缓存
 
-                        // 统计数据库中的文件数量和大小
-                        const fileStats = await db
-                            .select({
-                                count: sql<number>`count(*)`,
-                                totalSize: sql<number>`coalesce(sum(${files.size}), 0)`
-                            })
-                            .from(files)
-                            .where(
-                                and(
-                                    eq(files.isFolder, 0),
-                                    sql`not (${files.name} like 'thumb_%')`
-                                )
-                            );
+                        // 检查缓存
+                        if (useCache) {
+                            const cache = Container.get("cache") as any;
+                            const cacheKey = 'r2-capacity-stats';
+                            const cached = cache.get(cacheKey);
 
-                        const stats = fileStats[0] || { count: 0, totalSize: 0 };
+                            if (cached && cached.timestamp && (Date.now() - cached.timestamp < CACHE_TTL)) {
+                                return {
+                                    ...cached.data,
+                                    note: `缓存数据 (${Math.floor((Date.now() - cached.timestamp) / 60000)}分钟前)`
+                                };
+                            }
+                        }
 
-                        return {
-                            r2: { used: Number(stats.totalSize) },
-                            total: Number(stats.count),
-                            filesCount: Number(stats.count),
-                            note: '基于数据库统计，避免CPU超时'
+                        const env = getEnv();
+                        const s3 = createS3Client();
+                        const bucket = env.S3_BUCKET;
+
+                        let totalSize = 0;
+                        let totalCount = 0;
+                        let continuationToken: string | undefined = undefined;
+                        let requestCount = 0;
+
+                        // 使用限制的ListObjectsV2 API计算容量，避免CPU超时
+                        do {
+                            requestCount++;
+                            if (requestCount > maxRequests) {
+                                console.warn(`R2容量计算达到最大请求限制 (${maxRequests})，返回部分统计结果`);
+                                break;
+                            }
+
+                            const listParams: any = {
+                                Bucket: bucket,
+                                MaxKeys: 500, // 减少每次请求的对象数量，避免CPU超时
+                            };
+
+                            if (continuationToken) {
+                                listParams.ContinuationToken = continuationToken;
+                            }
+
+                            const response = await s3.send(new ListObjectsV2Command(listParams));
+
+                            if (response.Contents) {
+                                for (const object of response.Contents) {
+                                    if (object.Size && object.Key) {
+                                        // 排除缩略图文件
+                                        if (!object.Key.includes('thumb_')) {
+                                            totalSize += object.Size;
+                                            totalCount++;
+                                        }
+                                    }
+                                }
+                            }
+
+                            continuationToken = response.NextContinuationToken;
+                        } while (continuationToken && requestCount < maxRequests);
+
+                        const result = {
+                            r2: { used: totalSize },
+                            total: totalCount,
+                            filesCount: totalCount,
+                            note: `R2 API统计 (${requestCount}次请求${requestCount >= maxRequests ? '，已限制' : ''})`
                         };
+
+                        // 缓存结果
+                        if (useCache) {
+                            const cache = Container.get("cache") as any;
+                            const cacheKey = 'r2-capacity-stats';
+                            cache.set(cacheKey, {
+                                data: result,
+                                timestamp: Date.now()
+                            });
+                        }
+
+                        return result;
                     } catch (error: any) {
-                        console.error('Error calculating file stats:', error);
-                        set.status = 500;
-                        return { error: error.message || 'Failed to calculate file stats' };
+                        console.error('Error calculating R2 stats:', error);
+
+                        // 降级到数据库统计
+                        try {
+                            const db = getDB();
+                            const fileStats = await db
+                                .select({
+                                    count: sql<number>`count(*)`,
+                                    totalSize: sql<number>`coalesce(sum(${files.size}), 0)`
+                                })
+                                .from(files)
+                                .where(
+                                    and(
+                                        eq(files.isFolder, 0),
+                                        sql`not (${files.name} like 'thumb_%')`
+                                    )
+                                );
+
+                            const stats = fileStats[0] || { count: 0, totalSize: 0 };
+
+                            return {
+                                r2: { used: Number(stats.totalSize) },
+                                total: Number(stats.count),
+                                filesCount: Number(stats.count),
+                                note: 'R2 API失败，降级到数据库统计'
+                            };
+                        } catch (dbError: any) {
+                            set.status = 500;
+                            return { error: dbError.message || 'Failed to calculate file stats' };
+                        }
                     }
+                }, {
+                    query: t.Object({
+                        useCache: t.Optional(t.String()),
+                        maxRequests: t.Optional(t.Numeric())
+                    })
                 })
                 // 新增：更新文件缩略图的端点
                 .patch('/:id/thumbnail', async ({ params: { id }, body: { thumbnailHash }, uid, set }) => {

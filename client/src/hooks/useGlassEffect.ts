@@ -46,6 +46,18 @@ export const useGlassEffect = (baseClass: string) => {
         case 'glass-dropdown':
           setGlassClass('glass-dropdown'); // 下拉菜单保持原样，CSS会自动适配
           break;
+        case 'glass-transparent':
+          setGlassClass('glass-transparent'); // 透明毛玻璃保持原样，避免白色背景
+          break;
+        case 'glass-clear':
+          setGlassClass('glass-clear'); // 完全透明毛玻璃，只有模糊效果
+          break;
+        case 'glass-file-card':
+          setGlassClass('glass-file-card'); // 文件管理器卡片保持原样，CSS会自动适配
+          break;
+        case 'glass-file-button':
+          setGlassClass('glass-file-button'); // 文件操作按钮保持原样，CSS会自动适配
+          break;
         default:
           setGlassClass(baseClass);
       }

@@ -69,12 +69,13 @@ export function IconButton({
     onClick: () => void,
     title: string,
     variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning' | 'info',
-    size?: 'small' | 'medium' | 'large',
+    size?: 'tiny' | 'small' | 'medium' | 'large',
     disabled?: boolean
 }) {
-    const glassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
+    const glassClass = useGlassEffect('glass-clear');
 
     const sizeClasses = {
+        tiny: 'w-6 h-6 text-xs',
         small: 'w-8 h-8 text-sm',
         medium: 'w-10 h-10 text-base',
         large: 'w-12 h-12 text-lg'
@@ -82,7 +83,7 @@ export function IconButton({
 
     const variantClasses = {
         primary: 'bg-theme text-white hover:bg-theme-hover active:bg-theme-active shadow-enhanced hover:shadow-enhanced-lg',
-        secondary: `${glassClass} text-gray-700 dark:text-gray-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-theme hover:text-theme hover:bg-theme/10 shadow-enhanced`,
+        secondary: `text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:border-theme hover:text-theme hover:bg-theme/10 transition-all duration-200`,
         danger: 'bg-error text-white hover:bg-error-hover active:bg-error-active shadow-enhanced hover:shadow-enhanced-lg',
         success: 'bg-success text-white hover:bg-success-hover active:bg-success-active shadow-enhanced hover:shadow-enhanced-lg',
         warning: 'bg-warning text-white hover:bg-warning-hover active:bg-warning-active shadow-enhanced hover:shadow-enhanced-lg',
@@ -97,12 +98,10 @@ export function IconButton({
             className={`
                 ${sizeClasses[size]}
                 ${variantClasses[variant]}
-                rounded-xl font-medium
-                transition-all duration-200 ease-out
-                hover:-translate-y-0.5 active:translate-y-0
+                rounded-lg font-medium
                 focus:outline-none focus:ring-2 focus:ring-theme/30 focus:ring-offset-2
                 dark:focus:ring-offset-gray-900
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0
+                disabled:opacity-50 disabled:cursor-not-allowed
                 flex items-center justify-center
             `}
         >

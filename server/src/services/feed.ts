@@ -984,15 +984,22 @@ async function syncFeedFileReferences(db: any, feedId: number, content: string, 
           // 查重
           let exist = await db.select({id: filesTable.id}).from(filesTable).where(eq(filesTable.path, path));
           if (exist && exist.length > 0) {
-            await db.update(filesTable).set({
-              name,
+            // 构建更新数据，保护现有文件名
+            const updateData: any = {
               size,
               mimeType,
               userId: 1,
               hash,
               parentPath,
               modifiedAt: new Date(),
-            }).where(eq(filesTable.path, path));
+            };
+
+            // 只有当R2有filename元信息时才更新name
+            if (meta.filename) {
+              updateData.name = meta.filename;
+            }
+
+            await db.update(filesTable).set(updateData).where(eq(filesTable.path, path));
             pathToId.set(path, exist[0].id);
           } else {
             const insertRes = await db.insert(filesTable).values({

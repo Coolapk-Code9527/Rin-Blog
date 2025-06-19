@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
+import { UnifiedContainer } from "./UnifiedContainer";
 
 // 定义组件Props接口 - 使用React.ComponentProps确保类型兼容性
 interface UnifiedTimelineItemProps extends React.ComponentProps<'div'> {
@@ -110,8 +110,6 @@ export function UnifiedTimelineItem({ item, onToggle, t }: UnifiedTimelineItemPr
 
 // UnifiedTimeline: 统一的时间轴组件（所有项目在同一条线上）
 export function UnifiedTimeline({ feeds, t }: { feeds: any[], t: any }) {
-  const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
-
   // 折叠状态管理
   const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
 
@@ -213,32 +211,40 @@ export function UnifiedTimeline({ feeds, t }: { feeds: any[], t: any }) {
 
   if (!feeds || feeds.length === 0) {
     return (
-      <div className={`timeline-card w-full max-w-4xl mx-auto h-96 ${glassClass} rounded-2xl shadow-enhanced border border-gray-200/60 dark:border-gray-700/60 flex flex-col items-center justify-center`}>
-        <i className="ri-time-line text-4xl text-gray-400 mb-4"></i>
-        <p className="text-gray-500 dark:text-gray-400">{t('no_articles') || '暂无文章'}</p>
+      <div className="w-full max-w-6xl mx-auto">
+        <UnifiedContainer
+          heightType="responsive"
+          layoutType="default"
+          className="flex flex-col items-center justify-center"
+          enableScroll={false}
+        >
+          <i className="ri-time-line text-4xl text-gray-400 mb-4"></i>
+          <p className="text-gray-500 dark:text-gray-400">{t('no_articles') || '暂无文章'}</p>
+        </UnifiedContainer>
       </div>
     );
   }
 
   return (
     <div className="w-full max-w-6xl mx-auto">
-      <div className={`timeline-card relative ${glassClass} rounded-2xl shadow-enhanced border border-gray-200/60 dark:border-gray-700/60 overflow-hidden h-[500px] lg:h-[600px]`}>
-        <div className="relative h-full overflow-hidden">
-          <div className="h-full overflow-y-auto custom-scrollbar p-6">
-            {/* 统一的Cruip时间轴结构 - 所有项目在同一条连续线上 */}
-            <div className="-my-6">
-              {timelineItems.map((item) => (
-                <UnifiedTimelineItem
-                  key={item.id}
-                  item={item}
-                  onToggle={toggleCollapse}
-                  t={t}
-                />
-              ))}
-            </div>
-          </div>
+      <UnifiedContainer
+        heightType="responsive"
+        layoutType="default"
+        className="timeline-card"
+        enableScroll={true}
+      >
+        {/* 统一的Cruip时间轴结构 - 所有项目在同一条连续线上 */}
+        <div className="-my-6">
+          {timelineItems.map((item) => (
+            <UnifiedTimelineItem
+              key={item.id}
+              item={item}
+              onToggle={toggleCollapse}
+              t={t}
+            />
+          ))}
         </div>
-      </div>
+      </UnifiedContainer>
     </div>
   );
 }
