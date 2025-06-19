@@ -18,10 +18,19 @@ declare module 'wouter' {
     location?: string;
   }
 
-  export interface LinkProps extends HTMLAnchorElement {
-    to: string;
+  export interface LinkProps {
+    to?: string;
     href?: string;
     children?: ReactNode;
+    className?: string;
+    'aria-label'?: string;
+    'aria-labelledby'?: string;
+    'aria-current'?: string;
+    target?: string;
+    replace?: boolean;
+    onMouseEnter?: () => void;
+    style?: React.CSSProperties;
+    key?: string | number;
   }
 
   export interface RedirectProps {

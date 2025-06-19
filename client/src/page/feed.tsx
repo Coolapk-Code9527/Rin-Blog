@@ -26,6 +26,7 @@ import { RecentPosts } from "../components/recent_posts";
 import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
+import { NotFoundPage } from './not-found';
 
 type Feed = {
   id: number;
@@ -189,18 +190,24 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
       )}
       <PageContainer className="flex flex-col lg:flex-row justify-center ani-show lg:gap-5">
         {error && (
-          <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
-            <h1 className="text-xl font-bold t-primary mt-0">{error === "Not found" ? t("error.not_found") : error}</h1>
-            {error === "Not found" && id === "about" && (
-              <Tips value={t("about.notfound")} />
+          <>
+            {error === "Not found" ? (
+              // 404页面：全宽布局，不显示侧边栏
+              <div className="w-full">
+                <NotFoundPage />
+              </div>
+            ) : (
+              <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center space-y-2">
+                <h1 className="text-xl font-bold t-primary mt-0">{error}</h1>
+                <Button
+                  title={t("index.back")}
+                  onClick={() => {
+                    window.history.back();
+                  }}
+                />
+              </div>
             )}
-            <Button
-              title={t("index.back")}
-              onClick={() => {
-                window.history.back();
-              }}
-            />
-          </div>
+          </>
         )}
         {feed && !error && (
           <main className="w-full mt-5">
@@ -385,25 +392,27 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             <div className="h-16" />
           </main>
         )}
-        {/* 侧边栏，仅大屏显示 */}
-        <aside className="hidden lg:flex flex-col w-[260px] flex-shrink-0 gap-6 mt-5">
-          <section className="sticky top-[5.5rem]">
-            <div className={`mb-6 rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden`}>
-              <div className="px-4 py-3 border-b border-neutral-200/60 dark:border-neutral-700/60">
-                <h3 className="text-lg font-bold flex items-center gap-2 mt-0 mb-0">
-                  <i className="ri-list-unordered text-theme"></i>
-                  {t('toc.title', { defaultValue: '目录' })}
-                </h3>
-              </div>
-              <div className="p-4">
-                <div className="custom-scrollbar max-h-[40vh] overflow-y-auto pr-1">
-                  <TOC />
+        {/* 侧边栏，仅大屏显示，且不是404页面时才显示 */}
+        {!error && (
+          <aside className="hidden lg:flex flex-col w-[260px] flex-shrink-0 gap-6 mt-5">
+            <section className="sticky top-[5.5rem]">
+              <div className={`mb-6 rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden`}>
+                <div className="px-4 py-3 border-b border-neutral-200/60 dark:border-neutral-700/60">
+                  <h3 className="text-lg font-bold flex items-center gap-2 mt-0 mb-0">
+                    <i className="ri-list-unordered text-theme"></i>
+                    {t('toc.title', { defaultValue: '目录' })}
+                  </h3>
+                </div>
+                <div className="p-4">
+                  <div className="custom-scrollbar max-h-[40vh] overflow-y-auto pr-1">
+                    <TOC />
+                  </div>
                 </div>
               </div>
-            </div>
-            <RecentPosts />
-          </section>
-        </aside>
+              <RecentPosts />
+            </section>
+          </aside>
+        )}
       </PageContainer>
       <AlertUI />
       <ConfirmUI />

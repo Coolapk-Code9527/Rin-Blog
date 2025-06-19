@@ -32,6 +32,7 @@ declare module 'primereact/calendar' {
     disabledDays?: number[];
     locale?: string;
     timeOnly?: boolean;
+    inputClassName?: string;
   }
   
   export class Calendar extends React.Component<CalendarProps> {}

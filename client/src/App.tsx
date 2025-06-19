@@ -285,7 +285,7 @@ function RouteMe({ path, children, headerComponent, paddingClassName }:
 
   return (
     <Route path={path} >
-      {(params: any) => {
+      {(params: any): JSX.Element => {
         return (
           <div className="min-h-screen flex flex-col relative">
             <GlassOverlay />
@@ -334,7 +334,7 @@ function RouteWithIndex({ path, children, contentReady }:
   const { TOC } = useTableOfContents(".toc-content", contentReady, currentId);
 
   return (<RouteMe path={path} headerComponent={TOCHeader({ TOC: TOC })} paddingClassName=''>
-    {params => {
+    {(params): React.ReactNode => {
       return children(params, TOC)
     }}
   </RouteMe>)

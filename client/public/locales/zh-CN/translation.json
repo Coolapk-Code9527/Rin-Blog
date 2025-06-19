@@ -106,6 +106,7 @@
     "github_callback": "GitHub回调URL格式错误，请检查 API_URL 环境变量是否正确",
     "not_found": "页面未找到",
     "page_not_exist": "你访问的页面不存在或已被移除",
+    "page_not_exist_desc": "页面可能已被移动、删除或链接地址有误",
     "back_home": "返回首页",
     "go_back": "返回上页"
   },

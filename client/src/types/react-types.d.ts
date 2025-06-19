@@ -1,7 +1,7 @@
 declare module 'react' {
     export type ReactNode = React.ReactNode;
     export type RefObject<T> = React.RefObject<T>;
-    export type CSSProperties = React.CSSProperties;
+    export type CSSProperties = React.CSSProperties & { [key: string]: any };
     export type MouseEvent<T = Element> = React.MouseEvent<T>;
     export type KeyboardEvent<T = Element> = React.KeyboardEvent<T>;
     export type ClipboardEvent<T = Element> = React.ClipboardEvent<T>;
@@ -19,4 +19,9 @@ declare module 'react' {
     export const StrictMode: typeof React.StrictMode;
     export const isValidElement: typeof React.isValidElement;
     export const cloneElement: typeof React.cloneElement;
-  } 
+
+    // 添加Class组件相关的类型定义
+    export const Component: typeof React.Component;
+    export type ErrorInfo = React.ErrorInfo;
+    export type ComponentType<P = {}> = React.ComponentType<P>;
+  }

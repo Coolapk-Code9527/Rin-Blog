@@ -1,9 +1,7 @@
 // 为避免TypeScript错误，添加缺失模块的声明
 
-declare module 'react' {
-  // React模块已经由 @types/react 提供，这里只是为了避免可能的导入错误
-  export * from 'react';
-}
+// React模块已经由 @types/react 提供，不需要重新声明
+// 删除了有问题的 declare module 'react' 声明，避免循环引用
 
 declare module 'reactjs-popup' {
   import { ReactNode, ComponentType, HTMLAttributes } from 'react';
@@ -44,44 +42,7 @@ declare module 'typescript-cookie' {
   export function removeCookie(name: string, options?: any): void;
 }
 
-declare module 'wouter' {
-  import { ComponentType, ReactNode } from 'react';
 
-  export interface RouteProps {
-    path: string;
-    children: ReactNode;
-  }
-
-  export interface SwitchProps {
-    children: ReactNode;
-    location?: string;
-  }
-
-  export interface LinkProps extends HTMLAnchorElement {
-    to: string;
-    href?: string;
-    children?: ReactNode;
-  }
-
-  export interface RedirectProps {
-    to: string;
-    replace?: boolean;
-  }
-
-  export function useRoute(pattern?: string): [boolean, Record<string, string>];
-  export function useLocation(): [string, (to: string, options?: { replace?: boolean }) => void];
-  export function useRouter(): {
-    base: string;
-    location: string;
-    matcher: (pattern: string, path: string) => Record<string, string> | null;
-  };
-
-  export const Route: ComponentType<RouteProps>;
-  export const Switch: ComponentType<SwitchProps>;
-  export const Link: ComponentType<LinkProps>;
-  export const Redirect: ComponentType<RedirectProps>;
-  export const Router: ComponentType<{ children: ReactNode; base?: string }>;
-}
 
 // 为Node.js进程声明添加支持
 declare let process: {

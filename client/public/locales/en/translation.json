@@ -103,7 +103,12 @@
   "error": {
     "api_url": "API_URL in Pages environment variables should be the Worker address. Please check if API_URL in Pages environment variables is correct.",
     "api_url_slash": "API_URL in Pages environment variables should be the Worker address. Please check if API_URL in Pages environment variables is correct and ensure API_URL does not end with a slash (/).",
-    "github_callback": "GitHub OAuth callback URL should be `https://<Worker address>/user/github/callback`. Please check if the GitHub OAuth callback URL is correct."
+    "github_callback": "GitHub OAuth callback URL should be `https://<Worker address>/user/github/callback`. Please check if the GitHub OAuth callback URL is correct.",
+    "not_found": "Page Not Found",
+    "page_not_exist": "The page you are looking for does not exist or has been removed",
+    "page_not_exist_desc": "The page may have been moved, deleted, or the link address is incorrect",
+    "back_home": "Back to Home",
+    "go_back": "Go Back"
   },
   "feed_card": {
     "published$time": "Published at {{time}}",

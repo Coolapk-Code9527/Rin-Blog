@@ -3733,4 +3733,232 @@ main h1, [role="complementary"] h3, aside h3 {
   opacity: 0.7;
 }
 
+/* ========================================
+   404页面动画效果 - 404 Page Animation Effects
+   ======================================== */
+
+/* 眼睛跟随动画基础样式 */
+.eye-follow {
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+/* 眨眼动画 */
+@keyframes blink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+.eye-blink {
+  animation: blink 3s infinite;
+}
+
+/* 快速眨眼动画（移动端） */
+@keyframes quickBlink {
+  0%, 85%, 100% {
+    transform: scaleY(1);
+  }
+  90% {
+    transform: scaleY(0.1);
+  }
+}
+
+.eye-quick-blink {
+  animation: quickBlink 2s infinite;
+}
+
+/* 404数字打字机效果 */
+@keyframes typewriter {
+  0% {
+    width: 0;
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+.typewriter-404 {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: typewriter 2s steps(3) 1s both;
+}
+
+/* 机器人入场动画 */
+@keyframes robotEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(-5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.robot-enter {
+  animation: robotEnter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* 眼球高光动画 */
+@keyframes eyeHighlight {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.eye-highlight {
+  animation: eyeHighlight 2s ease-in-out infinite;
+}
+
+/* 404页面容器动画 */
+@keyframes pageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-slide-in {
+  animation: pageSlideIn 0.6s ease-out both;
+}
+
+/* 按钮悬停动画增强 */
+.button-404-hover {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.button-404-hover:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.button-404-hover:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.1s;
+}
+
+/* 眼睛容器样式 */
+.eye-container {
+  position: relative;
+  display: inline-block;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 眼球样式 */
+.eyeball {
+  position: absolute;
+  border-radius: 50%;
+  transition: transform 0.1s ease-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  will-change: transform;
+}
+
+/* 瞳孔样式 */
+.pupil {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 眼球高光 */
+.eye-shine {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+/* 机器人头部轮廓 */
+.robot-head {
+  position: relative;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #f0f0f0, #e0e0e0);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark .robot-head {
+  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* 性能优化：减少重绘 */
+.eye-follow,
+.eyeball,
+.robot-enter {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* 可访问性：减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  .eye-follow,
+  .eye-blink,
+  .eye-quick-blink,
+  .typewriter-404,
+  .robot-enter,
+  .eye-highlight,
+  .page-slide-in {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .button-404-hover:hover {
+    transform: none !important;
+  }
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .eye-follow {
+    transition-duration: 0.2s;
+  }
+
+  .robot-enter {
+    animation-duration: 0.6s;
+  }
+
+  .typewriter-404 {
+    animation-duration: 1.5s;
+  }
+}
+
+/* 高性能设备优化 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .eye-container {
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+  }
+
+  .eyeball {
+    box-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.25);
+  }
+}
+
 

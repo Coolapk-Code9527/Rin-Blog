@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
-import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
+import { useGlassEffect } from "../hooks/useGlassEffect";
 
 export interface PaginationProps {
   /**
@@ -104,7 +104,7 @@ export function Pagination({
           boxShadow: isCurrentPage
             ? '0 4px 12px rgba(0, 122, 255, 0.3), 0 2px 6px rgba(0, 0, 0, 0.1)'
             : '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
-        }}
+        } as React.CSSProperties}
       >
         {label || pageNumber}
       </button>
@@ -144,7 +144,7 @@ export function Pagination({
           style={{
             transform: 'none',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
-          }}
+          } as React.CSSProperties}
         >
           <i className="ri-arrow-left-s-line text-lg"></i>
         </button>
@@ -158,7 +158,7 @@ export function Pagination({
         style={{
           transform: 'none',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
-        }}
+        } as React.CSSProperties}
       >
         <i className="ri-arrow-left-s-line text-lg"></i>
       </button>
@@ -170,7 +170,7 @@ export function Pagination({
         style={{
           transform: 'none',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
-        }}
+        } as React.CSSProperties}
       >
         <i className="ri-arrow-left-s-line text-lg"></i>
       </Link>
@@ -194,7 +194,7 @@ export function Pagination({
           style={{
             transform: 'none',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
-          }}
+          } as React.CSSProperties}
         >
           <i className="ri-arrow-right-s-line text-lg"></i>
         </button>
@@ -208,7 +208,7 @@ export function Pagination({
         style={{
           transform: 'none',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
-        }}
+        } as React.CSSProperties}
       >
         <i className="ri-arrow-right-s-line text-lg"></i>
       </button>
@@ -220,7 +220,7 @@ export function Pagination({
         style={{
           transform: 'none',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)'
-        }}
+        } as React.CSSProperties}
       >
         <i className="ri-arrow-right-s-line text-lg"></i>
       </Link>

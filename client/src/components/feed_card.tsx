@@ -102,7 +102,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 boxShadow: top === 1
                     ? '0 4px 20px rgba(0, 122, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1)'
                     : '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
-            }}
+            } as React.CSSProperties}
             replace={false}
         >
             {/* 卡片顶部区域 - 根据屏幕大小调整高度 */}
