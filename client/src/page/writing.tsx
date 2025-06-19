@@ -6,7 +6,7 @@ import * as monaco from 'monaco-editor';
 import {Calendar} from 'primereact/calendar';
 import 'primereact/resources/primereact.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
-import React, {useCallback, useEffect, useRef, useState, useMemo} from "react";
+import React, {useCallback, useContext, useEffect, useRef, useState, useMemo} from "react";
 import {Helmet} from "react-helmet-async";
 import {useTranslation} from "react-i18next";
 
@@ -20,6 +20,8 @@ import {Cache, useCache} from '../utils/cache';
 import {siteName} from "../utils/constants";
 import {useColorMode} from "../utils/darkModeUtils";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
+import { ProfileContext } from "../state/profile";
+import UnauthorizedAccess from "../components/UnauthorizedAccess";
 
 import { HistoryDialog } from "../components/history_dialog";
 import { useEditorHistory, HistoryItem } from "../utils/history";
@@ -1777,6 +1779,22 @@ export function WritingPage({ id }: { id?: number }) {
   const cache = Cache.with(id);
   const editorRef = useRef<editor.IStandaloneCodeEditor>();
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // 权限检查
+  const profile = useContext(ProfileContext);
+
+  // 如果用户未登录或不是管理员，显示未授权页面
+  if (!profile || !profile.permission) {
+    return (
+      <UnauthorizedAccess
+        title={t('writing.unauthorized.title', { defaultValue: '写作权限受限' })}
+        description={t('writing.unauthorized.description', {
+          defaultValue: '写作功能仅限管理员使用。请使用管理员账户登录后再试。'
+        })}
+        showLoginButton={!profile} // 只有未登录时显示登录按钮
+      />
+    );
+  }
 
   // 使用智能毛玻璃效果
   const editorGlassClass = useGlassEffect(GLASS_LAYERS.CARD);

@@ -118,6 +118,10 @@
     "title": "文件管理",
     "page_title": "文件管理",
     "page_description": "管理你上传的文件和文件夹",
+    "unauthorized": {
+      "title": "文件管理权限受限",
+      "description": "文件管理功能仅限管理员使用。请使用管理员账户登录后再试。"
+    },
     "root": "根目录",
     "empty": "暂无文件",
     "load_error": "加载文件失败: {{error}}",
@@ -256,6 +260,10 @@
   "scroll_sync": "滚动同步",
   "more_options": "更多选项",
   "settings": {
+    "unauthorized": {
+      "title": "设置权限受限",
+      "description": "系统设置功能仅限管理员使用。请使用管理员账户登录后再试。"
+    },
     "cache": {
       "clear": {
         "confirm": {
@@ -397,7 +405,11 @@
     "statistics": "统计信息",
     "characters": "字符数",
     "words": "单词数",
-    "lines": "行数"
+    "lines": "行数",
+    "unauthorized": {
+      "title": "写作权限受限",
+      "description": "写作功能仅限管理员使用。请使用管理员账户登录后再试。"
+    }
   },
   "year$year": "{{year}} 年",
   "templates": {
@@ -431,6 +443,12 @@
   },
   "github_login": "GitHub 登录",
   "home": "首页",
+  "back_to_home": "返回首页",
+  "unauthorized": {
+    "title": "访问受限",
+    "description": "此页面仅限管理员访问。如果您是管理员，请先登录。",
+    "help": "如需获得管理员权限，请联系网站管理员。"
+  },
   "index": {
     "back": "返回首页",
     "empty": {

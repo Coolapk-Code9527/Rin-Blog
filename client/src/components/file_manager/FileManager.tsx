@@ -13,6 +13,7 @@ import Modal from 'react-modal';
 import { macOSModalStyles, MODAL_CONTAINER_CLASSES, useModalKeyboard, useModalBodyLock } from '../../utils/modal-config';
 import { useNotification } from '../../hooks/useNotification';
 import { ClientConfigContext } from '../../state/config';
+import { ProfileContext } from '../../state/profile';
 import { FilePreview } from './FilePreview';
 import { FileTypeSvgIcon } from './FileTypeSvgIcon';
 import { useGlassEffect, GLASS_LAYERS } from '../../hooks/useGlassEffect';
@@ -87,6 +88,7 @@ export function FileManager({
   const { showConfirm, ConfirmUI } = useConfirm();
   const notification = useNotification();
   const config = useContext(ClientConfigContext);
+  const profile = useContext(ProfileContext);
   const S3_FOLDER = config?.get<string>('S3_FOLDER') || 'images';
   const S3_CACHE_FOLDER = config?.get<string>('S3_CACHE_FOLDER') || 'cache';
   
@@ -140,8 +142,8 @@ export function FileManager({
   // 新增：管理员全部文件切换
   const [showAll, setShowAll] = useState(false);
 
-  // 判断是否管理员（需根据实际用户信息实现）
-  const isAdmin = true; // TODO: 替换为真实权限判断
+  // 权限检查：只有管理员可以使用文件管理器
+  const isAdmin = profile?.permission === true;
 
   if (!isAdmin) {
     return null;

@@ -21,10 +21,13 @@ import { useToast } from '../hooks/useToast';
 import { PageContainer } from "../components/container";
 import { macOSModalStyles, MODAL_CONTAINER_CLASSES, useModalKeyboard, useModalBodyLock } from "../utils/modal-config";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
+import { ProfileContext } from "../state/profile";
+import UnauthorizedAccess from "../components/UnauthorizedAccess";
 
 
 export function Settings() {
     const { t } = useTranslation();
+    const profile = useContext(ProfileContext);
     const [isOpen, setIsOpen] = useState(false);
     const [msg, setMsg] = useState('');
     const [msgList, setMsgList] = useState<{ title: string, reason: string }[]>([]);
@@ -35,6 +38,19 @@ export function Settings() {
     const ref = useRef(false);
     const { showAlert, AlertUI } = useAlert();
     const { showToast } = useToast();
+
+    // 权限检查：只有管理员可以访问设置页面
+    if (!profile || !profile.permission) {
+        return (
+            <UnauthorizedAccess
+                title={t('settings.unauthorized.title', { defaultValue: '设置权限受限' })}
+                description={t('settings.unauthorized.description', {
+                    defaultValue: '系统设置功能仅限管理员使用。请使用管理员账户登录后再试。'
+                })}
+                showLoginButton={!profile} // 只有未登录时显示登录按钮
+            />
+        );
+    }
 
 
     useEffect(() => {
