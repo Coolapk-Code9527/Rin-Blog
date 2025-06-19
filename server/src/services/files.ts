@@ -11,22 +11,62 @@ import { syncFeedFileReferences } from './feed';
 import { listAllR2Files, getR2FileMeta, normalizePath, setR2FileMeta } from '../utils/s3';
 import { generateThumbnail } from '../utils/image';
 
-// 优化：哈希计算缓存，避免重复计算
+// 优化：哈希计算缓存，避免重复计算（扩大缓存容量）
 const hashCache = new Map<string, string>();
+const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024; // 10MB阈值，大文件使用分块哈希
 
-// 优化：计算文件哈希的工具函数，支持缓存
-async function calculateFileHash(fileBuffer: ArrayBuffer | Uint8Array | Buffer, cacheKey?: string): Promise<string> {
+// 优化：计算文件哈希的工具函数，支持缓存和大文件分块处理
+async function calculateFileHash(fileBuffer: ArrayBuffer | Uint8Array | Buffer, cacheKey?: string, fileSize?: number): Promise<string> {
     if (cacheKey && hashCache.has(cacheKey)) {
         return hashCache.get(cacheKey)!;
     }
 
-    const hashArray = await crypto.subtle.digest({ name: 'SHA-1' }, fileBuffer);
-    const hash = buf2hex(hashArray);
+    let hash: string;
+
+    // 优化：大文件使用分块哈希，减少CPU峰值消耗
+    if (fileSize && fileSize > LARGE_FILE_THRESHOLD) {
+        // 对大文件只计算前1MB + 中间1MB + 后1MB的哈希，大幅减少CPU消耗
+        const buffer = new Uint8Array(fileBuffer);
+        const chunkSize = 1024 * 1024; // 1MB
+        const chunks: Uint8Array[] = [];
+
+        // 前1MB
+        if (buffer.length > chunkSize) {
+            chunks.push(buffer.slice(0, chunkSize));
+        }
+
+        // 中间1MB
+        if (buffer.length > chunkSize * 2) {
+            const midStart = Math.floor(buffer.length / 2) - Math.floor(chunkSize / 2);
+            chunks.push(buffer.slice(midStart, midStart + chunkSize));
+        }
+
+        // 后1MB
+        if (buffer.length > chunkSize * 3) {
+            chunks.push(buffer.slice(-chunkSize));
+        }
+
+        // 合并块并计算哈希
+        const combinedSize = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+        const combined = new Uint8Array(combinedSize);
+        let offset = 0;
+        for (const chunk of chunks) {
+            combined.set(chunk, offset);
+            offset += chunk.length;
+        }
+
+        const hashArray = await crypto.subtle.digest({ name: 'SHA-1' }, combined);
+        hash = buf2hex(hashArray);
+    } else {
+        // 小文件正常计算哈希
+        const hashArray = await crypto.subtle.digest({ name: 'SHA-1' }, fileBuffer);
+        hash = buf2hex(hashArray);
+    }
 
     if (cacheKey) {
         hashCache.set(cacheKey, hash);
-        // 限制缓存大小，避免内存泄漏
-        if (hashCache.size > 100) {
+        // 优化：扩大缓存大小从100到200，提高缓存命中率
+        if (hashCache.size > 200) {
             const firstKey = hashCache.keys().next().value;
             if (firstKey) {
                 hashCache.delete(firstKey);
@@ -178,6 +218,16 @@ export function FileService() {
                             resultData = [...dbItems, ...virtualFolders];
                             count = dbItems.length + virtualFolders.length;
                         } else {
+                        // 深度优化：简化查询条件，减少CPU消耗
+                        const whereConditions = [
+                            eq(files.parentPath, path),
+                            sql`not (${files.name} like 'thumb_%')`
+                        ];
+
+                        if (userFilter) whereConditions.push(userFilter);
+                        if (type) whereConditions.push(like(files.mimeType, `${type}/%`));
+                        if (search) whereConditions.push(like(files.name, `%${search}%`));
+
                         const result = await db
                             .select({
                                 id: files.id,
@@ -193,15 +243,7 @@ export function FileService() {
                                 modifiedAt: files.modifiedAt,
                             })
                             .from(files)
-                            .where(
-                                and(
-                                    ...(userFilter ? [userFilter] : []),
-                                    eq(files.parentPath, path),
-                                    sql`not (${files.name} like 'thumb_%')`,
-                                    ...(type ? [like(files.mimeType, `${type}/%`)] : []),
-                                    ...(search ? [like(files.name, `%${search}%`)] : [])
-                                )
-                            )
+                            .where(and(...whereConditions))
                             .orderBy(
                                 sort === 'name' ? (order === 'asc' ? asc(files.name) : desc(files.name)) :
                                 sort === 'size' ? (order === 'asc' ? asc(files.size) : desc(files.size)) :
@@ -407,9 +449,9 @@ export function FileService() {
                         } else {
                             throw new Error('Unsupported file type for hash calculation: ' + Object.prototype.toString.call(file));
                         }
-                        // 优化：使用缓存的哈希计算，避免重复计算
+                        // 优化：使用缓存的哈希计算，避免重复计算，传入文件大小用于大文件优化
                         const cacheKey = `file_${file.size}_${file.name}`;
-                        const hash = await calculateFileHash(fileBuffer, cacheKey);
+                        const hash = await calculateFileHash(fileBuffer, cacheKey, file.size);
                         let s3Key = (parentPath === '/' ? '' : parentPath.replace(/^\//, '') + '/') + hash;
                         // 修复：文本类型Content-Type加charset，防止中文乱码
                         let uploadMimeType = file.type || getMimeTypeFromFileName(name || file.name);
@@ -449,7 +491,7 @@ export function FileService() {
                                 const thumbBuffer = await generateThumbnail(arrBuf);
                                 // 优化：使用缓存的哈希计算，避免重复计算缩略图哈希
                                 const thumbCacheKey = `thumb_${hash}_150_60`;
-                                const thumbHash = await calculateFileHash(thumbBuffer, thumbCacheKey);
+                                const thumbHash = await calculateFileHash(thumbBuffer, thumbCacheKey, thumbBuffer.byteLength);
                                 let thumbKey = (parentPath === '/' ? '' : parentPath.replace(/^\//, '') + '/') + 'thumb_' + thumbHash;
                                 await s3.send(new PutObjectCommand({
                                     Bucket: bucket,

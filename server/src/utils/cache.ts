@@ -186,22 +186,26 @@ export class CacheImpl {
     async save() {
         const cacheKey = path.join(this.env.S3_CACHE_FOLDER, `${this.type}.json`);
 
-        // 深度优化：分批序列化大对象，减少内存峰值和CPU消耗
+        // 深度优化：进一步优化序列化，减少CPU消耗
         let serializedData: string;
         try {
-            if (this.cache.size > 100) {
-                // 深度优化：避免创建中间数组，直接构建对象
+            if (this.cache.size > 50) { // 深度优化：降低阈值从100到50
+                // 深度优化：减少批处理大小，更频繁让出控制权
                 const mergedData: Record<string, any> = {};
-                const chunkSize = 50;
+                const chunkSize = 20; // 深度优化：从50减少到20
                 let processed = 0;
 
                 for (const [key, value] of this.cache) {
+                    // 深度优化：跳过过大的值，避免序列化大对象
+                    if (typeof value === 'string' && value.length > 10000) {
+                        continue; // 跳过超过10KB的字符串
+                    }
+
                     mergedData[key] = value;
                     processed++;
 
-                    // 分批处理，避免长时间阻塞
+                    // 深度优化：更频繁地让出控制权
                     if (processed % chunkSize === 0) {
-                        // 让出控制权，避免阻塞事件循环
                         await new Promise(resolve => setTimeout(resolve, 0));
                     }
                 }
@@ -216,15 +220,16 @@ export class CacheImpl {
             return; // 序列化失败时不进行保存
         }
 
+        // 优化：移除调试日志，减少CPU消耗
         await this.s3.send(new PutObjectCommand({
             Bucket: this.env.S3_BUCKET,
             Key: cacheKey,
             Body: serializedData
-        })).then(() => {
-            console.log('Cache saved');
-        }).catch((e: any) => {
-            console.error('Cache save failed')
-            console.error(e.message);
+        })).catch((e: any) => {
+            // 只在真正的错误时记录，减少日志输出
+            if (e.code !== 'NoSuchBucket') {
+                console.error('Cache save failed:', e.message);
+            }
         });
     }
 }

@@ -195,8 +195,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                             </>
                         )}
 
-                        {/* 浏览量信息 */}
-                        {(pv !== undefined || uv !== undefined) && (pv > 0 || uv > 0) && (
+                        {/* 浏览量信息 - 修复显示逻辑 */}
+                        {(pv !== undefined || uv !== undefined) && (
                             <>
                                 <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
                                 <div className="flex items-center">

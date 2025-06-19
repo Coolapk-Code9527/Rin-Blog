@@ -219,11 +219,11 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <button
                         aria-label={top > 0 ? t("untop.title") : t("top.title")}
                         onClick={topFeed}
-                        className={`w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border transition-all duration-200 glass-layer-1
+                        className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all duration-200
                           ${top > 0
-                            ? "bg-blue-50/80 dark:bg-blue-900/40 text-blue-600 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-800"
-                            : "bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"}
-                          hover:scale-105 active:scale-95`}
+                            ? "text-blue-500 hover:text-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/20"
+                            : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-800/30"}
+                          hover:scale-110 active:scale-95`}
                       >
                         <i className="ri-skip-up-line text-lg"></i>
                       </button>
@@ -235,8 +235,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <Link
                         aria-label={t("edit")}
                         href={`/writing/${feed.id}`}
-                        className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200"
-
+                        className="w-9 h-9 rounded-xl text-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:scale-110 active:scale-95 transition-all duration-200"
                       >
                         <i className="ri-edit-2-line text-lg"></i>
                       </Link>
@@ -248,7 +247,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <button
                         aria-label={t("delete.title")}
                         onClick={deleteFeed}
-                        className="w-9 h-9 rounded-xl text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-red-500 border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 active:scale-95 transition-all duration-200 backdrop-blur-sm"
+                        className="w-9 h-9 rounded-xl text-lg flex items-center justify-center text-red-400 hover:text-red-500 hover:bg-red-50/50 dark:hover:bg-red-900/20 hover:scale-110 active:scale-95 transition-all duration-200"
                       >
                         <i className="ri-delete-bin-7-line text-lg"></i>
                       </button>
@@ -260,15 +259,19 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                 )}
                 {/* 移动端按钮组，标题下方横排居中显示 */}
                 {profile?.permission && (
-                  <div className="flex sm:hidden justify-center mt-3 gap-3 article-action-group">
+                  <div className="flex sm:hidden justify-center mt-3 gap-4 article-action-group">
                     <div className="group relative">
-                      <IconButton
-                        icon="ri-skip-up-line"
+                      <button
+                        aria-label={top > 0 ? t("untop.title") : t("top.title")}
                         onClick={topFeed}
-                        title={top > 0 ? t("untop.title") : t("top.title")}
-                        variant={top > 0 ? "info" : "secondary"}
-                        size="small"
-                      />
+                        className={`w-8 h-8 rounded-lg text-base flex items-center justify-center transition-all duration-200
+                          ${top > 0
+                            ? "text-blue-500 hover:text-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/20"
+                            : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-800/30"}
+                          hover:scale-110 active:scale-95`}
+                      >
+                        <i className="ri-skip-up-line"></i>
+                      </button>
                       <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
                         {top > 0 ? t("untop.title") : t("top.title")}
                       </span>
@@ -277,22 +280,22 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       <Link
                         aria-label={t("edit")}
                         href={`/writing/${feed.id}`}
-                        className="w-8 h-8 rounded-lg text-base font-medium flex items-center justify-center shadow-enhanced hover:shadow-enhanced-lg border bg-white/80 dark:bg-gray-800/80 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200 backdrop-blur-sm"
+                        className="w-8 h-8 rounded-lg text-base flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:scale-110 active:scale-95 transition-all duration-200"
                       >
-                        <i className="ri-edit-2-line text-base"></i>
+                        <i className="ri-edit-2-line"></i>
                       </Link>
                       <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
                         {t("edit")}
                       </span>
                     </div>
                     <div className="group relative">
-                      <IconButton
-                        icon="ri-delete-bin-7-line"
+                      <button
+                        aria-label={t("delete.title")}
                         onClick={deleteFeed}
-                        title={t("delete.title")}
-                        variant="danger"
-                        size="small"
-                      />
+                        className="w-8 h-8 rounded-lg text-base flex items-center justify-center text-red-400 hover:text-red-500 hover:bg-red-50/50 dark:hover:bg-red-900/20 hover:scale-110 active:scale-95 transition-all duration-200"
+                      >
+                        <i className="ri-delete-bin-7-line"></i>
+                      </button>
                       <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
                         {t("delete.title")}
                       </span>
@@ -304,7 +307,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               </div>
               <div className="flex justify-center mb-2">
                 <div className="flex flex-wrap gap-2 justify-center w-full">
-                  <div className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 py-1 rounded-xl ${glassClass} shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60 text-gray-500 dark:text-gray-400 text-[15px] font-medium w-full sm:w-auto`}>
+                  <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 py-1 text-gray-500 dark:text-gray-400 text-[15px] font-medium w-full sm:w-auto">
                     <div className="flex items-center gap-1">
                       <i className="ri-calendar-line text-blue-500 mr-1"></i>
                       <span>{t("published_at")} {timeago(feed.createdAt)}</span>
@@ -592,7 +595,7 @@ function CommentInput({
           {parentId && onCancel && (
             <button
               onClick={onCancel}
-              className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 rounded-lg transition-all duration-200"
+              className={`inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 ${glassClass} hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 rounded-lg transition-all duration-200`}
             >
               <i className="ri-close-line mr-1"></i>
               取消回复
@@ -625,7 +628,7 @@ function CommentInput({
             <input
                 id="nickname"
               type="text"
-                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
+                className={`${glassClass} border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none`}
               placeholder={t("comment.anonymous.nickname_placeholder")}
               value={nickname}
               onChange={(e) => {
@@ -645,7 +648,7 @@ function CommentInput({
               <input
                 id="email"
                 type="email"
-                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none"
+                className={`${glassClass} border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg block w-full ps-10 p-2.5 focus:ring-theme focus:border-theme focus:outline-none`}
                 placeholder={t("comment.email_placeholder")}
                 value={email}
                 onChange={(e) => {
@@ -673,7 +676,7 @@ function CommentInput({
         <div className="px-4 py-4">
           <textarea
             placeholder={t("comment.placeholder.title")}
-            className="w-full min-h-24 p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-theme focus:border-theme focus:outline-none resize-y text-sm text-gray-900 dark:text-gray-100"
+            className={`w-full min-h-24 p-3 ${glassClass} border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-theme focus:border-theme focus:outline-none resize-y text-sm text-gray-900 dark:text-gray-100`}
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
@@ -924,13 +927,14 @@ function CommentItem({
   const INITIAL_REPLIES_COUNT = depth === 0 ? 1 : 0; // 主评论只显示1条，其他默认折叠
   const hasMoreReplies = comment.replies && comment.replies.length > INITIAL_REPLIES_COUNT;
 
-  // 智能回复排序和显示
+  // 修复：统一回复排序逻辑，与后端保持一致
   const getSortedReplies = (replies: any[]) => {
     if (!replies) return [];
 
-    // 按时间排序（新的在前）
+    // 修复：回复按时间正序排序（旧的在前），保持对话的连续性
+    // 这与后端的排序逻辑保持一致，确保回复显示在正确位置
     const sorted = [...replies].sort((a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     return sorted;

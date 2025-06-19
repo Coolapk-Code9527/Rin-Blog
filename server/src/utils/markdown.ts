@@ -11,21 +11,26 @@
 export function markdownToPlainText(markdown: string, maxLength: number = 150): string {
   if (!markdown) return '';
 
-  // 深度优化：进一步减少输入长度限制，避免处理过长文本
-  const inputLimit = maxLength * 5; // 从10倍减少到5倍，减少处理量
+  // 优化：调整回合理的输入长度限制，平衡性能和功能完整性
+  const inputLimit = maxLength * 5; // 调整回5倍，保持功能完整性
   const limitedMarkdown = markdown.length > inputLimit ? markdown.slice(0, inputLimit) : markdown;
+
+  // 深度优化：早期退出机制，如果文本很短直接返回
+  if (limitedMarkdown.length <= maxLength && !/[*_`#\[\]!>-]/.test(limitedMarkdown)) {
+    return limitedMarkdown.trim();
+  }
 
   let text = limitedMarkdown;
 
-  // 深度优化：分解复杂正则表达式，避免回溯问题
-  // 第一步：移除代码块（最CPU密集的操作）
-  text = text.replace(/```[\s\S]*?```/g, '[代码块]');
+  // 深度优化：进一步简化正则表达式，减少回溯
+  // 第一步：移除代码块（使用更简单的正则）
+  text = text.replace(/```[^`]*```/g, '[代码]');
 
-  // 第二步：移除图片（简化正则，避免贪婪匹配）
-  text = text.replace(/!\[[^\]]*\]\([^)]*\)/g, '');
+  // 第二步：移除图片（使用非贪婪匹配）
+  text = text.replace(/!\[[^\]]*?\]\([^)]*?\)/g, '');
 
-  // 第三步：提取链接文本（简化正则）
-  text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  // 第三步：提取链接文本（限制长度避免过长匹配）
+  text = text.replace(/\[([^\]]{1,100})\]\([^)]{1,200}\)/g, '$1');
 
   // 第四步：移除格式化标记（分别处理，避免复杂分组）
   text = text.replace(/\*\*([^*]+)\*\*/g, '$1'); // 粗体

@@ -422,5 +422,10 @@
     "error": "错误",
     "info": "信息",
     "important": "重要"
-  }
+  },
+  "empty_list": "暂无内容",
+  "empty_draft_description": "草稿箱空空如也，快去创建第一篇草稿吧！",
+  "empty_unlisted_description": "还没有未列出的文章，创建一篇试试吧！",
+  "empty_article_description": "这里还没有任何文章，快去创建第一篇文章吧！",
+  "create_now": "立即创建"
 }

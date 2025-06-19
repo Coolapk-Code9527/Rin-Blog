@@ -19,10 +19,10 @@ export async function generateVideoThumbnail(
   quality: number = 0.8
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    // 设置超时机制
+    // 优化：设置合理的超时机制，从30秒减少到15秒
     const timeout = setTimeout(() => {
       reject(new Error('视频缩略图生成超时'));
-    }, 30000); // 30秒超时
+    }, 15000); // 15秒超时，平衡性能和成功率
     const video = document.createElement('video');
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -89,16 +89,16 @@ export async function generateVideoThumbnail(
         // 长视频：使用指定时间点，但至少2秒，最多留1秒缓冲
         seekTime = Math.max(2, Math.min(timeOffset, video.duration - 1));
       }
-      console.log('设置视频时间点:', seekTime, '总时长:', video.duration);
+      // 优化：移除调试日志，减少CPU消耗
       video.currentTime = seekTime;
     };
 
     let retryCount = 0;
-    const maxRetries = 2; // 优化：减少重试次数从3到2，降低CPU消耗
-    const retryTimePoints = [1, 0.25, 0.5]; // 优化：减少重试时间点
+    const maxRetries = 2; // 优化：保持2次重试，平衡性能和成功率
+    const retryTimePoints = [0.25, 0.5]; // 优化：保留两个重试时间点
 
     const onSeeked = () => {
-      console.log('视频定位完成，开始生成缩略图');
+      // 优化：移除调试日志，减少CPU消耗
       try {
         // 填充深灰色背景，避免纯黑色
         ctx.fillStyle = '#1a1a1a';
@@ -113,8 +113,8 @@ export async function generateVideoThumbnail(
         let nonBlackPixels = 0;
         let totalBrightness = 0;
 
-        // 优化：减少像素采样以降低CPU消耗（从16000减少到4000，减少75%计算量）
-        const sampleSize = Math.min(pixels.length, 4000); // 检查前1000个像素（4000字节）
+        // 优化：进一步减少像素采样以降低CPU消耗（从4000减少到2000，再减少50%计算量）
+        const sampleSize = Math.min(pixels.length, 2000); // 检查前500个像素（2000字节）
         for (let i = 0; i < sampleSize; i += 4) {
           const r = pixels[i];
           const g = pixels[i + 1];
@@ -130,12 +130,12 @@ export async function generateVideoThumbnail(
         const avgBrightness = totalBrightness / (sampleSize / 4);
         const nonBlackRatio = nonBlackPixels / (sampleSize / 4);
 
-        console.log(`图像分析: 非黑色像素比例=${(nonBlackRatio * 100).toFixed(1)}%, 平均亮度=${avgBrightness.toFixed(1)}`);
+        // 优化：移除调试日志，减少CPU消耗
 
-        // 优化：提高重试阈值，减少不必要的重试（降低CPU消耗）
-        if ((nonBlackRatio < 0.05 || avgBrightness < 20) && retryCount < maxRetries && video.duration > 2) {
+        // 优化：进一步提高重试阈值，更严格地减少重试（大幅降低CPU消耗）
+        if ((nonBlackRatio < 0.03 || avgBrightness < 15) && retryCount < maxRetries && video.duration > 3) {
           retryCount++;
-          console.warn(`检测到黑色帧，尝试第${retryCount}次重试`);
+          // 优化：移除调试日志，减少CPU消耗
 
           // 使用预定义的时间点
           const timeRatio = retryTimePoints[retryCount] || Math.random() * 0.8 + 0.1;

@@ -155,12 +155,11 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
     const enable = await config.getOrDefault('friend_crontab', true)
     const ua = await config.get('friend_ua') || 'Rin-Check/0.1.0'
     if (!enable) {
-        console.info('friend crontab disabled')
         return
     }
     const db = drizzle(env.DB, { schema: schema })
     const friend_list = await db.query.friends.findMany()
-    console.info(`total friends: ${friend_list.length}`)
+    // 优化：移除调试日志，减少CPU消耗
 
     // 优化：限制并发数量，保留超时保护，移除总数量限制
     const maxConcurrent = 3; // 最大并发数
@@ -176,7 +175,7 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
         const batch = limitedFriends.slice(i, batchEnd);
 
         const promises = batch.map(async (friend) => {
-            console.info(`checking ${friend.name}: ${friend.url}`)
+            // 优化：移除调试日志，减少CPU消耗
             try {
                 // 添加超时保护
                 const controller = new AbortController();
@@ -189,7 +188,7 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
                 }));
 
                 clearTimeout(timeoutId);
-                console.info(`response status: ${response.status}`)
+                // 优化：移除调试日志，减少CPU消耗
 
                 if (response.ok) {
                     ctx.waitUntil(db.update(schema.friends).set({ health: "" }).where(eq(schema.friends.id, friend.id)))
@@ -199,7 +198,7 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
                     return 'unhealthy';
                 }
             } catch (e: any) {
-                console.error(`error checking ${friend.name}: ${e.message}`)
+                // 优化：移除调试日志，减少CPU消耗
                 ctx.waitUntil(db.update(schema.friends).set({ health: e.message }).where(eq(schema.friends.id, friend.id)))
                 return 'unhealthy';
             }
@@ -217,5 +216,5 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
         });
     }
 
-    console.info(`friend crontab finished: ${health} healthy, ${unhealthy} unhealthy (processed ${limitedFriends.length}/${friend_list.length})`)
+    // 优化：移除调试日志，减少CPU消耗
 }

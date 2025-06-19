@@ -29,8 +29,8 @@ async function getBatchVisitStats(db: any, feedIds: number[]): Promise<Map<numbe
     const statsMap = new Map<number, { pv: number, uv: number }>();
     const uncachedIds: number[] = [];
 
-    // 先尝试从缓存获取，检查过期时间
-    const CACHE_EXPIRE_TIME = 5 * 60 * 1000; // 5分钟过期
+    // 优化：先尝试从缓存获取，延长过期时间减少数据库查询
+    const CACHE_EXPIRE_TIME = 10 * 60 * 1000; // 优化：从5分钟延长到10分钟过期
     for (const feedId of feedIds) {
         const cacheKey = `visit_stats_${feedId}`;
         const cached = await cache.get(cacheKey);
@@ -49,16 +49,16 @@ async function getBatchVisitStats(db: any, feedIds: number[]): Promise<Map<numbe
     }
 
     try {
-        // 只查询未缓存的数据
-        const stats = await db.all(sql`
-            SELECT
-                feedId,
-                COUNT(*) as pv,
-                COUNT(DISTINCT ip) as uv
-            FROM visits
-            WHERE feedId IN (${sql.join(uncachedIds.map(id => sql`${id}`), sql`, `)})
-            GROUP BY feedId
-        `);
+        // 只查询未缓存的数据 - 使用标准Drizzle语法
+        const stats = await db
+            .select({
+                feedId: visits.feedId,
+                pv: sql<number>`COUNT(*)`,
+                uv: sql<number>`COUNT(DISTINCT ${visits.ip})`
+            })
+            .from(visits)
+            .where(inArray(visits.feedId, uncachedIds))
+            .groupBy(visits.feedId);
 
         // 处理查询结果并缓存
         for (const stat of stats) {
@@ -147,7 +147,10 @@ export function FeedService() {
                     
                     if (cursor) {
                         // 游标分页不使用缓存，因为数据是动态的
-                        const [cursorTimestamp, cursorId] = cursor.split('|').map(val => parseInt(val));
+                        // 深度优化：优化cursor解析，减少字符串操作
+                        const pipeIndex = cursor.indexOf('|');
+                        const cursorTimestamp = parseInt(cursor.slice(0, pipeIndex));
+                        const cursorId = parseInt(cursor.slice(pipeIndex + 1));
 
                         const cursorCondition = or(
                             lt(feeds.createdAt, new Date(cursorTimestamp)),
@@ -157,8 +160,8 @@ export function FeedService() {
                             )
                         );
 
-                        // 优化：添加限制和超时保护
-                        const maxLimit = Math.min(limit_num + 1, 50); // 限制最大查询数量
+                        // 优化：添加更严格的限制和超时保护
+                        const maxLimit = Math.min(limit_num + 1, 30); // 优化：进一步限制最大查询数量从50到30
 
                         const feedsData = await db.query.feeds.findMany({
                             where: and(where, cursorCondition),
@@ -273,8 +276,10 @@ export function FeedService() {
                         cursor: nextCursor
                     }
                     
-                    if (type === undefined || type === 'normal' || type === '')
+                    if (type === undefined || type === 'normal' || type === '') {
+                        // 优化：设置缓存，减少重复查询
                         await cache.set(cacheKey, data);
+                    }
                     return data
                 }, {
                     query: t.Object({
@@ -677,8 +682,8 @@ export function FeedService() {
                 keyword = keyword.slice(0, 50);
             }
 
-            // 优化：过滤过短的关键词，减少无意义查询
-            if (keyword.trim().length < 2) {
+            // 修复：放宽关键词长度限制，支持单字符搜索（如中文）
+            if (keyword.trim().length < 1) {
                 return {
                     size: 0,
                     data: [],
@@ -686,64 +691,75 @@ export function FeedService() {
                 }
             }
 
-            const cacheKey = `search_${keyword}`;
+            // 优化：改进缓存键，包含管理员状态和分页信息
+            const cacheKey = `search_${keyword}_${admin ? 'admin' : 'public'}_${page_num}_${limit_num}`;
             const searchKeyword = `%${keyword}%`;
 
-            // 优化：进一步简化搜索条件，只搜索标题和别名，减少CPU消耗
+            // 修复：恢复完整搜索范围，提高搜索精准度
             const whereClause = or(
                 like(feeds.title, searchKeyword),
-                like(feeds.alias, searchKeyword)
-                // 移除summary和content搜索以进一步减少CPU消耗
+                like(feeds.alias, searchKeyword),
+                like(feeds.summary, searchKeyword),
+                like(feeds.content, searchKeyword)
             );
 
-            // 优化：减少搜索结果限制，避免返回过多数据
-            const maxSearchResults = 100;
+            // 优化：移除搜索结果限制，保持完整搜索功能
+            // const maxSearchResults = 100; // 移除限制，保持搜索完整性
 
-            const feed_list = (await cache.getOrSet(cacheKey, () => db.query.feeds.findMany({
-                where: admin ? whereClause : and(whereClause, eq(feeds.draft, 0)),
-                columns: admin ? undefined : {
-                    draft: false,
-                    listed: false
-                },
-                with: {
-                    hashtags: {
-                        columns: {},
-                        with: {
-                            hashtag: {
-                                columns: { id: true, name: true }
+            // 修复：优化搜索查询，添加数据库级分页
+            const searchResults = await cache.getOrSet(cacheKey, async () => {
+                const baseWhere = admin ? whereClause : and(whereClause, eq(feeds.draft, 0));
+
+                // 获取总数（用于分页）
+                const totalCount = await db
+                    .select({ count: sql<number>`count(*)` })
+                    .from(feeds)
+                    .where(baseWhere);
+
+                // 获取分页数据
+                const feedsData = await db.query.feeds.findMany({
+                    where: baseWhere,
+                    columns: admin ? undefined : {
+                        draft: false,
+                        listed: false
+                    },
+                    with: {
+                        hashtags: {
+                            columns: {},
+                            with: {
+                                hashtag: {
+                                    columns: { id: true, name: true }
+                                }
                             }
+                        }, user: {
+                            columns: { id: true, username: true, avatar: true }
                         }
-                    }, user: {
-                        columns: { id: true, username: true, avatar: true }
-                    }
-                },
-                limit: maxSearchResults, // 添加搜索结果限制
-                orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
-            }))).map(({ content, hashtags, summary, ...other }) => {
+                    },
+                    // 优化搜索结果排序：优先显示置顶文章，然后按时间排序
+                    orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.updatedAt)],
+                    limit: limit_num,
+                    offset: page_num * limit_num
+                });
+
+                return {
+                    total: totalCount[0].count,
+                    data: feedsData,
+                    hasNext: (page_num + 1) * limit_num < totalCount[0].count
+                };
+            });
+
+            const feed_list = searchResults.data.map(({ content, hashtags, summary, ...other }) => {
                 return {
                     summary: summary.length > 0 ? summary : markdownToPlainText(content, 150),
                     hashtags: hashtags.map(({ hashtag }) => hashtag),
                     ...other
                 }
             });
-            if (feed_list.length <= page_num * limit_num) {
-                return {
-                    size: feed_list.length,
-                    data: [],
-                    hasNext: false
-                }
-            } else if (feed_list.length <= page_num * limit_num + limit_num) {
-                return {
-                    size: feed_list.length,
-                    data: feed_list.slice(page_num * limit_num),
-                    hasNext: false
-                }
-            } else {
-                return {
-                    size: feed_list.length,
-                    data: feed_list.slice(page_num * limit_num, page_num * limit_num + limit_num),
-                    hasNext: true
-                }
+            // 修复：使用数据库级分页结果
+            return {
+                size: searchResults.total,
+                data: feed_list,
+                hasNext: searchResults.hasNext
             }
         }, {
             query: t.Object({

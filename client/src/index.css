@@ -3482,4 +3482,32 @@ main h1, [role="complementary"] h3, aside h3 {
   box-shadow: none !important;
 }
 
+/* 时间轴卡片专用样式 */
+.timeline-card {
+  position: relative;
+}
+
+.timeline-card .custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.timeline-card .custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline-card .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--primary, #007AFF);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+.timeline-card .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  opacity: 0.8;
+}
+
+[data-color-mode="dark"] .timeline-card .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--primary, #007AFF);
+  opacity: 0.7;
+}
+
 

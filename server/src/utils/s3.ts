@@ -42,7 +42,7 @@ export async function listAllR2Files(): Promise<string[]> {
     let files: string[] = [];
     let ContinuationToken: string | undefined = undefined;
     let requestCount = 0;
-    const maxRequests = 10; // 限制最大请求数，避免CPU超时
+    const maxRequests = 5; // 优化：进一步限制最大请求数从10到5，大幅减少CPU消耗
 
     do {
         requestCount++;
@@ -54,7 +54,7 @@ export async function listAllR2Files(): Promise<string[]> {
         const res: any = await s3.send(new ListObjectsV2Command({
             Bucket: bucket,
             ContinuationToken,
-            MaxKeys: 1000 // 限制每次请求的文件数量
+            MaxKeys: 500 // 优化：减少每次请求的文件数量从1000到500，降低单次请求CPU消耗
         }));
         if (res.Contents) {
             files.push(...res.Contents.map((obj: any) => '/' + (obj.Key || '')));

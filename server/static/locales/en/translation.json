@@ -370,5 +370,10 @@
     "error": "Error",
     "info": "Info",
     "important": "Important"
-  }
+  },
+  "empty_list": "No content available",
+  "empty_draft_description": "Your draft box is empty. Create your first draft now!",
+  "empty_unlisted_description": "No unlisted articles yet. Try creating one!",
+  "empty_article_description": "No articles here yet. Create your first article now!",
+  "create_now": "Create Now"
 }

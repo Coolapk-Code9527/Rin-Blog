@@ -33,16 +33,11 @@ export const endpoint = isDev
 // 如果在生产环境中没有设置API_URL，在控制台发出警告
 if (!isDev && !endpoint) {
   console.error('Warning: API_URL environment variable not set in production, API requests may not work properly');
-  console.log('Please set API_URL environment variable in Cloudflare Pages pointing to your API server address');
 }
 
 // OAuth URL同样从API端点派生
 export const oauth_url = endpoint + '/user/github';
 export const client = treaty<ServerType>(endpoint) as unknown as ApiClient;
-
-// 调试信息
-console.log('Current environment:', isDev ? 'Development' : 'Production');
-console.log('API endpoint:', endpoint);
 
 // 立即初始化主题，确保在React渲染前应用正确的主题
 initializeTheme();

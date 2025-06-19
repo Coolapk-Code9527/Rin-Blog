@@ -7,7 +7,7 @@ import {headersWithAuth} from "../utils/auth"
 import {siteName} from "../utils/constants"
 import {useTranslation} from "react-i18next";
 import { PageContainer } from "../components/container";
-import { Timeline } from "../components/timeline";
+import { SimpleTimeline } from "../components/simple-timeline";
 import {useGlassEffect} from "../hooks/useGlassEffect";
 
 // Object.groupBy polyfill（如原生不支持则自动挂载）
@@ -24,7 +24,7 @@ if (!Object.groupBy) {
 }
 
 export function TimelinePage() {
-    const [feeds, setFeeds] = useState<Partial<Record<number, any[]>>>();
+    const [feeds, setFeeds] = useState<any[]>([]);
     const [length, setLength] = useState(0);
     const { t } = useTranslation();
 
@@ -37,7 +37,7 @@ export function TimelinePage() {
     function fetchFeeds() {
         setError(null);
         setLoading(true);
-        // 获取完整文章列表（含摘要、标签、图片等）
+        // 获取简化的文章列表（只需要基本信息：id, title, createdAt, pv）
         client.feed.index.get({
             query: { page: 1, limit: 9999 },
             headers: headersWithAuth()
@@ -45,27 +45,24 @@ export function TimelinePage() {
             setLoading(false);
             if (apiError) {
                 setError(apiError.value as string);
-                setFeeds({});
+                setFeeds([]);
                 return;
             }
             if (data && typeof data !== 'string') {
                 setLength(data.size || data.data.length);
-                // 按年份分组
-                const groups = (Object.groupBy as any)(
-                  data.data,
-                  (item: any, idx: number, array: any) => new Date(item.createdAt).getFullYear()
-                );
-                setFeeds(groups);
+                // 直接使用数组，让SimpleTimeline组件内部处理分组
+
+                setFeeds(data.data || []);
                 setError(null);
             } else if (data === null || (typeof data === 'object' && Object.keys(data).length === 0)) {
                 setLength(0);
-                setFeeds({});
+                setFeeds([]);
                 setError(null);
             }
         }).catch(err => {
             console.error("Error fetching timeline feeds:", err);
             setLoading(false);
-            setFeeds({});
+            setFeeds([]);
             setError(t('load_failed') || '加载失败');
         });
     }
@@ -131,8 +128,8 @@ export function TimelinePage() {
                             </button>
                           </div>
                         )}
-                        {/* 使用Timeline组件渲染分组数据，内容丰富、响应式、交互体验升级 */}
-                        <Timeline feeds={feeds} error={error} t={t} />
+                        {/* 使用SimpleTimeline组件渲染简洁时间轴，性能优化版 */}
+                        <SimpleTimeline feeds={feeds} t={t} />
 
 
                     </PageContainer>

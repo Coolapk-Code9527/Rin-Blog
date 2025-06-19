@@ -92,45 +92,65 @@ export function HashtagsPage() {
                         </div>
 
 
-                        {/* 排序切换 */}
-                        <div className="mb-6 flex gap-3 items-center w-full wauto">
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">{t('排序')}:</span>
-                          {SORT_OPTIONS.map(opt => (
-                            <button
-                              key={opt.value}
-                              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] ${sort === opt.value ? 'bg-theme/10 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced backdrop-blur-sm' : `${glassClass} text-neutral-600 dark:text-neutral-300 border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme shadow-enhanced`}`}
-                              onClick={() => setSort(opt.value as any)}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                        {/* 标签云布局 */}
-                        {sortedTags.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-500">
-                            <i className="ri-emotion-unhappy-line text-5xl mb-3 text-neutral-300 dark:text-neutral-600"></i>
-                            <div className="text-lg font-medium">{t('暂无标签')}</div>
-                          </div>
-                        ) : (
-                          <div className="w-full flex flex-row flex-wrap gap-4 items-start justify-center sm:gap-4 md:gap-5 lg:gap-6">
-                            {sortedTags.map((hashtag, index) => (
-                              <div key={index} className="relative group flex flex-col items-center min-w-[90px] max-w-full">
-                                <Link href={`/hashtag/${hashtag.name}`} className="inline-block w-full">
-                                  <span className={`transition-all duration-200 ${getFontSize(hashtag.feeds)} break-all w-full text-center`} title={hashtag.description || ''} style={{display: 'inline-block', minWidth: 0, maxWidth: '100%'}}>
-                                    <HashTag name={hashtag.name} />
-                                  </span>
-                                </Link>
-                                <span className="text-xs text-neutral-400 dark:text-neutral-500 mt-2 select-none w-full text-center font-medium">{t("article.total_short$count", { count: hashtag.feeds })}</span>
-                                {/* 简介tooltip */}
-                                {hashtag.description && (
-                                  <span className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-20 hidden group-hover:block bg-neutral-900/95 dark:bg-neutral-100/95 text-white dark:text-neutral-900 text-xs rounded-lg px-3 py-2 shadow-enhanced-lg whitespace-pre-line max-w-xs backdrop-blur-md">
-                                    {hashtag.description}
-                                  </span>
-                                )}
+                        {/* 标签云容器 - 固定高度，内部滚动，与时间轴页面保持一致 */}
+                        <div className={`w-full ${glassClass} rounded-2xl shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden`}>
+                          {/* 容器标题和排序控制 */}
+                          <div className="px-6 py-4 border-b border-neutral-200/60 dark:border-neutral-700/60">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                              <h3 className="text-lg font-semibold flex items-center gap-3 text-gray-900 dark:text-gray-100">
+                                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                  <i className="ri-hashtag text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                {t('hashtags')}
+                              </h3>
+
+                              {/* 排序切换 - 移到容器内 */}
+                              <div className="flex gap-2 items-center">
+                                <span className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">{t('排序')}:</span>
+                                {SORT_OPTIONS.map(opt => (
+                                  <button
+                                    key={opt.value}
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] ${sort === opt.value ? 'bg-theme/10 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced backdrop-blur-sm' : `${tagGlassClass} text-neutral-600 dark:text-neutral-300 border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme shadow-enhanced`}`}
+                                    onClick={() => setSort(opt.value as any)}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
                               </div>
-                            ))}
+                            </div>
                           </div>
-                        )}
+
+                          {/* 标签内容区域 - 固定高度，内部滚动 */}
+                          <div className="h-[60vh] overflow-y-auto custom-scrollbar">
+                            <div className="p-6">
+                              {sortedTags.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-500">
+                                  <i className="ri-emotion-unhappy-line text-5xl mb-3 text-neutral-300 dark:text-neutral-600"></i>
+                                  <div className="text-lg font-medium">{t('暂无标签')}</div>
+                                </div>
+                              ) : (
+                                <div className="w-full flex flex-row flex-wrap gap-4 items-start justify-start sm:gap-4 md:gap-5 lg:gap-6">
+                                  {sortedTags.map((hashtag, index) => (
+                                    <div key={index} className="relative group flex flex-col items-center min-w-[90px] max-w-full">
+                                      <Link href={`/hashtag/${hashtag.name}`} className="inline-block w-full">
+                                        <span className={`transition-all duration-200 ${getFontSize(hashtag.feeds)} break-all w-full text-center`} title={hashtag.description || ''} style={{display: 'inline-block', minWidth: 0, maxWidth: '100%'}}>
+                                          <HashTag name={hashtag.name} />
+                                        </span>
+                                      </Link>
+                                      <span className="text-xs text-neutral-400 dark:text-neutral-500 mt-2 select-none w-full text-center font-medium">{t("article.total_short$count", { count: hashtag.feeds })}</span>
+                                      {/* 简介tooltip */}
+                                      {hashtag.description && (
+                                        <span className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-20 hidden group-hover:block bg-neutral-900/95 dark:bg-neutral-100/95 text-white dark:text-neutral-900 text-xs rounded-lg px-3 py-2 shadow-enhanced-lg whitespace-pre-line max-w-xs backdrop-blur-md">
+                                          {hashtag.description}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
 
 
                     </main>

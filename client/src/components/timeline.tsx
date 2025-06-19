@@ -52,8 +52,8 @@ export function TimelineItem({ id, title, createdAt, summary, hashtags, avatar }
 
   return (
     <div className="relative flex flex-row group">
-      {/* 主线节点 - 精确对齐 */}
-      <div className="absolute left-2 md:left-6 top-1/2 transform -translate-y-1/2 flex flex-col items-center z-10">
+      {/* 修复：主线节点 - 与竖线精确对齐 */}
+      <div className="absolute left-4 md:left-8 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
         <div className="w-4 h-4 bg-gradient-to-br from-theme to-pink-400 rounded-full border-4 border-white dark:border-gray-900 shadow-lg transition-transform group-hover:scale-110 duration-200 flex items-center justify-center">
           <i className="ri-calendar-line text-xs text-white"></i>
         </div>
@@ -127,8 +127,8 @@ export function TimelineYear({ year, items, t }: { year: string, items: any[], t
 
   return (
     <div className="w-full flex flex-col justify-center items-start relative">
-      {/* 年份分隔条 - 可折叠设计 */}
-      <div className="sticky top-0 z-20 w-full">
+      {/* 修复：年份分隔条 - 考虑导航栏高度的滚动固定位置 */}
+      <div className="sticky top-[5.5rem] z-20 w-full">
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="w-full flex items-center justify-between mb-4 mt-6 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl px-4 py-3 sm:px-5 sm:py-4 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-theme/30 transition-all duration-300 group"
@@ -162,11 +162,19 @@ export function TimelineYear({ year, items, t }: { year: string, items: any[], t
           {items.map((feed, index) => (
             <div
               key={feed.id}
-              className="w-full"
+              className="w-full relative"
               style={{
                 animationDelay: isCollapsed ? '0ms' : `${index * 50}ms`
               }}
             >
+              {/* 添加：类似评论树状连接的分支线 */}
+              {index < items.length - 1 && (
+                <div className="absolute left-4 md:left-8 top-8 w-0.5 h-full bg-gradient-to-b from-theme/30 to-transparent transform -translate-x-1/2 z-0"></div>
+              )}
+
+              {/* 添加：水平连接线，从主线到内容卡片 */}
+              <div className="absolute left-4 md:left-8 top-1/2 w-4 md:w-6 h-0.5 bg-gradient-to-r from-theme/60 to-theme/20 transform -translate-y-1/2 z-0"></div>
+
               <TimelineItem
                 id={feed.id.toString()}
                 title={feed.title || t('unlisted')}
@@ -188,8 +196,8 @@ export function Timeline({ feeds, error, t }: { feeds: any, error: string | null
   if (feeds && Object.keys(feeds).length > 0) {
     return (
       <div className="relative w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-        {/* 主线竖线（全局） - 与小圆点精确对齐 */}
-        <div className="absolute left-4 md:left-8 top-0 bottom-0 w-1 bg-gradient-to-b from-theme/90 via-theme/40 to-pink-400/50 rounded-full z-0 shadow-sm" style={{ minHeight: '100%' }}></div>
+        {/* 修复：主线竖线（全局） - 与节点圆点精确对齐 */}
+        <div className="absolute left-4 md:left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-theme/90 via-theme/40 to-pink-400/50 rounded-full z-0 shadow-sm transform -translate-x-1/2" style={{ minHeight: '100%' }}></div>
         <div className="relative z-10 pb-6">
           {Object.keys(feeds).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
             <div key={year} className="mb-4">

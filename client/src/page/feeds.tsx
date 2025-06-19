@@ -588,17 +588,17 @@ export function FeedsPage() {
                             ))}
                         </div>
                     ) : (
-                        // 空状态 - 添加创建文章按钮
-                        <div className="w-full py-14 sm:py-20 flex flex-col items-center justify-center text-center space-y-5 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-50 dark:bg-gray-800/50">
+                        // 空状态 - 添加创建文章按钮，使用毛玻璃效果
+                        <div className={`w-full py-14 sm:py-20 flex flex-col items-center justify-center text-center space-y-5 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl ${glassClass} shadow-enhanced`}>
                             <div className="text-6xl text-gray-300 dark:text-gray-600">
                                 <i className="ri-inbox-2-line"></i>
                             </div>
                             <div className="max-w-md px-4">
                                 <h3 className="text-2xl font-bold text-gray-600 dark:text-gray-300 mb-2">{t('empty_list')}</h3>
                                 <p className="text-base text-gray-500 dark:text-gray-400">
-                                    {listState === 'draft' 
-                                        ? t('empty_draft_description') 
-                                        : listState === 'unlisted' 
+                                    {listState === 'draft'
+                                        ? t('empty_draft_description')
+                                        : listState === 'unlisted'
                                             ? t('empty_unlisted_description')
                                             : t('empty_article_description')
                                     }

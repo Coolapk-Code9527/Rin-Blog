@@ -39,7 +39,8 @@ export function CommentService() {
                                     columns: { id: true, username: true, avatar: true, permission: true }
                                 }
                             },
-                            orderBy: [desc(comments.createdAt)],
+                            // 修复：按创建时间正序获取，便于构建正确的父子关系
+                            orderBy: [comments.createdAt],
                             limit: maxComments
                         });
 
@@ -57,18 +58,25 @@ export function CommentService() {
 
                         // 深度优化：单次遍历构建树形结构，显著减少CPU消耗
                         const buildCommentTree = (comments: any[]) => {
+                            // 深度优化：限制处理的评论数量，避免CPU超时
+                            const limitedComments = comments.slice(0, 200); // 最多处理200条评论
                             const commentMap = new Map();
                             const rootComments: any[] = [];
-                            const maxDepth = 5; // 最大嵌套深度
-                            const maxRepliesPerLevel = 50; // 每层最大回复数
+                            const maxDepth = 3; // 深度优化：减少最大嵌套深度从5到3
+                            const maxRepliesPerLevel = 20; // 深度优化：减少每层最大回复数从50到20
 
-                            // 深度优化：单次遍历同时创建映射和构建树结构
-                            for (const comment of comments) {
-                                // 创建评论节点
+                            // 修复：两次遍历构建树形结构，确保父子关系正确
+                            // 第一次遍历：创建所有评论节点的映射
+                            for (const comment of limitedComments) {
                                 const commentNode = { ...comment, replies: [], depth: 0 };
                                 commentMap.set(comment.id, commentNode);
+                            }
 
-                                // 立即尝试构建父子关系
+                            // 第二次遍历：构建父子关系
+                            for (const comment of limitedComments) {
+                                const commentNode = commentMap.get(comment.id);
+                                if (!commentNode) continue;
+
                                 if (comment.parentId) {
                                     const parent = commentMap.get(comment.parentId);
                                     if (parent && parent.depth < maxDepth && parent.replies.length < maxRepliesPerLevel) {
@@ -85,12 +93,12 @@ export function CommentService() {
                                 }
                             }
 
-                            // 深度优化：使用队列进行非递归排序，避免深度递归和栈溢出
+                            // 修复：统一排序逻辑，确保回复按时间正序排列（旧的在前）
                             const sortQueue = [...rootComments];
                             while (sortQueue.length > 0) {
                                 const comment = sortQueue.shift()!;
                                 if (comment.replies && comment.replies.length > 0) {
-                                    // 按时间排序回复
+                                    // 修复：回复按时间正序排序（旧的在前），保持对话的连续性
                                     comment.replies.sort((a: any, b: any) =>
                                         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
                                     );
@@ -98,6 +106,11 @@ export function CommentService() {
                                     sortQueue.push(...comment.replies);
                                 }
                             }
+
+                            // 修复：根评论按时间倒序排序（新的在前）
+                            rootComments.sort((a: any, b: any) =>
+                                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                            );
 
                             return rootComments;
                         };

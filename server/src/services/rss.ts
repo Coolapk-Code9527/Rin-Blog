@@ -123,11 +123,11 @@ export async function rssCrontab(env: Env) {
 
     const feed = new Feed(feedConfig);
 
-    // 优化：减少处理的文章数量，避免CPU超时
+    // 优化：适度减少处理的文章数量，避免CPU超时
     const feed_list = await db.query.feeds.findMany({
         where: and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
         orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
-        limit: 10, // 从20减少到10
+        limit: 10, // 保持10篇文章，平衡内容丰富度和性能
         with: {
             user: {
                 columns: { id: true, username: true, avatar: true },
@@ -135,14 +135,14 @@ export async function rssCrontab(env: Env) {
         },
     });
 
-    // 添加超时保护
+    // 优化：添加更严格的超时保护
     const processStartTime = Date.now();
-    const maxProcessTime = 8000; // 8秒超时
+    const maxProcessTime = 5000; // 优化：从8秒减少到5秒超时，更严格控制CPU使用
 
     for (const f of feed_list) {
         // 检查是否超时
         if (Date.now() - processStartTime > maxProcessTime) {
-            console.warn('RSS生成超时，停止处理剩余文章');
+            // 优化：移除调试日志，减少CPU消耗
             break;
         }
 
@@ -178,8 +178,7 @@ export async function rssCrontab(env: Env) {
             // 继续处理下一篇文章
         }
     }
-    // save rss.xml to s3
-    console.log("save rss.xml to s3");
+    // 优化：移除调试日志，减少CPU消耗
     const bucket = env.S3_BUCKET;
     const folder = env.S3_CACHE_FOLDER || "cache/";
     const s3 = createS3Client();
@@ -198,9 +197,9 @@ export async function rssCrontab(env: Env) {
         }
     }
     await save("rss.xml", feed.rss2());
-    console.log("Saved atom.xml to s3");
+    // 优化：移除调试日志，减少CPU消耗
     await save("atom.xml", feed.atom1());
-    console.log("Saved rss.json to s3");
+    // 优化：移除调试日志，减少CPU消耗
     await save("rss.json", feed.json1());
-    console.log("Saved rss.xml to s3");
+    // 优化：移除调试日志，减少CPU消耗
 }
