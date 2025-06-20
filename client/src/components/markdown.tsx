@@ -9,6 +9,7 @@ import {
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import gfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import remarkMermaid from "../remark/remarkMermaid";
 import { remarkAlert } from "remark-github-blockquote-alert";
 import remarkMath from "remark-math";
@@ -298,7 +299,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
   const Content = useMemo(() => (
     <ReactMarkdown
       className="toc-content markdown-body dark:text-neutral-300"
-      remarkPlugins={[gfm, remarkMermaid, remarkMath, remarkAlert]}
+      remarkPlugins={[gfm, remarkBreaks, remarkMermaid, remarkMath, remarkAlert]}
       children={content}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
@@ -1107,7 +1108,7 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
   return (
     <ReactMarkdown
       className="summary-markdown"
-      remarkPlugins={[gfm]}
+      remarkPlugins={[gfm, remarkBreaks]}
       children={processedContent}
       components={{
         // 简化的组件渲染，所有块级元素都改为行内显示

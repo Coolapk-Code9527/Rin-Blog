@@ -154,19 +154,7 @@ const scrollbarStyles = `
     border-color: #007ACC !important;
   }
 
-  /* 预览区域文本换行优化 */
-  .prose {
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    word-break: break-word !important;
-    white-space: pre-wrap !important;
-  }
 
-  .prose p, .prose div, .prose span {
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    word-break: break-word !important;
-  }
 
   .monaco-editor .current-line {
     background-color: transparent !important;
@@ -2803,14 +2791,7 @@ export function WritingPage({ id }: { id?: number }) {
                         onScroll={handlePreviewScroll}
                         className="h-full overflow-auto p-4"
                       >
-                        <div className="prose prose-lg dark:prose-invert max-w-none" style={{
-                          wordWrap: 'break-word',
-                          overflowWrap: 'break-word',
-                          wordBreak: 'break-word',
-                          whiteSpace: 'pre-wrap'
-                        }}>
-                          <Markdown content={content ? content : `> ${t('content.writing_placeholder')}`} />
-                        </div>
+                        <Markdown content={content ? content : `> ${t('content.writing_placeholder')}`} />
                       </div>
                     </div>
                   )}
