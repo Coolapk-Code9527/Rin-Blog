@@ -387,7 +387,9 @@ export function FeedService() {
                     const id_num = parseInt(id);
                     const cache = PublicCache();
                     const cacheKey = `feed_${id}`;
-                    const feed = await cache.getOrSet(cacheKey, () => (db.query.feeds.findFirst({
+
+                    // 先直接查询文章，不使用缓存
+                    const feed = await db.query.feeds.findFirst({
                         where: or(eq(feeds.id, id_num), eq(feeds.alias, id)),
                         with: {
                             hashtags: {
@@ -401,14 +403,23 @@ export function FeedService() {
                                 columns: { id: true, username: true, avatar: true }
                             }
                         }
-                    })));
+                    });
+
                     if (!feed) {
                         set.status = 404;
                         return 'Not found';
                     }
+
+                    // 权限检查 - 在缓存之前进行
                     if (feed.draft && feed.uid !== uid && !admin) {
                         set.status = 403;
                         return 'Permission denied';
+                    }
+
+                    // 只有公开文章才进入公共缓存
+                    const shouldCache = !feed.draft;
+                    if (shouldCache) {
+                        await cache.set(cacheKey, feed);
                     }
 
                     const { hashtags, ...other } = feed;
