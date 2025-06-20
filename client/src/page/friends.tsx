@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { useTranslation } from "react-i18next";
 import Modal from 'react-modal';
 import Select from 'react-select';
-import { ShowAlertType, useAlert, useConfirm } from "../components/dialog";
+import { useGlobalDialog } from "../components/dialog";
 import { Input } from "../components/input";
 import { Waiting } from "../components/loading";
 import { Button, IconButton } from "../components/button";
@@ -31,7 +31,7 @@ type FriendItem = {
     health: string;
 };
 
-async function publish({ name, avatar, desc, url, showAlert }: { name: string, avatar: string, desc: string, url: string, showAlert: ShowAlertType }) {
+async function publish({ name, avatar, desc, url, showAlert }: { name: string, avatar: string, desc: string, url: string, showAlert: (msg: string) => void }) {
     const t = i18next.t
     name = name.trim();
     desc = desc.trim();
@@ -56,9 +56,8 @@ async function publish({ name, avatar, desc, url, showAlert }: { name: string, a
     if (error) {
         showAlert(error.value as string)
     } else {
-        showAlert(t('create_action.success'), () => {
-            window.location.reload()
-        })
+        showAlert(t('create_action.success'))
+        setTimeout(() => window.location.reload(), 800)
     }
 }
 
@@ -77,7 +76,7 @@ export function FriendsPage() {
     const [friendsUnavailable, setFriendsUnavailable] = useState<FriendItem[]>([])
     const [status, setStatus] = useState<'idle' | 'loading'>('loading')
     const ref = useRef(false)
-    const { showAlert, AlertUI } = useAlert()
+    const { showAlert, showConfirm } = useGlobalDialog()
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -167,7 +166,6 @@ export function FriendsPage() {
 
             </PageContainer>
         </Waiting>
-        <AlertUI />
     </>)
 }
 
@@ -199,8 +197,7 @@ function Friend(props: any) {
     const [url, setUrl] = useState(props.url)
     const [status, setStatus] = useState(props.accepted)
     const [modalIsOpen, setIsOpen] = useState(false);
-    const { showConfirm, ConfirmUI } = useConfirm()
-    const { showAlert, AlertUI } = useAlert()
+    const { showAlert, showConfirm } = useGlobalDialog();
     const friend = props;
 
     // 使用智能毛玻璃效果
@@ -353,8 +350,6 @@ function Friend(props: any) {
                     </div>
                 </div >
             </Modal>
-            <ConfirmUI />
-            <AlertUI />
         </>
     )
 }

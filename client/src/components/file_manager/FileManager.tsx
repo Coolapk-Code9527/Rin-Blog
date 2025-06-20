@@ -8,7 +8,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Pagination } from '../pagination';
 import { useToast } from '../../hooks/useToast';
-import { useConfirm } from '../dialog';
+import { useGlobalDialog } from '../dialog';
 import Modal from 'react-modal';
 import { macOSModalStyles, MODAL_CONTAINER_CLASSES, useModalKeyboard, useModalBodyLock } from '../../utils/modal-config';
 import { useNotification } from '../../hooks/useNotification';
@@ -85,7 +85,7 @@ export function FileManager({
 }) {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const { showConfirm, ConfirmUI } = useConfirm();
+  const { showConfirm } = useGlobalDialog();
   const notification = useNotification();
   const config = useContext(ClientConfigContext);
   const profile = useContext(ProfileContext);
@@ -1883,8 +1883,6 @@ export function FileManager({
         <FilePreview files={previewableFiles} current={previewIndex} onClose={() => setPreviewOpen(false)} />,
         document.body
       )}
-
-      <ConfirmUI />
       </div>
     </UnifiedContainer>
   );

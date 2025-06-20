@@ -4,7 +4,7 @@ import {useTranslation} from "react-i18next";
 import { InlineSpinner } from "../components/loading";
 import Modal from "react-modal";
 import {Button} from "../components/button.tsx";
-import {useAlert, useConfirm} from "../components/dialog.tsx";
+import {useGlobalDialog} from "../components/dialog";
 import {client, oauth_url} from "../main.tsx";
 import {
     ClientConfigContext,
@@ -36,8 +36,7 @@ export function Settings() {
     const [clientConfig, setClientConfig] = useState<ConfigWrapper>(defaultClientConfigWrapper);
     const [serverConfig, setServerConfig] = useState<ConfigWrapper>(defaultServerConfigWrapper);
     const ref = useRef(false);
-    const { showAlert, AlertUI } = useAlert();
-    const { showConfirm, ConfirmUI } = useConfirm();
+    const { showAlert, showConfirm } = useGlobalDialog();
     const { showToast } = useToast();
 
     useEffect(() => {
@@ -280,8 +279,6 @@ export function Settings() {
                     </div>
                 </div>
             </Modal>
-            <AlertUI />
-            <ConfirmUI />
         </div>
     );
 }

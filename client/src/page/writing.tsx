@@ -11,7 +11,7 @@ import {Helmet} from "react-helmet-async";
 import {useTranslation} from "react-i18next";
 
 import { ToolbarButton, Button } from '../components/button';
-import {ShowAlertType, useAlert} from '../components/dialog';
+import { useGlobalDialog } from '../components/dialog';
 // import {Checkbox, Input} from "../components/input"; // 不再需要，使用内联编辑
 import {Markdown} from "../components/markdown";
 import {client} from "../main";
@@ -1083,7 +1083,7 @@ const MarkdownToolbar = React.memo(({
 MarkdownToolbar.displayName = 'MarkdownToolbar';
 
 // 增强的编辑器拖放上传功能
-const useEditorDragDrop = (editorRef: React.RefObject<editor.IStandaloneCodeEditor>, showAlert: ShowAlertType) => {
+const useEditorDragDrop = (editorRef: React.RefObject<editor.IStandaloneCodeEditor>, showAlert: (msg: string) => void) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -1212,7 +1212,7 @@ const useEditorDragDrop = (editorRef: React.RefObject<editor.IStandaloneCodeEdit
 };
 
 // 增强的粘贴处理函数，支持预览
-function handlePaste(event: React.ClipboardEvent<HTMLDivElement>, editorRef: React.RefObject<editor.IStandaloneCodeEditor>, setUploading: (value: boolean) => void, showAlert: ShowAlertType) {
+function handlePaste(event: React.ClipboardEvent<HTMLDivElement>, editorRef: React.RefObject<editor.IStandaloneCodeEditor>, setUploading: (value: boolean) => void, showAlert: (msg: string) => void) {
   const clipboardData = event.clipboardData;
   const t = i18n.t;
   
@@ -1325,7 +1325,7 @@ async function publish({
   alias?: string;
   createdAt?: Date;
   onCompleted?: () => void;
-  showAlert: ShowAlertType;
+  showAlert: (msg: string) => void;
 }) {
   const { data, error } = await client.feed.index.post(
     {
@@ -1388,7 +1388,7 @@ async function update({
   draft?: boolean;
   createdAt?: Date;
   onCompleted?: () => void;
-  showAlert: ShowAlertType;
+  showAlert: (msg: string) => void;
 }) {
   const { error } = await client.feed({ id }).post(
     {
@@ -1429,7 +1429,7 @@ async function update({
   }
 
 // 上传文件并为视频生成缩略图
-async function uploadFileWithThumbnail(file: File, onSuccess: (url: string, thumbnailUrl?: string) => void, showAlert: ShowAlertType) {
+async function uploadFileWithThumbnail(file: File, onSuccess: (url: string, thumbnailUrl?: string) => void, showAlert: (msg: string) => void) {
   const t = i18n.t;
   try {
     const config = JSON.parse(sessionStorage.getItem('config') || '{}');
@@ -1552,7 +1552,7 @@ async function uploadFileWithThumbnail(file: File, onSuccess: (url: string, thum
 }
 
 // 修改uploadImage函数，处理API响应类型
-async function uploadImage(file: File, onSuccess: (url: string) => void, showAlert: ShowAlertType) {
+async function uploadImage(file: File, onSuccess: (url: string) => void, showAlert: (msg: string) => void) {
   const t = i18n.t;
   try {
     const config = JSON.parse(sessionStorage.getItem('config') || '{}');
@@ -1797,7 +1797,7 @@ export function WritingPage({ id }: { id?: number }) {
   const [saveStatus, setSaveStatus] = useState(t('save'));
   const [editorScrolling, setEditorScrolling] = useState(false);
   const [previewScrolling, setPreviewScrolling] = useState(false);
-  const { showAlert, AlertUI } = useAlert()
+  const { showAlert } = useGlobalDialog();
 
   // 使用新的拖放功能
   const dragDropHandlers = useEditorDragDrop(editorRef, showAlert);
@@ -2760,7 +2760,6 @@ export function WritingPage({ id }: { id?: number }) {
       </PageContainer>
 
       {/* 对话框组件 */}
-      <AlertUI />
       {/* 历史记录对话框 */}
       <HistoryDialog
         isOpen={historyDialogOpen}

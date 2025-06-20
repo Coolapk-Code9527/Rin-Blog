@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { StrictModeModal } from "./StrictModeModal";
 import { Button, ButtonWithLoading } from "./button";
@@ -13,180 +13,138 @@ export type Confirm = {
     title: string;
     message: string;
     onConfirm: () => Promise<void> | void;
-}
+};
 
 export type Alert = {
     message: string;
     onConfirm: () => void;
+};
+
+interface DialogContextType {
+    showAlert: (msg: string, onConfirm?: () => (Promise<void> | void)) => void;
+    showConfirm: (title: string, message: string, onConfirm?: () => Promise<void> | void) => void;
+    close: () => void;
 }
 
-export type ShowAlertType = (msg: string, onConfirm?: () => (Promise<void> | void)) => void;
+const DialogContext = createContext<DialogContextType | null>(null);
 
-// macOS风格弹窗容器组件
-const MacOSModalContainer = ({
-    children,
-    className = ""
-}: {
-    children: React.ReactNode;
-    className?: string;
-}) => (
-    <div className={`${MODAL_CONTAINER_CLASSES.standard} ${className}`}>
-        {children}
-    </div>
+const MacOSModalContainer = ({ children, className = "" }: { children: ReactNode; className?: string }) => (
+    <div className={`${MODAL_CONTAINER_CLASSES.standard} ${className}`}>{children}</div>
 );
 
-export function useAlert() {
-    const [alert, setAlert] = useState<Alert | null>(null)
-    const [isOpen, setIsOpen] = useState(false)
-
-    const close = () => {
-        alert?.onConfirm()
-        setIsOpen(false)
-        setAlert(null)
-    }
-
-    const showAlert = (alert: string, onConfirm?: () => void) => {
-        setAlert({
-            message: alert,
-            onConfirm: onConfirm ?? (() => { })
-        })
-        setIsOpen(true)
-    }
-
-    // 使用统一的键盘事件处理和body锁定
-    useModalKeyboard(isOpen, close, close);
-    useModalBodyLock(isOpen);
-
-    const { t } = useTranslation()
-
-    const AlertUI = () => (
-        <StrictModeModal
-            isOpen={isOpen}
-            shouldCloseOnOverlayClick={true}
-            shouldCloseOnEsc={true}
-            onRequestClose={close}
-            style={macOSModalStyles}
-        >
-            <MacOSModalContainer>
-                <div className="flex flex-col items-center text-center space-y-6">
-                    {/* 图标 */}
-                    <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                        <i className="ri-information-line text-2xl text-theme"></i>
-                    </div>
-
-                    {/* 标题 */}
-                    <div className="space-y-2">
-                        <h1 className="text-xl font-semibold t-primary">
-                            {t("alert")}
-                        </h1>
-                        <p className="text-base t-secondary leading-relaxed max-w-sm">
-                            {alert?.message}
-                        </p>
-                    </div>
-
-                    {/* 按钮 - macOS风格单按钮居中 */}
-                    <div className="flex justify-center pt-2">
-                        <Button
-                            onClick={close}
-                            title={t('confirm')}
-                        />
-                    </div>
-                </div>
-            </MacOSModalContainer>
-        </StrictModeModal>
-    )
-
-    return { showAlert, close, AlertUI }
-}
-
-export function useConfirm() {
-    const [confirm, setConfirm] = useState<Confirm | null>(null)
-    const [isOpen, setIsOpen] = useState(false)
+export function GlobalDialogProvider({ children }: { children: ReactNode }): JSX.Element {
+    const { t } = useTranslation();
+    // alert state
+    const [alert, setAlert] = useState<Alert | null>(null);
+    const [alertOpen, setAlertOpen] = useState(false);
+    // confirm state
+    const [confirm, setConfirm] = useState<Confirm | null>(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const close = useCallback(() => {
+    // alert
+    const closeAlert = () => {
+        alert?.onConfirm();
+        setAlertOpen(false);
+        setAlert(null);
+    };
+    const showAlert = (msg: string, onConfirm?: () => (Promise<void> | void)) => {
+        setAlert({ message: msg, onConfirm: onConfirm ?? (() => {}) });
+        setAlertOpen(true);
+    };
+    // confirm
+    const closeConfirm = useCallback(() => {
         setConfirm(null);
-        setIsOpen(false);
+        setConfirmOpen(false);
         setLoading(false);
     }, []);
-
     const showConfirm = (title: string, message: string, onConfirm?: () => Promise<void> | void) => {
-        setConfirm({
-            title,
-            message,
-            onConfirm: onConfirm ?? (() => { })
-        })
-        setIsOpen(true)
-    }
-
+        setConfirm({ title, message, onConfirm: onConfirm ?? (() => {}) });
+        setConfirmOpen(true);
+    };
     const handleConfirm = useCallback(async () => {
         if (loading) return;
         setLoading(true);
         try {
             await confirm?.onConfirm();
-            close();
+            closeConfirm();
         } catch (error) {
             console.error('Confirm action failed:', error);
             setLoading(false);
         }
-    }, [confirm, loading, close]);
+    }, [confirm, loading, closeConfirm]);
 
-    // 使用统一的键盘事件处理和body锁定（避免loading依赖项变化）
-    useModalKeyboard(isOpen, close, () => {
-        if (!loading) {
-            handleConfirm();
-        }
+    // modal hooks
+    useModalKeyboard(alertOpen, closeAlert, closeAlert);
+    useModalBodyLock(alertOpen);
+    useModalKeyboard(confirmOpen, closeConfirm, () => {
+        if (!loading) handleConfirm();
     });
-    useModalBodyLock(isOpen);
+    useModalBodyLock(confirmOpen);
 
-    const { t } = useTranslation()
-
-    const ConfirmUI = () => (
+    // UI
+    const AlertUI = (
         <StrictModeModal
-            isOpen={isOpen}
-            shouldCloseOnOverlayClick={!loading}
-            shouldCloseOnEsc={!loading}
-            onRequestClose={() => {
-                if (!loading) {
-                    close();
-                }
-            }}
+            isOpen={alertOpen}
+            shouldCloseOnOverlayClick={true}
+            shouldCloseOnEsc={true}
+            onRequestClose={closeAlert}
             style={macOSModalStyles}
         >
             <MacOSModalContainer>
                 <div className="flex flex-col items-center text-center space-y-6">
-                    {/* 警告图标 */}
-                    <div className="w-16 h-16 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
-                        <i className="ri-alert-line text-2xl text-warning"></i>
+                    <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                        <i className="ri-information-line text-2xl text-theme"></i>
                     </div>
-
-                    {/* 标题和消息 */}
-                    <div className="space-y-3">
-                        <h1 className="text-xl font-semibold t-primary">
-                            {confirm?.title}
-                        </h1>
-                        <p className="text-base t-secondary leading-relaxed max-w-sm">
-                            {confirm?.message}
-                        </p>
+                    <div className="space-y-2">
+                        <h1 className="text-xl font-semibold t-primary">{t("alert")}</h1>
+                        <p className="text-base t-secondary leading-relaxed max-w-sm">{alert?.message}</p>
                     </div>
-
-                    {/* 按钮组 - macOS风格：取消在左，确认在右 */}
-                    <div className="flex justify-center space-x-3 pt-2">
-                        <Button
-                            secondary
-                            onClick={close}
-                            title={t('cancel')}
-                        />
-                        <ButtonWithLoading
-                            loading={loading}
-                            onClick={handleConfirm}
-                            title={t('confirm')}
-                        />
+                    <div className="flex justify-center pt-2">
+                        <Button onClick={closeAlert} title={t('confirm')} />
                     </div>
                 </div>
             </MacOSModalContainer>
         </StrictModeModal>
-    )
+    );
+    const ConfirmUI = (
+        <StrictModeModal
+            isOpen={confirmOpen}
+            shouldCloseOnOverlayClick={!loading}
+            shouldCloseOnEsc={!loading}
+            onRequestClose={() => { if (!loading) closeConfirm(); }}
+            style={macOSModalStyles}
+        >
+            <MacOSModalContainer>
+                <div className="flex flex-col items-center text-center space-y-6">
+                    <div className="w-16 h-16 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
+                        <i className="ri-alert-line text-2xl text-warning"></i>
+                    </div>
+                    <div className="space-y-3">
+                        <h1 className="text-xl font-semibold t-primary">{confirm?.title}</h1>
+                        <p className="text-base t-secondary leading-relaxed max-w-sm">{confirm?.message}</p>
+                    </div>
+                    <div className="flex justify-center space-x-3 pt-2">
+                        <Button secondary onClick={closeConfirm} title={t('cancel')} />
+                        <ButtonWithLoading loading={loading} onClick={handleConfirm} title={t('confirm')} />
+                    </div>
+                </div>
+            </MacOSModalContainer>
+        </StrictModeModal>
+    );
 
-    return { showConfirm, close, ConfirmUI }
+    const Provider = DialogContext.Provider as any;
+    return (
+        <Provider value={{ showAlert, showConfirm, close: closeAlert }}>
+            {children}
+            {AlertUI}
+            {ConfirmUI}
+        </Provider>
+    );
+}
+
+export function useGlobalDialog() {
+    const ctx = useContext(DialogContext);
+    if (ctx === null) throw new Error('useGlobalDialog must be used within GlobalDialogProvider');
+    return ctx;
 }

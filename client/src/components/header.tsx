@@ -5,7 +5,7 @@ import { Link, useLocation } from "wouter";
 import { useLoginModal } from "../hooks/useLoginModal";
 import { Profile, ProfileContext } from "../state/profile";
 import { ClientConfigContext } from "../state/config";
-import { useConfirm } from "./dialog";
+import { useGlobalDialog } from "./dialog";
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
@@ -357,7 +357,7 @@ function MobileMenu() {
     };
     
     // 退出登录确认弹窗
-    const { showConfirm, ConfirmUI } = useConfirm();
+    const { showConfirm } = useGlobalDialog();
 
     // 处理退出登录
     const handleLogout = () => {
@@ -461,7 +461,6 @@ function MobileMenu() {
                                         )}
                                     </div>
                                     <LoginModal /> {/* Ensure LoginModal is rendered to be usable */}
-                                    <ConfirmUI /> {/* 退出登录确认弹窗 */}
 
                                     {/* 搜索和语言区域 */}
                                     <div className="px-3 py-3 border-b border-neutral-200/60 dark:border-neutral-700/60">
@@ -1042,7 +1041,7 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
     const dropdownGlassClass = useGlassEffect('glass-dropdown');
 
     // 退出登录确认弹窗
-    const { showConfirm, ConfirmUI } = useConfirm();
+    const { showConfirm } = useGlobalDialog();
     
     // 监听点击外部关闭菜单
     useEffect(() => {
@@ -1135,7 +1134,6 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                 </button>
             )}
             <LoginModal />
-            <ConfirmUI />
         </div>
     )
 }

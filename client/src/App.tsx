@@ -28,6 +28,7 @@ import { Tips, TipsPage } from './components/tips.tsx'
 import { useTranslation } from 'react-i18next'
 import { NotFoundPage } from './page/not-found.tsx'
 import { ToastProvider } from './components/toast/Toast'
+import { GlobalDialogProvider } from './components/dialog'
 
 // 返回顶部按钮组件
 function BackToTop() {
@@ -154,131 +155,133 @@ function App() {
     <BackgroundProvider>
       <BackgroundManager />
       <div className="min-h-screen">
-      <ToastProvider>
-        {/* @ts-ignore - 忽略Provider的类型检查 */}
-        <ClientConfigContext.Provider value={config}>
+      <GlobalDialogProvider>
+        <ToastProvider>
           {/* @ts-ignore - 忽略Provider的类型检查 */}
-          <ProfileContext.Provider value={profile}>
-          <Helmet>
-            {favicon &&
-              <link rel="icon" href={favicon} />}
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <meta charSet="utf-8" />
-            <meta name="description" content={process.env.DESCRIPTION || t('site.default_description')} />
-            <meta property="og:site_name" content={process.env.NAME || t('site.default_name')} />
-            <meta property="og:type" content="website" />
-            <meta property="og:image" content={process.env.AVATAR} />
-            <meta name="twitter:card" content="summary" />
-            <meta name="twitter:title" content={process.env.NAME || t('site.default_name')} />
-            <meta name="twitter:description" content={process.env.DESCRIPTION || t('site.default_description')} />
-            <meta name="twitter:image" content={process.env.AVATAR} />
-          </Helmet>
-          <Switch>
-            <RouteMe path="/">
-              <FeedsPage />
-            </RouteMe>
+          <ClientConfigContext.Provider value={config}>
+            {/* @ts-ignore - 忽略Provider的类型检查 */}
+            <ProfileContext.Provider value={profile}>
+              <Helmet>
+                {favicon &&
+                  <link rel="icon" href={favicon} />}
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <meta charSet="utf-8" />
+                <meta name="description" content={process.env.DESCRIPTION || t('site.default_description')} />
+                <meta property="og:site_name" content={process.env.NAME || t('site.default_name')} />
+                <meta property="og:type" content="website" />
+                <meta property="og:image" content={process.env.AVATAR} />
+                <meta name="twitter:card" content="summary" />
+                <meta name="twitter:title" content={process.env.NAME || t('site.default_name')} />
+                <meta name="twitter:description" content={process.env.DESCRIPTION || t('site.default_description')} />
+                <meta name="twitter:image" content={process.env.AVATAR} />
+              </Helmet>
+              <Switch>
+                <RouteMe path="/">
+                  <FeedsPage />
+                </RouteMe>
 
-            <RouteMe path="/timeline">
-              <TimelinePage />
-            </RouteMe>
+                <RouteMe path="/timeline">
+                  <TimelinePage />
+                </RouteMe>
 
-            <RouteMe path="/files">
-              <FilesPage />
-            </RouteMe>
+                <RouteMe path="/files">
+                  <FilesPage />
+                </RouteMe>
 
-            <RouteMe path="/friends">
-              <FriendsPage />
-            </RouteMe>
+                <RouteMe path="/friends">
+                  <FriendsPage />
+                </RouteMe>
 
-            <RouteMe path="/hashtags">
-              <HashtagsPage />
-            </RouteMe>
+                <RouteMe path="/hashtags">
+                  <HashtagsPage />
+                </RouteMe>
 
-            <RouteMe path="/hashtag/:name">
-              {params => {
-                return (<HashtagPage name={params.name || ""} />)
-              }}
-            </RouteMe>
+                <RouteMe path="/hashtag/:name">
+                  {params => {
+                    return (<HashtagPage name={params.name || ""} />)
+                  }}
+                </RouteMe>
 
-            <RouteMe path="/search/:keyword">
-              {params => {
-                return (<SearchPage keyword={params.keyword || ""} />)
-              }}
-            </RouteMe>
+                <RouteMe path="/search/:keyword">
+                  {params => {
+                    return (<SearchPage keyword={params.keyword || ""} />)
+                  }}
+                </RouteMe>
 
-            <RouteMe path="/settings">
-              <Settings />
-            </RouteMe>
+                <RouteMe path="/settings">
+                  <Settings />
+                </RouteMe>
 
 
-            <RouteMe path="/writing">
-              <WritingPage />
-            </RouteMe>
+                <RouteMe path="/writing">
+                  <WritingPage />
+                </RouteMe>
 
-            <RouteMe path="/writing/:id">
-              {({ id }) => {
-                // 如果id是"new"，则不传递id参数，保持与/writing路由一致
-                if (id === "new") {
-                  return <WritingPage />
-                }
-                const id_num = tryInt(0, id)
-                return (
-                  <WritingPage id={id_num} />
-                )
-              }}
-            </RouteMe>
+                <RouteMe path="/writing/:id">
+                  {({ id }) => {
+                    // 如果id是"new"，则不传递id参数，保持与/writing路由一致
+                    if (id === "new") {
+                      return <WritingPage />
+                    }
+                    const id_num = tryInt(0, id)
+                    return (
+                      <WritingPage id={id_num} />
+                    )
+                  }}
+                </RouteMe>
 
-            <RouteMe path="/callback" >
-              <CallbackPage />
-            </RouteMe>
+                <RouteMe path="/callback" >
+                  <CallbackPage />
+                </RouteMe>
 
-            <RouteWithIndex path="/feed/:id" contentReady={contentReady}>
-              {(params, TOC) => {
-                return (<FeedPage id={params.id || ""} TOC={TOC} setContentReady={setContentReady} />)
-              }}
-            </RouteWithIndex>
+                <RouteWithIndex path="/feed/:id" contentReady={contentReady}>
+                  {(params, TOC) => {
+                    return (<FeedPage id={params.id || ""} TOC={TOC} setContentReady={setContentReady} />)
+                  }}
+                </RouteWithIndex>
 
-            <RouteWithIndex path="/:alias" contentReady={contentReady}>
-              {(params, TOC) => {
-                return (
-                  <FeedPage id={params.alias || ""} TOC={TOC} setContentReady={setContentReady} />
-                )
-              }}
-            </RouteWithIndex>
+                <RouteWithIndex path="/:alias" contentReady={contentReady}>
+                  {(params, TOC) => {
+                    return (
+                      <FeedPage id={params.alias || ""} TOC={TOC} setContentReady={setContentReady} />
+                    )
+                  }}
+                </RouteWithIndex>
 
-            <RouteMe path="/user/github">
-              {_ => (
-                <TipsPage>
-                  <Tips value={t('error.api_url')} type='error' />
-                </TipsPage>
-              )}
-            </RouteMe>
+                <RouteMe path="/user/github">
+                  {_ => (
+                    <TipsPage>
+                      <Tips value={t('error.api_url')} type='error' />
+                    </TipsPage>
+                  )}
+                </RouteMe>
 
-            <RouteMe path="/*/user/github">
-              {_ => (
-                <TipsPage>
-                  <Tips value={t('error.api_url_slash')} type='error' />
-                </TipsPage>
-              )}
-            </RouteMe>
+                <RouteMe path="/*/user/github">
+                  {_ => (
+                    <TipsPage>
+                      <Tips value={t('error.api_url_slash')} type='error' />
+                    </TipsPage>
+                  )}
+                </RouteMe>
 
-            <RouteMe path="/user/github/callback">
-              {_ => (
-                <TipsPage>
-                  <Tips value={t('error.github_callback')} type='error' />
-                </TipsPage>
-              )}
-            </RouteMe>
+                <RouteMe path="/user/github/callback">
+                  {_ => (
+                    <TipsPage>
+                      <Tips value={t('error.github_callback')} type='error' />
+                    </TipsPage>
+                  )}
+                </RouteMe>
 
-            {/* Default route in a switch */}
-            <RouteMe path="*">
-              <NotFoundPage />
-            </RouteMe>
-          </Switch>
-          </ProfileContext.Provider>
-        </ClientConfigContext.Provider>
-        <BackToTop />
-      </ToastProvider>
+                {/* Default route in a switch */}
+                <RouteMe path="*">
+                  <NotFoundPage />
+                </RouteMe>
+              </Switch>
+              <BackToTop />
+            </ProfileContext.Provider>
+          </ClientConfigContext.Provider>
+        </ToastProvider>
+      </GlobalDialogProvider>
       </div>
     </BackgroundProvider>
   )

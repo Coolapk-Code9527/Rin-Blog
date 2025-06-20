@@ -5,7 +5,7 @@ import { InlineSpinner, MacOSSpinner } from "../components/loading";
 import ReactModal from "react-modal";
 import Popup from "reactjs-popup";
 import {Link, useLocation} from "wouter";
-import {useAlert, useConfirm} from "../components/dialog";
+import {useGlobalDialog} from "../components/dialog";
 import {HashTag} from "../components/hashtag";
 import {Waiting} from "../components/loading";
 import {Markdown} from "../components/markdown";
@@ -61,8 +61,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
   const ref = React.useRef("");
   const [, setLocation] = useLocation();
-  const { showAlert, AlertUI } = useAlert();
-  const { showConfirm, ConfirmUI } = useConfirm();
+  const { showAlert, showConfirm } = useGlobalDialog();
   const [top, setTop] = React.useState<number>(0);
   const config = React.useContext(ClientConfigContext);
   const counterEnabled = config.get<boolean>('counter.enabled');
@@ -414,8 +413,6 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
           </aside>
         )}
       </PageContainer>
-      <AlertUI />
-      <ConfirmUI />
     </Waiting>
   );
 }
@@ -508,7 +505,7 @@ function CommentInput({
   const [isAnonymous, setIsAnonymous] = React.useState(false);
   const [error, setError] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
-  const { showAlert, AlertUI } = useAlert();
+  const { showAlert, showConfirm } = useGlobalDialog();
   const profile = React.useContext(ProfileContext);
   const { LoginModal, setIsOpened } = useLoginModal();
 
@@ -720,9 +717,6 @@ function CommentInput({
           />
         </div>
       )}
-      
-      <AlertUI />
-      <LoginModal />
     </div>
   );
 }
@@ -921,8 +915,7 @@ function CommentItem({
   feedId: string;
   depth?: number;
 }) {
-  const { showConfirm, ConfirmUI } = useConfirm();
-  const { showAlert, AlertUI } = useAlert();
+  const { showConfirm } = useGlobalDialog();
   const { t } = useTranslation();
   const profile = React.useContext(ProfileContext);
   const [showReplyForm, setShowReplyForm] = React.useState(false);
@@ -977,6 +970,7 @@ function CommentItem({
   }
   
   function deleteComment() {
+    const { showAlert, showConfirm } = useGlobalDialog();
     showConfirm(
       t("delete.comment.title"),
       t("delete.comment.confirm"),
@@ -995,7 +989,8 @@ function CommentItem({
               });
             }
           });
-      })
+      }
+    );
   }
 
   // 判断是否是匿名评论
@@ -1304,9 +1299,6 @@ function CommentItem({
           )}
         </div>
       )}
-
-      <ConfirmUI />
-      <AlertUI />
     </div>
   );
 }
