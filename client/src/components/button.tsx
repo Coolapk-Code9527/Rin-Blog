@@ -135,7 +135,7 @@ export function ToolbarButton({
         warning: `${glassClass} text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-800/40 border border-yellow-200 dark:border-yellow-800 shadow-enhanced hover:shadow-enhanced-lg`,
         info: `${glassClass} text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 border border-blue-200 dark:border-blue-800 shadow-enhanced hover:shadow-enhanced-lg`,
         purple: `${glassClass} text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-800/40 border border-purple-200 dark:border-purple-800 shadow-enhanced hover:shadow-enhanced-lg`,
-        ghost: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
+        ghost: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 active:bg-gray-200/50 dark:active:bg-gray-600/50 active:scale-95'
     };
 
     return (

@@ -502,6 +502,114 @@
     "tools": "工具",
     "insert_file": "插入文件"
   },
+  "toolbar": {
+    "undo": {
+      "title": "撤销 (Ctrl+Z)",
+      "description": "撤销上一步操作"
+    },
+    "redo": {
+      "title": "重做 (Ctrl+Y)",
+      "description": "重做上一步操作"
+    },
+    "clearFormat": {
+      "title": "清除格式",
+      "description": "清除选中文本的所有Markdown格式"
+    },
+    "bold": {
+      "title": "粗体 (Ctrl+B) - 支持多行",
+      "defaultText": "粗体文本"
+    },
+    "italic": {
+      "title": "斜体 (Ctrl+I) - 支持多行",
+      "defaultText": "斜体文本"
+    },
+    "strikethrough": {
+      "title": "删除线 - 支持多行",
+      "defaultText": "删除线文本"
+    },
+    "highlight": {
+      "title": "高亮标记 - 支持多行",
+      "defaultText": "高亮文本"
+    },
+    "underline": {
+      "title": "下划线 - 支持多行",
+      "defaultText": "下划线文本"
+    },
+    "heading": {
+      "h1": {
+        "title": "一级标题 - 支持多行",
+        "defaultText": "一级标题"
+      },
+      "h2": {
+        "title": "二级标题 - 支持多行",
+        "defaultText": "二级标题"
+      },
+      "h3": {
+        "title": "三级标题 - 支持多行",
+        "defaultText": "三级标题"
+      }
+    },
+    "code": {
+      "inline": {
+        "title": "行内代码 - 支持多行",
+        "defaultText": "行内代码"
+      },
+      "block": {
+        "title": "代码块",
+        "defaultText": "代码块"
+      }
+    },
+    "list": {
+      "task": {
+        "title": "任务列表 - 支持多行",
+        "defaultText": "待办任务"
+      },
+      "completed": {
+        "title": "已完成任务 - 支持多行",
+        "defaultText": "已完成任务"
+      }
+    },
+    "style": {
+      "center": {
+        "title": "居中对齐 - 支持多行",
+        "defaultText": "居中文本"
+      },
+      "color": {
+        "title": "彩色文本 - 支持多行",
+        "defaultText": "彩色文本"
+      }
+    },
+    "mark": {
+      "star": {
+        "title": "重要标记 - 支持多行",
+        "defaultText": "重要标记"
+      },
+      "tip": {
+        "title": "提示标记 - 支持多行",
+        "defaultText": "提示"
+      },
+      "hot": {
+        "title": "热门标记 - 支持多行",
+        "defaultText": "热门"
+      },
+      "bookmark": {
+        "title": "重点标记 - 支持多行",
+        "defaultText": "重点"
+      }
+    },
+    "comment": {
+      "title": "HTML注释 - 支持多行",
+      "defaultText": "注释内容"
+    },
+    "keyboard": {
+      "title": "键盘按键 - 支持多行",
+      "defaultText": "按键"
+    },
+    "multiline": {
+      "warning": "选择行数过多（{{count}}行），仅处理前{{limit}}行",
+      "processing": "正在处理多行格式化..."
+    }
+  },
   "history": {
     "title": "编辑历史",
     "empty": "暂无历史记录",

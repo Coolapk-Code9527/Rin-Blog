@@ -495,5 +495,113 @@
   "empty_draft_description": "Your draft box is empty. Create your first draft now!",
   "empty_unlisted_description": "No unlisted articles yet. Try creating one!",
   "empty_article_description": "No articles here yet. Create your first article now!",
-  "create_now": "Create Now"
+  "create_now": "Create Now",
+  "toolbar": {
+    "undo": {
+      "title": "Undo (Ctrl+Z)",
+      "description": "Undo the last operation"
+    },
+    "redo": {
+      "title": "Redo (Ctrl+Y)",
+      "description": "Redo the last operation"
+    },
+    "clearFormat": {
+      "title": "Clear Format",
+      "description": "Clear all Markdown formatting from selected text"
+    },
+    "bold": {
+      "title": "Bold (Ctrl+B) - Multi-line Support",
+      "defaultText": "Bold Text"
+    },
+    "italic": {
+      "title": "Italic (Ctrl+I) - Multi-line Support",
+      "defaultText": "Italic Text"
+    },
+    "strikethrough": {
+      "title": "Strikethrough - Multi-line Support",
+      "defaultText": "Strikethrough Text"
+    },
+    "highlight": {
+      "title": "Highlight - Multi-line Support",
+      "defaultText": "Highlighted Text"
+    },
+    "underline": {
+      "title": "Underline - Multi-line Support",
+      "defaultText": "Underlined Text"
+    },
+    "heading": {
+      "h1": {
+        "title": "Heading 1 - Multi-line Support",
+        "defaultText": "Heading 1"
+      },
+      "h2": {
+        "title": "Heading 2 - Multi-line Support",
+        "defaultText": "Heading 2"
+      },
+      "h3": {
+        "title": "Heading 3 - Multi-line Support",
+        "defaultText": "Heading 3"
+      }
+    },
+    "code": {
+      "inline": {
+        "title": "Inline Code - Multi-line Support",
+        "defaultText": "Inline Code"
+      },
+      "block": {
+        "title": "Code Block",
+        "defaultText": "Code Block"
+      }
+    },
+    "list": {
+      "task": {
+        "title": "Task List - Multi-line Support",
+        "defaultText": "Task Item"
+      },
+      "completed": {
+        "title": "Completed Task - Multi-line Support",
+        "defaultText": "Completed Task"
+      }
+    },
+    "style": {
+      "center": {
+        "title": "Center Align - Multi-line Support",
+        "defaultText": "Centered Text"
+      },
+      "color": {
+        "title": "Colored Text - Multi-line Support",
+        "defaultText": "Colored Text"
+      }
+    },
+    "mark": {
+      "star": {
+        "title": "Important Mark - Multi-line Support",
+        "defaultText": "Important"
+      },
+      "tip": {
+        "title": "Tip Mark - Multi-line Support",
+        "defaultText": "Tip"
+      },
+      "hot": {
+        "title": "Hot Mark - Multi-line Support",
+        "defaultText": "Hot"
+      },
+      "bookmark": {
+        "title": "Bookmark Mark - Multi-line Support",
+        "defaultText": "Bookmark"
+      }
+    },
+    "comment": {
+      "title": "HTML Comment - Multi-line Support",
+      "defaultText": "Comment Content"
+    },
+    "keyboard": {
+      "title": "Keyboard Key - Multi-line Support",
+      "defaultText": "Key"
+    },
+    "multiline": {
+      "warning": "Too many lines selected ({{count}} lines), processing first {{limit}} lines only",
+      "processing": "Processing multi-line formatting..."
+    }
+  }
 }

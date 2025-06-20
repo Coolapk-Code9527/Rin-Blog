@@ -126,8 +126,46 @@ const scrollbarStyles = `
     background-color: transparent !important;
   }
 
-  .monaco-editor .monaco-mouse-cursor-text {
+  /* 移除可能影响光标显示的CSS规则 */
+  /* .monaco-editor .monaco-mouse-cursor-text {
     background-color: transparent !important;
+  } */
+
+  /* 确保光标在所有情况下都可见 */
+  .monaco-editor .cursor {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .monaco-editor .cursors-layer .cursor {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* 浅色模式下的蓝色光标 */
+  .monaco-editor[data-theme="transparent-light"] .cursor {
+    background-color: #007ACC !important;
+    border-color: #007ACC !important;
+  }
+
+  /* 深色模式下的蓝色光标 */
+  .monaco-editor[data-theme="transparent-dark"] .cursor {
+    background-color: #007ACC !important;
+    border-color: #007ACC !important;
+  }
+
+  /* 预览区域文本换行优化 */
+  .prose {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    white-space: pre-wrap !important;
+  }
+
+  .prose p, .prose div, .prose span {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
   }
 
   .monaco-editor .current-line {
@@ -692,7 +730,6 @@ const ContentTemplates = React.memo(({ editor, onClose }: { editor?: editor.ISta
     }]);
 
     setIsOpen(false);
-    editor.focus();
 
     // 如果有外部关闭回调，也调用它
     if (onClose) {
@@ -810,14 +847,110 @@ const ContentTemplates = React.memo(({ editor, onClose }: { editor?: editor.ISta
 ContentTemplates.displayName = 'ContentTemplates';
 
 // 改进的Markdown工具栏组件 - 支持多行处理和更多工具
-const MarkdownToolbar = React.memo(({
+function MarkdownToolbar({
   editor
 }: {
   editor?: editor.IStandaloneCodeEditor
-}) => {
+}) {
   const { t } = useTranslation();
 
-  // 基础文本插入函数
+  // 逐行包裹格式化（用于加粗、斜体、删除线等）
+  const wrapEachLine = useCallback((before: string, after: string, defaultText: string = '') => {
+    if (!editor) return;
+    const selection = editor.getSelection();
+    if (!selection) return;
+
+    const model = editor.getModel();
+    if (!model) return;
+
+    const startLine = selection.startLineNumber;
+    const endLine = selection.endLineNumber;
+
+    // 性能限制：最多处理500行
+    const maxLines = 500;
+    const actualEndLine = Math.min(endLine, startLine + maxLines - 1);
+    if (endLine > actualEndLine) {
+      const totalLines = endLine - startLine + 1;
+      console.warn(t('toolbar.multiline.warning', { count: totalLines, limit: maxLines }));
+    }
+
+    // 如果是单行选择，使用原有的简单逻辑
+    if (startLine === endLine) {
+      const selectedText = model.getValueInRange(selection) || defaultText;
+      editor.executeEdits('', [{
+        range: selection,
+        text: before + selectedText + after
+      }]);
+      return;
+    }
+
+    // 多行处理：逐行包裹
+    const edits = [];
+    for (let i = startLine; i <= actualEndLine; i++) {
+      const lineContent = model.getLineContent(i);
+      const trimmedContent = lineContent.trim();
+
+      // 处理所有行，包括空行
+      const textToWrap = trimmedContent || (i === startLine ? defaultText : '');
+      const newContent = before + textToWrap + after;
+
+      edits.push({
+        range: new monaco.Range(i, 1, i, lineContent.length + 1),
+        text: newContent
+      });
+    }
+
+    if (edits.length > 0) {
+      editor.executeEdits('', edits);
+    }
+  }, [editor, t]);
+
+  // 逐行前缀格式化（用于标题等）
+  const prefixEachLine = useCallback((prefix: string, defaultText: string = '') => {
+    if (!editor) return;
+    const selection = editor.getSelection();
+    if (!selection) return;
+
+    const model = editor.getModel();
+    if (!model) return;
+
+    const startLine = selection.startLineNumber;
+    const endLine = selection.endLineNumber;
+
+    // 性能限制：最多处理500行
+    const maxLines = 500;
+    const actualEndLine = Math.min(endLine, startLine + maxLines - 1);
+    if (endLine > actualEndLine) {
+      const totalLines = endLine - startLine + 1;
+      console.warn(t('toolbar.multiline.warning', { count: totalLines, limit: maxLines }));
+    }
+
+    // 如果是单行且没有选中文本，直接插入前缀
+    const isEmptySelection = selection.startLineNumber === selection.endLineNumber &&
+                            selection.startColumn === selection.endColumn;
+    if (startLine === endLine && isEmptySelection) {
+      editor.executeEdits('', [{
+        range: selection,
+        text: prefix + defaultText
+      }]);
+      return;
+    }
+
+    // 多行处理：逐行添加前缀
+    const edits = [];
+    for (let i = startLine; i <= actualEndLine; i++) {
+      edits.push({
+        range: new monaco.Range(i, 1, i, 1),
+        text: prefix
+      });
+    }
+
+    if (edits.length > 0) {
+      editor.executeEdits('', edits);
+    }
+  }, [editor, t]);
+
+  // 基础文本插入函数（保留用于不需要多行处理的工具）
   const insertText = useCallback((before: string, after: string = '', defaultText: string = '') => {
     if (!editor) return;
     const selection = editor.getSelection();
@@ -827,7 +960,6 @@ const MarkdownToolbar = React.memo(({
       range: selection,
       text: before + selectedText + after
     }]);
-    editor.focus();
   }, [editor]);
 
   // 多行列表处理函数
@@ -884,7 +1016,6 @@ const MarkdownToolbar = React.memo(({
     if (edits.length > 0) {
       editor.executeEdits('', edits);
     }
-    editor.focus();
   }, [editor]);
 
   // 多行引用处理函数
@@ -934,7 +1065,6 @@ const MarkdownToolbar = React.memo(({
     if (edits.length > 0) {
       editor.executeEdits('', edits);
     }
-    editor.focus();
   }, [editor]);
 
   // 插入当前时间
@@ -950,10 +1080,76 @@ const MarkdownToolbar = React.memo(({
     insertText(timeString);
   }, [insertText]);
 
-  // 插入任务列表
-  const insertTaskList = useCallback(() => {
-    insertText('- [ ] ');
-  }, [insertText]);
+  // 撤销操作
+  const handleUndo = useCallback(() => {
+    if (!editor) return;
+    editor.trigger(undefined, 'undo', undefined);
+  }, [editor]);
+
+  // 重做操作
+  const handleRedo = useCallback(() => {
+    if (!editor) return;
+    editor.trigger(undefined, 'redo', undefined);
+  }, [editor]);
+
+  // 清除格式功能
+  const clearFormatting = useCallback(() => {
+    if (!editor) return;
+    const selection = editor.getSelection();
+    if (!selection) return;
+
+    const model = editor.getModel();
+    if (!model) return;
+
+    const selectedText = model.getValueInRange(selection);
+    if (!selectedText) return;
+
+    // 清除所有Markdown格式的正则表达式
+    let cleanText = selectedText
+      // 清除加粗 **text** 或 __text__
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      // 清除斜体 *text* 或 _text_
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/_(.*?)_/g, '$1')
+      // 清除删除线 ~~text~~
+      .replace(/~~(.*?)~~/g, '$1')
+      // 清除高亮 ==text==
+      .replace(/==(.*?)==/g, '$1')
+      // 清除内联代码 `text`
+      .replace(/`(.*?)`/g, '$1')
+      // 清除下划线 <u>text</u>
+      .replace(/<u>(.*?)<\/u>/g, '$1')
+      // 清除标题标记 # ## ### 等
+      .replace(/^#{1,6}\s+/gm, '')
+      // 清除列表标记 - * + 1. 等
+      .replace(/^[\s]*[-*+]\s+/gm, '')
+      .replace(/^[\s]*\d+\.\s+/gm, '')
+      // 清除任务列表 - [ ] - [x]
+      .replace(/^[\s]*-\s+\[[ x]\]\s+/gm, '')
+      // 清除引用标记 >
+      .replace(/^>\s*/gm, '')
+      // 清除链接 [text](url)
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // 清除图片 ![alt](url)
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+      // 清除HTML标签
+      .replace(/<[^>]+>/g, '')
+      // 清除表情符号前缀
+      .replace(/^[⭐💡🔥📌]\s+/gm, '')
+      // 清除HTML注释
+      .replace(/<!--.*?-->/g, '')
+      // 清除键盘标记 <kbd>text</kbd>
+      .replace(/<kbd>(.*?)<\/kbd>/g, '$1');
+
+    // 执行替换
+    editor.executeEdits('clear-formatting', [{
+      range: selection,
+      text: cleanText
+    }]);
+  }, [editor]);
+
+
 
   // 智能链接插入
   const insertSmartLink = useCallback(() => {
@@ -978,7 +1174,6 @@ const MarkdownToolbar = React.memo(({
         text: `[${linkText}](url)`
       }]);
     }
-    editor.focus();
   }, [editor]);
 
   // 智能图片插入
@@ -1004,29 +1199,33 @@ const MarkdownToolbar = React.memo(({
         text: `![${altText}](图片链接)`
       }]);
     }
-    editor.focus();
   }, [editor]);
 
   return (
     <div className="flex items-center space-x-0.5 flex-wrap gap-y-1">
-      {/* 基础格式工具 */}
-      <ToolbarButton icon="ri-bold" onClick={() => insertText('**', '**', '粗体文本')} title="粗体 (Ctrl+B)" variant="ghost" />
-      <ToolbarButton icon="ri-italic" onClick={() => insertText('*', '*', '斜体文本')} title="斜体 (Ctrl+I)" variant="ghost" />
-      <ToolbarButton icon="ri-strikethrough" onClick={() => insertText('~~', '~~', '删除线文本')} title="删除线" variant="ghost" />
-      <ToolbarButton icon="ri-mark-pen-line" onClick={() => insertText('==', '==', '高亮文本')} title="高亮标记" variant="ghost" />
-      <ToolbarButton icon="ri-underline" onClick={() => insertText('<u>', '</u>', '下划线文本')} title="下划线" variant="ghost" />
+      {/* 编辑操作工具 */}
+      <ToolbarButton icon="ri-arrow-go-back-line" onClick={handleUndo} title={t('toolbar.undo.title')} variant="ghost" />
+      <ToolbarButton icon="ri-arrow-go-forward-line" onClick={handleRedo} title={t('toolbar.redo.title')} variant="ghost" />
+      <ToolbarButton icon="ri-format-clear" onClick={clearFormatting} title={t('toolbar.clearFormat.title')} variant="ghost" />
+
+      {/* 基础格式工具 - 支持多行处理 */}
+      <ToolbarButton icon="ri-bold" onClick={() => wrapEachLine('**', '**', t('toolbar.bold.defaultText'))} title={t('toolbar.bold.title')} variant="ghost" />
+      <ToolbarButton icon="ri-italic" onClick={() => wrapEachLine('*', '*', t('toolbar.italic.defaultText'))} title={t('toolbar.italic.title')} variant="ghost" />
+      <ToolbarButton icon="ri-strikethrough" onClick={() => wrapEachLine('~~', '~~', t('toolbar.strikethrough.defaultText'))} title={t('toolbar.strikethrough.title')} variant="ghost" />
+      <ToolbarButton icon="ri-mark-pen-line" onClick={() => wrapEachLine('==', '==', t('toolbar.highlight.defaultText'))} title={t('toolbar.highlight.title')} variant="ghost" />
+      <ToolbarButton icon="ri-underline" onClick={() => wrapEachLine('<u>', '</u>', t('toolbar.underline.defaultText'))} title={t('toolbar.underline.title')} variant="ghost" />
 
 
-      {/* 标题工具 */}
-      <ToolbarButton icon="ri-h-1" onClick={() => insertText('# ')} title="一级标题" variant="ghost" />
-      <ToolbarButton icon="ri-h-2" onClick={() => insertText('## ')} title="二级标题" variant="ghost" />
-      <ToolbarButton icon="ri-h-3" onClick={() => insertText('### ')} title="三级标题" variant="ghost" />
+      {/* 标题工具 - 支持多行处理 */}
+      <ToolbarButton icon="ri-h-1" onClick={() => prefixEachLine('# ', t('toolbar.heading.h1.defaultText'))} title={t('toolbar.heading.h1.title')} variant="ghost" />
+      <ToolbarButton icon="ri-h-2" onClick={() => prefixEachLine('## ', t('toolbar.heading.h2.defaultText'))} title={t('toolbar.heading.h2.title')} variant="ghost" />
+      <ToolbarButton icon="ri-h-3" onClick={() => prefixEachLine('### ', t('toolbar.heading.h3.defaultText'))} title={t('toolbar.heading.h3.title')} variant="ghost" />
 
       {/* 列表工具 */}
       <ToolbarButton icon="ri-list-unordered" onClick={() => insertMultiLineList('unordered')} title="无序列表 (支持多行)" variant="ghost" />
       <ToolbarButton icon="ri-list-ordered" onClick={() => insertMultiLineList('ordered')} title="有序列表 (支持多行)" variant="ghost" />
-      <ToolbarButton icon="ri-list-check-2" onClick={insertTaskList} title="任务列表" variant="ghost" />
-      <ToolbarButton icon="ri-checkbox-line" onClick={() => insertText('- [x] ', '', '已完成任务')} title="已完成任务" variant="ghost" />
+      <ToolbarButton icon="ri-list-check-2" onClick={() => prefixEachLine('- [ ] ', t('toolbar.list.task.defaultText'))} title={t('toolbar.list.task.title')} variant="ghost" />
+      <ToolbarButton icon="ri-checkbox-line" onClick={() => prefixEachLine('- [x] ', t('toolbar.list.completed.defaultText'))} title={t('toolbar.list.completed.title')} variant="ghost" />
       <ToolbarButton icon="ri-double-quotes-l" onClick={insertMultiLineQuote} title="引用 (支持多行)" variant="ghost" />
 
       {/* 插入工具 */}
@@ -1035,9 +1234,9 @@ const MarkdownToolbar = React.memo(({
       <ToolbarButton icon="ri-video-line" onClick={() => insertText('<video controls>\n  <source src="视频链接" type="video/mp4">\n</video>', '', '')} title="插入视频" variant="ghost" />
       <ToolbarButton icon="ri-music-line" onClick={() => insertText('<audio controls>\n  <source src="音频链接" type="audio/mp3">\n</audio>', '', '')} title="插入音频" variant="ghost" />
 
-      {/* 代码工具 */}
-      <ToolbarButton icon="ri-code-line" onClick={() => insertText('`', '`', '行内代码')} title="行内代码" variant="ghost" />
-      <ToolbarButton icon="ri-code-s-slash-line" onClick={() => insertText('```\n', '\n```', '代码块')} title="代码块" variant="ghost" />
+      {/* 代码工具 - 支持多行处理 */}
+      <ToolbarButton icon="ri-code-line" onClick={() => wrapEachLine('`', '`', t('toolbar.code.inline.defaultText'))} title={t('toolbar.code.inline.title')} variant="ghost" />
+      <ToolbarButton icon="ri-code-s-slash-line" onClick={() => insertText('```\n', '\n```', t('toolbar.code.block.defaultText'))} title={t('toolbar.code.block.title')} variant="ghost" />
       <ToolbarButton icon="ri-functions" onClick={() => insertText('$$\n', '\n$$', 'LaTeX公式')} title="数学公式" variant="ghost" />
 
       {/* 结构工具 */}
@@ -1050,20 +1249,20 @@ const MarkdownToolbar = React.memo(({
       <ToolbarButton icon="ri-separator" onClick={() => insertText('---\n')} title="分隔线" variant="ghost" />
       <ToolbarButton icon="ri-layout-grid-line" onClick={() => insertText('<details>\n<summary>点击展开</summary>\n\n隐藏内容\n\n</details>', '', '')} title="折叠内容" variant="ghost" />
 
-      {/* 样式工具 */}
-      <ToolbarButton icon="ri-text-spacing" onClick={() => insertText('<center>', '</center>', '居中文本')} title="居中对齐" variant="ghost" />
-      <ToolbarButton icon="ri-palette-line" onClick={() => insertText('<span style="color: red;">', '</span>', '彩色文本')} title="彩色文本" variant="ghost" />
+      {/* 样式工具 - 支持多行处理 */}
+      <ToolbarButton icon="ri-text-spacing" onClick={() => wrapEachLine('<center>', '</center>', t('toolbar.style.center.defaultText'))} title={t('toolbar.style.center.title')} variant="ghost" />
+      <ToolbarButton icon="ri-palette-line" onClick={() => wrapEachLine('<span style="color: red;">', '</span>', t('toolbar.style.color.defaultText'))} title={t('toolbar.style.color.title')} variant="ghost" />
 
-      {/* 标记工具 */}
-      <ToolbarButton icon="ri-star-line" onClick={() => insertText('⭐ ', '', '重要标记')} title="重要标记" variant="ghost" />
-      <ToolbarButton icon="ri-lightbulb-line" onClick={() => insertText('💡 ', '', '提示')} title="提示标记" variant="ghost" />
-      <ToolbarButton icon="ri-fire-line" onClick={() => insertText('🔥 ', '', '热门')} title="热门标记" variant="ghost" />
-      <ToolbarButton icon="ri-bookmark-line" onClick={() => insertText('📌 ', '', '重点')} title="重点标记" variant="ghost" />
+      {/* 标记工具 - 支持多行处理 */}
+      <ToolbarButton icon="ri-star-line" onClick={() => prefixEachLine('⭐ ', t('toolbar.mark.star.defaultText'))} title={t('toolbar.mark.star.title')} variant="ghost" />
+      <ToolbarButton icon="ri-lightbulb-line" onClick={() => prefixEachLine('💡 ', t('toolbar.mark.tip.defaultText'))} title={t('toolbar.mark.tip.title')} variant="ghost" />
+      <ToolbarButton icon="ri-fire-line" onClick={() => prefixEachLine('🔥 ', t('toolbar.mark.hot.defaultText'))} title={t('toolbar.mark.hot.title')} variant="ghost" />
+      <ToolbarButton icon="ri-bookmark-line" onClick={() => prefixEachLine('📌 ', t('toolbar.mark.bookmark.defaultText'))} title={t('toolbar.mark.bookmark.title')} variant="ghost" />
 
       {/* 提示工具 */}
       <ToolbarButton icon="ri-information-line" onClick={() => insertText('> [!NOTE]\n> ', '', '注意事项')} title="提示框" variant="ghost" />
       <ToolbarButton icon="ri-alert-line" onClick={() => insertText('> [!WARNING]\n> ', '', '警告信息')} title="警告框" variant="ghost" />
-      <ToolbarButton icon="ri-file-text-line" onClick={() => insertText('<!-- ', ' -->', '注释内容')} title="HTML注释" variant="ghost" />
+      <ToolbarButton icon="ri-file-text-line" onClick={() => wrapEachLine('<!-- ', ' -->', t('toolbar.comment.defaultText'))} title={t('toolbar.comment.title')} variant="ghost" />
 
       {/* 快速插入工具 */}
       <ToolbarButton icon="ri-time-line" onClick={insertCurrentTime} title="插入当前时间" variant="ghost" />
@@ -1072,15 +1271,13 @@ const MarkdownToolbar = React.memo(({
       <ToolbarButton icon="ri-hashtag" onClick={() => insertText('#', '', '标签')} title="插入标签" variant="ghost" />
       <ToolbarButton icon="ri-external-link-line" onClick={() => insertText('[外部链接](https://)', '', '')} title="外部链接" variant="ghost" />
       <ToolbarButton icon="ri-download-line" onClick={() => insertText('[下载文件](文件链接)', '', '')} title="下载链接" variant="ghost" />
-      <ToolbarButton icon="ri-keyboard-line" onClick={() => insertText('<kbd>', '</kbd>', '按键')} title="键盘按键" variant="ghost" />
+      <ToolbarButton icon="ri-keyboard-line" onClick={() => wrapEachLine('<kbd>', '</kbd>', t('toolbar.keyboard.defaultText'))} title={t('toolbar.keyboard.title')} variant="ghost" />
 
       {/* 新增常用工具 */}
       <ToolbarButton icon="ri-text-wrap" onClick={() => insertText('<br>', '', '')} title="换行符" variant="ghost" />
     </div>
   );
-});
-// 确保有一个明确的displayName
-MarkdownToolbar.displayName = 'MarkdownToolbar';
+}
 
 // 增强的编辑器拖放上传功能
 const useEditorDragDrop = (editorRef: React.RefObject<editor.IStandaloneCodeEditor>, showAlert: (msg: string) => void) => {
@@ -1600,47 +1797,74 @@ async function uploadImage(file: File, onSuccess: (url: string) => void, showAle
 // Monaco编辑器实例初始化和自定义快捷键配置
 function configureEditorKeybindings(editor: editor.IStandaloneCodeEditor, autoSave: () => void, setSaveStatus: (status: string) => void) {
   const t = i18n.t;
-  
-  // Ctrl+B: 加粗
+
+  // 创建多行处理函数实例
+  const createMultiLineFormatting = () => {
+    // 逐行包裹格式化（用于加粗、斜体、删除线等）
+    const wrapEachLine = (before: string, after: string, defaultText: string = '') => {
+      if (!editor) return;
+      const selection = editor.getSelection();
+      if (!selection) return;
+
+      const model = editor.getModel();
+      if (!model) return;
+
+      const startLine = selection.startLineNumber;
+      const endLine = selection.endLineNumber;
+
+      // 如果是单行选择，使用原有的简单逻辑
+      if (startLine === endLine) {
+        const selectedText = model.getValueInRange(selection) || defaultText;
+        editor.executeEdits('', [{
+          range: selection,
+          text: before + selectedText + after
+        }]);
+
+        // 定位光标到格式化文本后（仅在没有选中文本时）
+        if (!selectedText || selectedText === defaultText) {
+          const newPosition = new monaco.Position(
+            selection.startLineNumber,
+            selection.startColumn + before.length
+          );
+          editor.setPosition(newPosition);
+        }
+        return;
+      }
+
+      // 多行处理：逐行包裹
+      const edits = [];
+      for (let i = startLine; i <= endLine; i++) {
+        const lineContent = model.getLineContent(i);
+        const trimmedContent = lineContent.trim();
+
+        // 处理所有行，包括空行
+        const textToWrap = trimmedContent || (i === startLine ? defaultText : '');
+        const newContent = before + textToWrap + after;
+
+        edits.push({
+          range: new monaco.Range(i, 1, i, lineContent.length + 1),
+          text: newContent
+        });
+      }
+
+      if (edits.length > 0) {
+        editor.executeEdits('', edits);
+      }
+    };
+
+    return { wrapEachLine };
+  };
+
+  const { wrapEachLine } = createMultiLineFormatting();
+
+  // Ctrl+B: 加粗 - 支持多行处理
   editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB, () => {
-    const selection = editor.getSelection();
-    if (!selection) return;
-    const selectedText = editor.getModel()?.getValueInRange(selection) || '';
-    
-    editor.executeEdits('', [{
-      range: selection,
-      text: `**${selectedText}**`
-    }]);
-    
-    // 定位光标到加粗文本后
-    if (selectedText.length === 0) {
-      const newPosition = new monaco.Position(
-        selection.startLineNumber,
-        selection.startColumn + 2
-      );
-      editor.setPosition(newPosition);
-    }
+    wrapEachLine('**', '**', t('toolbar.bold.defaultText'));
   });
-  
-  // Ctrl+I: 斜体
+
+  // Ctrl+I: 斜体 - 支持多行处理
   editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyI, () => {
-    const selection = editor.getSelection();
-    if (!selection) return;
-    const selectedText = editor.getModel()?.getValueInRange(selection) || '';
-    
-    editor.executeEdits('', [{
-      range: selection,
-      text: `*${selectedText}*`
-    }]);
-    
-    // 定位光标到斜体文本后
-    if (selectedText.length === 0) {
-      const newPosition = new monaco.Position(
-        selection.startLineNumber,
-        selection.startColumn + 1
-      );
-      editor.setPosition(newPosition);
-    }
+    wrapEachLine('*', '*', t('toolbar.italic.defaultText'));
   });
   
   // Ctrl+K: 链接
@@ -1666,24 +1890,17 @@ function configureEditorKeybindings(editor: editor.IStandaloneCodeEditor, autoSa
     }
   });
   
-  // Ctrl+`: 代码
+  // Ctrl+`: 代码 - 支持多行处理
   editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Backquote, () => {
-    const selection = editor.getSelection();
-    if (!selection) return;
-    const selectedText = editor.getModel()?.getValueInRange(selection) || '';
-    
-    editor.executeEdits('', [{
-      range: selection,
-      text: '`' + selectedText + '`'
-    }]);
+    wrapEachLine('`', '`', t('toolbar.code.inline.defaultText'));
   });
-  
-  // Ctrl+Shift+`: 代码块
+
+  // Ctrl+Shift+`: 代码块 - 保持原有逻辑（整体处理）
   editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Backquote, () => {
     const selection = editor.getSelection();
     if (!selection) return;
     const selectedText = editor.getModel()?.getValueInRange(selection) || '';
-    
+
     editor.executeEdits('', [{
       range: selection,
       text: '```\n' + selectedText + '\n```'
@@ -1832,6 +2049,9 @@ export function WritingPage({ id }: { id?: number }) {
 
   // 专注写作模式状态
   const [focusMode, setFocusMode] = useState(false);
+
+  // 编辑器加载状态
+  const [editorLoaded, setEditorLoaded] = useState(false);
 
   // 移除复杂的高度计算，使用CSS Grid来解决布局问题
 
@@ -2234,7 +2454,6 @@ export function WritingPage({ id }: { id?: number }) {
     insertText = insertText.replace(/\n{3,}/g, '\n\n');
     if (insertText) {
       editor.executeEdits('', [{ range: selection, text: insertText }]);
-      editor.focus();
     }
     setSelectedFiles(null);
   }, [selectedFiles]);
@@ -2406,8 +2625,13 @@ export function WritingPage({ id }: { id?: number }) {
                   style={{ gridRow: '2' }}
                 >
                   <div className="pb-0 border-b border-neutral-200/60 dark:border-neutral-700/60">
-                    {/* @ts-ignore */}
-                    <MarkdownToolbar editor={editorRef.current} />
+                    {editorLoaded && editorRef.current ? (
+                      <MarkdownToolbar editor={editorRef.current} />
+                    ) : (
+                      <div className="h-8 flex items-center justify-center text-gray-400 text-sm">
+                        编辑器加载中...
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -2455,6 +2679,7 @@ export function WritingPage({ id }: { id?: number }) {
                       <Editor
                         onMount={(editor, monaco) => {
                           editorRef.current = editor;
+                          setEditorLoaded(true);
                           configureEditorWithHistory(editor);
 
                           // 定义透明主题
@@ -2472,6 +2697,9 @@ export function WritingPage({ id }: { id?: number }) {
                               'editorWidget.border': '#00000000',
                               'editorHoverWidget.background': '#ffffff',
                               'editorSuggestWidget.background': '#ffffff',
+                              // 光标配置 - 使用醒目的蓝色
+                              'editorCursor.foreground': '#007ACC',
+                              'editorCursor.background': '#ffffff',
                               // Minimap透明配置
                               'minimap.background': '#00000000',
                               'minimapSlider.background': 'rgba(0, 122, 255, 0.1)',
@@ -2494,6 +2722,9 @@ export function WritingPage({ id }: { id?: number }) {
                               'editorWidget.border': '#00000000',
                               'editorHoverWidget.background': '#1e1e1e',
                               'editorSuggestWidget.background': '#1e1e1e',
+                              // 光标配置 - 使用醒目的蓝色
+                              'editorCursor.foreground': '#007ACC',
+                              'editorCursor.background': '#000000',
                               // Minimap透明配置
                               'minimap.background': '#00000000',
                               'minimapSlider.background': 'rgba(0, 122, 255, 0.1)',
@@ -2543,6 +2774,11 @@ export function WritingPage({ id }: { id?: number }) {
                           overviewRulerLanes: 0,
                           hideCursorInOverviewRuler: true,
                           overviewRulerBorder: false,
+                          // 光标配置 - 确保光标可见和闪烁
+                          cursorStyle: 'line',
+                          cursorWidth: 2,
+                          cursorBlinking: 'blink',
+                          cursorSmoothCaretAnimation: true,
                           scrollbar: {
                             verticalScrollbarSize: 8,
                             horizontalScrollbarSize: 8,
@@ -2567,7 +2803,12 @@ export function WritingPage({ id }: { id?: number }) {
                         onScroll={handlePreviewScroll}
                         className="h-full overflow-auto p-4"
                       >
-                        <div className="prose prose-lg dark:prose-invert max-w-none">
+                        <div className="prose prose-lg dark:prose-invert max-w-none" style={{
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word',
+                          wordBreak: 'break-word',
+                          whiteSpace: 'pre-wrap'
+                        }}>
                           <Markdown content={content ? content : `> ${t('content.writing_placeholder')}`} />
                         </div>
                       </div>
