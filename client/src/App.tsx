@@ -217,6 +217,10 @@ function App() {
 
             <RouteMe path="/writing/:id">
               {({ id }) => {
+                // 如果id是"new"，则不传递id参数，保持与/writing路由一致
+                if (id === "new") {
+                  return <WritingPage />
+                }
                 const id_num = tryInt(0, id)
                 return (
                   <WritingPage id={id_num} />

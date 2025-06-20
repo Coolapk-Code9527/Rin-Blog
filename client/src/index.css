@@ -1582,62 +1582,7 @@ button[role="option"] > * {
   animation: anvil 0.3s cubic-bezier(0.38, 0.1, 0.36, 0.9) forwards;
 }
 
-/* macOS风格弹窗动画 */
-.animate-in {
-  animation-fill-mode: both;
-}
-
-.fade-in-0 {
-  animation-name: fadeIn;
-}
-
-.zoom-in-95 {
-  animation-name: zoomIn95;
-}
-
-.duration-200 {
-  animation-duration: 0.2s;
-}
-
-.duration-300 {
-  animation-duration: 0.3s;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes zoomIn95 {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-/* flex居中专用动画 - 不包含translate */
-@keyframes zoomInFlex {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.zoom-in-flex {
-  animation-name: zoomInFlex;
-}
+/* 移除重复的动画定义，统一使用modal-animations.css中的定义 */
 
 /* 弹窗遮罩层样式 - 使用统一的层级管理 */
 .ReactModal__Overlay {
@@ -2216,15 +2161,7 @@ i[class^="ri-"]::before, i[class*=" ri-"]::before {
   @apply bg-yellow-100 dark:bg-yellow-800/40 px-1 rounded text-gray-900 dark:text-gray-100;
 }
 
-/* 导航栏相关动画和样式 */
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+/* 导航栏相关动画和样式 - 使用modal-animations.css中的fadeIn定义 */
 
 /* 导航项选中效果 - 桌面端的下划线 */
 @media (min-width: 1024px) {

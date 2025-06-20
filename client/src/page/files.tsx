@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileManager } from '../components/file_manager/FileManager';
 // @ts-ignore - 忽略类型错误
@@ -19,6 +19,21 @@ export function FilesPage() {
   // 使用函数默认值方式
   const pageTitle = t('files.page_title');
   useDocumentTitle(pageTitle, '- Rin Blog');
+
+  // 权限检查：检查是否有token，如果有token但profile为空，说明还在加载中
+  const hasToken = useMemo(() => document.cookie.includes('token='), []);
+
+  // 如果有token但profile还没加载，显示加载状态
+  if (hasToken && !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">{t('loading', { defaultValue: '加载中...' })}</p>
+        </div>
+      </div>
+    );
+  }
 
   // 权限检查：只有管理员可以访问文件管理页面
   if (!profile || !profile.permission) {

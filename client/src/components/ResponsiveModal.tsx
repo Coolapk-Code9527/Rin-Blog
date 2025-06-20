@@ -136,10 +136,7 @@ export function ResponsiveModal({
       'shadow-enhanced-2xl',
       'w-full',
       'flex',
-      'flex-col',
-      'transition-all',
-      'duration-300',
-      'ease-out'
+      'flex-col'
     ];
 
     if (isMobile) {

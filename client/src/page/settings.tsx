@@ -1,5 +1,5 @@
 import * as Switch from '@radix-ui/react-switch';
-import {ChangeEvent, useContext, useEffect, useRef, useState} from "react";
+import {ChangeEvent, useContext, useEffect, useRef, useState, useMemo} from "react";
 import {useTranslation} from "react-i18next";
 import { InlineSpinner } from "../components/loading";
 import Modal from "react-modal";
@@ -37,21 +37,8 @@ export function Settings() {
     const [serverConfig, setServerConfig] = useState<ConfigWrapper>(defaultServerConfigWrapper);
     const ref = useRef(false);
     const { showAlert, AlertUI } = useAlert();
+    const { showConfirm, ConfirmUI } = useConfirm();
     const { showToast } = useToast();
-
-    // 权限检查：只有管理员可以访问设置页面
-    if (!profile || !profile.permission) {
-        return (
-            <UnauthorizedAccess
-                title={t('settings.unauthorized.title', { defaultValue: '设置权限受限' })}
-                description={t('settings.unauthorized.description', {
-                    defaultValue: '系统设置功能仅限管理员使用。请使用管理员账户登录后再试。'
-                })}
-                showLoginButton={!profile} // 只有未登录时显示登录按钮
-            />
-        );
-    }
-
 
     useEffect(() => {
         if (ref.current) return;
@@ -141,6 +128,34 @@ export function Settings() {
         }
     }
 
+    // 权限检查：检查是否有token，如果有token但profile为空，说明还在加载中
+    const hasToken = useMemo(() => document.cookie.includes('token='), []);
+
+    // 如果有token但profile还没加载，显示加载状态
+    if (hasToken && !profile) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme mx-auto mb-4"></div>
+                    <p className="text-gray-600 dark:text-gray-400">{t('loading', { defaultValue: '加载中...' })}</p>
+                </div>
+            </div>
+        );
+    }
+
+    // 权限检查：只有管理员可以访问设置页面
+    if (!profile || !profile.permission) {
+        return (
+            <UnauthorizedAccess
+                title={t('settings.unauthorized.title', { defaultValue: '设置权限受限' })}
+                description={t('settings.unauthorized.description', {
+                    defaultValue: '系统设置功能仅限管理员使用。请使用管理员账户登录后再试。'
+                })}
+                showLoginButton={!profile} // 只有未登录时显示登录按钮
+            />
+        );
+    }
+
     return (
         <div className="flex flex-col justify-center items-center">
             {/* @ts-ignore - 忽略Provider的类型检查 */}
@@ -197,7 +212,7 @@ export function Settings() {
                                         onFileChange={handleFaviconChange}
                                     />
                                     <ItemInput title={t('settings.footer.title')} description={t('settings.footer.desc')} type="client" configKey="footer" configKeyTitle="Footer HTML" />
-                                    <ItemButton title={t('settings.cache.clear.title')} description={t('settings.cache.clear.desc')} buttonTitle={t('clear')} onConfirm={async () => {
+                                    <ItemButton title={t('settings.cache.clear.title')} description={t('settings.cache.clear.desc')} buttonTitle={t('clear')} showConfirm={showConfirm} onConfirm={async () => {
                                         await client.config.cache.delete(undefined, {
                                             headers: headersWithAuth()
                                         })
@@ -266,6 +281,7 @@ export function Settings() {
                 </div>
             </Modal>
             <AlertUI />
+            <ConfirmUI />
         </div>
     );
 }
@@ -288,7 +304,6 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
     const defaultValue = config?.default<boolean>(configKey);
     const [checked, setChecked] = useState(defaultValue);
     const [loading, setLoading] = useState(false);
-    const { showAlert, AlertUI } = useAlert();
     const { t } = useTranslation();
     const { showToast } = useToast();
 
@@ -366,7 +381,6 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
                     </p>
                 </div>
             </div>
-            <AlertUI />
         </div >
     );
 }
@@ -377,7 +391,6 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
     const [value, setValue] = useState("");
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-    const { showAlert, AlertUI } = useAlert();
     const { t } = useTranslation();
     const { showToast } = useToast();
 
@@ -483,7 +496,6 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
                     </div>
                 </div>
             </Modal>
-            <AlertUI />
         </div >
     );
 }
@@ -494,7 +506,8 @@ function ItemButton({
     buttonTitle,
     onConfirm,
     alertTitle,
-    alertDescription
+    alertDescription,
+    showConfirm
 }:
     {
         title: string,
@@ -503,8 +516,8 @@ function ItemButton({
         onConfirm: () => Promise<void>,
         alertTitle: string,
         alertDescription: string,
+        showConfirm: (title: string, message: string, onConfirm?: () => Promise<void> | void) => void,
     }) {
-    const { showConfirm, ConfirmUI } = useConfirm();
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -528,7 +541,6 @@ function ItemButton({
                     </p>
                 </div>
             </div>
-            <ConfirmUI />
         </div >
     );
 }

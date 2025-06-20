@@ -122,21 +122,17 @@ export const macOSFullscreenModalStyles = {
 
 // 统一的弹窗容器样式类名
 export const MODAL_CONTAINER_CLASSES = {
-  // 标准弹窗容器 - 使用统一的毛玻璃系统
+  // 标准弹窗容器 - 使用统一的毛玻璃系统和自定义动画
   standard: `
     glass-layer-3
     shadow-enhanced-2xl
     rounded-2xl
     p-6
     w-full
-    animate-in
-    fade-in-0
-    zoom-in-flex
-    duration-200
-    ease-out
+    animate-modalEnter
   `,
 
-  // 大尺寸弹窗容器 - 使用统一的毛玻璃系统
+  // 大尺寸弹窗容器 - 使用统一的毛玻璃系统和自定义动画
   large: `
     glass-layer-3
     rounded-2xl
@@ -144,11 +140,7 @@ export const MODAL_CONTAINER_CLASSES = {
     overflow-hidden
     flex
     flex-col
-    animate-in
-    fade-in-0
-    zoom-in-flex
-    duration-200
-    ease-out
+    animate-modalEnter
   `,
 
   // 全屏预览容器
@@ -158,10 +150,7 @@ export const MODAL_CONTAINER_CLASSES = {
     flex
     items-center
     justify-center
-    animate-in
-    fade-in-0
-    duration-300
-    ease-out
+    animate-fadeIn
   `
 };
 

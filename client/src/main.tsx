@@ -72,7 +72,7 @@ const i18n = i18next;
 
 const helmetContext = {};
 
-// 修复React.StrictMode组件问题
+// 重新启用React.StrictMode进行深入分析
 ReactDOM.createRoot(document.getElementById('root')!).render(
   // @ts-ignore - 忽略React.StrictMode的类型检查
   <React.StrictMode>

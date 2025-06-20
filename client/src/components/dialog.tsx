@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import Modal from "react-modal";
+import { StrictModeModal } from "./StrictModeModal";
 import { Button, ButtonWithLoading } from "./button";
 import {
     macOSModalStyles,
     MODAL_CONTAINER_CLASSES,
     useModalKeyboard,
-    useModalBodyLock,
-    MODAL_Z_INDEX
+    useModalBodyLock
 } from "../utils/modal-config";
 
 export type Confirm = {
@@ -61,13 +60,12 @@ export function useAlert() {
     const { t } = useTranslation()
 
     const AlertUI = () => (
-        <Modal
+        <StrictModeModal
             isOpen={isOpen}
             shouldCloseOnOverlayClick={true}
             shouldCloseOnEsc={true}
             onRequestClose={close}
             style={macOSModalStyles}
-            ariaHideApp={false}
         >
             <MacOSModalContainer>
                 <div className="flex flex-col items-center text-center space-y-6">
@@ -95,7 +93,7 @@ export function useAlert() {
                     </div>
                 </div>
             </MacOSModalContainer>
-        </Modal>
+        </StrictModeModal>
     )
 
     return { showAlert, close, AlertUI }
@@ -106,11 +104,11 @@ export function useConfirm() {
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false);
 
-    const close = () => {
-        setConfirm(null)
-        setIsOpen(false)
-        setLoading(false)
-    }
+    const close = useCallback(() => {
+        setConfirm(null);
+        setIsOpen(false);
+        setLoading(false);
+    }, []);
 
     const showConfirm = (title: string, message: string, onConfirm?: () => Promise<void> | void) => {
         setConfirm({
@@ -121,26 +119,30 @@ export function useConfirm() {
         setIsOpen(true)
     }
 
-    const handleConfirm = async () => {
+    const handleConfirm = useCallback(async () => {
+        if (loading) return;
         setLoading(true);
         try {
             await confirm?.onConfirm();
-            setIsOpen(false);
+            close();
         } catch (error) {
             console.error('Confirm action failed:', error);
-        } finally {
             setLoading(false);
         }
-    };
+    }, [confirm, loading, close]);
 
-    // 使用统一的键盘事件处理和body锁定（加载时禁用）
-    useModalKeyboard(isOpen, close, handleConfirm, loading);
+    // 使用统一的键盘事件处理和body锁定（避免loading依赖项变化）
+    useModalKeyboard(isOpen, close, () => {
+        if (!loading) {
+            handleConfirm();
+        }
+    });
     useModalBodyLock(isOpen);
 
     const { t } = useTranslation()
 
     const ConfirmUI = () => (
-        <Modal
+        <StrictModeModal
             isOpen={isOpen}
             shouldCloseOnOverlayClick={!loading}
             shouldCloseOnEsc={!loading}
@@ -150,7 +152,6 @@ export function useConfirm() {
                 }
             }}
             style={macOSModalStyles}
-            ariaHideApp={false}
         >
             <MacOSModalContainer>
                 <div className="flex flex-col items-center text-center space-y-6">
@@ -184,7 +185,7 @@ export function useConfirm() {
                     </div>
                 </div>
             </MacOSModalContainer>
-        </Modal>
+        </StrictModeModal>
     )
 
     return { showConfirm, close, ConfirmUI }

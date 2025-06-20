@@ -1776,25 +1776,10 @@ function configureEditorKeybindings(editor: editor.IStandaloneCodeEditor, autoSa
 export function WritingPage({ id }: { id?: number }) {
   const { t } = useTranslation();
   const colorMode = useColorMode();
+  const profile = useContext(ProfileContext);
   const cache = Cache.with(id);
   const editorRef = useRef<editor.IStandaloneCodeEditor>();
   const previewRef = useRef<HTMLDivElement>(null);
-
-  // 权限检查
-  const profile = useContext(ProfileContext);
-
-  // 如果用户未登录或不是管理员，显示未授权页面
-  if (!profile || !profile.permission) {
-    return (
-      <UnauthorizedAccess
-        title={t('writing.unauthorized.title', { defaultValue: '写作权限受限' })}
-        description={t('writing.unauthorized.description', {
-          defaultValue: '写作功能仅限管理员使用。请使用管理员账户登录后再试。'
-        })}
-        showLoginButton={!profile} // 只有未登录时显示登录按钮
-      />
-    );
-  }
 
   // 使用智能毛玻璃效果
   const editorGlassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -2126,31 +2111,43 @@ export function WritingPage({ id }: { id?: number }) {
   }, [showAlert]);
 
   useEffect(() => {
-    if (id) {
-      client
-        .feed({ id })
-        .get({
-          headers: headersWithAuth(),
-        })
-        .then((response) => {
-          const { data } = response;
-          if (data && typeof data !== "string") {
-            // 使用ExtendedFeed类型
-            const feedData = data as unknown as ExtendedFeed;
-            
-            if (title == "" && feedData.title) setTitle(feedData.title);
-            if (tags == "" && feedData.hashtags)
-              setTags(feedData.hashtags.map(({ name }) => `#${name}`).join(" "));
-            if (alias == "" && feedData.alias) setAlias(feedData.alias);
-            if (content == "") setContent(feedData.content);
-            if (summary == "") setSummary(feedData.summary || "");
-            setListed(feedData.listed === 1);
-            setDraft(feedData.draft === 1);
-            setCreatedAt(new Date(feedData.createdAt));
-          }
-        });
+    // 只有当id存在且大于0时才从服务器加载文章内容
+    // 这确保新文章页面不会被覆盖
+    if (id && id > 0) {
+      // 添加延迟，确保缓存状态已经初始化
+      setTimeout(() => {
+        client
+          .feed({ id })
+          .get({
+            headers: headersWithAuth(),
+          })
+          .then((response) => {
+            const { data } = response;
+            if (data && typeof data !== "string") {
+              // 使用ExtendedFeed类型
+              const feedData = data as unknown as ExtendedFeed;
+
+              // 检查localStorage中的缓存内容，而不是React状态
+              const cachedTitle = cache.get("title") || "";
+              const cachedTags = cache.get("tags") || "";
+              const cachedAlias = cache.get("alias") || "";
+              const cachedContent = cache.get("content") || "";
+              const cachedSummary = cache.get("summary") || "";
+
+              if (cachedTitle == "" && feedData.title) setTitle(feedData.title);
+              if (cachedTags == "" && feedData.hashtags)
+                setTags(feedData.hashtags.map(({ name }) => `#${name}`).join(" "));
+              if (cachedAlias == "" && feedData.alias) setAlias(feedData.alias);
+              if (cachedContent == "") setContent(feedData.content);
+              if (cachedSummary == "") setSummary(feedData.summary || "");
+              setListed(feedData.listed === 1);
+              setDraft(feedData.draft === 1);
+              setCreatedAt(new Date(feedData.createdAt));
+            }
+          });
+      }, 100); // 100ms延迟，确保缓存状态已初始化
     }
-  }, []);
+  }, [id]); // 添加id作为依赖，确保id变化时重新执行
 
   // 加载自定义模板
   useEffect(() => {
@@ -2247,6 +2244,36 @@ export function WritingPage({ id }: { id?: number }) {
   // 移除内部组件定义，将在组件外部定义
 
   // 移除内部组件定义，使用外部定义的组件
+
+
+
+  // 权限检查：检查是否有token，如果有token但profile为空，说明还在加载中
+  const hasToken = useMemo(() => document.cookie.includes('token='), []);
+
+  // 如果有token但profile还没加载，显示加载状态
+  if (hasToken && !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">{t('loading', { defaultValue: '加载中...' })}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 如果用户未登录或不是管理员，显示未授权页面
+  if (!profile || !profile.permission) {
+    return (
+      <UnauthorizedAccess
+        title={t('writing.unauthorized.title', { defaultValue: '写作权限受限' })}
+        description={t('writing.unauthorized.description', {
+          defaultValue: '写作功能仅限管理员使用。请使用管理员账户登录后再试。'
+        })}
+        showLoginButton={!profile} // 只有未登录时显示登录按钮
+      />
+    );
+  }
 
   return (
     <>
