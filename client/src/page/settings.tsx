@@ -210,6 +210,7 @@ export function Settings() {
                                         accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
                                         onFileChange={handleFaviconChange}
                                     />
+                                    <ItemInput title="作者简介" description="设置文章详情页显示的作者简介信息，支持自定义个人介绍内容" type="client" configKey="author.bio" configKeyTitle="作者简介" />
                                     <ItemInput title={t('settings.footer.title')} description={t('settings.footer.desc')} type="client" configKey="footer" configKeyTitle="Footer HTML" />
                                     <ItemButton title={t('settings.cache.clear.title')} description={t('settings.cache.clear.desc')} buttonTitle={t('clear')} showConfirm={showConfirm} onConfirm={async () => {
                                         await client.config.cache.delete(undefined, {

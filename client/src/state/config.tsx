@@ -7,7 +7,8 @@ export const defaultClientConfig = new Map(Object.entries({
     "login.enabled": true,
     "S3_ACCESS_HOST": "",
     "background.enabled": false,
-    "background.url": ""
+    "background.url": "",
+    "author.bio": "热爱分享技术与生活的博主，专注于前端开发和用户体验设计。"
 }))
 
 export const defaultServerConfig = new Map(Object.entries({

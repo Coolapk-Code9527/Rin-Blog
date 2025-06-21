@@ -308,39 +308,6 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                     </div>
                   </div>
                 )}
-                {/* 标题与下方内容间增加视觉分隔 */}
-                <div className="mt-4" />
-              </div>
-              <div className="flex justify-center mb-2">
-                <div className="flex flex-wrap gap-2 justify-center w-full">
-                  <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 py-1 text-gray-500 dark:text-gray-400 text-[15px] font-medium w-full sm:w-auto">
-                    <div className="flex items-center gap-1">
-                      <i className="ri-calendar-line text-blue-500 mr-1"></i>
-                      <span>{t("published_at")} {timeago(feed.createdAt)}</span>
-                    </div>
-                    {feed.createdAt !== feed.updatedAt && (
-                      <>
-                        <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
-                        <div className="flex items-center gap-1">
-                          <i className="ri-history-line text-purple-400 mr-1"></i>
-                          <span>{t("feed_card.updated$time", { time: timeago(feed.updatedAt) })}</span>
-                        </div>
-                      </>
-                    )}
-                    {counterEnabled && (
-                      <>
-                        <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
-                        <div className="flex items-center gap-1">
-                          <i className="ri-eye-line text-green-500 mr-1"></i>
-                          <span>{t("count.pv")} {feed.pv}</span>
-                          <span className="mx-1 text-gray-300 dark:text-gray-600">|</span>
-                          <i className="ri-user-3-line text-pink-400 mr-1"></i>
-                          <span>{t("count.uv")} {feed.uv}</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
               </div>
               <hr className="my-4 h-1 border-0 rounded-full bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70 animate-fadeIn" />
               <div className="mt-6">
@@ -355,7 +322,8 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                 }}
               />
               </div>
-              <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/30 flex flex-col gap-3">
+              <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/30 flex flex-col gap-6">
+                {/* 标签区域 */}
                 {feed.hashtags.length > 0 && (
                   <div className="flex flex-row flex-wrap gap-x-2 gap-y-1.5">
                     {feed.hashtags.map(({ name }, index) => (
@@ -365,23 +333,149 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                     ))}
                   </div>
                 )}
-                <div className="mt-4 flex flex-col items-center justify-center">
-                  <div className="relative flex-shrink-0 mb-2">
-                  <img
-                    src={feed.user.avatar || "/avatar.png"}
-                      className="w-16 h-16 rounded-full border-2 border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300"
+
+                {/* 文章统计信息 */}
+                <div className={`grid gap-2 sm:gap-4 py-3 sm:py-4 px-3 sm:px-6 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-200/60 dark:border-blue-700/60 ${counterEnabled ? 'grid-cols-4' : 'grid-cols-2'}`}>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
+                      <i className="ri-calendar-line text-blue-600 dark:text-blue-400 text-xs sm:text-base"></i>
+                      <div className="text-sm sm:text-lg font-bold text-blue-600 dark:text-blue-400">{new Date(feed.createdAt).toLocaleDateString()}</div>
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">发布日期</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
+                      <i className="ri-history-line text-green-600 dark:text-green-400 text-xs sm:text-base"></i>
+                      <div className="text-sm sm:text-lg font-bold text-green-600 dark:text-green-400">{new Date(feed.updatedAt).toLocaleDateString()}</div>
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">更新日期</div>
+                  </div>
+                  {counterEnabled && (
+                    <>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
+                          <i className="ri-eye-line text-purple-600 dark:text-purple-400 text-xs sm:text-base"></i>
+                          <div className="text-sm sm:text-lg font-bold text-purple-600 dark:text-purple-400">{feed.pv}</div>
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">浏览量</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
+                          <i className="ri-user-3-line text-pink-600 dark:text-pink-400 text-xs sm:text-base"></i>
+                          <div className="text-sm sm:text-lg font-bold text-pink-600 dark:text-pink-400">{feed.uv}</div>
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">访客数</div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* 作者信息卡片 */}
+                <div className="flex flex-col sm:flex-row items-center gap-4 py-6 px-6 bg-gradient-to-r from-gray-50/80 to-blue-50/80 dark:from-gray-800/80 dark:to-blue-900/30 rounded-xl border border-gray-200/60 dark:border-gray-700/60">
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={feed.user.avatar || "/avatar.png"}
+                      className="w-20 h-20 rounded-full border-3 border-white dark:border-gray-800 shadow-lg hover:shadow-xl transition-all duration-300"
                       alt={feed.user.username}
                     />
                     {profile?.permission && (
-                      <div className="absolute -top-1 -right-1 bg-theme text-white rounded-full w-6 h-6 flex items-center justify-center">
-                        <i className="ri-verified-badge-fill text-[12px]"></i>
+                      <div className="absolute -top-1 -right-1 bg-theme text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg">
+                        <i className="ri-verified-badge-fill text-sm"></i>
                       </div>
                     )}
                   </div>
-                  <div className="text-center">
-                    <span className="text-gray-800 dark:text-gray-200 font-medium text-base cursor-default hover:text-gray-900 dark:hover:text-white transition-colors">
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-1">
                       {feed.user.username}
-                    </span>
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      {config?.get<string>('author.bio') || '热爱分享技术与生活的博主，专注于前端开发和用户体验设计。'}
+                    </p>
+                    <div className="flex items-center justify-center sm:justify-start gap-3">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <i className="ri-calendar-line"></i>
+                        加入于 {new Date(feed.createdAt).getFullYear()}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <i className="ri-article-line"></i>
+                        文章作者
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 社交分享区域 - 移到最底部 */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-4 sm:px-6 bg-gray-50/50 dark:bg-gray-800/30 rounded-xl border border-gray-200/60 dark:border-gray-700/60">
+                  <div className="flex items-center gap-3">
+                    <i className="ri-share-line text-theme text-lg"></i>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">分享这篇文章</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const url = window.location.href;
+                        const text = `${feed.title} - ${siteName}`;
+                        if (navigator.share) {
+                          navigator.share({ title: feed.title, text, url });
+                        } else {
+                          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors duration-200"
+                      title="分享到 Twitter"
+                    >
+                      <i className="ri-twitter-x-line"></i>
+                      <span className="hidden sm:inline">Twitter</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const url = window.location.href;
+                        const text = `${feed.title} - ${siteName}`;
+                        window.open(`https://connect.qq.com/widget/shareqq/index.html?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`, '_blank');
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
+                      title="分享到 QQ"
+                    >
+                      <i className="ri-qq-line"></i>
+                      <span className="hidden sm:inline">QQ</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const url = window.location.href;
+                        const text = `${feed.title} - ${siteName}`;
+                        window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-400 hover:bg-blue-500 rounded-lg transition-colors duration-200"
+                      title="分享到 Telegram"
+                    >
+                      <i className="ri-telegram-line"></i>
+                      <span className="hidden sm:inline">Telegram</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const url = window.location.href;
+                        const text = `${feed.title} - ${siteName}`;
+                        // 微信分享需要生成二维码或使用微信 JS-SDK
+                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+                        window.open(qrUrl, '_blank');
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors duration-200"
+                      title="生成微信分享二维码"
+                    >
+                      <i className="ri-wechat-line"></i>
+                      <span className="hidden sm:inline">微信</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        // 这里可以添加一个提示
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200"
+                      title="复制链接"
+                    >
+                      <i className="ri-link"></i>
+                      <span className="hidden sm:inline">复制链接</span>
+                    </button>
                   </div>
                 </div>
               </div>
