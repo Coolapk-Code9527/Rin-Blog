@@ -1096,11 +1096,6 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
     // 替换复杂的多行代码块为简单提示
     processed = processed.replace(/```[\s\S]*?```/g, '[代码块]');
     
-    // 限制内容长度（如果太长可能影响渲染性能）
-    if (processed.length > 500) {
-      processed = processed.substring(0, 500) + '...';
-    }
-    
     return processed;
   }, [content]);
   

@@ -3503,6 +3503,46 @@ main h1, [role="complementary"] h3, aside h3 {
   margin-top: 0 !important;
 }
 
+/* 视图切换动画效果 */
+.view-transition-container {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.view-transition-fade-in {
+  animation: viewFadeIn 0.4s ease-out forwards;
+}
+
+@keyframes viewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 列表视图专用样式优化 */
+.list-view-card {
+  transition: all 0.2s ease-out;
+}
+
+.list-view-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1), 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* 网格视图专用样式优化 */
+.grid-view-card {
+  transition: all 0.3s ease-out;
+}
+
+.grid-view-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12), 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
 .wmde-markdown pre code,
 .toc-content pre code,
 .markdown-body pre code {

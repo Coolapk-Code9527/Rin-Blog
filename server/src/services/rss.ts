@@ -17,6 +17,7 @@ import { getEnv } from "../utils/di";
 import { extractImage } from "../utils/image";
 import { createS3Client } from "../utils/s3";
 import { ClientConfig } from "../utils/cache";
+import { markdownToPlainText } from "../utils/markdown";
 
 export function RSSService() {
     const env: Env = getEnv();
@@ -166,9 +167,7 @@ export async function rssCrontab(env: Env) {
                 description:
                     summary.length > 0
                         ? summary
-                        : content.length > 100
-                          ? content.slice(0, 100)
-                          : content,
+                        : markdownToPlainText(content, 400),
                 content: contentHtml,
                 author: [{ name: user.username }],
                 image: extractImage(content),

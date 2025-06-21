@@ -8,7 +8,7 @@
  * @param {number} maxLength 可选，截断的最大长度
  * @returns {string} 转换后的纯文本
  */
-export function markdownToPlainText(markdown: string, maxLength: number = 150): string {
+export function markdownToPlainText(markdown: string, maxLength: number = 400): string {
   if (!markdown) return '';
 
   // 优化：调整回合理的输入长度限制，平衡性能和功能完整性
