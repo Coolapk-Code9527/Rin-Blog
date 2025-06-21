@@ -157,8 +157,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
 
                 {/* 今日发布标识 */}
                 {isToday() && (
-                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-medium px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full shadow-md z-30 flex items-center justify-center">
-                        <i className="ri-time-line mr-1"></i>
+                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-medium px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full shadow-md z-30 flex items-center justify-center gap-1">
+                        <i className="ri-time-line"></i>
                         <span className="hidden xs:inline">{t('today')}</span>
                     </div>
                 )}

@@ -29,6 +29,8 @@ import { useTranslation } from 'react-i18next'
 import { NotFoundPage } from './page/not-found.tsx'
 import { ToastProvider } from './components/toast/Toast'
 import { GlobalDialogProvider } from './components/dialog'
+import { GlobalMusicPlayer } from './components/GlobalMusicPlayer'
+import { MusicProvider } from './context/MusicContext'
 
 // 返回顶部按钮组件
 function BackToTop() {
@@ -159,8 +161,9 @@ function App() {
         <ToastProvider>
           {/* @ts-ignore - 忽略Provider的类型检查 */}
           <ClientConfigContext.Provider value={config}>
-            {/* @ts-ignore - 忽略Provider的类型检查 */}
-            <ProfileContext.Provider value={profile}>
+            <MusicProvider>
+              {/* @ts-ignore - 忽略Provider的类型检查 */}
+              <ProfileContext.Provider value={profile}>
               <Helmet>
                 {favicon &&
                   <link rel="icon" href={favicon} />}
@@ -278,7 +281,9 @@ function App() {
                 </RouteMe>
               </Switch>
               <BackToTop />
+              <GlobalMusicPlayer />
             </ProfileContext.Provider>
+            </MusicProvider>
           </ClientConfigContext.Provider>
         </ToastProvider>
       </GlobalDialogProvider>

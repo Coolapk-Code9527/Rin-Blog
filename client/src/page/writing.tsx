@@ -524,16 +524,18 @@ function TagManager({ tags, setTags }: {
     tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : []
   , [tags]);
 
-  // 标签颜色配置
+  // 标签颜色配置（与其他页面保持一致的鲜艳颜色）
   const tagColors = useMemo(() => [
-    'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700',
-    'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700',
-    'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-700',
-    'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-700',
-    'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700',
-    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-700',
-    'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-700',
-    'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-700',
+    'bg-red-500 text-white border-red-500',
+    'bg-emerald-500 text-white border-emerald-500',
+    'bg-yellow-500 text-white border-yellow-500',
+    'bg-blue-500 text-white border-blue-500',
+    'bg-purple-500 text-white border-purple-500',
+    'bg-pink-500 text-white border-pink-500',
+    'bg-indigo-500 text-white border-indigo-500',
+    'bg-teal-500 text-white border-teal-500',
+    'bg-orange-500 text-white border-orange-500',
+    'bg-cyan-500 text-white border-cyan-500',
   ], []);
 
   // 根据标签内容生成颜色索引
@@ -566,13 +568,13 @@ function TagManager({ tags, setTags }: {
       {tagArray.map((tag, index) => (
         <span
           key={index}
-          className={`inline-flex items-center px-3 py-2 rounded-lg text-xs border ${getTagColor(tag)} shadow-sm h-8 font-medium`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 ${getTagColor(tag)}`}
         >
-          <i className="ri-price-tag-3-fill mr-1.5 text-xs"></i>
+          <i className="ri-price-tag-3-line text-xs opacity-80"></i>
           {tag}
           <button
             onClick={() => removeTag(tag)}
-            className="ml-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-1 transition-colors"
+            className="ml-1 hover:bg-white/20 rounded-full p-0.5 transition-colors"
           >
             <i className="ri-close-line text-xs"></i>
           </button>

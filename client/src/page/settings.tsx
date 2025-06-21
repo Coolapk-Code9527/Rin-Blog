@@ -23,7 +23,24 @@ import { macOSModalStyles, MODAL_CONTAINER_CLASSES, useModalKeyboard, useModalBo
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { ProfileContext } from "../state/profile";
 import UnauthorizedAccess from "../components/UnauthorizedAccess";
+import { AnnouncementManager } from "../components/sidebar/AnnouncementManager";
 
+
+// 定义设置标签页类型
+interface SettingsTab {
+    id: string;
+    title: string;
+    icon: string;
+}
+
+// 设置标签页配置
+const settingsTabs: SettingsTab[] = [
+    { id: 'basic', title: '基础设置', icon: 'ri-settings-line' },
+    { id: 'profile', title: '个人资料', icon: 'ri-user-line' },
+    { id: 'sidebar', title: '侧边栏', icon: 'ri-layout-right-line' },
+    { id: 'music', title: '音乐播放器', icon: 'ri-music-line' },
+    { id: 'advanced', title: '高级设置', icon: 'ri-tools-line' }
+];
 
 export function Settings() {
     const { t } = useTranslation();
@@ -38,6 +55,153 @@ export function Settings() {
     const ref = useRef(false);
     const { showAlert, showConfirm } = useGlobalDialog();
     const { showToast } = useToast();
+
+    // 标签页状态管理
+    const [activeTab, setActiveTab] = useState('basic');
+
+    // 渲染标签页内容
+    const renderTabContent = () => {
+        switch (activeTab) {
+            case 'basic':
+                return renderBasicSettings();
+            case 'profile':
+                return renderProfileSettings();
+            case 'sidebar':
+                return renderSidebarSettings();
+            case 'music':
+                return renderMusicSettings();
+            case 'advanced':
+                return renderAdvancedSettings();
+            default:
+                return renderBasicSettings();
+        }
+    };
+
+    // 基础设置标签页
+    const renderBasicSettings = () => (
+        <>
+            {/* 页面背景设置分组 */}
+            <div className="mb-8">
+                <ItemTitle title={t('settings.background.title')} />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                    <ItemSwitch title={t('settings.background.enable.title')} description={t('settings.background.enable.desc')} type="client" configKey="background.enabled" />
+                    <ItemInput title={t('settings.background.url.title')} configKeyTitle={t('settings.background.url.title')} description={t('settings.background.url.desc')} type="client" configKey="background.url" />
+                </div>
+            </div>
+
+            {/* 友情链接设置分组 */}
+            <div className="mb-8">
+                <ItemTitle title={t('settings.friend.title')} />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                    <ItemSwitch title={t('settings.friend.apply.title')} description={t('settings.friend.apply.desc')} type="client" configKey="friend_apply_enable" />
+                    <ItemSwitch title={t('settings.friend.health.title')} description={t('settings.friend.health.desc')} type="server" configKey="friend_crontab" />
+                    <ItemInput title={t('settings.friend.health.ua.title')} description={t('settings.friend.health.ua.desc')} type="server" configKey="friend_ua" configKeyTitle="User-Agent" />
+                </div>
+            </div>
+        </>
+    );
+
+    // 个人资料设置标签页
+    const renderProfileSettings = () => (
+        <>
+            <div className="mb-8">
+                <ItemTitle title="个人资料设置" />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                    <ItemInput title={t('settings.author.name.title', { defaultValue: '昵称' })} description={t('settings.author.name.desc', { defaultValue: '设置个人资料卡片中显示的昵称' })} type="client" configKey="author.name" configKeyTitle={t('settings.author.name.title', { defaultValue: '昵称' })} />
+                    <ItemInput title={t('settings.author.avatar.title', { defaultValue: '头像链接' })} description={t('settings.author.avatar.desc', { defaultValue: '设置个人资料卡片中的头像图片URL' })} type="client" configKey="author.avatar" configKeyTitle={t('settings.author.avatar.title', { defaultValue: '头像链接' })} />
+                    <ItemInput title="个人简介" description="设置个人资料卡片中显示的简介信息，支持自定义个人介绍内容" type="client" configKey="author.bio" configKeyTitle="个人简介" />
+                </div>
+            </div>
+
+            <div className="mb-8">
+                <ItemTitle title="社交平台链接" />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                    <ItemInput title={t('settings.author.social.github.title', { defaultValue: 'GitHub' })} description={t('settings.author.social.github.desc', { defaultValue: '设置GitHub用户名或完整链接' })} type="client" configKey="author.social.github" configKeyTitle="GitHub" />
+                    <ItemInput title={t('settings.author.social.email.title', { defaultValue: '邮箱' })} description={t('settings.author.social.email.desc', { defaultValue: '设置联系邮箱地址' })} type="client" configKey="author.social.email" configKeyTitle={t('settings.author.social.email.title', { defaultValue: '邮箱' })} />
+                    <ItemInput title="B站" description="设置B站用户ID或完整链接" type="client" configKey="author.social.bilibili" configKeyTitle="B站" />
+                    <ItemInput title="X (Twitter)" description="设置X(Twitter)用户名或完整链接" type="client" configKey="author.social.twitter" configKeyTitle="X (Twitter)" />
+                    <ItemInput title="YouTube" description="设置YouTube频道用户名或完整链接" type="client" configKey="author.social.youtube" configKeyTitle="YouTube" />
+                    <ItemInput title="微博" description="设置微博用户名或完整链接" type="client" configKey="author.social.weibo" configKeyTitle="微博" />
+                    <ItemInput title="Instagram" description="设置Instagram用户名或完整链接" type="client" configKey="author.social.instagram" configKeyTitle="Instagram" />
+                    <ItemInput title="LinkedIn" description="设置LinkedIn用户名或完整链接" type="client" configKey="author.social.linkedin" configKeyTitle="LinkedIn" />
+                    <ItemInput title="QQ" description="设置QQ号码" type="client" configKey="author.social.qq" configKeyTitle="QQ" />
+                    <ItemInput title="微信" description="设置微信号" type="client" configKey="author.social.wechat" configKeyTitle="微信" />
+                    <ItemInput title="Telegram" description="设置Telegram用户名或完整链接" type="client" configKey="author.social.telegram" configKeyTitle="Telegram" />
+                    <ItemInput title="Discord" description="设置Discord服务器邀请链接" type="client" configKey="author.social.discord" configKeyTitle="Discord" />
+                </div>
+            </div>
+        </>
+    );
+
+    // 侧边栏设置标签页
+    const renderSidebarSettings = () => (
+        <>
+            <div className="mb-8">
+                <ItemTitle title={t('settings.sidebar.title', { defaultValue: '侧边栏设置' })} />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                    <ItemSwitch title={t('settings.sidebar.enable.title', { defaultValue: '启用侧边栏' })} description={t('settings.sidebar.enable.desc', { defaultValue: '在文章列表页面显示侧边栏，包含个人资料、标签云等组件' })} type="client" configKey="sidebar.enabled" />
+                    <ItemSwitch title={t('settings.sidebar.profile.title', { defaultValue: '个人资料卡片' })} description={t('settings.sidebar.profile.desc', { defaultValue: '显示头像、昵称和社交链接' })} type="client" configKey="sidebar.components.profile" />
+                    <ItemSwitch title={t('settings.sidebar.tagCloud.title', { defaultValue: '标签云' })} description={t('settings.sidebar.tagCloud.desc', { defaultValue: '显示热门标签，方便用户发现内容' })} type="client" configKey="sidebar.components.tagCloud" />
+                    <ItemSwitch title={t('settings.sidebar.announcements.title', { defaultValue: '公告通知' })} description={t('settings.sidebar.announcements.desc', { defaultValue: '显示重要公告和通知信息' })} type="client" configKey="sidebar.components.announcements" />
+                </div>
+            </div>
+
+            {/* 公告管理 */}
+            <div className="mt-6">
+                <AnnouncementManager />
+            </div>
+        </>
+    );
+
+    // 音乐播放器设置标签页
+    const renderMusicSettings = () => (
+        <>
+            <div className="mb-8">
+                <ItemTitle title="音乐播放器设置" />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                    <ItemSwitch title={t('settings.sidebar.music.title', { defaultValue: '背景音乐自动播放' })} description={t('settings.sidebar.music.desc', { defaultValue: '启用后背景音乐将在页面加载时自动播放' })} type="client" configKey="music.autoplay" />
+                    <ItemInput title="音乐链接" description="设置背景音乐的URL地址，支持MP3、OGG等格式" type="client" configKey="music.url" configKeyTitle="音乐链接" />
+                    <ItemInput title="音乐标题" description="设置音乐播放器中显示的歌曲名称" type="client" configKey="music.title" configKeyTitle="音乐标题" />
+                    <ItemInput title="艺术家" description="设置音乐播放器中显示的艺术家名称" type="client" configKey="music.artist" configKeyTitle="艺术家" />
+                </div>
+            </div>
+        </>
+    );
+
+    // 高级设置标签页
+    const renderAdvancedSettings = () => (
+        <>
+            <div className="mb-8">
+                <ItemTitle title={t('settings.other.title')} />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                    <ItemSwitch title={t('settings.login.enable.title')} description={t('settings.login.enable.desc', {"url": oauth_url})} type="client" configKey="login.enabled" />
+                    <ItemSwitch title={t('settings.comment.enable.title')} description={t('settings.comment.enable.desc')} type="client" configKey="comment.enabled" />
+                    <ItemSwitch title={t('settings.counter.enable.title')} description={t('settings.counter.enable.desc')} type="client" configKey="counter.enabled" />
+                    <ItemSwitch title={t('settings.rss.title')} description={t('settings.rss.desc')} type="client" configKey="rss" />
+                    <ItemWithUpload
+                        title={t("settings.favicon.title")}
+                        description={t("settings.favicon.desc")}
+                        accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+                        onFileChange={handleFaviconChange}
+                    />
+                    <ItemInput title={t('settings.footer.title')} description={t('settings.footer.desc')} type="client" configKey="footer" configKeyTitle="Footer HTML" />
+                    <ItemButton title={t('settings.cache.clear.title')} description={t('settings.cache.clear.desc')} buttonTitle={t('clear')} showConfirm={showConfirm} onConfirm={async () => {
+                        await client.config.cache.delete(undefined, {
+                            headers: headersWithAuth()
+                        })
+                            .then((response) => {
+                                if (response.error) {
+                                    showToast(t('settings.cache.clear_failed$message', { message: String(response.error.value) }))
+                                }
+                            })
+                    }} alertTitle={t('settings.cache.clear.confirm.title')} alertDescription={t('settings.cache.clear.confirm.desc')} />
+                    <ItemWithUpload title={t('settings.wordpress.title')} description={t('settings.wordpress.desc')}
+                        accept="application/xml"
+                        onFileChange={onFileChange} />
+                </div>
+            </div>
+        </>
+    );
 
     useEffect(() => {
         if (ref.current) return;
@@ -171,62 +335,33 @@ export function Settings() {
                         </div>
 
                         {/* 上方分隔线 - 与文章列表页面保持一致 */}
-                        <div className="w-full mb-2">
+                        <div className="w-full mb-6">
                             <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                         </div>
-                        {/* 网格布局设置项 */}
+
+                        {/* 标签页导航 */}
                         <div className="w-full mb-8">
-                            {/* 页面背景设置分组 */}
-                            <div className="mb-8">
-                                <ItemTitle title={t('settings.background.title')} />
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-                                    <ItemSwitch title={t('settings.background.enable.title')} description={t('settings.background.enable.desc')} type="client" configKey="background.enabled" />
-                                    <ItemInput title={t('settings.background.url.title')} configKeyTitle={t('settings.background.url.title')} description={t('settings.background.url.desc')} type="client" configKey="background.url" />
-                                </div>
+                            <div className="flex flex-wrap gap-2 p-1 bg-neutral-100/50 dark:bg-neutral-800/50 rounded-xl backdrop-blur-sm border border-neutral-200/60 dark:border-neutral-700/60">
+                                {settingsTabs.map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+                                            activeTab === tab.id
+                                                ? 'bg-white dark:bg-neutral-700 text-theme shadow-sm'
+                                                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-white/50 dark:hover:bg-neutral-700/50'
+                                        }`}
+                                    >
+                                        <i className={`${tab.icon} text-sm`}></i>
+                                        <span className="text-sm">{tab.title}</span>
+                                    </button>
+                                ))}
                             </div>
+                        </div>
 
-                            {/* 友情链接设置分组 */}
-                            <div className="mb-8">
-                                <ItemTitle title={t('settings.friend.title')} />
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-                                    <ItemSwitch title={t('settings.friend.apply.title')} description={t('settings.friend.apply.desc')} type="client" configKey="friend_apply_enable" />
-                                    <ItemSwitch title={t('settings.friend.health.title')} description={t('settings.friend.health.desc')} type="server" configKey="friend_crontab" />
-                                    <ItemInput title={t('settings.friend.health.ua.title')} description={t('settings.friend.health.ua.desc')} type="server" configKey="friend_ua" configKeyTitle="User-Agent" />
-                                </div>
-                            </div>
-
-                            {/* 其他设置分组 */}
-                            <div className="mb-8">
-                                <ItemTitle title={t('settings.other.title')} />
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-                                    <ItemSwitch title={t('settings.login.enable.title')} description={t('settings.login.enable.desc', {"url": oauth_url})} type="client" configKey="login.enabled" />
-                                    <ItemSwitch title={t('settings.comment.enable.title')} description={t('settings.comment.enable.desc')} type="client" configKey="comment.enabled" />
-                                    <ItemSwitch title={t('settings.counter.enable.title')} description={t('settings.counter.enable.desc')} type="client" configKey="counter.enabled" />
-                                    <ItemSwitch title={t('settings.rss.title')} description={t('settings.rss.desc')} type="client" configKey="rss" />
-                                    <ItemWithUpload
-                                        title={t("settings.favicon.title")}
-                                        description={t("settings.favicon.desc")}
-                                        // @see https://developers.cloudflare.com/images/transform-images/#supported-input-formats
-                                        accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
-                                        onFileChange={handleFaviconChange}
-                                    />
-                                    <ItemInput title="作者简介" description="设置文章详情页显示的作者简介信息，支持自定义个人介绍内容" type="client" configKey="author.bio" configKeyTitle="作者简介" />
-                                    <ItemInput title={t('settings.footer.title')} description={t('settings.footer.desc')} type="client" configKey="footer" configKeyTitle="Footer HTML" />
-                                    <ItemButton title={t('settings.cache.clear.title')} description={t('settings.cache.clear.desc')} buttonTitle={t('clear')} showConfirm={showConfirm} onConfirm={async () => {
-                                        await client.config.cache.delete(undefined, {
-                                            headers: headersWithAuth()
-                                        })
-                                            .then((response) => {
-                                                if (response.error) {
-                                                    showToast(t('settings.cache.clear_failed$message', { message: String(response.error.value) }))
-                                                }
-                                            })
-                                    }} alertTitle={t('settings.cache.clear.confirm.title')} alertDescription={t('settings.cache.clear.confirm.desc')} />
-                                    <ItemWithUpload title={t('settings.wordpress.title')} description={t('settings.wordpress.desc')}
-                                        accept="application/xml"
-                                        onFileChange={onFileChange} />
-                                </div>
-                            </div>
+                        {/* 标签页内容 */}
+                        <div className="w-full mb-8">
+                            {renderTabContent()}
                         </div>
                     </PageContainer>
                 </ClientConfigContext.Provider>

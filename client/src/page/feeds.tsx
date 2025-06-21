@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { PageContainer } from "../components/container"
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect"
 import { ViewToggle, useViewMode } from "../components/view_toggle"
+import { SidebarContainer } from "../components/sidebar/SidebarContainer"
 
 type FeedsData = {
     size: number,
@@ -475,6 +476,7 @@ export function FeedsPage() {
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
             </Helmet>
+
             <PageContainer>
                 <div className="flex flex-col space-y-3 mb-3">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
@@ -551,19 +553,21 @@ export function FeedsPage() {
                     </div>
                 </div>
                 
-                <Waiting for={status === 'idle'}>
-                    {paginatedFeeds.length > 0 ? (
-                        <>
-
-
-                            <div className={viewMode === 'list'
-                                ? "flex flex-col gap-3 sm:gap-4 w-full mt-2 view-transition-container"
-                                : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 w-full mt-2 view-transition-container"
-                            }>
-                                {paginatedFeeds.map((feed, i) => (
-                                    <LazyFeedCard key={`feed-card-${feed.id}-${i}-${sortType}-${viewMode}`} viewMode={viewMode} {...feed} />
-                                ))}
-                            </div>
+                {/* 主内容和侧边栏容器 */}
+                <div className="flex gap-6 mt-2">
+                    {/* 主内容区域 */}
+                    <div className="flex-1 min-w-0">
+                        <Waiting for={status === 'idle'}>
+                            {paginatedFeeds.length > 0 ? (
+                                <>
+                                    <div className={viewMode === 'list'
+                                        ? "flex flex-col gap-3 sm:gap-4 w-full view-transition-container"
+                                        : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 w-full view-transition-container"
+                                    }>
+                                        {paginatedFeeds.map((feed, i) => (
+                                            <LazyFeedCard key={`feed-card-${feed.id}-${i}-${sortType}-${viewMode}`} viewMode={viewMode} {...feed} />
+                                        ))}
+                                    </div>
 
                             {/* 分页控制 - 使用计算出的总页数 */}
                             {totalPages > 1 && (
@@ -664,7 +668,12 @@ export function FeedsPage() {
                             )}
                         </div>
                     )}
-                </Waiting>
+                        </Waiting>
+                    </div>
+
+                    {/* 侧边栏 */}
+                    <SidebarContainer />
+                </div>
             </PageContainer>
         </>
     )
