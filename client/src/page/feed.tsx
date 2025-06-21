@@ -488,8 +488,8 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
         {/* 侧边栏，仅大屏显示，且不是404页面时才显示 */}
         {!error && (
           <aside className="hidden lg:flex flex-col w-[260px] flex-shrink-0 gap-6 mt-5">
-            <section className="sticky top-[5.5rem]">
-              <div className={`mb-6 rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden`}>
+            <section className="sticky top-[5.5rem] max-h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
+              <div className={`flex-shrink-0 mb-6 rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden`}>
                 <div className="px-4 py-3 border-b border-neutral-200/60 dark:border-neutral-700/60">
                   <h3 className="text-lg font-bold flex items-center gap-2 mt-0 mb-0">
                     <i className="ri-list-unordered text-theme"></i>
@@ -497,12 +497,14 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                   </h3>
                 </div>
                 <div className="p-4">
-                  <div className="custom-scrollbar max-h-[40vh] overflow-y-auto pr-1">
+                  <div className="custom-scrollbar max-h-[50vh] overflow-y-auto pr-1">
                     <TOC />
                   </div>
                 </div>
               </div>
-              <RecentPosts />
+              <div className="flex-1 min-h-0">
+                <RecentPosts />
+              </div>
             </section>
           </aside>
         )}
@@ -932,7 +934,7 @@ function Comments({ id }: { id: string }) {
             <>
               {comments.length > 0 ? (
                 <div className="w-full space-y-4">
-                  <div className={`w-full ${glassClass} rounded-2xl shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60`}>
+                  <div className="w-full bg-white/80 dark:bg-gray-800/80 rounded-2xl shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60">
                     <div className="px-6 py-4 border-b border-neutral-200/60 dark:border-neutral-700/60">
                       <div className="flex justify-between items-center">
                         <h3 className="text-lg font-semibold flex items-center gap-3 text-gray-900 dark:text-gray-100">
@@ -981,7 +983,7 @@ function Comments({ id }: { id: string }) {
                   )}
                 </div>
               ) : (
-                <div className={`w-full ${glassClass} rounded-2xl p-8 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}>
+                <div className="w-full bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60">
                   <div className="flex flex-col items-center">
                     <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
                       <i className="ri-chat-1-line text-xl text-gray-400 dark:text-gray-500"></i>
@@ -1274,7 +1276,7 @@ function CommentItem({
 
       {/* 回复表单 */}
       {showReplyForm && (
-        <div className={`mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 ${glassClass} rounded-b-xl -mx-4 px-4 pb-4`}>
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-700/80 rounded-b-xl -mx-4 px-4 pb-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
               <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-2">

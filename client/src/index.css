@@ -524,7 +524,22 @@ html.dark body .glass-file-card,
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-/* 完全透明毛玻璃效果 - 只有模糊，无背景色 */
+/* 分页专用毛玻璃效果 - 确保可读性和可访问性 */
+.glass-pagination {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+[data-color-mode="dark"] .glass-pagination {
+  background: rgba(13, 17, 23, 0.75) !important;
+  backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* 完全透明毛玻璃效果 - 只有模糊，无背景色（已弃用，保留兼容性） */
 .glass-clear {
   background: transparent !important;
   backdrop-filter: blur(12px) saturate(180%) brightness(1.05);

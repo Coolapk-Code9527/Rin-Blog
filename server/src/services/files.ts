@@ -138,6 +138,23 @@ function isHash(str: string) {
   return /^[a-f0-9]{32,}$/.test(str);
 }
 
+/**
+ * 构建文件URL，确保正确的路径分隔符
+ * @param accessHost 访问主机地址
+ * @param path 文件路径
+ * @returns 完整的文件URL
+ */
+function buildFileUrl(accessHost: string, path: string): string {
+  if (!accessHost || !path) return '';
+
+  // 确保accessHost不以斜杠结尾
+  const cleanHost = accessHost.replace(/\/+$/, '');
+  // 确保path以斜杠开头
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+  return `${cleanHost}${cleanPath}`;
+}
+
 // 类型守卫：排除 SharedArrayBuffer
 function isRealArrayBuffer(buf: any): buf is ArrayBuffer {
     return buf instanceof ArrayBuffer && (typeof SharedArrayBuffer === 'undefined' || !(buf instanceof SharedArrayBuffer));
@@ -298,11 +315,11 @@ export function FileService() {
                                        file.modifiedAt) : 
                                     Math.floor(Date.now() / 1000),
                                 referencesCount: Number(referencesMap[file.id] || 0),
-                                url: file.path ? `${accessHost}${file.path}` : undefined,
+                                url: file.path ? buildFileUrl(accessHost, file.path) : undefined,
                                 thumbUrl: file.thumbnailHash
                                     ? (file.parentPath && file.parentPath !== '/'
-                                        ? `${accessHost}${file.parentPath}/thumb_${file.thumbnailHash}`
-                                        : `${accessHost}/thumb_${file.thumbnailHash}`)
+                                        ? buildFileUrl(accessHost, `${file.parentPath}/thumb_${file.thumbnailHash}`)
+                                        : buildFileUrl(accessHost, `/thumb_${file.thumbnailHash}`))
                                     : undefined,
                             })),
                             total: count,
@@ -536,7 +553,7 @@ export function FileService() {
                         return {
                             id: result[0].id,
                             path: filePath,
-                            url: `${accessHost}/${s3Key}`,
+                            url: buildFileUrl(accessHost, `/${s3Key}`),
                             name: name || file.name,
                             size: file.size,
                             mimeType,
@@ -618,7 +635,7 @@ export function FileService() {
 
                         return {
                             ...file,
-                            url: `${accessHost}/${file.path}`,
+                            url: buildFileUrl(accessHost, file.path),
                             isFolder: false,
                             references: references.map((ref: FileReference) => ({
                                 id: ref.id,

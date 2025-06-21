@@ -49,8 +49,11 @@ export const useGlassEffect = (baseClass: string) => {
         case 'glass-transparent':
           setGlassClass('glass-transparent'); // 透明毛玻璃保持原样，避免白色背景
           break;
+        case 'glass-pagination':
+          setGlassClass('glass-pagination'); // 分页专用毛玻璃，确保可读性
+          break;
         case 'glass-clear':
-          setGlassClass('glass-clear'); // 完全透明毛玻璃，只有模糊效果
+          setGlassClass('glass-clear'); // 完全透明毛玻璃，只有模糊效果（已弃用）
           break;
         case 'glass-file-card':
           setGlassClass('glass-file-card'); // 文件管理器卡片保持原样，CSS会自动适配

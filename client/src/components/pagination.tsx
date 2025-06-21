@@ -63,8 +63,8 @@ export function Pagination({
 }: PaginationProps) {
   const { t } = useTranslation();
 
-  // 使用完全透明毛玻璃效果，只有模糊无背景
-  const glassClass = useGlassEffect('glass-clear');
+  // 使用分页专用毛玻璃效果，确保可读性和可访问性
+  const glassClass = useGlassEffect('glass-pagination');
   
   // 处理页码点击
   const handlePageClick = (page: number) => {

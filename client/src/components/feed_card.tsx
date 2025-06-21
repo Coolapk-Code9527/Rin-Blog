@@ -5,6 +5,7 @@ import {SimplifiedMarkdown} from "./markdown";
 import React from "react";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { ViewMode } from "./view_toggle";
+import { generateGradient, generateGradientCSS } from '../utils/placeholderUtils';
 
 export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt, pv, uv, viewMode = 'grid' }:
     {
@@ -48,39 +49,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         document.head.appendChild(link);
     };
     
-    // 为文章生成基于标题的稳定渐变背景
-    const generateGradient = React.useMemo(() => {
-        // 根据文章ID和标题生成一致的颜色
-        const getHashCode = (str: string) => {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = ((hash << 5) - hash) + str.charCodeAt(i);
-                hash = hash & hash; // 转换为32位整数
-            }
-            return Math.abs(hash);
-        };
-        
-        const colorPalettes = [
-            ['#4158D0', '#C850C0', '#FFCC70'], // 紫蓝到粉
-            ['#0093E9', '#80D0C7'], // 蓝到青
-            ['#8EC5FC', '#E0C3FC'], // 浅蓝到浅紫
-            ['#FFDEE9', '#B5FFFC'], // 粉到青
-            ['#FF9A8B', '#FF6A88', '#FF99AC'], // 珊瑚到粉
-            ['#FBAB7E', '#F7CE68'], // 橙到黄
-            ['#85FFBD', '#FFFB7D'], // 绿到黄
-            ['#FF3CAC', '#784BA0', '#2B86C5'], // 粉到紫再到蓝
-            ['#D9AFD9', '#97D9E1'], // 浅紫到浅蓝
-            ['#0250c5', '#d43f8d'], // 深蓝到玫红
-        ];
-        
-        const hash = getHashCode(`${id}-${title}`);
-        const paletteIndex = hash % colorPalettes.length;
-        
-        return {
-            colors: colorPalettes[paletteIndex],
-            angle: (hash % 360)
-        };
-    }, [id, title]);
+    // 使用统一的渐变生成工具
+    const gradientConfig = React.useMemo(() => generateGradient(id, title), [id, title]);
 
     // CSS变量定义，用于支持渐变遮罩效果
     const cardStyle = {
@@ -138,11 +108,11 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 ? `w-[140px] sm:w-[160px] md:w-[200px] h-full overflow-hidden rounded-l-xl relative flex-shrink-0`
                 : `w-full h-44 xs:h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-xl relative`  // 增加移动端图片高度
             }>
-                {/* 动态渐变背景层 - 与TimelineItem一致 */}
-                <div 
+                {/* 动态渐变背景层 - 使用统一工具函数 */}
+                <div
                     className="absolute inset-0 w-full h-full z-0"
                     style={{
-                        background: `linear-gradient(${generateGradient.angle}deg, ${generateGradient.colors.join(', ')})`,
+                        background: `linear-gradient(${gradientConfig.angle}deg, ${gradientConfig.colors.join(', ')})`,
                         opacity: (!avatar || imageError) ? 0.8 : 0,
                         transition: 'opacity 0.3s'
                     }}

@@ -65,30 +65,57 @@ export function UnifiedTimelineItem({ item, onToggle, t }: UnifiedTimelineItemPr
         const formattedDate = `${date.getDate()}日`;
 
         return (
-          <div className="flex items-center justify-between w-full">
+          <div className="w-full">
             {/* 日期标签 */}
-            <time className="sm:absolute left-0 translate-y-0.5 inline-flex items-center justify-center text-xs font-semibold w-16 h-5 mb-2 sm:mb-0 text-theme bg-theme/10 rounded-full">
+            <time className="sm:absolute left-0 translate-y-0.5 inline-flex items-center justify-center text-xs font-semibold w-16 h-5 mb-2 sm:mb-0 text-theme bg-theme/10 rounded-full flex-shrink-0">
               {formattedDate}
             </time>
 
-            {/* 文章标题 */}
-            <Link
-              href={`/feed/${data.id}`}
-              className="text-base font-medium text-gray-900 dark:text-gray-100 hover:text-theme transition-colors duration-200 flex-1 min-w-0 mr-3"
-            >
-              <span className="truncate">{data.title || t('unlisted')}</span>
-            </Link>
+            {/* 移动端：垂直布局 */}
+            <div className="sm:hidden">
+              {/* 文章标题 - 移动端独占一行 */}
+              <Link
+                href={`/feed/${data.id}`}
+                className="block text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-theme transition-colors duration-200 line-clamp-2 mb-2 break-words"
+                style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+              >
+                {data.title || t('unlisted')}
+              </Link>
 
-            {/* 浏览量显示 - 修复显示逻辑，与FeedCard保持一致 */}
-            {(data.pv !== undefined || data.uv !== undefined) && (
-              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                <i className="ri-eye-line text-green-500 mr-1"></i>
-                <span>{data.pv || 0}</span>
-                <span className="mx-1 text-gray-300 dark:text-gray-600">|</span>
-                <i className="ri-user-3-line text-pink-400 mr-1"></i>
-                <span>{data.uv || 0}</span>
-              </div>
-            )}
+              {/* 统计信息 - 移动端在标题下方 */}
+              {(data.pv !== undefined || data.uv !== undefined) && (
+                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                  <i className="ri-eye-line text-green-500"></i>
+                  <span>{data.pv || 0}</span>
+                  <span className="mx-1 text-gray-300 dark:text-gray-600">|</span>
+                  <i className="ri-user-3-line text-pink-400"></i>
+                  <span>{data.uv || 0}</span>
+                </div>
+              )}
+            </div>
+
+            {/* 桌面端：水平布局 */}
+            <div className="hidden sm:flex sm:items-center sm:justify-between">
+              {/* 文章标题 - 桌面端与统计信息同行 */}
+              <Link
+                href={`/feed/${data.id}`}
+                className="text-base font-medium text-gray-900 dark:text-gray-100 hover:text-theme transition-colors duration-200 line-clamp-1 break-words flex-1 min-w-0 mr-3"
+                style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+              >
+                {data.title || t('unlisted')}
+              </Link>
+
+              {/* 统计信息 - 桌面端在标题右侧 */}
+              {(data.pv !== undefined || data.uv !== undefined) && (
+                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                  <i className="ri-eye-line text-green-500"></i>
+                  <span>{data.pv || 0}</span>
+                  <span className="mx-1 text-gray-300 dark:text-gray-600">|</span>
+                  <i className="ri-user-3-line text-pink-400"></i>
+                  <span>{data.uv || 0}</span>
+                </div>
+              )}
+            </div>
           </div>
         );
     }
@@ -98,7 +125,9 @@ export function UnifiedTimelineItem({ item, onToggle, t }: UnifiedTimelineItemPr
     <div className="relative pl-8 sm:pl-32 py-3 group">
       {/* 统一的Cruip时间轴结构 - 所有项目都在同一条线上 */}
       <div className={`flex flex-col sm:flex-row items-start mb-1 group-last:before:hidden before:absolute before:left-2 sm:before:left-0 before:h-full before:px-px before:bg-theme/30 sm:before:ml-[6.5rem] before:self-start before:-translate-x-1/2 before:translate-y-3 after:absolute after:left-2 sm:after:left-0 ${getCircleStyle()} after:border-4 after:box-content after:border-white dark:after:border-gray-900 after:rounded-full sm:after:ml-[6.5rem] after:-translate-x-1/2 after:translate-y-1.5`}>
-        {renderContent()}
+        <div className="w-full px-2 sm:px-3">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );

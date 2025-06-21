@@ -120,7 +120,7 @@ export function FeedService() {
         .use(setup())
         .group('/feed', (group) =>
             group
-                .get('/', async ({ admin, set, query: { page, limit, type, cursor } }) => {
+                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime } }) => {
                     const db: DB = getDB();
                     if ((type === 'draft' || type === 'unlisted') && !admin) {
                         set.status = 403;
@@ -181,7 +181,7 @@ export function FeedService() {
                                     columns: { id: true, username: true, avatar: true }
                                 }
                             },
-                            orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
+                            orderBy: sortByTime ? [desc(feeds.createdAt), desc(feeds.id)] : [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
                             limit: maxLimit,
                         });
 
@@ -207,7 +207,7 @@ export function FeedService() {
                         });
                     } else {
                         const page_num = (page ? page > 0 ? page : 1 : 1) - 1;
-                        cacheKey = `feeds_${type}_${page_num}_${limit_num}`;
+                        cacheKey = `feeds_${type}_${page_num}_${limit_num}_${sortByTime ? 'time' : 'default'}`;
                         
                         const cached = await cache.get(cacheKey);
                         if (cached) {
@@ -232,7 +232,7 @@ export function FeedService() {
                                 columns: { id: true, username: true, avatar: true }
                             }
                         },
-                            orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
+                            orderBy: sortByTime ? [desc(feeds.createdAt), desc(feeds.id)] : [desc(feeds.top), desc(feeds.createdAt), desc(feeds.id)],
                         offset: page_num * limit_num,
                         limit: limit_num + 1,
                     });
@@ -286,7 +286,8 @@ export function FeedService() {
                         page: t.Optional(t.Numeric()),
                         limit: t.Optional(t.Numeric()),
                         type: t.Optional(t.String()),
-                        cursor: t.Optional(t.String())
+                        cursor: t.Optional(t.String()),
+                        sortByTime: t.Optional(t.Boolean())
                     })
                 })
                 .get('/timeline', async () => {

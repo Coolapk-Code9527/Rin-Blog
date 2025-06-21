@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { client } from "../main";
 import { timeago } from "../utils/timeago";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
+import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
 
 interface Post {
   id: number;
@@ -47,7 +48,7 @@ export function RecentPosts() {
   React.useEffect(() => {
     setLoading(true);
     setError(null);
-    client.feed.index.get({ query: { page: 1, limit: 3 }, headers: {} })
+    client.feed.index.get({ query: { page: 1, limit: 3, sortByTime: true }, headers: {} })
       .then(({ data, error }) => {
         setLoading(false);
         if (error) {
@@ -83,8 +84,8 @@ export function RecentPosts() {
   }, []);
 
   return (
-    <section className={`${glassClass} rounded-2xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`} aria-label={t("recent_posts.title", { defaultValue: "最近发布" })}>
-      <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
+    <section className={`${glassClass} rounded-2xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60 h-full flex flex-col`} aria-label={t("recent_posts.title", { defaultValue: "最近发布" })}>
+      <h3 className="text-lg font-medium t-primary mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
         <i className="ri-time-line text-theme"></i>
         {t("recent_posts.title", { defaultValue: "最近发布" })}
       </h3>
@@ -95,7 +96,7 @@ export function RecentPosts() {
       ) : posts.length === 0 ? (
         <div className="text-gray-400 text-sm py-3">{t("recent_posts.empty", { defaultValue: "暂无最新文章" })}</div>
       ) : (
-        <div className="recent-posts-content overflow-y-auto max-h-[calc(40vh-3rem)] custom-scrollbar pr-1">
+        <div className="recent-posts-content overflow-y-auto flex-1 min-h-0 custom-scrollbar pr-1">
           <ul className="space-y-4">
             {posts.map((post, index) => (
               <li key={post.id} className={`py-3 ${index !== posts.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
@@ -114,17 +115,21 @@ export function RecentPosts() {
                             target.style.display = "none";
                             const container = target.parentElement;
                             if (container) {
+                              const placeholderProps = generatePlaceholderProps(post.id, post.title || '', PLACEHOLDER_PRESETS.THUMBNAIL_SMALL);
                               container.innerHTML = `
-                                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
-                                  <i class="ri-file-text-line text-gray-400 dark:text-gray-600 text-xl"></i>
+                                <div class="w-16 h-16 rounded-md flex items-center justify-center" style="background: ${placeholderProps.gradientCSS}">
+                                  <i class="ri-article-line text-white/80 text-xl"></i>
                                 </div>
                               `;
                             }
                           }}
                         />
                       ) : (
-                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
-                          <i className="ri-file-text-line text-gray-400 dark:text-gray-600 text-xl"></i>
+                        <div
+                          className="w-16 h-16 rounded-md flex items-center justify-center"
+                          style={generatePlaceholderProps(post.id, post.title || '', PLACEHOLDER_PRESETS.THUMBNAIL_SMALL).style}
+                        >
+                          <i className="ri-article-line text-white/80 text-xl"></i>
                         </div>
                       )}
                     </div>

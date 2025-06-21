@@ -4,6 +4,7 @@ import {timeago} from "../utils/timeago.ts";
 import {Link} from "wouter";
 import {useTranslation} from "react-i18next";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
+import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
 
 export type AdjacentFeed = {
     id: number;
@@ -107,7 +108,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                             thumbnail = await fetchFullArticle(data.previousFeed.id);
                         }
                         
-                        extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
+                        extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || null;
                         console.log(`Previous article (ID:${data.previousFeed.id}) thumbnail:`, extractedThumbnails[`prev-${data.previousFeed.id}`]);
                     }
                     
@@ -121,7 +122,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                             thumbnail = await fetchFullArticle(data.nextFeed.id);
                         }
                         
-                        extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || DEFAULT_THUMBNAIL;
+                        extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || null;
                         console.log(`Next article (ID:${data.nextFeed.id}) thumbnail:`, extractedThumbnails[`next-${data.nextFeed.id}`]);
                     }
                     
@@ -185,16 +186,17 @@ export function AdjacentCard({
               className={`h-full w-full block p-0 duration-300 hover:bg-white/10 dark:hover:bg-black/10 relative group overflow-hidden transition-all ease-out ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>
             <div className={`flex flex-row ${type === "next" ? "flex-row-reverse" : "flex-row"} items-stretch w-full h-20 sm:h-32`}>
                 {/* 图片区 */}
-                <div className={`flex-shrink-0 w-16 sm:w-32 h-full overflow-hidden bg-gray-200 dark:bg-gray-700 relative ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}>
+                <div className={`flex-shrink-0 w-16 sm:w-32 h-full overflow-hidden relative ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}
+                     style={generatePlaceholderProps(data.id, data.title || '', PLACEHOLDER_PRESETS.NAVIGATION_CARD).style}>
                     {loading ? (
                         <div className="w-full h-full flex items-center justify-center animate-pulse">
-                            <i className="ri-image-line text-gray-400 dark:text-gray-300 text-2xl sm:text-3xl opacity-90"></i>
+                            <i className="ri-article-line text-white/90 text-2xl sm:text-3xl"></i>
                         </div>
                     ) : thumbnail ? (
                         <img 
                             src={thumbnail} 
                             alt={data.title || ""} 
-                            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 bg-gray-200 dark:bg-gray-700 ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}
+                            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}
                             loading="lazy"
                             style={{height:'100%'}}
                             onError={(e) => {
@@ -202,17 +204,21 @@ export function AdjacentCard({
                                 target.style.display = 'none';
                                 const container = target.parentElement;
                                 if (container) {
+                                    const placeholderProps = generatePlaceholderProps(data.id, data.title || '', PLACEHOLDER_PRESETS.NAVIGATION_CARD);
                                     container.innerHTML = `
-                                        <div class='w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700'>
-                                            <i class='ri-file-text-line text-gray-400 dark:text-gray-300 text-2xl sm:text-3xl opacity-90'></i>
+                                        <div class='w-full h-full flex items-center justify-center' style='background: ${placeholderProps.gradientCSS}'>
+                                            <i class='ri-article-line text-white/90 text-2xl sm:text-3xl'></i>
                                         </div>
                                     `;
                                 }
                             }}
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                            <i className="ri-file-text-line text-gray-400 dark:text-gray-300 text-2xl sm:text-3xl opacity-90"></i>
+                        <div
+                            className="w-full h-full flex items-center justify-center"
+                            style={generatePlaceholderProps(data.id, data.title || '', PLACEHOLDER_PRESETS.NAVIGATION_CARD).style}
+                        >
+                            <i className="ri-article-line text-white/90 text-2xl sm:text-3xl"></i>
                         </div>
                     )}
                 </div>

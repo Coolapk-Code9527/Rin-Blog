@@ -26,6 +26,7 @@ Rin博客系统采用了统一的毛玻璃效果(Glassmorphism)设计系统，�
 - **glass-file-card**: 文件管理器卡片 (65%透明度, 16px模糊)
 - **glass-file-button**: 文件操作按钮 (90%透明度, 16px模糊)
 - **glass-toast**: Toast通知 (85%透明度, 16px模糊)
+- **glass-pagination**: 分页组件专用 (75%透明度, 12px模糊, 确保可读性)
 - **glass-background-mobile**: 移动端背景遮罩 (80%透明度, 8px模糊)
 - **glass-background-desktop**: 桌面端背景遮罩 (75%透明度, 12px模糊)
 
