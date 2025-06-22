@@ -8,6 +8,7 @@ interface MusicState {
   isPlaying: boolean;
   loading: boolean;
   visible: boolean;
+  waitingForInteraction: boolean;
 }
 
 // 音乐播放器控制接口
@@ -31,21 +32,82 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [waitingForInteraction, setWaitingForInteraction] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const playAttemptRef = useRef<NodeJS.Timeout | null>(null);
+  const hasUserInteractedRef = useRef(false);
+
+  // 智能自动播放尝试
+  const attemptAutoplay = async () => {
+    if (!audioRef.current || !musicConfig.url || !musicConfig.autoplay) return;
+
+    // 只在页面可见且活跃时尝试播放
+    if (document.hidden || document.visibilityState === 'hidden') {
+      return false;
+    }
+
+    try {
+      await audioRef.current.play();
+      setIsPlaying(true);
+      setWaitingForInteraction(false);
+      // 播放成功，停止轮询
+      if (playAttemptRef.current) {
+        clearInterval(playAttemptRef.current);
+        playAttemptRef.current = null;
+      }
+      return true;
+    } catch (error) {
+      // 自动播放失败，继续等待用户交互
+      return false;
+    }
+  };
+
+  // 开始智能轮询播放
+  const startAutoplayPolling = () => {
+    if (!musicConfig.autoplay || hasUserInteractedRef.current) return;
+
+    setWaitingForInteraction(true);
+
+    // 立即尝试一次
+    attemptAutoplay();
+
+    // 优化策略：只尝试有限次数，避免无限轮询
+    let attemptCount = 0;
+    const maxAttempts = 5; // 最多尝试5次
+
+    playAttemptRef.current = setInterval(async () => {
+      attemptCount++;
+
+      const success = await attemptAutoplay();
+      if (success || !musicConfig.autoplay || attemptCount >= maxAttempts) {
+        if (playAttemptRef.current) {
+          clearInterval(playAttemptRef.current);
+          playAttemptRef.current = null;
+        }
+
+        // 如果达到最大尝试次数仍未成功，只显示等待提示，不再轮询
+        if (attemptCount >= maxAttempts && !success) {
+          console.log('自动播放尝试次数已达上限，等待用户交互');
+        }
+      }
+    }, 5000); // 改为每5秒尝试一次，更温和
+  };
 
   // 音乐播放控制
   const togglePlay = async () => {
     if (!audioRef.current || !musicConfig.url) return;
-    
+
     try {
       setLoading(true);
-      
+
       if (isPlaying) {
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
         await audioRef.current.play();
         setIsPlaying(true);
+        hasUserInteractedRef.current = true; // 标记用户已交互
+        setWaitingForInteraction(false);
       }
     } catch (error) {
       console.error('音乐播放失败:', error);
@@ -53,6 +115,52 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   };
+
+  // 用户交互检测
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      if (!hasUserInteractedRef.current) {
+        hasUserInteractedRef.current = true;
+        setWaitingForInteraction(false);
+
+        // 用户交互后立即尝试自动播放
+        if (musicConfig.autoplay && !isPlaying) {
+          attemptAutoplay();
+        }
+
+        // 停止轮询
+        if (playAttemptRef.current) {
+          clearInterval(playAttemptRef.current);
+          playAttemptRef.current = null;
+        }
+      }
+    };
+
+    // 页面可见性变化处理
+    const handleVisibilityChange = () => {
+      // 如果页面变为隐藏状态，暂停不必要的轮询
+      if (document.hidden && playAttemptRef.current) {
+        clearInterval(playAttemptRef.current);
+        playAttemptRef.current = null;
+      }
+    };
+
+    // 监听各种用户交互事件
+    const events = ['click', 'keydown', 'touchstart', 'mousedown'];
+    events.forEach(event => {
+      document.addEventListener(event, handleUserInteraction, { once: true });
+    });
+
+    // 监听页面可见性变化
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, handleUserInteraction);
+      });
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [musicConfig.autoplay, isPlaying]);
 
   // 音频事件处理
   useEffect(() => {
@@ -63,12 +171,10 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     const handleCanPlay = () => {
       setLoading(false);
       setVisible(true); // 音频可以播放时显示按钮
-      
-      // 自动播放（如果启用）
-      if (musicConfig.autoplay) {
-        audio.play().catch(() => {
-          // 自动播放失败是正常的，现代浏览器需要用户交互
-        });
+
+      // 启动智能自动播放
+      if (musicConfig.autoplay && !hasUserInteractedRef.current) {
+        startAutoplayPolling();
       }
     };
     const handlePlay = () => setIsPlaying(true);
@@ -93,6 +199,12 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
+
+      // 清理轮询
+      if (playAttemptRef.current) {
+        clearInterval(playAttemptRef.current);
+        playAttemptRef.current = null;
+      }
     };
   }, [musicConfig.url, musicConfig.autoplay]);
 
@@ -100,6 +212,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     isPlaying,
     loading,
     visible,
+    waitingForInteraction,
     togglePlay,
     setVisible
   };

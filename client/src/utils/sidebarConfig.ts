@@ -87,10 +87,11 @@ export function getAuthorConfig(config: ConfigWrapper): AuthorConfig {
 
 // 从配置包装器中获取音乐配置
 export function getMusicConfig(config: ConfigWrapper): MusicConfig {
+  const url = config?.get<string>('music.url') || undefined;
   return {
-    enabled: config?.get<boolean>('music.enabled') ?? false,
+    enabled: !!url, // 有音乐URL就启用播放器
     autoplay: config?.get<boolean>('music.autoplay') ?? false,
-    url: config?.get<string>('music.url') || undefined,
+    url: url,
     title: config?.get<string>('music.title') || undefined,
     artist: config?.get<string>('music.artist') || undefined,
     volume: config?.get<number>('music.volume') ?? 0.7,

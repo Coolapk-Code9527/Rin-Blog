@@ -21,7 +21,7 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
   const musicConfig = getMusicConfig(config);
 
   // 使用全局音乐状态
-  const { isPlaying, loading, togglePlay } = useMusic();
+  const { isPlaying, loading, waitingForInteraction, togglePlay } = useMusic();
 
 
 
@@ -192,11 +192,15 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
                 <div className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
                   {musicConfig.title || '背景音乐'}
                 </div>
-                {musicConfig.artist && (
+                {waitingForInteraction ? (
+                  <div className="text-xs text-blue-500 dark:text-blue-400 truncate animate-pulse">
+                    点击任意位置开始播放
+                  </div>
+                ) : musicConfig.artist ? (
                   <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                     {musicConfig.artist}
                   </div>
-                )}
+                ) : null}
               </div>
 
               {/* 音乐图标 */}
