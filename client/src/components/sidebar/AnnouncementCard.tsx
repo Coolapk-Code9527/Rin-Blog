@@ -128,8 +128,9 @@ export function AnnouncementCard({ className = '', maxAnnouncements = 3 }: Annou
         </h3>
       </div>
 
-      {/* 公告列表 */}
-      <div className="p-4 space-y-3">
+      {/* 公告列表 - 添加滚动支持 */}
+      <div className="p-4 max-h-[200px] overflow-y-auto custom-scrollbar">
+        <div className="space-y-3 pr-1">
         {validAnnouncements.map((announcement, index) => {
           const priorityStyle = getPriorityStyle(announcement.priority);
 
@@ -159,6 +160,7 @@ export function AnnouncementCard({ className = '', maxAnnouncements = 3 }: Annou
             </div>
           );
         })}
+        </div>
       </div>
 
       {/* 底部操作区域（如果需要） */}

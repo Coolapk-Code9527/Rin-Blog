@@ -1985,7 +1985,7 @@ export function WritingPage({ id }: { id?: number }) {
   const colorMode = useColorMode();
   const profile = useContext(ProfileContext);
   const cache = Cache.with(id);
-  const editorRef = useRef<editor.IStandaloneCodeEditor>();
+  const editorRef = useRef<editor.IStandaloneCodeEditor | undefined>(undefined);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // 使用智能毛玻璃效果

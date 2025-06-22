@@ -10,10 +10,13 @@ import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { useTranslation } from "react-i18next";
-import { PageContainer } from "../components/container"
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect"
-import { ViewToggle, useViewMode } from "../components/view_toggle"
-import { SidebarContainer } from "../components/sidebar/SidebarContainer"
+import { useViewMode } from "../components/view_toggle"
+import { ArticleListLayout } from "../components/layout"
+import { ArticleManagementTabs, type ListState, type SortType } from '../components/ArticleManagementTabs';
+import { ClientConfigContext } from "../state/config"
+import { getSidebarConfig } from "../utils/sidebarConfig"
+import { useSmartGrid } from "../hooks/useSmartGrid"
 
 type FeedsData = {
     size: number,
@@ -23,62 +26,11 @@ type FeedsData = {
 
 type FeedType = 'draft' | 'unlisted' | 'normal'
 
-type SortType = 'latest' | 'popular' | 'oldest'
-
 type FeedsMap = {
     [key in FeedType]: FeedsData
 }
 
-// 排序控件组件 - 毛玻璃风格分段控制器
-function SortControl({ currentSort, onSortChange }: { currentSort: SortType, onSortChange: (sort: SortType) => void }) {
-    const { t } = useTranslation();
-    const buttonGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
 
-    const sortOptions: { key: SortType, label: string, icon: string, tooltip?: string }[] = [
-        {
-            key: 'latest',
-            label: t('sort.latest', { defaultValue: '最新' }),
-            icon: 'ri-time-line',
-            tooltip: '按创建时间降序排列，置顶文章优先'
-        },
-        {
-            key: 'popular',
-            label: t('sort.popular', { defaultValue: '热度' }),
-            icon: 'ri-fire-line',
-            tooltip: '按热度排序，综合考虑浏览量和文章新旧程度'
-        },
-        {
-            key: 'oldest',
-            label: t('sort.oldest', { defaultValue: '倒序' }),
-            icon: 'ri-history-line',
-            tooltip: '按创建时间升序排列，显示最早的文章'
-        }
-    ];
-
-    return (
-        <div className="flex shadow-enhanced rounded-xl overflow-hidden w-full sm:w-auto">
-            {sortOptions.map((option, index) => (
-                <button
-                    key={option.key}
-                    onClick={() => onSortChange(option.key)}
-                    className={`
-                        flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center hover:-translate-y-0.5 active:translate-y-0
-                        ${index === 0 ? 'rounded-l-xl' : index === sortOptions.length - 1 ? 'rounded-r-xl' : ''}
-                        ${currentSort === option.key
-                            ? 'bg-theme/25 text-theme border-2 border-theme/40 dark:bg-theme/30 dark:border-theme/35 shadow-enhanced-lg'
-                            : `${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme`
-                        }
-                    `}
-                    aria-label={option.label}
-                    title={option.tooltip}
-                >
-                    <i className={`${option.icon} text-xs md:text-sm`}></i>
-                    <span className="ml-1 sm:ml-1.5 hidden sm:inline">{option.label}</span>
-                </button>
-            ))}
-        </div>
-    );
-}
 
 // 懒加载Feed卡片组件
 function LazyFeedCard({ id, viewMode, ...props }: any) {
@@ -212,6 +164,14 @@ export function FeedsPage() {
     const query = new URLSearchParams(useSearch());
     const [, setLocation] = useLocation();
     const profile = React.useContext(ProfileContext);
+    const config = React.useContext(ClientConfigContext);
+
+    // 获取侧边栏配置
+    const sidebarConfig = getSidebarConfig(config);
+
+    // 智能响应式网格配置
+    const { gridCols, showButtonText } = useSmartGrid(sidebarConfig.enabled);
+
     const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
     const [sortType, setSortType] = React.useState<SortType>(query.get("sort") as SortType || 'latest')
     const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
@@ -240,6 +200,22 @@ export function FeedsPage() {
         newQuery.set('sort', newSort);
         if (newQuery.get('page') !== '1') {
             newQuery.set('page', '1'); // 切换排序时重置到第一页
+        }
+        setLocation(`/?${newQuery.toString()}`);
+    }, [query, setLocation]);
+
+    // 列表状态切换处理函数
+    const handleListStateChange = React.useCallback((newState: ListState) => {
+        _setListState(newState as FeedType);
+        // 更新URL参数
+        const newQuery = new URLSearchParams(query);
+        if (newState === 'normal') {
+            newQuery.delete('type');
+        } else {
+            newQuery.set('type', newState);
+        }
+        if (newQuery.get('page') !== '1') {
+            newQuery.set('page', '1'); // 切换状态时重置到第一页
         }
         setLocation(`/?${newQuery.toString()}`);
     }, [query, setLocation]);
@@ -477,60 +453,33 @@ export function FeedsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
 
-            <PageContainer>
-                <div className="flex flex-col space-y-3 mb-3">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
-                        {/* 左侧：标题和文章数量 - 优化移动端布局 */}
-                        <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
-                            <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
-                                {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
-                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
-                            </h1>
-                            <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
-                                <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
-                                <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: feeds[listState]?.size })}</span>
-                            </div>
+            {/* 页面标题和工具栏区域 */}
+            <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 mb-0 transition-all duration-300`}>
+                <div className="flex flex-col space-y-4 mb-0">
+                    {/* 标题行 */}
+                    <div className="flex flex-row items-center gap-2 sm:gap-3 py-2">
+                        <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
+                            {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
+                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
+                        </h1>
+                        <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
+                            <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
+                            <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: feeds[listState]?.size })}</span>
                         </div>
-                        
-                        {/* 右侧：操作按钮组 */}
-                        <div className="flex items-center gap-2 md:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
-                            {profile?.permission && (
-                                <>
-                                    <Link href="/writing/new"
-                                        className={`flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
-                                        ${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme`}>
-                                        <i className="ri-add-line text-xs md:text-sm"></i>
-                                        <span className="ml-1 sm:ml-1.5 hidden sm:inline">{t('new_article')}</span>
-                                    </Link>
-                                    <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'}
-                                        className={`flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
-                                        ${listState === 'draft'
-                                        ? "bg-theme/25 text-theme border-2 border-theme/40 dark:bg-theme/30 dark:border-theme/35 shadow-enhanced-lg"
-                                        : `${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme`}`}>
-                                        <i className="ri-draft-line text-xs md:text-sm"></i>
-                                        <span className="ml-1 sm:ml-1.5 hidden sm:inline">{t('draft_bin')}</span>
-                                    </Link>
-                                    <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'}
-                                        className={`flex-1 sm:flex-none px-3 sm:px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 ease-out flex items-center justify-center shadow-enhanced hover:-translate-y-0.5 active:translate-y-0
-                                        ${listState === 'unlisted'
-                                        ? "bg-theme/25 text-theme border-2 border-theme/40 dark:bg-theme/30 dark:border-theme/35 shadow-enhanced-lg"
-                                        : `${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme`}`}>
-                                        <i className="ri-eye-off-line text-xs md:text-sm"></i>
-                                        <span className="ml-1 sm:ml-1.5 hidden sm:inline">{t('unlisted')}</span>
-                                    </Link>
-                                </>
-                            )}
+                    </div>
 
-                            {/* 视图切换控件 */}
-                            <div className="flex-1 sm:flex-none">
-                                <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
-                            </div>
-
-                            {/* 排序控件 - 放在最右侧 */}
-                            <div className="flex-1 sm:flex-none">
-                                <SortControl currentSort={sortType} onSortChange={handleSortChange} />
-                            </div>
-                        </div>
+                    {/* 文章管理标签页 - 独立一行 */}
+                    <div className="w-full">
+                        <ArticleManagementTabs
+                            listState={listState as ListState}
+                            viewMode={viewMode}
+                            sortType={sortType}
+                            onListStateChange={handleListStateChange}
+                            onViewModeChange={setViewMode}
+                            onSortTypeChange={handleSortChange}
+                            hasPermission={!!profile?.permission}
+                            showButtonText={showButtonText}
+                        />
                     </div>
                     
                     {/* 上方渐变分割线 - 增加粗细 */}
@@ -538,7 +487,7 @@ export function FeedsPage() {
                         <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                     </div>
                     
-                    <div className="flex justify-between items-center -mt-1 sm:mt-0">
+                    <div className="flex justify-between items-center mt-0">
                         {(listState === 'draft' || listState === 'unlisted') && (
                             <div className={`text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-3 py-2 ${buttonGlassClass} rounded-lg shadow-sm border border-neutral-200/60 dark:border-neutral-700/60 max-w-full sm:max-w-md`}>
                                 {listState === 'draft' 
@@ -552,40 +501,30 @@ export function FeedsPage() {
                         </div>
                     </div>
                 </div>
-                
-                {/* 主内容和侧边栏容器 */}
-                <div className="flex gap-6 mt-2">
-                    {/* 主内容区域 */}
-                    <div className="flex-1 min-w-0">
+            </div>
+
+            {/* 主内容布局 - 文章列表与侧边栏 */}
+                <ArticleListLayout>
+                {/* 文章列表内容 */}
                         <Waiting for={status === 'idle'}>
                             {paginatedFeeds.length > 0 ? (
                                 <>
                                     <div className={viewMode === 'list'
                                         ? "flex flex-col gap-3 sm:gap-4 w-full view-transition-container"
-                                        : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 w-full view-transition-container"
+                                        : `grid ${gridCols} gap-4 sm:gap-5 md:gap-6 w-full view-transition-container`
                                     }>
                                         {paginatedFeeds.map((feed, i) => (
                                             <LazyFeedCard key={`feed-card-${feed.id}-${i}-${sortType}-${viewMode}`} viewMode={viewMode} {...feed} />
                                         ))}
                                     </div>
 
-                            {/* 分页控制 - 使用计算出的总页数 */}
-                            {totalPages > 1 && (
-                                <div className="flex justify-center mt-6 mb-2 w-full">
-                                    <Pagination
-                                        currentPage={page}
-                                        totalPages={totalPages}
-                                        basePath={`/?type=${listState}${sortType !== 'latest' ? `&sort=${sortType}` : ''}`}
-                                        className="gap-2"
-                                    />
-                                </div>
-                            )}
+
                         </>
                     ) : status === 'loading' ? (
                         // 加载状态显示骨架屏
                         <div className={viewMode === 'list'
                             ? "flex flex-col gap-3 sm:gap-4 w-full"
-                            : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full"
+                            : `grid ${gridCols} gap-4 sm:gap-5 w-full`
                         }>
                             {Array(6).fill(0).map((_, i) => (
                                 <div key={`skeleton-${i}`} className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}>
@@ -669,12 +608,21 @@ export function FeedsPage() {
                         </div>
                     )}
                         </Waiting>
-                    </div>
+            </ArticleListLayout>
 
-                    {/* 侧边栏 */}
-                    <SidebarContainer />
+            {/* 分页控制 - 移到ArticleListLayout外部，与侧边栏分离 */}
+            {paginatedFeeds.length > 0 && totalPages > 1 && (
+                <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 transition-all duration-300`}>
+                    <div className="flex justify-center mt-6 mb-2 w-full">
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            basePath={`/?type=${listState}${sortType !== 'latest' ? `&sort=${sortType}` : ''}`}
+                            className="gap-2"
+                        />
+                    </div>
                 </div>
-            </PageContainer>
+            )}
         </>
     )
 }

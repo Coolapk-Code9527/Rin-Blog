@@ -24,6 +24,8 @@ import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { ProfileContext } from "../state/profile";
 import UnauthorizedAccess from "../components/UnauthorizedAccess";
 import { AnnouncementManager } from "../components/sidebar/AnnouncementManager";
+import { ExtendedConfigContext } from "../context/ConfigContext";
+import { configUpdateManager } from "../utils/ConfigUpdateManager";
 
 
 // 定义设置标签页类型
@@ -432,8 +434,19 @@ function ItemTitle({ title }: { title: string }) {
 }
 
 function ItemSwitch({ title, description, type, configKey }: { title: string, description: string, configKey: string, type: 'client' | 'server' }) {
-    const config = type === 'client' ? useContext(ClientConfigContext) : useContext(ServerConfigContext);
-    const clientConfig = useContext(ClientConfigContext);
+    // 获取扩展配置上下文（包含加载状态）
+    const extendedConfig = useContext(ExtendedConfigContext);
+
+    // 根据类型选择配置源，优先使用ExtendedConfigContext
+    const config = type === 'client' ?
+        (extendedConfig?.config || useContext(ClientConfigContext)) :
+        useContext(ServerConfigContext);
+
+    // 获取配置加载状态（只对client类型有效）
+    const configLoaded = type === 'client' ?
+        (extendedConfig?.configLoaded ?? true) :
+        true; // server配置不需要等待加载状态
+
     const defaultValue = config?.default<boolean>(configKey);
     const [checked, setChecked] = useState(defaultValue);
     const [loading, setLoading] = useState(false);
@@ -442,54 +455,42 @@ function ItemSwitch({ title, description, type, configKey }: { title: string, de
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
-    
+
     useEffect(() => {
+        // 对于client类型，等待配置加载完成后再更新状态
+        if (type === 'client' && !configLoaded) return;
+
         const value = config?.get<boolean>(configKey);
         if (value !== undefined) {
             setChecked(value);
         }
-    }, [config]);
+    }, [config, configKey, configLoaded, type]);
     
     function updateConfig(type: 'client' | 'server', key: string, value: boolean) {
         const currentChecked = checked;
         setChecked(!currentChecked);
         setLoading(true);
         
-        client.config({
-            type
-        }).post({
-            [key]: value
-        }, {
-            headers: headersWithAuth()
-        }).then((response) => {
-            if (response.error) {
-                setChecked(currentChecked);
-                showToast(t('settings.update_failed$message', { message: String(response.error.value) }));
-            } else {
-                if (type === 'client') {
-                    const config = sessionStorage.getItem('config')
-                    const newConfig = config ?
-                        { ...JSON.parse(config), [key]: value } :
-                        { [key]: value };
-
-                    sessionStorage.setItem('config', JSON.stringify(newConfig));
-
-                    // 触发全局配置更新事件
-                    window.dispatchEvent(new Event('configUpdated'));
-                    window.dispatchEvent(new StorageEvent('storage', {
-                        key: 'config',
-                        newValue: JSON.stringify(newConfig),
-                        oldValue: config,
-                        storageArea: sessionStorage
-                    }));
+        // 使用配置更新管理器，支持防抖和批量更新
+        configUpdateManager.setCallbacks(
+            // 成功回调
+            (updateType, updates) => {
+                if (updateType === type && updates[key] !== undefined) {
+                    setLoading(false);
+                }
+            },
+            // 错误回调
+            (updateType, error, updates) => {
+                if (updateType === type && updates[key] !== undefined) {
+                    setChecked(currentChecked);
+                    showToast(t('settings.update_failed$message', { message: error }));
+                    setLoading(false);
                 }
             }
-            setLoading(false);
-        }).catch((err) => {
-            showToast(t('settings.update_failed$message', { message: err.message }));
-            setChecked(currentChecked);
-            setLoading(false);
-        });
+        );
+
+        // 添加到更新队列
+        configUpdateManager.enqueueUpdate(type, key, value);
     }
     
     return (
@@ -546,43 +547,27 @@ function ItemInput({ title, configKeyTitle, description, type, configKey }: { ti
     
     function updateConfig(type: 'client' | 'server', key: string, newValue: any) {
         setLoading(true);
-        client.config({
-            type
-        }).post({
-            [key]: newValue
-        }, {
-            headers: headersWithAuth()
-        }).then((response) => {
-            // 检查错误
-            if (response.error) {
-                showToast(t('settings.update_failed$message', { message: String(response.error.value) }));
-                setValue(config?.get<string>(configKey) || "");
-            } else {
-                // 成功处理
-                if (type === 'client') {
-                    const config = sessionStorage.getItem('config')
-                    const newConfig = config ?
-                        { ...JSON.parse(config), [key]: newValue } :
-                        { [key]: newValue };
 
-                    sessionStorage.setItem('config', JSON.stringify(newConfig));
-
-                    // 触发全局配置更新事件
-                    window.dispatchEvent(new Event('configUpdated'));
-                    window.dispatchEvent(new StorageEvent('storage', {
-                        key: 'config',
-                        newValue: JSON.stringify(newConfig),
-                        oldValue: config,
-                        storageArea: sessionStorage
-                    }));
+        // 使用配置更新管理器，支持防抖和批量更新
+        configUpdateManager.setCallbacks(
+            // 成功回调
+            (updateType, updates) => {
+                if (updateType === type && updates[key] !== undefined) {
+                    setLoading(false);
+                }
+            },
+            // 错误回调
+            (updateType, error, updates) => {
+                if (updateType === type && updates[key] !== undefined) {
+                    showToast(t('settings.update_failed$message', { message: error }));
+                    setValue(config?.get<string>(configKey) || "");
+                    setLoading(false);
                 }
             }
-            setLoading(false);
-        }).catch((err) => {
-            showToast(t('settings.update_failed$message', { message: err.message }));
-            setValue(config?.get<string>(configKey) || "");
-            setLoading(false);
-        });
+        );
+
+        // 添加到更新队列
+        configUpdateManager.enqueueUpdate(type, key, newValue);
     }
     
     return (

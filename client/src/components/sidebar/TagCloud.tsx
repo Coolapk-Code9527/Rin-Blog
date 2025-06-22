@@ -1,15 +1,7 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
 import { useGlassEffect, GLASS_LAYERS } from '../../hooks/useGlassEffect';
-import { client } from '../../main';
-
-interface Tag {
-  id: number;
-  name: string;
-  feeds: number;
-  description?: string;
-}
+import { useTagsWithCache } from '../../hooks/useTagsWithCache';
 
 interface TagCloudProps {
   className?: string;
@@ -19,41 +11,9 @@ interface TagCloudProps {
 export function TagCloud({ className = '', maxTags = 10 }: TagCloudProps) {
   const { t } = useTranslation();
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
-  
-  const [tags, setTags] = React.useState<Tag[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
 
-  // 获取标签数据
-  React.useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await client.tag.index.get();
-        
-        if (response.error) {
-          throw new Error(response.error.value as string);
-        }
-        
-        // 按文章数量排序，取前N个热门标签
-        const sortedTags = (response.data || [])
-          .filter((tag: Tag) => tag.feeds > 0) // 只显示有文章的标签
-          .sort((a: Tag, b: Tag) => b.feeds - a.feeds)
-          .slice(0, maxTags);
-        
-        setTags(sortedTags);
-      } catch (err) {
-        console.error('Failed to fetch tags:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load tags');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTags();
-  }, [maxTags]);
+  // 使用带缓存的标签数据Hook
+  const { tags, loading, error, refreshTags } = useTagsWithCache(maxTags);
 
   // 计算标签字体大小（基于文章数量，但范围更小）
   const getTagSize = (feedCount: number, maxCount: number) => {
@@ -125,7 +85,7 @@ export function TagCloud({ className = '', maxTags = 10 }: TagCloudProps) {
   const maxFeedCount = Math.max(...tags.map(tag => tag.feeds));
 
   return (
-    <div className={`rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden ${className}`}>
+    <div className={`rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden flex flex-col h-full ${className}`}>
       {/* 头部 */}
       <div className="px-4 py-3 border-b border-neutral-200/60 dark:border-neutral-700/60">
         <h3 className="text-lg font-bold flex items-center gap-2 mt-0 mb-0">
@@ -134,9 +94,9 @@ export function TagCloud({ className = '', maxTags = 10 }: TagCloudProps) {
         </h3>
       </div>
 
-      {/* 标签云内容 */}
-      <div className="p-4">
-        <div className="flex flex-wrap gap-2 justify-start">
+      {/* 标签云内容 - 自适应高度滚动 */}
+      <div className="p-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+        <div className="flex flex-wrap gap-2 justify-start pr-1">
           {tags.map((tag, index) => (
             <Link
               key={tag.id}

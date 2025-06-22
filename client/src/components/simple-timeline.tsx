@@ -2,15 +2,15 @@ import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { UnifiedContainer } from "./UnifiedContainer";
 
-// 定义组件Props接口 - 使用React.ComponentProps确保类型兼容性
-interface UnifiedTimelineItemProps extends React.ComponentProps<'div'> {
+// 定义组件Props接口 - 避免与HTML元素的onToggle冲突
+interface UnifiedTimelineItemProps {
   item: any;
-  onToggle: (id: string) => void;
+  onToggleItem: (id: string) => void;
   t: any;
 }
 
 // UnifiedTimelineItem: 统一的时间轴项目组件（年、月、文章都在同一条线上）
-export function UnifiedTimelineItem({ item, onToggle, t }: UnifiedTimelineItemProps) {
+export function UnifiedTimelineItem({ item, onToggleItem, t }: UnifiedTimelineItemProps) {
   const { type, data, isCollapsed } = item;
 
   // 根据类型设置不同的圆点样式
@@ -31,7 +31,7 @@ export function UnifiedTimelineItem({ item, onToggle, t }: UnifiedTimelineItemPr
       case 'year':
         return (
           <button
-            onClick={() => onToggle?.(data.id)}
+            onClick={() => onToggleItem?.(data.id)}
             className="flex items-center gap-3 hover:text-theme transition-colors duration-200"
           >
             <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -47,7 +47,7 @@ export function UnifiedTimelineItem({ item, onToggle, t }: UnifiedTimelineItemPr
       case 'month':
         return (
           <button
-            onClick={() => onToggle?.(data.id)}
+            onClick={() => onToggleItem?.(data.id)}
             className="flex items-center gap-2 hover:text-theme transition-colors duration-200"
           >
             <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
@@ -266,10 +266,12 @@ export function UnifiedTimeline({ feeds, t }: { feeds: any[], t: any }) {
         <div className="-my-6">
           {timelineItems.map((item) => (
             <UnifiedTimelineItem
-              key={item.id}
-              item={item}
-              onToggle={toggleCollapse}
-              t={t}
+              {...({
+                key: item.id,
+                item: item,
+                onToggleItem: toggleCollapse,
+                t: t
+              } as any)}
             />
           ))}
         </div>

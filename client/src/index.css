@@ -435,6 +435,53 @@ html.dark body .nav-glass,
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+/* 文章列表布局动画 */
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* 容器宽度变化动画优化 */
+.article-list-container {
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: max-width;
+}
+
+/* 主内容区域自适应动画 */
+.article-list-main {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+}
+
+/* 侧边栏动画优化 */
+.article-list-sidebar {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  will-change: transform, opacity;
+}
+
+/* 性能优化：减少重绘 */
+.transform-gpu {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
 /* 文件管理器专用毛玻璃效果 */
 .glass-file-card {
   background: rgba(255, 255, 255, 0.65) !important;

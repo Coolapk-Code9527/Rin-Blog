@@ -1,18 +1,20 @@
 import * as React from 'react';
-import { useGlassEffect, GLASS_LAYERS } from '../../hooks/useGlassEffect';
 import { ProfileCard } from './ProfileCard';
 import { TagCloud } from './TagCloud';
 import { AnnouncementCard } from './AnnouncementCard';
 import { MusicPlayer } from './MusicPlayer';
+import { SidebarSkeleton } from './SidebarSkeleton';
 import { ClientConfigContext } from '../../state/config';
 import { getSidebarConfig, type SidebarConfig } from '../../utils/sidebarConfig';
 
 interface SidebarContainerProps {
   className?: string;
+  showSkeleton?: boolean;
 }
 
-export function SidebarContainer({ className = '' }: SidebarContainerProps) {
+export function SidebarContainer({ className = '', showSkeleton = false }: SidebarContainerProps) {
   const config = React.useContext(ClientConfigContext);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   // 获取侧边栏配置
   const sidebarConfig = getSidebarConfig(config);
@@ -20,6 +22,20 @@ export function SidebarContainer({ className = '' }: SidebarContainerProps) {
   // 如果侧边栏被禁用，不渲染任何内容
   if (!sidebarConfig.enabled) {
     return null;
+  }
+
+  // 模拟加载时间（实际项目中应该基于数据加载状态）
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800); // 800ms的加载时间，确保平滑过渡
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 如果正在加载或强制显示骨架屏，显示骨架屏
+  if (isLoading || showSkeleton) {
+    return <SidebarSkeleton className={className} />;
   }
 
   // 组件映射
@@ -47,34 +63,27 @@ export function SidebarContainer({ className = '' }: SidebarContainerProps) {
 
 
 
-  return (
-    <aside className={`hidden lg:flex flex-col w-[260px] flex-shrink-0 gap-6 ${className}`}>
-      <div className="flex flex-col gap-6">
-        {renderComponents()}
-      </div>
-    </aside>
-  );
-}
+  const components = renderComponents();
 
-// 侧边栏组件骨架屏
-function SidebarComponentSkeleton() {
-  const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
-  
   return (
-    <div className={`rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 p-4 animate-pulse`}>
-      <div className="space-y-3">
-        <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
-        <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2"></div>
-        <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-2/3"></div>
+    <div className={`flex flex-col gap-6 ${className}`}>
+      {/* 固定高度组件 */}
+      {components.slice(0, -1)}
+
+      {/* 最后一个组件（通常是TagCloud）*/}
+      <div className="min-h-0">
+        {components.slice(-1)}
       </div>
     </div>
   );
 }
 
-// 用于懒加载的高阶组件
+
+
+// 用于懒加载的高阶组件（保留用于未来扩展）
 export function withLazyLoading<T extends object>(
   Component: React.ComponentType<T>,
-  fallback?: React.ReactNode
+  _fallback?: React.ReactNode
 ) {
   return Component; // 简化实现，直接返回组件
 }

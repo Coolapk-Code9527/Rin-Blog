@@ -220,17 +220,26 @@ export class CacheImpl {
             return; // 序列化失败时不进行保存
         }
 
-        // 优化：移除调试日志，减少CPU消耗
-        await this.s3.send(new PutObjectCommand({
-            Bucket: this.env.S3_BUCKET,
-            Key: cacheKey,
-            Body: serializedData
-        })).catch((e: any) => {
-            // 只在真正的错误时记录，减少日志输出
-            if (e.code !== 'NoSuchBucket') {
-                console.error('Cache save failed:', e.message);
+        // 超级优化：异步上传，避免阻塞主线程
+        this.asyncUpload(cacheKey, serializedData);
+    }
+
+    // 异步上传方法，避免阻塞主线程
+    private asyncUpload(cacheKey: string, data: string): void {
+        // 使用setTimeout确保不阻塞当前执行
+        setTimeout(async () => {
+            try {
+                await this.s3.send(new PutObjectCommand({
+                    Bucket: this.env.S3_BUCKET,
+                    Key: cacheKey,
+                    Body: data
+                }));
+            } catch (e: any) {
+                if (e.code !== 'NoSuchBucket') {
+                    console.error('Cache save failed:', e.message);
+                }
             }
-        });
+        }, 0);
     }
 }
 

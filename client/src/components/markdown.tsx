@@ -208,7 +208,9 @@ function extractTextFromChildren(children: React.ReactNode): string {
   if (typeof children === 'string') return children;
   if (typeof children === 'number') return children.toString();
   if (Array.isArray(children)) return children.map(extractTextFromChildren).join('');
-  if (React.isValidElement(children)) return extractTextFromChildren(children.props.children);
+  if (React.isValidElement(children) && children.props && typeof children.props === 'object' && 'children' in children.props) {
+    return extractTextFromChildren(children.props.children as React.ReactNode);
+  }
   return '';
 }
 
@@ -216,7 +218,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
   const colorMode = useColorMode();
   const config = useContext(ClientConfigContext); // 注入config
   const [index, setIndex] = React.useState(-1);
-  const slides = useRef<SlideImage[]>();
+  const slides = useRef<SlideImage[]>([]);
   const { t } = useTranslation();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isReady, setIsReady] = useState(false);

@@ -8,13 +8,14 @@ interface ViewToggleProps {
     currentView: ViewMode;
     onViewChange: (view: ViewMode) => void;
     className?: string;
+    showButtonText?: boolean;
 }
 
 /**
  * 视图切换组件
  * 提供网格视图和列表视图的切换功能
  */
-export function ViewToggle({ currentView, onViewChange, className = '' }: ViewToggleProps) {
+export function ViewToggle({ currentView, onViewChange, className = '', showButtonText = true }: ViewToggleProps) {
     const { t } = useTranslation();
     const buttonGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
 
@@ -51,7 +52,7 @@ export function ViewToggle({ currentView, onViewChange, className = '' }: ViewTo
                     title={option.tooltip}
                 >
                     <i className={`${option.icon} text-xs md:text-sm`}></i>
-                    <span className="ml-1 sm:ml-1.5 hidden sm:inline">{option.label}</span>
+                    {showButtonText && <span className="ml-1 sm:ml-1.5">{option.label}</span>}
                 </button>
             ))}
         </div>

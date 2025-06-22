@@ -71,9 +71,9 @@ export const TypewriterText = ({
   const [showCursorState, setShowCursorState] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const cursorTimeoutRef = useRef<NodeJS.Timeout>();
-  const audioContextRef = useRef<AudioContext>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const cursorTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const audioContextRef = useRef<AudioContext | undefined>(undefined);
 
   /**
    * 获取颜色主题类名

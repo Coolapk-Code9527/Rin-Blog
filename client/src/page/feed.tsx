@@ -389,7 +389,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       {feed.user.username}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      {config?.get<string>('author.bio') || '热爱分享技术与生活的博主，专注于前端开发和用户体验设计。'}
+                      {config?.get<string>('author.bio') || '热爱分享技术与生活的博主。'}
                     </p>
                     <div className="flex items-center justify-center sm:justify-start gap-3">
                       <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">

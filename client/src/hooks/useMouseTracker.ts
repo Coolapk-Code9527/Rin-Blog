@@ -51,7 +51,7 @@ export const useMouseTracker = (options: MouseTrackerOptions = {}) => {
   });
 
   const [isSupported, setIsSupported] = useState(true);
-  const debounceRef = useRef<number>();
+  const debounceRef = useRef<number | undefined>(undefined);
   const lastUpdateRef = useRef<number>(0);
 
   /**

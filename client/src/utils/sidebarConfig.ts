@@ -72,7 +72,7 @@ export function getSidebarConfig(config: ConfigWrapper): SidebarConfig {
 export function getAuthorConfig(config: ConfigWrapper): AuthorConfig {
   return {
     name: config?.get<string>('author.name') || '博主',
-    bio: config?.get<string>('author.bio') || '热爱分享技术与生活的博主，专注于前端开发和用户体验设计。',
+    bio: config?.get<string>('author.bio') || '热爱分享技术与生活的博主。',
     avatar: config?.get<string>('author.avatar') || undefined,
     social: {
       github: config?.get<string>('author.social.github') || undefined,

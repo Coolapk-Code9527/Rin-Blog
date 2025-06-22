@@ -73,8 +73,8 @@ export const usePerformanceMonitor = (config: PerformanceMonitorConfig = {}) => 
   const frameCountRef = useRef(0);
   const lastTimeRef = useRef(performance.now());
   const fpsHistoryRef = useRef<number[]>([]);
-  const animationFrameRef = useRef<number>();
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   /**
    * 计算FPS

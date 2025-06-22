@@ -133,7 +133,7 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
 
           {/* 简介 */}
           {authorConfig.bio && (
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed line-clamp-3">
               {authorConfig.bio}
             </p>
           )}

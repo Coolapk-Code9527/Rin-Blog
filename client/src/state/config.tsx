@@ -8,9 +8,9 @@ export const defaultClientConfig = new Map(Object.entries({
     "S3_ACCESS_HOST": "",
     "background.enabled": false,
     "background.url": "",
-    "author.bio": "热爱分享技术与生活的博主，专注于前端开发和用户体验设计。",
+    "author.bio": "热爱分享技术与生活的博主。",
     // 侧边栏配置
-    "sidebar.enabled": true,
+    "sidebar.enabled": false,
     "sidebar.components.profile": true,
     "sidebar.components.music": false,
     "sidebar.components.announcements": true,

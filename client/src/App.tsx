@@ -31,6 +31,8 @@ import { ToastProvider } from './components/toast/Toast'
 import { GlobalDialogProvider } from './components/dialog'
 import { GlobalMusicPlayer } from './components/GlobalMusicPlayer'
 import { MusicProvider } from './context/MusicContext'
+import { ExtendedConfigProvider } from './context/ConfigContext'
+import { clearExpiredTagsCache } from './hooks/useTagsWithCache'
 
 // 返回顶部按钮组件
 function BackToTop() {
@@ -75,7 +77,28 @@ function App() {
   const ref = useRef(false)
   const { t } = useTranslation()
   const [profile, setProfile] = useState<Profile | undefined>()
-  const [config, setConfig] = useState<ConfigWrapper>(new ConfigWrapper({}, new Map()))
+
+  // 立即同步读取sessionStorage配置，避免使用默认配置导致的闪现
+  const [config, setConfig] = useState<ConfigWrapper>(() => {
+    const savedConfig = sessionStorage.getItem('config');
+    if (savedConfig) {
+      try {
+        const configObj = JSON.parse(savedConfig);
+        if (!('S3_ACCESS_HOST' in configObj)) configObj.S3_ACCESS_HOST = '';
+        return new ConfigWrapper(configObj, defaultClientConfig);
+      } catch (error) {
+        console.warn('Failed to parse saved config, using default:', error);
+        return new ConfigWrapper({}, defaultClientConfig);
+      }
+    }
+    return new ConfigWrapper({}, defaultClientConfig);
+  });
+
+  const [configLoaded, setConfigLoaded] = useState(() => {
+    // 如果sessionStorage中有配置，认为已加载
+    return !!sessionStorage.getItem('config');
+  });
+
   const [contentReady, setContentReady] = useState(false);
 
 
@@ -95,6 +118,7 @@ function App() {
         if (!('S3_ACCESS_HOST' in configObj)) configObj.S3_ACCESS_HOST = '';
         const configWrapper = new ConfigWrapper(configObj, defaultClientConfig)
         setConfig(configWrapper)
+        setConfigLoaded(true) // 标记配置已加载
       } catch (error) {
         loadConfigFromServer();
       }
@@ -111,6 +135,7 @@ function App() {
         sessionStorage.setItem('config', JSON.stringify(data))
         const config = new ConfigWrapper(data, defaultClientConfig)
         setConfig(config)
+        setConfigLoaded(true) // 标记配置已加载
       }
     })
   }
@@ -131,6 +156,10 @@ function App() {
         }
       })
     }
+
+    // 清理过期的标签缓存
+    clearExpiredTagsCache();
+
     // 页面初始加载时强制从服务器获取最新配置
     loadConfig(true)
     ref.current = true
@@ -161,7 +190,8 @@ function App() {
         <ToastProvider>
           {/* @ts-ignore - 忽略Provider的类型检查 */}
           <ClientConfigContext.Provider value={config}>
-            <MusicProvider>
+            <ExtendedConfigProvider value={{ config, configLoaded }}>
+              <MusicProvider>
               {/* @ts-ignore - 忽略Provider的类型检查 */}
               <ProfileContext.Provider value={profile}>
               <Helmet>
@@ -283,7 +313,8 @@ function App() {
               <BackToTop />
               <GlobalMusicPlayer />
             </ProfileContext.Provider>
-            </MusicProvider>
+              </MusicProvider>
+            </ExtendedConfigProvider>
           </ClientConfigContext.Provider>
         </ToastProvider>
       </GlobalDialogProvider>
@@ -305,7 +336,7 @@ function RouteMe({ path, children, headerComponent, paddingClassName }:
             <Header>
               {headerComponent}
             </Header>
-            <main className="flex-1 relative z-10">
+            <main className="flex-1 relative z-10 min-h-[calc(100vh-240px)]">
               <Padding className={paddingClassName}>
                 {typeof children === 'function' ? children(params) : children}
               </Padding>

@@ -11,6 +11,7 @@ import {
 import { client } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
 import { useToast } from '../../hooks/useToast';
+import { useGlobalDialog } from '../dialog';
 
 interface AnnouncementManagerProps {
   className?: string;
@@ -21,6 +22,7 @@ export function AnnouncementManager({ className = '' }: AnnouncementManagerProps
   const config = React.useContext(ClientConfigContext);
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
   const { showToast } = useToast();
+  const { showConfirm } = useGlobalDialog();
 
   // 状态管理
   const [announcements, setAnnouncements] = React.useState<Announcement[]>([]);
@@ -145,10 +147,18 @@ export function AnnouncementManager({ className = '' }: AnnouncementManagerProps
 
   // 删除公告
   const handleDeleteAnnouncement = (id: string) => {
-    if (confirm(t('announcements.deleteConfirm', { defaultValue: '确定要删除这条公告吗？' }))) {
-      const newAnnouncements = announcements.filter(a => a.id !== id);
-      saveAnnouncements(newAnnouncements);
-    }
+    const announcement = announcements.find(a => a.id === id);
+    showConfirm(
+      t('announcements.deleteTitle', { defaultValue: '删除公告' }),
+      t('announcements.deleteConfirm', {
+        defaultValue: '确定要删除公告"{title}"吗？此操作无法撤销。',
+        title: announcement?.title || ''
+      }),
+      () => {
+        const newAnnouncements = announcements.filter(a => a.id !== id);
+        saveAnnouncements(newAnnouncements);
+      }
+    );
   };
 
   // 重置表单
@@ -207,7 +217,7 @@ export function AnnouncementManager({ className = '' }: AnnouncementManagerProps
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               rows={3}
               className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-theme focus:border-transparent resize-none"
-              placeholder={t('announcements.contentPlaceholder', { defaultValue: '请输入公告内容，支持Markdown格式' })}
+              placeholder={t('announcements.contentPlaceholder', { defaultValue: '请输入公告内容' })}
             />
           </div>
 
