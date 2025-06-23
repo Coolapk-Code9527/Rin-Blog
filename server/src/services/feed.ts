@@ -197,7 +197,7 @@ export function FeedService() {
                             const stats = visitStatsMap.get(other.id) || { pv: 0, uv: 0 };
 
                             return {
-                                summary: summary.length > 0 ? summary : markdownToPlainText(content, 400),
+                                summary: summary.length > 0 ? summary : markdownToPlainText(content, 300),
                                 hashtags: hashtags.map(({ hashtag }) => hashtag),
                                 avatar,
                                 pv: stats.pv,
@@ -248,7 +248,7 @@ export function FeedService() {
                         const stats = visitStatsMap2.get(other.id) || { pv: 0, uv: 0 };
 
                         return {
-                            summary: summary.length > 0 ? summary : markdownToPlainText(content, 400),
+                            summary: summary.length > 0 ? summary : markdownToPlainText(content, 300),
                             hashtags: hashtags.map(({ hashtag }) => hashtag),
                             avatar,
                             pv: stats.pv,
@@ -488,7 +488,7 @@ export function FeedService() {
                             const summary =
                                 feed.summary.length > 0
                                     ? feed.summary
-                                    : markdownToPlainText(feed.content, 400);
+                                    : markdownToPlainText(feed.content, 300);
                             const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                             const cacheData = {
                             id: feed.id,
@@ -762,7 +762,7 @@ export function FeedService() {
 
             const feed_list = searchResults.data.map(({ content, hashtags, summary, ...other }) => {
                 return {
-                    summary: summary.length > 0 ? summary : markdownToPlainText(content, 400),
+                    summary: summary.length > 0 ? summary : markdownToPlainText(content, 300),
                     hashtags: hashtags.map(({ hashtag }) => hashtag),
                     ...other
                 }
@@ -813,7 +813,7 @@ export function FeedService() {
                     : contentHtml;
 
                 const content = html2md(limitedContentHtml || '');
-                const summary = markdownToPlainText(content, 400);
+                const summary = markdownToPlainText(content, 300);
                 let tags = item?.['category'];
                 if (tags && Array.isArray(tags)) {
                     tags = tags.map((tag: any) => tag + '').slice(0, 10); // 限制标签数量

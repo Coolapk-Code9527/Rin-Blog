@@ -2499,14 +2499,7 @@ button img.rounded-full:hover {
   transform: scale(1);
 }
 
-/* 设置文章摘要行数限制 */
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;  
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* TailwindCSS 3.4.3 内置line-clamp功能，移除自定义CSS类避免冲突 */
 
 /* 优化语言选择器样式 */
 [role="menu"], 

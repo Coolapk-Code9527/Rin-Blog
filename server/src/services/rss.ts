@@ -167,7 +167,7 @@ export async function rssCrontab(env: Env) {
                 description:
                     summary.length > 0
                         ? summary
-                        : markdownToPlainText(content, 400),
+                        : markdownToPlainText(content, 300),
                 content: contentHtml,
                 author: [{ name: user.username }],
                 image: extractImage(content),

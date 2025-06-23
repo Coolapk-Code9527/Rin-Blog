@@ -24,6 +24,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
+    // 移除复杂的动态截断Hook，使用简单可靠的固定行数
+
 
 
     // 判断是否为"今天"发布的文章
@@ -173,12 +175,12 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 <h2 id={`article-title-${id}`} className={
                     viewMode === 'list'
                         ? `text-sm sm:text-base font-bold text-gray-800 dark:text-white overflow-hidden mb-1 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 ${
-                            // 列表视图：移动端单行截断，桌面端双行截断
-                            'line-clamp-1 sm:line-clamp-2'
+                            // 列表视图：统一单行截断，给摘要更多空间
+                            'line-clamp-1'
                         } ${top === 1 ? 'pr-16 sm:pr-20' : ''}`  // 有置顶标识时预留右侧空间
                         : `text-lg sm:text-xl font-bold text-gray-800 dark:text-white overflow-hidden mb-1 sm:mb-1.5 leading-tight group-hover:text-theme dark:group-hover:text-theme transition-colors duration-300 ${
-                            // 网格视图：移动端双行截断，桌面端三行截断
-                            'line-clamp-2 sm:line-clamp-3'
+                            // 网格视图：统一单行截断，给摘要更多空间
+                            'line-clamp-1'
                         } ${top === 1 ? 'pr-12 sm:pr-16' : ''}`  // 有置顶标识时预留右侧空间
                 }>
                     {title}
@@ -236,25 +238,25 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     </div>
                 </div>
                 
-                {/* 文章摘要 - 回到基础实现 */}
-                <div className={viewMode === 'list' ? "flex-1 min-h-0 overflow-hidden mb-2" : "flex-1 flex flex-col min-h-0 overflow-hidden"}>
+                {/* 文章摘要 - 使用固定行数截断，简单可靠 */}
+                <div className={viewMode === 'list' ? "flex-1 min-h-0 mb-2" : "flex-1 flex flex-col min-h-0"}>
                     <div className={viewMode === 'list'
-                        ? "dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300 line-clamp-3"
-                        : "dark:text-gray-300 text-gray-600 text-xs sm:text-sm leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300 line-clamp-4"
+                        ? "dark:text-gray-300 text-gray-600 text-sm leading-normal group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300 line-clamp-3 sm:line-clamp-4"
+                        : "dark:text-gray-300 text-gray-600 text-sm leading-normal group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300 line-clamp-4 sm:line-clamp-3 lg:line-clamp-3"
                     }>
-                    <SimplifiedMarkdown content={summary} />
+                        <SimplifiedMarkdown content={summary} />
                     </div>
                 </div>
                     
-                {/* 标签区域 - 根据视图模式调整布局 */}
+                {/* 标签区域 - 统一为没标签时的高度，确保摘要区域一致 */}
                 <div className={viewMode === 'list'
-                    ? "mt-auto pt-1 border-t border-gray-100 dark:border-gray-700/40 flex-shrink-0"
-                    : "mt-auto pt-2 border-t-2 border-gray-100 dark:border-gray-700/40 flex-shrink-0"
+                    ? "mt-auto pt-1 border-t border-gray-100 dark:border-gray-700/40 flex-shrink-0 h-6"
+                    : "mt-auto pt-2 border-t-2 border-gray-100 dark:border-gray-700/40 flex-shrink-0 h-8"
                 }>
                     {hashtags.length > 0 ? (
                         <div className={viewMode === 'list'
-                            ? "flex flex-row flex-wrap items-center gap-1"
-                            : "flex flex-row flex-wrap items-center gap-1.5 sm:gap-2"
+                            ? "flex flex-row flex-wrap items-center gap-1 h-full"
+                            : "flex flex-row flex-wrap items-center gap-1.5 sm:gap-2 h-full"
                         }>
                             {(viewMode === 'list' ? hashtags.slice(0, 2) : hashtags).map(({id, name}) => (
                                 <div key={id} className="animate-fadeIn">

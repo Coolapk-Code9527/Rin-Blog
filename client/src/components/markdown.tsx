@@ -1108,9 +1108,9 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
       remarkPlugins={[gfm, remarkBreaks]}
       children={processedContent}
       components={{
-        // 简化的组件渲染，所有块级元素都改为行内显示
+        // 修复：使用span避免p标签嵌套问题，保持内联显示
         p({ children }) {
-          return <span className="text-inherit">{children}</span>;
+          return <span className="text-inherit block">{children}</span>;
         },
         a({ children, href }) {
           return (
@@ -1131,17 +1131,17 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
             </span>
           );
         },
-        // 所有标题都转为普通文本
-        h1: ({ children }) => <span className="font-medium">{children}</span>,
-        h2: ({ children }) => <span className="font-medium">{children}</span>,
-        h3: ({ children }) => <span className="font-medium">{children}</span>,
-        h4: ({ children }) => <span className="font-medium">{children}</span>,
-        h5: ({ children }) => <span className="font-medium">{children}</span>,
-        h6: ({ children }) => <span className="font-medium">{children}</span>,
-        
-        // 其他块级元素简化处理
+        // 保持块级元素结构，使用span避免p标签嵌套
+        h1: ({ children }) => <span className="font-medium block">{children}</span>,
+        h2: ({ children }) => <span className="font-medium block">{children}</span>,
+        h3: ({ children }) => <span className="font-medium block">{children}</span>,
+        h4: ({ children }) => <span className="font-medium block">{children}</span>,
+        h5: ({ children }) => <span className="font-medium block">{children}</span>,
+        h6: ({ children }) => <span className="font-medium block">{children}</span>,
+
+        // 其他块级元素保持块级结构
         blockquote({ children }) {
-          return <span className="italic">{children}</span>;
+          return <span className="italic block">{children}</span>;
         },
         strong({ children }) {
           return <span className="font-medium">{children}</span>;
@@ -1150,19 +1150,19 @@ export function SimplifiedMarkdown({ content }: { content: string }) {
           return <span className="italic">{children}</span>;
         },
         ul({ children }) {
-          return <span>{children}</span>;
+          return <div>{children}</div>;
         },
         ol({ children }) {
-          return <span>{children}</span>;
+          return <div>{children}</div>;
         },
         li({ children }) {
-          return <span>• {children} </span>;
+          return <span className="block">• {children}</span>;
         },
         hr() {
-          return <span> ... </span>;
+          return <span className="block"> ... </span>;
         },
         table() {
-          return <span>[表格] </span>;
+          return <span className="block">[表格] </span>;
         },
         // 其他元素使用默认渲染
       }}
