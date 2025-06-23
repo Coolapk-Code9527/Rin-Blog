@@ -13,7 +13,11 @@
     "search": {
       "placeholder": "キーワードを入力してください",
       "title": "検索",
-      "title$keyword": "検索: {{keyword}}"
+      "title$keyword": "検索: {{keyword}}",
+      "history": "検索履歴",
+      "clear_history": "履歴をクリア",
+      "no_results": "検索結果がありません",
+      "use": "使用"
     },
     "title": "記事",
     "top": {
@@ -84,7 +88,12 @@
   "error": {
     "api_url": "Pages 環境変数のAPI_URLはWorkerアドレスである必要があります。Pages環境変数のAPI_URLが正しいか確認してください。",
     "api_url_slash": "Pages 環境変数のAPI_URLはWorkerアドレスである必要があります。Pages環境変数のAPI_URLが正しいか、またAPI_URLの末尾にスラッシュ（/）がないか確認してください。",
-    "github_callback": "GitHub OAuthコールバックURLは`https://<Workerアドレス>/user/github/callback`である必要があります。GitHub OAuthコールバックURLが正しいか確認してください。"
+    "github_callback": "GitHub OAuthコールバックURLは`https://<Workerアドレス>/user/github/callback`である必要があります。GitHub OAuthコールバックURLが正しいか確認してください。",
+    "not_found": "ページが見つかりません",
+    "page_not_exist": "アクセスしようとしたページは存在しないか、削除されています",
+    "page_not_exist_desc": "ページが移動、削除されたか、リンクアドレスが間違っている可能性があります",
+    "back_home": "ホームに戻る",
+    "go_back": "戻る"
   },
   "feed_card": {
     "published$time": "{{time}} に公開",

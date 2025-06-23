@@ -338,33 +338,33 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                 <div className={`grid gap-2 sm:gap-4 py-3 sm:py-4 px-3 sm:px-6 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-200/60 dark:border-blue-700/60 ${counterEnabled ? 'grid-cols-4' : 'grid-cols-2'}`}>
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
-                      <i className="ri-calendar-line text-blue-600 dark:text-blue-400 text-xs sm:text-base"></i>
-                      <div className="text-sm sm:text-lg font-bold text-blue-600 dark:text-blue-400">{new Date(feed.createdAt).toLocaleDateString()}</div>
+                      <i className="ri-calendar-line text-blue-600 dark:text-blue-400 text-[10px] sm:text-sm"></i>
+                      <div className="text-xs sm:text-base font-bold text-blue-600 dark:text-blue-400">{new Date(feed.createdAt).toLocaleDateString()}</div>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">发布日期</div>
+                    <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('feedDetail.publishDate')}</div>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
-                      <i className="ri-history-line text-green-600 dark:text-green-400 text-xs sm:text-base"></i>
-                      <div className="text-sm sm:text-lg font-bold text-green-600 dark:text-green-400">{new Date(feed.updatedAt).toLocaleDateString()}</div>
+                      <i className="ri-history-line text-green-600 dark:text-green-400 text-[10px] sm:text-sm"></i>
+                      <div className="text-xs sm:text-base font-bold text-green-600 dark:text-green-400">{new Date(feed.updatedAt).toLocaleDateString()}</div>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">更新日期</div>
+                    <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('feedDetail.updateDate')}</div>
                   </div>
                   {counterEnabled && (
                     <>
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
-                          <i className="ri-eye-line text-purple-600 dark:text-purple-400 text-xs sm:text-base"></i>
-                          <div className="text-sm sm:text-lg font-bold text-purple-600 dark:text-purple-400">{feed.pv}</div>
+                          <i className="ri-eye-line text-purple-600 dark:text-purple-400 text-[10px] sm:text-sm"></i>
+                          <div className="text-xs sm:text-base font-bold text-purple-600 dark:text-purple-400">{feed.pv}</div>
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">浏览量</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('feedDetail.pageViews')}</div>
                       </div>
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
-                          <i className="ri-user-3-line text-pink-600 dark:text-pink-400 text-xs sm:text-base"></i>
-                          <div className="text-sm sm:text-lg font-bold text-pink-600 dark:text-pink-400">{feed.uv}</div>
+                          <i className="ri-user-3-line text-pink-600 dark:text-pink-400 text-[10px] sm:text-sm"></i>
+                          <div className="text-xs sm:text-base font-bold text-pink-600 dark:text-pink-400">{feed.uv}</div>
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">访客数</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('feedDetail.uniqueVisitors')}</div>
                       </div>
                     </>
                   )}
@@ -392,13 +392,13 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                       {config?.get<string>('author.bio') || '热爱分享技术与生活的博主。'}
                     </p>
                     <div className="flex items-center justify-center sm:justify-start gap-3">
-                      <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                        <i className="ri-calendar-line"></i>
-                        加入于 {new Date(feed.createdAt).getFullYear()}
+                      <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <i className="ri-calendar-line text-[10px] sm:text-xs"></i>
+                        {t('feedDetail.joinedIn')} {new Date(feed.createdAt).getFullYear()}
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                        <i className="ri-article-line"></i>
-                        文章作者
+                      <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <i className="ri-article-line text-[10px] sm:text-xs"></i>
+                        {t('feedDetail.articleAuthor')}
                       </span>
                     </div>
                   </div>
@@ -408,7 +408,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-4 sm:px-6 bg-gray-50/50 dark:bg-gray-800/30 rounded-xl border border-gray-200/60 dark:border-gray-700/60">
                   <div className="flex items-center gap-3">
                     <i className="ri-share-line text-theme text-lg"></i>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">分享这篇文章</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('share.title')}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <button
@@ -422,7 +422,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                         }
                       }}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors duration-200"
-                      title="分享到 Twitter"
+                      title={t('share.twitter')}
                     >
                       <i className="ri-twitter-x-line"></i>
                       <span className="hidden sm:inline">Twitter</span>
@@ -434,7 +434,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                         window.open(`https://connect.qq.com/widget/shareqq/index.html?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`, '_blank');
                       }}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
-                      title="分享到 QQ"
+                      title={t('share.qq')}
                     >
                       <i className="ri-qq-line"></i>
                       <span className="hidden sm:inline">QQ</span>
@@ -446,7 +446,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                         window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
                       }}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-400 hover:bg-blue-500 rounded-lg transition-colors duration-200"
-                      title="分享到 Telegram"
+                      title={t('share.telegram')}
                     >
                       <i className="ri-telegram-line"></i>
                       <span className="hidden sm:inline">Telegram</span>
@@ -460,10 +460,10 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                         window.open(qrUrl, '_blank');
                       }}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors duration-200"
-                      title="生成微信分享二维码"
+                      title={t('share.wechat')}
                     >
                       <i className="ri-wechat-line"></i>
-                      <span className="hidden sm:inline">微信</span>
+                      <span className="hidden sm:inline">{t('share.wechat', { defaultValue: '微信' }).includes('微信') ? '微信' : 'WeChat'}</span>
                     </button>
                     <button
                       onClick={() => {
@@ -471,10 +471,10 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                         // 这里可以添加一个提示
                       }}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200"
-                      title="复制链接"
+                      title={t('share.copyLink')}
                     >
                       <i className="ri-link"></i>
-                      <span className="hidden sm:inline">复制链接</span>
+                      <span className="hidden sm:inline">{t('share.copyLink')}</span>
                     </button>
                   </div>
                 </div>

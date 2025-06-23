@@ -93,7 +93,7 @@ export function TimelinePage() {
                                         {t('timeline')}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                                     </h1>
-                                    <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
+                                    <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
                                         <i className="ri-time-line text-theme text-xs sm:text-sm"></i>
                                         <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: length })}</span>
                                     </div>

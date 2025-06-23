@@ -186,43 +186,36 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     
                 {/* 日期、浏览量和状态区域 - 根据视图模式优化移动端显示 */}
                 <div className={viewMode === 'list'
-                    ? "flex flex-wrap justify-between items-center gap-1 mb-2 text-xs sm:text-xs text-gray-500 dark:text-gray-400"
-                    : "flex flex-wrap justify-between items-center gap-1 mb-2 text-xs text-gray-500 dark:text-gray-400"
+                    ? "flex flex-wrap justify-between items-center gap-1 mb-2 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400"
+                    : "flex flex-wrap justify-between items-center gap-1 mb-2 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400"
                 }>
                     {/* 左侧日期和浏览量显示 - 优化移动端间距 */}
                     <div className={viewMode === 'list'
-                        ? "flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-1.5 py-0.5 text-xs"
-                        : "flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-2 py-0.5"
+                        ? "flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-1 py-0.5 sm:px-1.5 text-[10px] sm:text-xs"
+                        : "flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full px-1 py-0.5 sm:px-2 text-[10px] sm:text-xs"
                     }>
                         {/* 发布日期 */}
                         <div className="flex items-center">
-                            <i className="ri-calendar-line text-blue-500 mr-1"></i>
+                            <i className="ri-calendar-line text-blue-500 mr-0.5 sm:mr-1 text-xs sm:text-sm"></i>
                             <span>{formatDate(createdAt)}</span>
                         </div>
 
                         {/* 更新日期 - 列表视图移动端简化显示 */}
                         {createdAt !== updatedAt && (
-                            <>
-                                <span className={viewMode === 'list' ? "mx-1 text-gray-300 dark:text-gray-600" : "mx-2 text-gray-300 dark:text-gray-600"}>|</span>
-                                <div className="flex items-center" title={new Date(updatedAt).toLocaleString()}>
-                                    <i className="ri-history-line text-purple-400 mr-1"></i>
-                                    <span>{formatDate(updatedAt)}</span>
-                                </div>
-                            </>
+                            <div className="flex items-center ml-1.5 sm:ml-2" title={new Date(updatedAt).toLocaleString()}>
+                                <i className="ri-history-line text-purple-400 mr-0.5 sm:mr-1 text-xs sm:text-sm"></i>
+                                <span>{formatDate(updatedAt)}</span>
+                            </div>
                         )}
 
                         {/* 浏览量信息 - 优化移动端显示 */}
                         {(pv !== undefined || uv !== undefined) && (
-                            <>
-                                <span className={viewMode === 'list' ? "mx-1 text-gray-300 dark:text-gray-600" : "mx-2 text-gray-300 dark:text-gray-600"}>|</span>
-                                <div className="flex items-center">
-                                    <i className="ri-eye-line text-green-500 mr-1"></i>
-                                    <span>{pv || 0}</span>
-                                    <span className="mx-1 text-gray-300 dark:text-gray-600">|</span>
-                                    <i className="ri-user-3-line text-pink-400 mr-1"></i>
-                                    <span>{uv || 0}</span>
-                                </div>
-                            </>
+                            <div className="flex items-center ml-1.5 sm:ml-2">
+                                <i className="ri-eye-line text-green-500 mr-0.5 sm:mr-1 text-xs sm:text-sm"></i>
+                                <span>{pv || 0}</span>
+                                <i className="ri-user-3-line text-pink-400 ml-1.5 sm:ml-2 mr-0.5 sm:mr-1 text-xs sm:text-sm"></i>
+                                <span>{uv || 0}</span>
+                            </div>
                         )}
                     </div>
 

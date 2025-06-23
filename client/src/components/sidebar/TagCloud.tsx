@@ -15,14 +15,14 @@ export function TagCloud({ className = '', maxTags = 10 }: TagCloudProps) {
   // 使用带缓存的标签数据Hook
   const { tags, loading, error, refreshTags } = useTagsWithCache(maxTags);
 
-  // 计算标签字体大小（基于文章数量，但范围更小）
+  // 计算标签字体大小（基于文章数量，但范围更小）- 移动端优化
   const getTagSize = (feedCount: number, maxCount: number) => {
-    if (maxCount === 0) return 'text-sm font-medium px-3 py-1.5';
+    if (maxCount === 0) return 'text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 sm:py-1.5';
 
     const ratio = feedCount / maxCount;
-    if (ratio >= 0.8) return 'text-sm font-semibold px-3 py-2';
-    if (ratio >= 0.6) return 'text-sm font-medium px-3 py-1.5';
-    return 'text-sm font-medium px-2.5 py-1.5';
+    if (ratio >= 0.8) return 'text-xs sm:text-sm font-semibold px-2 sm:px-3 py-1 sm:py-2';
+    if (ratio >= 0.6) return 'text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 sm:py-1.5';
+    return 'text-xs sm:text-sm font-medium px-2 sm:px-2.5 py-1 sm:py-1.5';
   };
 
   // 生成标签颜色（更鲜艳的颜色）
@@ -100,9 +100,9 @@ export function TagCloud({ className = '', maxTags = 10 }: TagCloudProps) {
           {tags.map((tag, index) => (
             <Link
               key={tag.id}
-              href={`/tag/${encodeURIComponent(tag.name)}`}
+              href={`/hashtag/${encodeURIComponent(tag.name)}`}
               className={`
-                inline-flex items-center gap-1.5 rounded-lg
+                inline-flex items-center gap-1 sm:gap-1.5 rounded-lg
                 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md
                 ${getTagSize(tag.feeds, maxFeedCount)}
                 ${getTagColor(index)}

@@ -13,7 +13,11 @@
     "search": {
       "placeholder": "キーワードを入力してください",
       "title": "検索",
-      "title$keyword": "検索: {{keyword}}"
+      "title$keyword": "検索: {{keyword}}",
+      "history": "検索履歴",
+      "clear_history": "履歴をクリア",
+      "no_results": "検索結果がありません",
+      "use": "使用"
     },
     "title": "記事",
     "top": {
@@ -100,7 +104,12 @@
   "error": {
     "api_url": "Pages 環境変数のAPI_URLはWorkerアドレスである必要があります。Pages環境変数のAPI_URLが正しいか確認してください。",
     "api_url_slash": "Pages 環境変数のAPI_URLはWorkerアドレスである必要があります。Pages環境変数のAPI_URLが正しいか、またAPI_URLの末尾にスラッシュ（/）がないか確認してください。",
-    "github_callback": "GitHub OAuthコールバックURLは`https://<Workerアドレス>/user/github/callback`である必要があります。GitHub OAuthコールバックURLが正しいか確認してください。"
+    "github_callback": "GitHub OAuthコールバックURLは`https://<Workerアドレス>/user/github/callback`である必要があります。GitHub OAuthコールバックURLが正しいか確認してください。",
+    "not_found": "ページが見つかりません",
+    "page_not_exist": "アクセスしようとしたページは存在しないか、削除されています",
+    "page_not_exist_desc": "ページが移動、削除されたか、リンクアドレスが間違っている可能性があります",
+    "back_home": "ホームに戻る",
+    "go_back": "戻る"
   },
   "feed_card": {
     "published$time": "{{time}}に公開",
@@ -197,6 +206,12 @@
     "title": "目次"
   },
   "languages": "言語",
+  "languageNames": {
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "ja": "日本語"
+  },
   "listed": "記事一覧に表示",
   "load_failed": "読み込みに失敗しました。後でもう一度お試しください",
   "login": {
@@ -376,5 +391,144 @@
     "latest": "最新",
     "popular": "人気",
     "oldest": "古い順"
+  },
+  "announcements": {
+    "title": "お知らせ",
+    "viewMore": "もっと見る"
+  },
+  "tagCloud": {
+    "title": "人気タグ",
+    "error": "タグの読み込みに失敗しました",
+    "empty": "タグがありません",
+    "viewAll": "すべてのタグを表示"
+  },
+  "hashtagsPage": {
+    "description": "合計{{count}}個のタグ、人気タグ：{{topTags}}",
+    "noTags": "タグがありません"
+  },
+  "hashtagDetail": {
+    "relatedTags": "関連タグ",
+    "sort": "並び替え",
+    "latest": "最新",
+    "oldest": "最古",
+    "noArticles": "このタグの記事がありません",
+    "hotTags": "人気タグ",
+    "metaDescription": "タグ {{name}} の記事{{description}}、合計 {{count}} 記事"
+  },
+  "musicPlayer": {
+    "title": "音楽プレーヤー",
+    "play": "再生",
+    "pause": "一時停止",
+    "loadError": "音声の読み込みに失敗しました",
+    "playError": "再生に失敗しました",
+    "volume": "音量",
+    "defaultTitle": "バックグラウンドミュージック"
+  },
+  "feedDetail": {
+    "publishDate": "公開日",
+    "updateDate": "更新日",
+    "pageViews": "ページビュー",
+    "uniqueVisitors": "ユニークビジター",
+    "joinedIn": "参加年",
+    "articleAuthor": "記事作者"
+  },
+  "share": {
+    "title": "この記事をシェア",
+    "twitter": "Twitterでシェア",
+    "qq": "QQでシェア",
+    "telegram": "Telegramでシェア",
+    "wechat": "WeChatのQRコードを生成",
+    "copyLink": "リンクをコピー"
+  },
+  "settingsTabs": {
+    "basic": "基本設定",
+    "profile": "プロフィール",
+    "sidebar": "サイドバー",
+    "music": "音楽プレーヤー",
+    "advanced": "詳細設定"
+  },
+  "settingsProfile": {
+    "title": "プロフィール設定",
+    "bio": {
+      "title": "自己紹介",
+      "desc": "プロフィールカードに表示される自己紹介情報を設定、カスタム個人紹介コンテンツをサポート"
+    },
+    "socialTitle": "ソーシャルプラットフォームリンク",
+    "bilibili": {
+      "title": "Bilibili",
+      "desc": "BilibiliユーザーIDまたは完全なリンクを設定"
+    },
+    "twitter": {
+      "title": "X (Twitter)",
+      "desc": "X(Twitter)ユーザー名または完全なリンクを設定"
+    },
+    "telegram": {
+      "title": "Telegram",
+      "desc": "Telegramユーザー名または完全なリンクを設定"
+    },
+    "qq": {
+      "title": "QQ",
+      "desc": "QQ番号または完全なリンクを設定"
+    },
+    "wechat": {
+      "title": "WeChat",
+      "desc": "WeChat IDまたはQRコードリンクを設定"
+    },
+    "youtube": {
+      "title": "YouTube",
+      "desc": "YouTubeチャンネルのユーザー名または完全なリンクを設定"
+    },
+    "weibo": {
+      "title": "Weibo",
+      "desc": "Weiboユーザー名または完全なリンクを設定"
+    },
+    "instagram": {
+      "title": "Instagram",
+      "desc": "Instagramユーザー名または完全なリンクを設定"
+    },
+    "linkedin": {
+      "title": "LinkedIn",
+      "desc": "LinkedInユーザー名または完全なリンクを設定"
+    },
+    "discord": {
+      "title": "Discord",
+      "desc": "Discordサーバーの招待リンクを設定"
+    }
+  },
+  "settingsMusic": {
+    "title": "音楽プレーヤー設定",
+    "url": {
+      "title": "音楽URL",
+      "desc": "バックグラウンドミュージックのURLアドレスを設定、MP3、OGGなどの形式をサポート"
+    },
+    "musicTitle": {
+      "title": "音楽タイトル",
+      "desc": "音楽プレーヤーに表示される楽曲名を設定"
+    },
+    "artist": {
+      "title": "アーティスト",
+      "desc": "音楽プレーヤーに表示されるアーティスト名を設定"
+    }
+  },
+  "templates": {
+    "templates": "テンプレート",
+    "insert": "テンプレートを挿入",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "save_selection": "選択内容を保存",
+    "template_name": "テンプレート名",
+    "default": "デフォルトテンプレート",
+    "custom": "カスタムテンプレート",
+    "delete": "テンプレートを削除",
+    "table": "テーブル",
+    "header": "ヘッダー",
+    "content": "コンテンツ",
+    "code_block": "コードブロック",
+    "quote": "引用",
+    "todo_list": "TODOリスト",
+    "image_gallery": "画像ギャラリー",
+    "callout": "コールアウト",
+    "mermaid": "Mermaid図表",
+    "save_success": "カスタムテンプレートが正常に保存されました！"
   }
 }

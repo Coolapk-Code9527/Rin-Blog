@@ -64,7 +64,7 @@ export function HashtagsPage() {
                 <meta property="og:image" content={process.env.AVATAR} />
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
-                <meta name="description" content={`${t('hashtags')}：共${hashtags.length}个标签，热门标签：${hashtags.slice(0, 5).map(tag => tag.name).join('、')}`} />
+                <meta name="description" content={`${t('hashtags')}：${t('hashtagsPage.description', { count: hashtags.length, topTags: hashtags.slice(0, 5).map(tag => tag.name).join('、') })}`} />
             </Helmet>
             <PageContainer maxWidth="max-w-6xl" className="w-full">
                 <Waiting for={hashtags}>
@@ -78,7 +78,7 @@ export function HashtagsPage() {
                                 {t('hashtags')}
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                               </h1>
-                              <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
+                              <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
                                 <i className="ri-hashtag text-theme text-xs sm:text-sm"></i>
                                 <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: hashtags.length })}</span>
                               </div>
@@ -126,7 +126,7 @@ export function HashtagsPage() {
                           {sortedTags.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-500">
                               <i className="ri-emotion-unhappy-line text-5xl mb-3 text-neutral-300 dark:text-neutral-600"></i>
-                              <div className="text-lg font-medium">{t('暂无标签')}</div>
+                              <div className="text-lg font-medium">{t('hashtagsPage.noTags')}</div>
                             </div>
                           ) : (
                             <div className="w-full flex flex-row flex-wrap gap-4 items-start justify-start sm:gap-4 md:gap-5 lg:gap-6">

@@ -663,10 +663,10 @@ function LanguageSwitch({ className }: { className?: string }) {
     const dropdownGlassClass = useGlassEffect('glass-dropdown');
     const label = t('languages')
     const languages = [
-        { code: 'en', name: 'English', flag: '🇺🇸' },
-        { code: 'zh-CN', name: '简体中文', flag: '🇨🇳' },
-        { code: 'zh-TW', name: '繁體中文', flag: '🇹🇼' },
-        { code: 'ja', name: '日本語', flag: '🇯🇵' }
+        { code: 'en', name: t('languageNames.en'), flag: '🇺🇸' },
+        { code: 'zh-CN', name: t('languageNames.zh-CN'), flag: '🇨🇳' },
+        { code: 'zh-TW', name: t('languageNames.zh-TW'), flag: '🇹🇼' },
+        { code: 'ja', name: t('languageNames.ja'), flag: '🇯🇵' }
     ]
     
     // 监听点击外部关闭菜单

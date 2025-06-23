@@ -15,7 +15,9 @@
       "title": "Search",
       "title$keyword": "Search: {{keyword}}",
       "history": "Search History",
-      "clear_history": "Clear History"
+      "clear_history": "Clear History",
+      "no_results": "No search results",
+      "use": "Use"
     },
     "title": "Article",
     "top": {
@@ -217,6 +219,12 @@
     "title": "Index"
   },
   "languages": "Languages",
+  "languageNames": {
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "ja": "日本語"
+  },
   "listed": "Listed in articles",
   "load_failed": "Failed to load, please try again later",
   "login": {
@@ -404,7 +412,8 @@
     "todo_list": "To-do List",
     "image_gallery": "Image Gallery",
     "callout": "Callout",
-    "mermaid": "Mermaid Diagram"
+    "mermaid": "Mermaid Diagram",
+    "save_success": "Custom template saved successfully!"
   },
   "drop_or_click_to_upload": "Drop image here or click to upload",
   "published_at": "Published at",
@@ -602,6 +611,124 @@
     "multiline": {
       "warning": "Too many lines selected ({{count}} lines), processing first {{limit}} lines only",
       "processing": "Processing multi-line formatting..."
+    }
+  },
+  "announcements": {
+    "title": "Announcements",
+    "viewMore": "View More Announcements"
+  },
+  "tagCloud": {
+    "title": "Popular Tags",
+    "error": "Failed to load tags",
+    "empty": "No tags available",
+    "viewAll": "View All Tags"
+  },
+  "hashtagsPage": {
+    "description": "Total {{count}} tags, popular tags: {{topTags}}",
+    "noTags": "No tags available"
+  },
+  "hashtagDetail": {
+    "relatedTags": "Related Tags",
+    "sort": "Sort",
+    "latest": "Latest",
+    "oldest": "Oldest",
+    "noArticles": "No articles under this tag",
+    "hotTags": "Hot Tags",
+    "metaDescription": "Articles under tag {{name}}{{description}}, total {{count}} articles"
+  },
+  "musicPlayer": {
+    "title": "Music Player",
+    "play": "Play",
+    "pause": "Pause",
+    "loadError": "Failed to load audio",
+    "playError": "Failed to play",
+    "volume": "Volume",
+    "defaultTitle": "Background Music"
+  },
+  "feedDetail": {
+    "publishDate": "Publish Date",
+    "updateDate": "Update Date",
+    "pageViews": "Page Views",
+    "uniqueVisitors": "Unique Visitors",
+    "joinedIn": "Joined in",
+    "articleAuthor": "Article Author"
+  },
+  "share": {
+    "title": "Share this article",
+    "twitter": "Share to Twitter",
+    "qq": "Share to QQ",
+    "telegram": "Share to Telegram",
+    "wechat": "Generate WeChat QR Code",
+    "copyLink": "Copy Link"
+  },
+  "settingsTabs": {
+    "basic": "Basic Settings",
+    "profile": "Profile",
+    "sidebar": "Sidebar",
+    "music": "Music Player",
+    "advanced": "Advanced Settings"
+  },
+  "settingsProfile": {
+    "title": "Profile Settings",
+    "bio": {
+      "title": "Bio",
+      "desc": "Set the bio information displayed in the profile card, supports custom personal introduction"
+    },
+    "socialTitle": "Social Platform Links",
+    "bilibili": {
+      "title": "Bilibili",
+      "desc": "Set Bilibili user ID or complete link"
+    },
+    "twitter": {
+      "title": "X (Twitter)",
+      "desc": "Set X(Twitter) username or complete link"
+    },
+    "telegram": {
+      "title": "Telegram",
+      "desc": "Set Telegram username or complete link"
+    },
+    "qq": {
+      "title": "QQ",
+      "desc": "Set QQ number or complete link"
+    },
+    "wechat": {
+      "title": "WeChat",
+      "desc": "Set WeChat ID or QR code link"
+    },
+    "youtube": {
+      "title": "YouTube",
+      "desc": "Set YouTube channel username or complete link"
+    },
+    "weibo": {
+      "title": "Weibo",
+      "desc": "Set Weibo username or complete link"
+    },
+    "instagram": {
+      "title": "Instagram",
+      "desc": "Set Instagram username or complete link"
+    },
+    "linkedin": {
+      "title": "LinkedIn",
+      "desc": "Set LinkedIn username or complete link"
+    },
+    "discord": {
+      "title": "Discord",
+      "desc": "Set Discord server invite link"
+    }
+  },
+  "settingsMusic": {
+    "title": "Music Player Settings",
+    "url": {
+      "title": "Music URL",
+      "desc": "Set the URL address of background music, supports MP3, OGG and other formats"
+    },
+    "musicTitle": {
+      "title": "Music Title",
+      "desc": "Set the song name displayed in the music player"
+    },
+    "artist": {
+      "title": "Artist",
+      "desc": "Set the artist name displayed in the music player"
     }
   }
 }

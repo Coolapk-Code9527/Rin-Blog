@@ -15,7 +15,9 @@
       "title": "搜索",
       "title$keyword": "搜索：{{keyword}}",
       "history": "搜索历史",
-      "clear_history": "清除历史"
+      "clear_history": "清除历史",
+      "no_results": "暂无搜索结果",
+      "use": "使用"
     },
     "title": "文章",
     "top": {
@@ -431,16 +433,141 @@
     "todo_list": "待办列表",
     "image_gallery": "图片库",
     "callout": "提示框",
-    "mermaid": "Mermaid 图表"
+    "mermaid": "Mermaid 图表",
+    "save_success": "自定义模板保存成功！"
   },
   "drop_or_click_to_upload": "拖放图片至此或点击上传",
   "editing": "编辑中...",
   "languages": "语言",
+  "languageNames": {
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "ja": "日本語"
+  },
   "logged_in": "已登录",
   "unnamed": "未命名",
   "published_at": "发布于",
   "date_format": {
     "month_day": "MM/DD"
+  },
+  "announcements": {
+    "title": "公告通知",
+    "viewMore": "查看更多公告"
+  },
+  "tagCloud": {
+    "title": "热门标签",
+    "error": "加载标签失败",
+    "empty": "暂无标签",
+    "viewAll": "查看全部标签"
+  },
+  "hashtagsPage": {
+    "description": "共{{count}}个标签，热门标签：{{topTags}}",
+    "noTags": "暂无标签"
+  },
+  "hashtagDetail": {
+    "relatedTags": "相关标签",
+    "sort": "排序",
+    "latest": "最新",
+    "oldest": "最早",
+    "noArticles": "暂无该标签下的文章",
+    "hotTags": "热门标签",
+    "metaDescription": "标签 {{name}} 下的文章{{description}}，共 {{count}} 篇文章"
+  },
+  "musicPlayer": {
+    "title": "音乐播放器",
+    "play": "播放",
+    "pause": "暂停",
+    "loadError": "音频加载失败",
+    "playError": "播放失败",
+    "volume": "音量",
+    "defaultTitle": "背景音乐"
+  },
+  "feedDetail": {
+    "publishDate": "发布日期",
+    "updateDate": "更新日期",
+    "pageViews": "浏览量",
+    "uniqueVisitors": "访客数",
+    "joinedIn": "加入于",
+    "articleAuthor": "文章作者"
+  },
+  "share": {
+    "title": "分享这篇文章",
+    "twitter": "分享到 Twitter",
+    "qq": "分享到 QQ",
+    "telegram": "分享到 Telegram",
+    "wechat": "生成微信分享二维码",
+    "copyLink": "复制链接"
+  },
+  "settingsTabs": {
+    "basic": "基础设置",
+    "profile": "个人资料",
+    "sidebar": "侧边栏",
+    "music": "音乐播放器",
+    "advanced": "高级设置"
+  },
+  "settingsProfile": {
+    "title": "个人资料设置",
+    "bio": {
+      "title": "个人简介",
+      "desc": "设置个人资料卡片中显示的简介信息，支持自定义个人介绍内容"
+    },
+    "socialTitle": "社交平台链接",
+    "bilibili": {
+      "title": "B站",
+      "desc": "设置B站用户ID或完整链接"
+    },
+    "twitter": {
+      "title": "X (Twitter)",
+      "desc": "设置X(Twitter)用户名或完整链接"
+    },
+    "telegram": {
+      "title": "Telegram",
+      "desc": "设置Telegram用户名或完整链接"
+    },
+    "qq": {
+      "title": "QQ",
+      "desc": "设置QQ号码或完整链接"
+    },
+    "wechat": {
+      "title": "微信",
+      "desc": "设置微信号或二维码链接"
+    },
+    "youtube": {
+      "title": "YouTube",
+      "desc": "设置YouTube频道用户名或完整链接"
+    },
+    "weibo": {
+      "title": "微博",
+      "desc": "设置微博用户名或完整链接"
+    },
+    "instagram": {
+      "title": "Instagram",
+      "desc": "设置Instagram用户名或完整链接"
+    },
+    "linkedin": {
+      "title": "LinkedIn",
+      "desc": "设置LinkedIn用户名或完整链接"
+    },
+    "discord": {
+      "title": "Discord",
+      "desc": "设置Discord服务器邀请链接"
+    }
+  },
+  "settingsMusic": {
+    "title": "音乐播放器设置",
+    "url": {
+      "title": "音乐链接",
+      "desc": "设置背景音乐的URL地址，支持MP3、OGG等格式"
+    },
+    "musicTitle": {
+      "title": "音乐标题",
+      "desc": "设置音乐播放器中显示的歌曲名称"
+    },
+    "artist": {
+      "title": "艺术家",
+      "desc": "设置音乐播放器中显示的艺术家名称"
+    }
   },
   "github_login": "GitHub 登录",
   "home": "首页",

@@ -13,7 +13,11 @@
     "search": {
       "placeholder": "請輸入關鍵字",
       "title": "搜尋",
-      "title$keyword": "搜尋：{{keyword}}"
+      "title$keyword": "搜尋：{{keyword}}",
+      "history": "搜尋歷史",
+      "clear_history": "清除歷史",
+      "no_results": "暫無搜尋結果",
+      "use": "使用"
     },
     "title": "文章",
     "top": {
@@ -96,7 +100,12 @@
   "error": {
     "api_url": "Pages 環境變數中 API_URL 應為 Worker 地址，請檢查 Pages 環境變數中 API_URL 是否正確",
     "api_url_slash": "Pages 環境變數中 API_URL 應為 Worker 地址，請檢查 Pages 環境變數中 API_URL 是否正確，且 API_URL 末尾不能有 /",
-    "github_callback": "GitHub OAuth 回調地址應為 `https://<Worker 地址>/user/github/callback，請檢查 GitHub OAuth 回調地址是否正確"
+    "github_callback": "GitHub OAuth 回調地址應為 `https://<Worker 地址>/user/github/callback，請檢查 GitHub OAuth 回調地址是否正確",
+    "not_found": "頁面未找到",
+    "page_not_exist": "您訪問的頁面不存在或已被移除",
+    "page_not_exist_desc": "頁面可能已被移動、刪除，或連結地址不正確",
+    "back_home": "返回首頁",
+    "go_back": "返回上頁"
   },
   "feed_card": {
     "published$time": "{{time}} 發布",

@@ -36,12 +36,12 @@ interface SettingsTab {
 }
 
 // 设置标签页配置
-const settingsTabs: SettingsTab[] = [
-    { id: 'basic', title: '基础设置', icon: 'ri-settings-line' },
-    { id: 'profile', title: '个人资料', icon: 'ri-user-line' },
-    { id: 'sidebar', title: '侧边栏', icon: 'ri-layout-right-line' },
-    { id: 'music', title: '音乐播放器', icon: 'ri-music-line' },
-    { id: 'advanced', title: '高级设置', icon: 'ri-tools-line' }
+const getSettingsTabs = (t: any): SettingsTab[] => [
+    { id: 'basic', title: t('settingsTabs.basic'), icon: 'ri-settings-line' },
+    { id: 'profile', title: t('settingsTabs.profile'), icon: 'ri-user-line' },
+    { id: 'sidebar', title: t('settingsTabs.sidebar'), icon: 'ri-layout-right-line' },
+    { id: 'music', title: t('settingsTabs.music'), icon: 'ri-music-line' },
+    { id: 'advanced', title: t('settingsTabs.advanced'), icon: 'ri-tools-line' }
 ];
 
 export function Settings() {
@@ -107,29 +107,29 @@ export function Settings() {
     const renderProfileSettings = () => (
         <>
             <div className="mb-8">
-                <ItemTitle title="个人资料设置" />
+                <ItemTitle title={t('settingsProfile.title')} />
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
                     <ItemInput title={t('settings.author.name.title', { defaultValue: '昵称' })} description={t('settings.author.name.desc', { defaultValue: '设置个人资料卡片中显示的昵称' })} type="client" configKey="author.name" configKeyTitle={t('settings.author.name.title', { defaultValue: '昵称' })} />
                     <ItemInput title={t('settings.author.avatar.title', { defaultValue: '头像链接' })} description={t('settings.author.avatar.desc', { defaultValue: '设置个人资料卡片中的头像图片URL' })} type="client" configKey="author.avatar" configKeyTitle={t('settings.author.avatar.title', { defaultValue: '头像链接' })} />
-                    <ItemInput title="个人简介" description="设置个人资料卡片中显示的简介信息，支持自定义个人介绍内容" type="client" configKey="author.bio" configKeyTitle="个人简介" />
+                    <ItemInput title={t('settingsProfile.bio.title')} description={t('settingsProfile.bio.desc')} type="client" configKey="author.bio" configKeyTitle={t('settingsProfile.bio.title')} />
                 </div>
             </div>
 
             <div className="mb-8">
-                <ItemTitle title="社交平台链接" />
+                <ItemTitle title={t('settingsProfile.socialTitle')} />
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
                     <ItemInput title={t('settings.author.social.github.title', { defaultValue: 'GitHub' })} description={t('settings.author.social.github.desc', { defaultValue: '设置GitHub用户名或完整链接' })} type="client" configKey="author.social.github" configKeyTitle="GitHub" />
                     <ItemInput title={t('settings.author.social.email.title', { defaultValue: '邮箱' })} description={t('settings.author.social.email.desc', { defaultValue: '设置联系邮箱地址' })} type="client" configKey="author.social.email" configKeyTitle={t('settings.author.social.email.title', { defaultValue: '邮箱' })} />
-                    <ItemInput title="B站" description="设置B站用户ID或完整链接" type="client" configKey="author.social.bilibili" configKeyTitle="B站" />
-                    <ItemInput title="X (Twitter)" description="设置X(Twitter)用户名或完整链接" type="client" configKey="author.social.twitter" configKeyTitle="X (Twitter)" />
-                    <ItemInput title="YouTube" description="设置YouTube频道用户名或完整链接" type="client" configKey="author.social.youtube" configKeyTitle="YouTube" />
-                    <ItemInput title="微博" description="设置微博用户名或完整链接" type="client" configKey="author.social.weibo" configKeyTitle="微博" />
-                    <ItemInput title="Instagram" description="设置Instagram用户名或完整链接" type="client" configKey="author.social.instagram" configKeyTitle="Instagram" />
-                    <ItemInput title="LinkedIn" description="设置LinkedIn用户名或完整链接" type="client" configKey="author.social.linkedin" configKeyTitle="LinkedIn" />
-                    <ItemInput title="QQ" description="设置QQ号码" type="client" configKey="author.social.qq" configKeyTitle="QQ" />
-                    <ItemInput title="微信" description="设置微信号" type="client" configKey="author.social.wechat" configKeyTitle="微信" />
-                    <ItemInput title="Telegram" description="设置Telegram用户名或完整链接" type="client" configKey="author.social.telegram" configKeyTitle="Telegram" />
-                    <ItemInput title="Discord" description="设置Discord服务器邀请链接" type="client" configKey="author.social.discord" configKeyTitle="Discord" />
+                    <ItemInput title={t('settingsProfile.bilibili.title')} description={t('settingsProfile.bilibili.desc')} type="client" configKey="author.social.bilibili" configKeyTitle={t('settingsProfile.bilibili.title')} />
+                    <ItemInput title={t('settingsProfile.twitter.title')} description={t('settingsProfile.twitter.desc')} type="client" configKey="author.social.twitter" configKeyTitle={t('settingsProfile.twitter.title')} />
+                    <ItemInput title={t('settingsProfile.youtube.title')} description={t('settingsProfile.youtube.desc')} type="client" configKey="author.social.youtube" configKeyTitle={t('settingsProfile.youtube.title')} />
+                    <ItemInput title={t('settingsProfile.weibo.title')} description={t('settingsProfile.weibo.desc')} type="client" configKey="author.social.weibo" configKeyTitle={t('settingsProfile.weibo.title')} />
+                    <ItemInput title={t('settingsProfile.instagram.title')} description={t('settingsProfile.instagram.desc')} type="client" configKey="author.social.instagram" configKeyTitle={t('settingsProfile.instagram.title')} />
+                    <ItemInput title={t('settingsProfile.linkedin.title')} description={t('settingsProfile.linkedin.desc')} type="client" configKey="author.social.linkedin" configKeyTitle={t('settingsProfile.linkedin.title')} />
+                    <ItemInput title={t('settingsProfile.qq.title')} description={t('settingsProfile.qq.desc')} type="client" configKey="author.social.qq" configKeyTitle={t('settingsProfile.qq.title')} />
+                    <ItemInput title={t('settingsProfile.wechat.title')} description={t('settingsProfile.wechat.desc')} type="client" configKey="author.social.wechat" configKeyTitle={t('settingsProfile.wechat.title')} />
+                    <ItemInput title={t('settingsProfile.telegram.title')} description={t('settingsProfile.telegram.desc')} type="client" configKey="author.social.telegram" configKeyTitle={t('settingsProfile.telegram.title')} />
+                    <ItemInput title={t('settingsProfile.discord.title')} description={t('settingsProfile.discord.desc')} type="client" configKey="author.social.discord" configKeyTitle={t('settingsProfile.discord.title')} />
                 </div>
             </div>
         </>
@@ -159,12 +159,12 @@ export function Settings() {
     const renderMusicSettings = () => (
         <>
             <div className="mb-8">
-                <ItemTitle title="音乐播放器设置" />
+                <ItemTitle title={t('settingsMusic.title')} />
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
                     <ItemSwitch title={t('settings.sidebar.music.title', { defaultValue: '背景音乐自动播放' })} description={t('settings.sidebar.music.desc', { defaultValue: '启用后背景音乐将在页面加载时自动播放' })} type="client" configKey="music.autoplay" />
-                    <ItemInput title="音乐链接" description="设置背景音乐的URL地址，支持MP3、OGG等格式" type="client" configKey="music.url" configKeyTitle="音乐链接" />
-                    <ItemInput title="音乐标题" description="设置音乐播放器中显示的歌曲名称" type="client" configKey="music.title" configKeyTitle="音乐标题" />
-                    <ItemInput title="艺术家" description="设置音乐播放器中显示的艺术家名称" type="client" configKey="music.artist" configKeyTitle="艺术家" />
+                    <ItemInput title={t('settingsMusic.url.title')} description={t('settingsMusic.url.desc')} type="client" configKey="music.url" configKeyTitle={t('settingsMusic.url.title')} />
+                    <ItemInput title={t('settingsMusic.musicTitle.title')} description={t('settingsMusic.musicTitle.desc')} type="client" configKey="music.title" configKeyTitle={t('settingsMusic.musicTitle.title')} />
+                    <ItemInput title={t('settingsMusic.artist.title')} description={t('settingsMusic.artist.desc')} type="client" configKey="music.artist" configKeyTitle={t('settingsMusic.artist.title')} />
                 </div>
             </div>
         </>
@@ -344,7 +344,7 @@ export function Settings() {
                         {/* 标签页导航 */}
                         <div className="w-full mb-8">
                             <div className="flex flex-wrap gap-2 p-1 bg-neutral-100/50 dark:bg-neutral-800/50 rounded-xl backdrop-blur-sm border border-neutral-200/60 dark:border-neutral-700/60">
-                                {settingsTabs.map((tab) => (
+                                {getSettingsTabs(t).map((tab) => (
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}

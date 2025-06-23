@@ -2398,7 +2398,7 @@ export function WritingPage({ id }: { id?: number }) {
 
     setNewTemplateName('');
     setShowSaveTemplateForm(false);
-    showAlert('自定义模板保存成功！');
+    showAlert(t('templates.save_success'));
   }, [newTemplateName, customTemplates, showAlert]);
 
   // 删除自定义模板

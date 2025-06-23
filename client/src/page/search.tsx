@@ -63,9 +63,9 @@ export function SearchPage({ keyword }: { keyword: string }) {
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
             </Helmet>
-            <PageContainer>
+            <PageContainer maxWidth="max-w-6xl" className="w-full">
                 <Waiting for={status === 'idle'}>
-                    <main className="w-full flex flex-col justify-center items-center mb-8">
+                    <main className="w-full flex flex-col mb-3 ani-show">
                         {/* 页面标题区域 - 与文章列表页面保持一致 */}
                         <div className="flex flex-col space-y-3 mb-3">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
@@ -75,7 +75,7 @@ export function SearchPage({ keyword }: { keyword: string }) {
                                         {t('article.search.title')}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                                     </h1>
-                                    <div className={`py-1.5 px-2.5 sm:px-3 ${glassClass} rounded-xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/40 dark:border-neutral-700/40 flex-shrink-0`}>
+                                    <div className={`py-1.5 px-2.5 sm:px-3 ${glassClass} rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/40 dark:border-neutral-700/40 flex-shrink-0`}>
                                         <i className="ri-search-line text-theme text-xs sm:text-sm"></i>
                                         <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: feeds?.size })}</span>
                                     </div>
@@ -87,27 +87,40 @@ export function SearchPage({ keyword }: { keyword: string }) {
                                 <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                             </div>
                         </div>
+                        {/* 搜索结果列表区域 */}
                         <Waiting for={status === 'idle'}>
-                            <div className="wauto flex flex-col">
-                                {feeds?.data.map(({ id, ...feed }: any) => (
-                                    <FeedCard key={id} id={id} {...feed} />
-                                ))}
-                            </div>
-                            
-                            {(page > 1 || feeds?.hasNext) && (
-                                <Pagination 
-                                    currentPage={page}
-                                    totalPages={Math.ceil(feeds?.size / limit) || 1}
-                                    basePath={`/search/${keyword}`}
-                                    className="ani-show"
-                                />
+                            {feeds?.data.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
+                                    <i className="ri-search-line text-5xl mb-3 text-gray-300 dark:text-gray-600"></i>
+                                    <div className="text-lg font-medium mb-2">{t('search.no_results')}</div>
+                                </div>
+                            ) : (
+                                <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 lg:gap-5 xl:gap-6">
+                                    {feeds?.data.map(({ id, ...feed }: any) => (
+                                        <div key={id} className="w-full max-w-md mx-auto md:max-w-none">
+                                            <FeedCard id={id} {...feed} />
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </Waiting>
-
-
                     </main>
                 </Waiting>
             </PageContainer>
+
+            {/* 分页控制 - 与其他页面保持一致 */}
+            {feeds?.data.length > 0 && (page > 1 || feeds?.hasNext) && (
+                <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-8 transition-all duration-300">
+                    <div className="flex justify-center mt-6 mb-2 w-full">
+                        <Pagination
+                            currentPage={page}
+                            totalPages={Math.ceil(feeds?.size / limit) || 1}
+                            basePath={`/search/${keyword}`}
+                            className="gap-2"
+                        />
+                    </div>
+                </div>
+            )}
         </>
     )
 }

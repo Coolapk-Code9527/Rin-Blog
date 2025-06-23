@@ -203,8 +203,15 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
                 ) : null}
               </div>
 
-              {/* 音乐图标 */}
-              <i className="ri-music-2-line text-blue-500 text-xl flex-shrink-0"></i>
+              {/* 音乐唱片图标 - 优雅高级设计 */}
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 shadow-sm hover:shadow-md flex-shrink-0 relative overflow-hidden transition-all duration-300 hover:scale-110 active:scale-95 ${isPlaying ? 'animate-vinyl-spin' : ''}`}>
+                {/* 唱片纹理 - 简约优雅 */}
+                <div className="absolute inset-2 rounded-full border border-white/20 dark:border-gray-800/20"></div>
+                {/* 唱片中心点 */}
+                <div className="absolute w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                {/* 唱片图标 */}
+                <i className="ri-disc-line text-base text-red-500 relative z-10"></i>
+              </div>
             </div>
 
 

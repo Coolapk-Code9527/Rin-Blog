@@ -63,7 +63,7 @@ export function NotFoundPage() {
           </p>
 
           <p className="text-gray-600 dark:text-gray-400 mb-8">
-            {t("error.page_not_exist_desc") || "页面可能已被移动或删除"}
+            {t("error.page_not_exist_desc")}
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">

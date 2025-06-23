@@ -8,8 +8,10 @@ import { client } from "../main"
 import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { PageContainer } from "../components/container"
-import { Link } from "react-router-dom"
+import { Link, useSearch } from "wouter"
 import { HashTag } from "../components/hashtag"
+import { Pagination } from "../components/pagination"
+import { tryInt } from "../utils/int"
 
 type FeedsData = {
     name: string;
@@ -38,9 +40,12 @@ type FeedsData = {
 
 export function HashtagPage({ name }: { name: string }) {
     const { t } = useTranslation()
+    const query = new URLSearchParams(useSearch());
     const [status, setStatus] = useState<'loading' | 'idle'>('idle')
     const [hashtag, setHashtag] = useState<FeedsData>()
     const [sort, setSort] = useState<'new' | 'old'>('new');
+    const page = tryInt(1, query.get("page"))
+    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = useRef("")
     function fetchFeeds() {
         const nameDecoded = decodeURI(name)
@@ -60,6 +65,13 @@ export function HashtagPage({ name }: { name: string }) {
         ref.current = name
     }, [name])
 
+    // 页面变化时滚动到顶部
+    React.useEffect(() => {
+        if (page > 1) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [page])
+
     // 文章排序
     const sortedFeeds = React.useMemo(() => {
       if (!hashtag?.feeds) return [];
@@ -71,6 +83,23 @@ export function HashtagPage({ name }: { name: string }) {
       }
       return arr;
     }, [hashtag, sort]);
+
+    // 前端分页逻辑 - 对排序后的数据进行分页
+    const paginatedFeeds = React.useMemo(() => {
+        if (!sortedFeeds.length) return [];
+
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedData = sortedFeeds.slice(startIndex, endIndex);
+
+        return paginatedData;
+    }, [sortedFeeds, page, limit]);
+
+    // 计算总页数
+    const totalPages = React.useMemo(() => {
+        if (!sortedFeeds.length) return 1;
+        return Math.ceil(sortedFeeds.length / limit);
+    }, [sortedFeeds.length, limit]);
 
     // 相关标签推荐（同一文章下的其他标签，去重）
     const relatedTags = React.useMemo(() => {
@@ -93,59 +122,109 @@ export function HashtagPage({ name }: { name: string }) {
                 <meta property="og:image" content={process.env.AVATAR} />
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
-                <meta name="description" content={t("hashtag.meta_description", {
+                <meta name="description" content={t("hashtagDetail.metaDescription", {
                     name: hashtag?.name,
-                    description: hashtag?.description || '',
+                    description: hashtag?.description ? `：${hashtag.description}` : '',
                     count: hashtag?.feeds?.length || 0
                 })} />
             </Helmet>
-            <PageContainer>
+            <PageContainer maxWidth="max-w-6xl" className="w-full">
                 <Waiting for={hashtag || status === 'idle'}>
-                    <main className="w-full flex flex-col justify-center items-center mb-8">
-                        <div className="wauto text-start text-black dark:text-white py-4 text-4xl font-bold break-words">
-                            <p className="break-all">{hashtag?.name}</p>
-                            <div className="flex flex-row flex-wrap gap-4 items-center mt-2">
-                                <span className="text-sm text-neutral-500 font-normal">
-                                    {t('article.total$count', { count: hashtag?.feeds?.length })}
-                                </span>
-                                {hashtag?.description && (
-                                  <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded max-w-xs line-clamp-2 break-all" title={hashtag.description}>{hashtag.description}</span>
-                                )}
+                    <main className="w-full flex flex-col mb-3 ani-show">
+                        {/* 页面标题区域 - 与其他标准页面保持一致 */}
+                        <div className="flex flex-col space-y-3 mb-3">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
+                                {/* 左侧：标签名称和文章数量 - 优化移动端布局 */}
+                                <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+                                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0 flex items-center">
+                                        <HashTag name={hashtag?.name || ''} />
+                                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
+                                    </h1>
+                                    <div className="py-1.5 px-2.5 sm:px-3 bg-gray-100/80 dark:bg-gray-800/80 rounded-lg text-xs sm:text-sm text-gray-600 dark:text-gray-400 flex items-center font-medium border border-gray-200/60 dark:border-gray-700/60 flex-shrink-0">
+                                        <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
+                                        <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: hashtag?.feeds?.length || 0 })}</span>
+                                    </div>
+                                </div>
+
+                                {/* 右侧：排序选择 */}
+                                <div className="flex gap-2 items-center">
+                                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">{t('hashtagDetail.sort')}:</span>
+                                    <button
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] ${sort === 'new' ? 'bg-theme/10 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced backdrop-blur-sm' : 'bg-gray-100/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300 border-gray-200/60 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme shadow-enhanced'}`}
+                                        onClick={() => setSort('new')}
+                                    >
+                                        {t('hashtagDetail.latest')}
+                                    </button>
+                                    <button
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] ${sort === 'old' ? 'bg-theme/10 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced backdrop-blur-sm' : 'bg-gray-100/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300 border-gray-200/60 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme shadow-enhanced'}`}
+                                        onClick={() => setSort('old')}
+                                    >
+                                        {t('hashtagDetail.oldest')}
+                                    </button>
+                                </div>
                             </div>
-                            {/* 相关标签推荐 */}
-                            {relatedTags.length > 0 && (
-                              <div className="mt-3 flex flex-row flex-wrap gap-2 items-center">
-                                <span className="text-xs text-gray-400">{t('相关标签')}:</span>
-                                {relatedTags.map(tag => (
-                                  <Link key={tag} href={`/hashtag/${tag}`} className="inline-block"><HashTag name={tag} /></Link>
-                                ))}
-                              </div>
+
+                            {/* 标签描述和相关标签 */}
+                            {(hashtag?.description || relatedTags.length > 0) && (
+                                <div className="flex flex-col gap-2">
+                                    {hashtag?.description && (
+                                        <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50/80 dark:bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-200/60 dark:border-gray-700/60">
+                                            {hashtag.description}
+                                        </div>
+                                    )}
+                                    {relatedTags.length > 0 && (
+                                        <div className="flex flex-row flex-wrap gap-2 items-center">
+                                            <span className="text-xs text-gray-400 font-medium">{t('hashtagDetail.relatedTags')}:</span>
+                                            {relatedTags.map(tag => (
+                                                <Link key={tag} href={`/hashtag/${tag}`} className="inline-block">
+                                                    <HashTag name={tag} />
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             )}
+
+                            {/* 标准渐变分割线 */}
+                            <div className="w-full mb-2">
+                                <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+                            </div>
                         </div>
-                        {/* 排序切换 */}
-                        <div className="wauto flex flex-row gap-2 items-center mb-4 flex-wrap">
-                          <span className="text-xs text-gray-400">{t('排序')}:</span>
-                          <button className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 shadow-sm hover:shadow-enhanced hover:scale-[0.98] active:scale-[0.96] ${sort === 'new' ? 'bg-theme/10 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/20' : 'bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme'}`} onClick={() => setSort('new')}>{t('最新')}</button>
-                          <button className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 shadow-sm hover:shadow-enhanced hover:scale-[0.98] active:scale-[0.96] ${sort === 'old' ? 'bg-theme/10 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/20' : 'bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 hover:text-theme dark:hover:text-theme'}`} onClick={() => setSort('old')}>{t('最早')}</button>
-                        </div>
+                        {/* 文章列表区域 */}
                         <Waiting for={status === 'idle'}>
                             {sortedFeeds.length === 0 ? (
-                              <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-                                <i className="ri-emotion-unhappy-line text-4xl mb-2"></i>
-                                <div className="mb-2">{t('暂无该标签下的文章')}</div>
-                                <HotTagsRecommend />
-                              </div>
+                                <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
+                                    <i className="ri-emotion-unhappy-line text-5xl mb-3 text-gray-300 dark:text-gray-600"></i>
+                                    <div className="text-lg font-medium mb-2">{t('hashtagDetail.noArticles')}</div>
+                                    <HotTagsRecommend />
+                                </div>
                             ) : (
-                              <div className="wauto flex flex-col gap-3">
-                                {sortedFeeds.map(({ id, ...feed }: any) => (
-                                  <FeedCard key={id} id={id} {...feed} />
-                                ))}
-                              </div>
+                                <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 lg:gap-5 xl:gap-6">
+                                    {paginatedFeeds.map(({ id, ...feed }: any) => (
+                                        <div key={id} className="w-full max-w-md mx-auto md:max-w-none">
+                                            <FeedCard id={id} {...feed} />
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </Waiting>
                     </main>
                 </Waiting>
             </PageContainer>
+
+            {/* 分页控制 - 与文章列表页面保持一致 */}
+            {paginatedFeeds.length > 0 && totalPages > 1 && (
+                <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-8 transition-all duration-300">
+                    <div className="flex justify-center mt-6 mb-2 w-full">
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            basePath={`/hashtag/${encodeURIComponent(name)}`}
+                            className="gap-2"
+                        />
+                    </div>
+                </div>
+            )}
         </>
     )
 }
@@ -164,9 +243,11 @@ function HotTagsRecommend() {
   if (!tags.length) return null;
   return (
     <div className="mt-4 flex flex-row flex-wrap gap-2 items-center justify-center">
-      <span className="text-xs text-gray-400">{t('热门标签')}:</span>
+      <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">{t('hashtagDetail.hotTags')}:</span>
       {tags.map(tag => (
-        <Link key={tag.name} href={`/hashtag/${tag.name}`} className="inline-block"><HashTag name={tag.name} /></Link>
+        <Link key={tag.name} href={`/hashtag/${tag.name}`} className="inline-block">
+          <HashTag name={tag.name} />
+        </Link>
       ))}
     </div>
   );

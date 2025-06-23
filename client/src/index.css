@@ -726,6 +726,20 @@ html.dark body .glass-file-card,
   font-family: var(--font-sans) !important;
 }
 
+/* 唱片旋转动画 - 慢速旋转模拟真实唱片 */
+@keyframes vinyl-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-vinyl-spin {
+  animation: vinyl-spin 3s linear infinite;
+}
+
 /* 中文内容字体 */
 :lang(zh), :lang(zh-CN), :lang(zh-TW) {
   font-family: var(--font-cn), var(--font-sans) !important;

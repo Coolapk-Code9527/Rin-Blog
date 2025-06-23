@@ -29,7 +29,7 @@ export function GlobalMusicPlayer() {
           disabled={loading}
           className="fixed right-5 bottom-20 z-50 w-10 h-10 rounded-full bg-theme text-white shadow-lg flex items-center justify-center transition-all duration-300 hover:bg-theme-hover active:bg-theme-active hover:scale-110 focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50"
           aria-label={isPlaying ? t('musicPlayer.pause') : t('musicPlayer.play')}
-          title={`${musicConfig.title || '背景音乐'} - ${isPlaying ? '暂停' : '播放'}`}
+          title={`${musicConfig.title || t('musicPlayer.defaultTitle', { defaultValue: '背景音乐' })} - ${isPlaying ? t('musicPlayer.pause', { defaultValue: '暂停' }) : t('musicPlayer.play', { defaultValue: '播放' })}`}
         >
           {loading ? (
             <i className="ri-loader-4-line animate-spin text-lg"></i>

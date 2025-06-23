@@ -55,8 +55,11 @@ export function HashTag({ name }: { name: string }) {
         }, 150);
     };
     
-    // 标签名过长时截断显示
-    const displayName = name.length > 12 ? `${name.substring(0, 10)}...` : name;
+    // 标签名过长时截断显示 - 移动端更短
+    const isMobile = window.innerWidth < 640;
+    const maxLength = isMobile ? 8 : 12;
+    const truncateLength = isMobile ? 6 : 10;
+    const displayName = name.length > maxLength ? `${name.substring(0, truncateLength)}...` : name;
     
     return (
         <button
@@ -65,7 +68,7 @@ export function HashTag({ name }: { name: string }) {
             onMouseLeave={() => setIsHovered(false)}
             onFocus={() => setIsHovered(true)}
             onBlur={() => setIsHovered(false)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium
+            className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium
                 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md transform
                 ${tagColor}
                 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}
@@ -74,7 +77,7 @@ export function HashTag({ name }: { name: string }) {
             title={t("hashtag.view_title", { name })}
             role="link"
         >
-            <i className="ri-price-tag-3-line text-xs opacity-80"></i>
+            <i className="ri-price-tag-3-line text-xs sm:text-xs opacity-80"></i>
             <span>{displayName}</span>
         </button>
     )

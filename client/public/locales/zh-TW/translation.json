@@ -13,7 +13,11 @@
     "search": {
       "placeholder": "請輸入關鍵字",
       "title": "搜尋",
-      "title$keyword": "搜尋：{{keyword}}"
+      "title$keyword": "搜尋：{{keyword}}",
+      "history": "搜尋歷史",
+      "clear_history": "清除歷史",
+      "no_results": "暫無搜尋結果",
+      "use": "使用"
     },
     "title": "文章",
     "top": {
@@ -100,7 +104,12 @@
   "error": {
     "api_url": "Pages 環境變數中 API_URL 應為 Worker 地址，請檢查 Pages 環境變數中 API_URL 是否正確",
     "api_url_slash": "Pages 環境變數中 API_URL 應為 Worker 地址，請檢查 Pages 環境變數中 API_URL 是否正確，且 API_URL 末尾不能有 /",
-    "github_callback": "GitHub OAuth 回調地址應為 `https://<Worker 地址>/user/github/callback，請檢查 GitHub OAuth 回調地址是否正確"
+    "github_callback": "GitHub OAuth 回調地址應為 `https://<Worker 地址>/user/github/callback，請檢查 GitHub OAuth 回調地址是否正確",
+    "not_found": "頁面未找到",
+    "page_not_exist": "您訪問的頁面不存在或已被移除",
+    "page_not_exist_desc": "頁面可能已被移動、刪除，或連結地址不正確",
+    "back_home": "返回首頁",
+    "go_back": "返回上頁"
   },
   "feed_card": {
     "published$time": "發布於 {{time}}",
@@ -197,6 +206,12 @@
     "title": "目錄"
   },
   "languages": "語言",
+  "languageNames": {
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "ja": "日本語"
+  },
   "listed": "展示在文章列表",
   "load_failed": "加載失敗，請稍後重試",
   "loading": "加載中",
@@ -377,5 +392,144 @@
     "latest": "最新",
     "popular": "熱度",
     "oldest": "倒序"
+  },
+  "announcements": {
+    "title": "公告通知",
+    "viewMore": "查看更多公告"
+  },
+  "tagCloud": {
+    "title": "熱門標籤",
+    "error": "載入標籤失敗",
+    "empty": "暫無標籤",
+    "viewAll": "查看全部標籤"
+  },
+  "hashtagsPage": {
+    "description": "共{{count}}個標籤，熱門標籤：{{topTags}}",
+    "noTags": "暫無標籤"
+  },
+  "hashtagDetail": {
+    "relatedTags": "相關標籤",
+    "sort": "排序",
+    "latest": "最新",
+    "oldest": "最早",
+    "noArticles": "暫無該標籤下的文章",
+    "hotTags": "熱門標籤",
+    "metaDescription": "標籤 {{name}} 下的文章{{description}}，共 {{count}} 篇文章"
+  },
+  "musicPlayer": {
+    "title": "音樂播放器",
+    "play": "播放",
+    "pause": "暫停",
+    "loadError": "音頻載入失敗",
+    "playError": "播放失敗",
+    "volume": "音量",
+    "defaultTitle": "背景音樂"
+  },
+  "feedDetail": {
+    "publishDate": "發布日期",
+    "updateDate": "更新日期",
+    "pageViews": "瀏覽量",
+    "uniqueVisitors": "訪客數",
+    "joinedIn": "加入於",
+    "articleAuthor": "文章作者"
+  },
+  "share": {
+    "title": "分享這篇文章",
+    "twitter": "分享到 Twitter",
+    "qq": "分享到 QQ",
+    "telegram": "分享到 Telegram",
+    "wechat": "生成微信分享二維碼",
+    "copyLink": "複製連結"
+  },
+  "settingsTabs": {
+    "basic": "基礎設定",
+    "profile": "個人資料",
+    "sidebar": "側邊欄",
+    "music": "音樂播放器",
+    "advanced": "進階設定"
+  },
+  "settingsProfile": {
+    "title": "個人資料設定",
+    "bio": {
+      "title": "個人簡介",
+      "desc": "設定個人資料卡片中顯示的簡介資訊，支援自訂個人介紹內容"
+    },
+    "socialTitle": "社交平台連結",
+    "bilibili": {
+      "title": "B站",
+      "desc": "設定B站用戶ID或完整連結"
+    },
+    "twitter": {
+      "title": "X (Twitter)",
+      "desc": "設定X(Twitter)用戶名或完整連結"
+    },
+    "telegram": {
+      "title": "Telegram",
+      "desc": "設定Telegram用戶名或完整連結"
+    },
+    "qq": {
+      "title": "QQ",
+      "desc": "設定QQ號碼或完整連結"
+    },
+    "wechat": {
+      "title": "微信",
+      "desc": "設定微信號或二維碼連結"
+    },
+    "youtube": {
+      "title": "YouTube",
+      "desc": "設定YouTube頻道用戶名或完整連結"
+    },
+    "weibo": {
+      "title": "微博",
+      "desc": "設定微博用戶名或完整連結"
+    },
+    "instagram": {
+      "title": "Instagram",
+      "desc": "設定Instagram用戶名或完整連結"
+    },
+    "linkedin": {
+      "title": "LinkedIn",
+      "desc": "設定LinkedIn用戶名或完整連結"
+    },
+    "discord": {
+      "title": "Discord",
+      "desc": "設定Discord伺服器邀請連結"
+    }
+  },
+  "settingsMusic": {
+    "title": "音樂播放器設定",
+    "url": {
+      "title": "音樂連結",
+      "desc": "設定背景音樂的URL地址，支援MP3、OGG等格式"
+    },
+    "musicTitle": {
+      "title": "音樂標題",
+      "desc": "設定音樂播放器中顯示的歌曲名稱"
+    },
+    "artist": {
+      "title": "藝術家",
+      "desc": "設定音樂播放器中顯示的藝術家名稱"
+    }
+  },
+  "templates": {
+    "templates": "模板",
+    "insert": "插入模板",
+    "save": "保存",
+    "cancel": "取消",
+    "save_selection": "保存所選內容",
+    "template_name": "模板名稱",
+    "default": "預設模板",
+    "custom": "自訂模板",
+    "delete": "刪除模板",
+    "table": "表格",
+    "header": "表頭",
+    "content": "內容",
+    "code_block": "程式碼區塊",
+    "quote": "引用",
+    "todo_list": "待辦清單",
+    "image_gallery": "圖片庫",
+    "callout": "提示框",
+    "mermaid": "Mermaid 圖表",
+    "save_success": "自訂模板保存成功！"
   }
 }

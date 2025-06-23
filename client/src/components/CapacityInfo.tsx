@@ -203,7 +203,7 @@ export function CapacityInfoInline() {
   );
 
   return (
-    <div className="py-1.5 px-2.5 sm:px-3 bg-neutral-100/80 dark:bg-neutral-800/80 rounded-xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium backdrop-blur-sm border border-neutral-200/40 dark:border-neutral-700/40 flex-shrink-0">
+    <div className="py-1.5 px-2.5 sm:px-3 bg-neutral-100/80 dark:bg-neutral-800/80 rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium backdrop-blur-sm border border-neutral-200/40 dark:border-neutral-700/40 flex-shrink-0">
       <i className="ri-database-2-line text-theme text-xs sm:text-sm"></i>
       <span className="ml-1 sm:ml-1.5">
         {r2Usage !== null ? formatFileSize(r2Usage) : '--'}
