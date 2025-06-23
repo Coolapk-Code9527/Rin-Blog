@@ -33,6 +33,7 @@ import { GlobalMusicPlayer } from './components/GlobalMusicPlayer'
 import { MusicProvider } from './context/MusicContext'
 import { ExtendedConfigProvider } from './context/ConfigContext'
 import { clearExpiredTagsCache } from './hooks/useTagsWithCache'
+import { SimpleClickEffectCanvas } from './components/effects/ClickEffectCanvas'
 
 // 返回顶部按钮组件
 function BackToTop() {
@@ -312,6 +313,7 @@ function App() {
               </Switch>
               <BackToTop />
               <GlobalMusicPlayer />
+              <SimpleClickEffectCanvas />
             </ProfileContext.Provider>
               </MusicProvider>
             </ExtendedConfigProvider>

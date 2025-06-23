@@ -27,6 +27,16 @@ export const defaultClientConfig = new Map(Object.entries({
     "author.social.qq": "",
     // 音乐播放器配置
     "music.enabled": true,
+    // 鼠标点击特效配置
+    "clickEffect.enabled": false,
+    "clickEffect.normalClick.min": 8,
+    "clickEffect.normalClick.max": 15,
+    "clickEffect.longPress.min": 20,
+    "clickEffect.longPress.max": 35,
+    "clickEffect.longPressDelay": 500,
+    "clickEffect.maxParticles": 100,
+    "clickEffect.enableOnMobile": true,
+    "clickEffect.mobileReduction": 0.6,
     "music.autoplay": false,
     "music.url": "https://www.bensound.com/bensound-music/bensound-ukulele.mp3",
     "music.title": "Ukulele",

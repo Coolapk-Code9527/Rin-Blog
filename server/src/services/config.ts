@@ -29,12 +29,24 @@ export function ConfigService() {
                         set.status = 401;
                         return 'Unauthorized';
                     }
-                    const config = type === 'server' ? ServerConfig() : ClientConfig();
-                    for (const key in body) {
-                        await config.set(key, body[key], false);
+
+                    try {
+                        const config = type === 'server' ? ServerConfig() : ClientConfig();
+                        for (const key in body) {
+                            await config.set(key, body[key], false);
+                        }
+                        await config.save();
+                        console.log(`Config saved successfully for type: ${type}`, Object.keys(body));
+                        return 'OK';
+                    } catch (error: any) {
+                        console.error(`Config save failed for type: ${type}`, error.message);
+                        set.status = 500;
+                        return {
+                            error: 'Failed to save configuration',
+                            message: error.message,
+                            type: error.message.includes('timeout') ? 'timeout' : 'storage_error'
+                        };
                     }
-                    await config.save();
-                    return 'OK';
                 }, {
                     body: t.Record(t.String(), t.Any())
                 })

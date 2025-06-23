@@ -91,6 +91,25 @@ export function Settings() {
                 </div>
             </div>
 
+            {/* 鼠标点击特效设置分组 */}
+            <div className="mb-8">
+                <ItemTitle title={t('settings.clickEffect.title', { defaultValue: '鼠标点击特效' })} />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                    <ItemSwitch
+                        title={t('settings.clickEffect.enable.title', { defaultValue: '启用点击特效' })}
+                        description={t('settings.clickEffect.enable.desc', { defaultValue: '鼠标点击时显示彩色粒子动画特效，符合macOS设计风格，支持深色/浅色主题适配' })}
+                        type="client"
+                        configKey="clickEffect.enabled"
+                    />
+                    <ItemSwitch
+                        title={t('settings.clickEffect.mobile.title', { defaultValue: '移动端启用' })}
+                        description={t('settings.clickEffect.mobile.desc', { defaultValue: '在移动设备上启用触摸点击特效，会自动优化性能以确保流畅体验' })}
+                        type="client"
+                        configKey="clickEffect.enableOnMobile"
+                    />
+                </div>
+            </div>
+
             {/* 友情链接设置分组 */}
             <div className="mb-8">
                 <ItemTitle title={t('settings.friend.title')} />

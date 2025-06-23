@@ -325,6 +325,17 @@
         "desc": "Set the URL address of the background image, supports web image links"
       }
     },
+    "clickEffect": {
+      "title": "Mouse Click Effects",
+      "enable": {
+        "title": "Enable Click Effects",
+        "desc": "Display colorful particle animation effects when clicking"
+      },
+      "mobile": {
+        "title": "Enable on Mobile",
+        "desc": "Enable touch click effects on mobile devices"
+      }
+    },
     "other": {
       "title": "Other Settings"
     },

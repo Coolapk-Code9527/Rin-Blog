@@ -220,24 +220,50 @@ export class CacheImpl {
             return; // 序列化失败时不进行保存
         }
 
-        // 超级优化：异步上传，避免阻塞主线程
-        this.asyncUpload(cacheKey, serializedData);
+        // 优化：尝试同步保存，失败时异步重试
+        try {
+            // 使用Promise.race实现超时保护，避免Cloudflare Workers超时
+            await Promise.race([
+                this.syncUpload(cacheKey, serializedData),
+                new Promise<void>((_, reject) =>
+                    setTimeout(() => reject(new Error('Save timeout')), 8000) // 8秒超时
+                )
+            ]);
+        } catch (error: any) {
+            console.warn('Sync save failed, falling back to async:', error.message);
+            // 同步保存失败，使用异步保存作为备用
+            this.asyncUpload(cacheKey, serializedData);
+            // 重新抛出错误，让API知道保存可能有问题
+            throw new Error('Config save may be delayed due to sync failure');
+        }
     }
 
-    // 异步上传方法，避免阻塞主线程
+    // 同步上传方法，确保配置真正保存
+    private async syncUpload(cacheKey: string, data: string): Promise<void> {
+        try {
+            await this.s3.send(new PutObjectCommand({
+                Bucket: this.env.S3_BUCKET,
+                Key: cacheKey,
+                Body: data
+            }));
+            console.log(`Cache saved successfully: ${cacheKey}`);
+        } catch (e: any) {
+            if (e.code !== 'NoSuchBucket') {
+                console.error('Cache save failed:', e.message);
+                throw e; // 重新抛出错误，让调用者知道保存失败
+            }
+        }
+    }
+
+    // 异步上传方法（保留作为备用）
     private asyncUpload(cacheKey: string, data: string): void {
         // 使用setTimeout确保不阻塞当前执行
         setTimeout(async () => {
             try {
-                await this.s3.send(new PutObjectCommand({
-                    Bucket: this.env.S3_BUCKET,
-                    Key: cacheKey,
-                    Body: data
-                }));
+                await this.syncUpload(cacheKey, data);
             } catch (e: any) {
-                if (e.code !== 'NoSuchBucket') {
-                    console.error('Cache save failed:', e.message);
-                }
+                // 异步保存失败，记录错误
+                console.error('Async cache save failed:', e.message);
             }
         }, 0);
     }

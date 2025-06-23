@@ -7,6 +7,7 @@ interface UnifiedTimelineItemProps {
   item: any;
   onToggleItem: (id: string) => void;
   t: any;
+  key?: any; // 添加key属性以解决TypeScript错误
 }
 
 // UnifiedTimelineItem: 统一的时间轴项目组件（年、月、文章都在同一条线上）
@@ -266,12 +267,10 @@ export function UnifiedTimeline({ feeds, t }: { feeds: any[], t: any }) {
         <div className="-my-6">
           {timelineItems.map((item) => (
             <UnifiedTimelineItem
-              {...({
-                key: item.id,
-                item: item,
-                onToggleItem: toggleCollapse,
-                t: t
-              } as any)}
+              key={item.id}
+              item={item}
+              onToggleItem={toggleCollapse}
+              t={t}
             />
           ))}
         </div>

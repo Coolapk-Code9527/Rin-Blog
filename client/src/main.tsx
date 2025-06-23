@@ -60,7 +60,8 @@ const i18n = i18next;
       escapeValue: false,
     },
     react: {
-      useSuspense: false,
+      // 移除 useSuspense: false，使用默认的Suspense行为
+      // 这样组件会等待翻译加载完成后再渲染，避免翻译键显示在浏览器标签页
     },
   })
   .then(() => {
