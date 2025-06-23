@@ -70,7 +70,7 @@ export function Header({ children }: { children?: React.ReactNode }) {
                         <img 
                             src={process.env.AVATAR} 
                             alt="Avatar" 
-                            className="w-10 h-10 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-sm group-hover:shadow-md transition-all duration-200" 
+                            className="w-10 h-10 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-sm group-hover:shadow-md transition-all duration-200"
                         />
                         <div className="flex flex-col justify-center items-start ml-3">
                             <p className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-theme dark:group-hover:text-theme transition-colors duration-200">
@@ -154,11 +154,11 @@ function NavItem({ menu, title, selected, href, when = true, onClick, iconKey }:
                         ${menu
                             ? "block w-full relative px-4 py-3"
                             : "inline-flex items-center relative px-4 py-2.5"}
-                        text-sm font-medium rounded-xl transition-all duration-200 ease-out
+                        text-sm font-semibold rounded-xl transition-all duration-200 ease-out
                         ${selected
                             ? menu
-                                ? "text-theme dark:text-theme bg-theme/8 dark:bg-theme/12 font-semibold shadow-sm"
-                                : "nav-item active text-theme dark:text-theme bg-theme/5 dark:bg-theme/8"
+                                ? "text-theme dark:text-theme bg-theme/20 dark:bg-theme/25 font-bold shadow-sm"
+                                : "nav-item active text-theme dark:text-theme bg-theme/15 dark:bg-theme/20"
                             : menu
                                 ? "text-gray-700 dark:text-gray-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-theme dark:hover:text-theme"
                                 : "nav-item text-gray-700 dark:text-gray-300 hover:text-theme dark:hover:text-theme hover:bg-neutral-100/80 dark:hover:bg-neutral-800/80"}
@@ -429,7 +429,7 @@ function MobileMenu() {
                                                     <img 
                                                         src={profile.avatar} 
                                                         alt={profile.name || t('user')} 
-                                                        className="w-20 h-20 rounded-full border-2 border-gray-300 dark:border-gray-600 shadow-md transition-transform duration-200 hover:scale-105" 
+                                                        className="w-20 h-20 rounded-full border-2 border-gray-300 dark:border-gray-600 shadow-md transition-transform duration-200 hover:scale-105"
                                                     />
                                                     <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900 shadow-sm"></span>
                                                 </div>
@@ -1102,7 +1102,7 @@ function UserAvatar({ className, profile, onClose }: { className?: string, profi
                                 <img 
                                     src={profile.avatar} 
                                     alt={profile.name || t('user')} 
-                                    className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm" 
+                                    className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
                                 />
                                 <div>
                                     <p className="font-medium text-gray-800 dark:text-gray-200">{profile.name}</p>

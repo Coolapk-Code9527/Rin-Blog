@@ -8,6 +8,8 @@ export const defaultClientConfig = new Map(Object.entries({
     "S3_ACCESS_HOST": "",
     "background.enabled": false,
     "background.url": "",
+    // UI界面配置
+    "ui.defaultViewMode": "grid",
     "author.bio": "热爱分享技术与生活的博主。",
     // 侧边栏配置
     "sidebar.enabled": false,

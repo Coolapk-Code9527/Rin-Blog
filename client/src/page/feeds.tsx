@@ -12,6 +12,8 @@ import { tryInt } from "../utils/int"
 import { useTranslation } from "react-i18next";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect"
 import { useViewMode } from "../components/view_toggle"
+import { useContext } from "react"
+import { ExtendedConfigContext } from "../context/ConfigContext"
 import { ArticleListLayout } from "../components/layout"
 import { ArticleManagementTabs, type ListState, type SortType } from '../components/ArticleManagementTabs';
 import { ClientConfigContext } from "../state/config"
@@ -184,8 +186,26 @@ export function FeedsPage() {
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = React.useRef("")
 
-    // 视图模式状态管理
-    const { viewMode, setViewMode } = useViewMode('grid');
+    // 获取配置加载状态
+    const extendedConfig = useContext(ExtendedConfigContext);
+    const configLoaded = extendedConfig?.configLoaded ?? false;
+
+    // 视图模式状态管理 - 等待配置加载完成后再初始化
+    const { viewMode, setViewMode } = useViewMode();
+
+    // 检查是否有用户主动选择的视图模式
+    const hasUserChoice = () => {
+        try {
+            const userChoice = localStorage.getItem('rin-blog-view-mode-user');
+            const oldChoice = localStorage.getItem('rin-blog-view-mode');
+            return !!(userChoice || oldChoice);
+        } catch {
+            return false;
+        }
+    };
+
+    // 如果配置未加载且用户没有主动选择，显示loading状态
+    const shouldShowLoading = !configLoaded && !hasUserChoice();
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -453,72 +473,67 @@ export function FeedsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
 
-            {/* 页面标题和工具栏区域 */}
-            <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 mb-0 transition-all duration-300`}>
-                <div className="flex flex-col space-y-4 mb-0">
-                    {/* 标题行 */}
-                    <div className="flex flex-row items-center gap-2 sm:gap-3 py-2">
-                        <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
-                            {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
-                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
-                        </h1>
-                        <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
-                            <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
-                            <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: feeds[listState]?.size })}</span>
-                        </div>
-                    </div>
-
-                    {/* 文章管理标签页 - 独立一行 */}
-                    <div className="w-full">
-                        <ArticleManagementTabs
-                            listState={listState as ListState}
-                            viewMode={viewMode}
-                            sortType={sortType}
-                            onListStateChange={handleListStateChange}
-                            onViewModeChange={setViewMode}
-                            onSortTypeChange={handleSortChange}
-                            hasPermission={!!profile?.permission}
-                            showButtonText={showButtonText}
-                        />
-                    </div>
-                    
-                    {/* 上方渐变分割线 - 增加粗细 */}
-                    <div className="w-full mb-2">
-                        <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
-                    </div>
-                    
-                    <div className="flex justify-between items-center mt-0">
-                        {(listState === 'draft' || listState === 'unlisted') && (
-                            <div className={`text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic px-3 py-2 ${buttonGlassClass} rounded-lg shadow-sm border border-neutral-200/60 dark:border-neutral-700/60 max-w-full sm:max-w-md`}>
-                                {listState === 'draft' 
-                                    ? t('draft_description') 
-                                    : t('unlisted_description')
-                                }
+            {/* 等待配置和数据加载完成 */}
+            <Waiting for={status === 'idle' && configLoaded}>
+                {/* 页面标题和工具栏区域 */}
+                <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 mb-0 transition-all duration-300`}>
+                    <div className="flex flex-col space-y-4 mb-0">
+                        {/* 标题行 */}
+                        <div className="flex flex-row items-center gap-2 sm:gap-3 py-2">
+                            <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
+                                {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
+                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
+                            </h1>
+                            <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
+                                <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
+                                <span className="ml-1 sm:ml-1.5">
+                                    {t('article.total$count', { count: feeds[listState]?.size })}
+                                    {listState === 'draft' && '(仅自己可见)'}
+                                    {listState === 'unlisted' && '(有链接才能访问)'}
+                                </span>
                             </div>
-                        )}
-                        <div className="flex space-x-2">
-                            {/* 预留位置，可添加其他控件 */}
+                        </div>
+
+                        {/* 文章管理标签页 - 独立一行 */}
+                        <div className="w-full">
+                            <ArticleManagementTabs
+                                listState={listState as ListState}
+                                viewMode={viewMode}
+                                sortType={sortType}
+                                onListStateChange={handleListStateChange}
+                                onViewModeChange={setViewMode}
+                                onSortTypeChange={handleSortChange}
+                                hasPermission={!!profile?.permission}
+                                showButtonText={showButtonText}
+                            />
+                        </div>
+
+                        {/* 上方渐变分割线 - 增加粗细 */}
+                        <div className="w-full mb-2">
+                            <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+                        </div>
+
+                        <div className="flex justify-between items-center mt-0">
+                            <div className="flex space-x-2">
+                                {/* 预留位置，可添加其他控件 */}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* 主内容布局 - 文章列表与侧边栏 */}
+                {/* 主内容布局 - 文章列表与侧边栏 */}
                 <ArticleListLayout>
-                {/* 文章列表内容 */}
-                        <Waiting for={status === 'idle'}>
-                            {paginatedFeeds.length > 0 ? (
-                                <>
-                                    <div className={viewMode === 'list'
-                                        ? "flex flex-col gap-3 sm:gap-4 w-full view-transition-container"
-                                        : `grid ${gridCols} gap-4 sm:gap-5 md:gap-6 w-full view-transition-container`
-                                    }>
-                                        {paginatedFeeds.map((feed, i) => (
-                                            <LazyFeedCard key={`feed-card-${feed.id}-${i}-${sortType}-${viewMode}`} viewMode={viewMode} {...feed} />
-                                        ))}
-                                    </div>
-
-
+                    {/* 文章列表内容 */}
+                    {paginatedFeeds.length > 0 ? (
+                        <>
+                            <div className={viewMode === 'list'
+                                ? "flex flex-col gap-3 sm:gap-4 w-full view-transition-container"
+                                : `grid ${gridCols} gap-4 sm:gap-5 md:gap-6 w-full view-transition-container`
+                            }>
+                                {paginatedFeeds.map((feed, i) => (
+                                    <LazyFeedCard key={`feed-card-${feed.id}-${i}-${sortType}-${viewMode}`} viewMode={viewMode} {...feed} />
+                                ))}
+                            </div>
                         </>
                     ) : status === 'loading' ? (
                         // 加载状态显示骨架屏
@@ -607,8 +622,8 @@ export function FeedsPage() {
                             )}
                         </div>
                     )}
-                        </Waiting>
-            </ArticleListLayout>
+                </ArticleListLayout>
+            </Waiting>
 
             {/* 分页控制 - 移到ArticleListLayout外部，与侧边栏分离 */}
             {paginatedFeeds.length > 0 && totalPages > 1 && (

@@ -97,16 +97,16 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
   return (
     <div className={`rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden ${className}`}>
       {/* 内容区域 */}
-      <div className="p-4">
+      <div className="p-3">
         {/* 头像和基本信息 */}
-        <div className="flex flex-col items-center text-center mb-4">
+        <div className="flex flex-col items-center text-center mb-3">
           {/* 头像 */}
-          <div className="relative mb-3">
+          <div className="relative mb-2">
             {authorConfig.avatar ? (
               <img
                 src={authorConfig.avatar}
                 alt={authorConfig.name}
-                className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-lg"
+                className="w-20 h-20 rounded-full object-cover border-2 border-white/20 shadow-lg"
                 onError={(e) => {
                   // 头像加载失败时显示占位符
                   const target = e.target as HTMLImageElement;
@@ -118,8 +118,8 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
                 }}
               />
             ) : null}
-            <div 
-              className={`w-16 h-16 rounded-full bg-gradient-to-br ${getAvatarPlaceholder(authorConfig.name)} flex items-center justify-center text-white font-bold text-xl shadow-lg ${authorConfig.avatar ? 'hidden' : 'flex'}`}
+            <div
+              className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarPlaceholder(authorConfig.name)} flex items-center justify-center text-white font-bold text-2xl shadow-lg ${authorConfig.avatar ? 'hidden' : 'flex'}`}
               style={{ display: authorConfig.avatar ? 'none' : 'flex' }}
             >
               {authorConfig.name.charAt(0).toUpperCase()}
@@ -141,8 +141,8 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
 
         {/* 社交链接 */}
         {authorConfig.social && Object.keys(authorConfig.social).length > 0 && (
-          <div className="pt-4">
-            <div className="flex flex-wrap justify-center gap-3">
+          <div className="pt-3">
+            <div className="flex flex-wrap justify-center gap-2">
               {Object.entries(authorConfig.social)
                 .filter(([_, value]) => value)
                 .map(([platform, value]) => {
@@ -169,8 +169,8 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
 
         {/* 音乐播放器 */}
         {musicConfig.enabled && musicConfig.url && (
-          <div className={`border-t border-neutral-200/60 dark:border-neutral-700/60 pt-4 ${authorConfig.social && Object.keys(authorConfig.social).length > 0 ? 'mt-4' : ''}`}>
-            <div className="flex items-center gap-3">
+          <div className={`border-t border-neutral-200/60 dark:border-neutral-700/60 pt-3 ${authorConfig.social && Object.keys(authorConfig.social).length > 0 ? 'mt-3' : ''}`}>
+            <div className="flex items-center gap-2">
               {/* 播放按钮 */}
               <button
                 onClick={togglePlay}

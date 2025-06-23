@@ -767,13 +767,14 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
           );
         },
         p({ children, ...props }) {
-          // 递归检查 children 是否包含 div/video/audio
+          // 递归检查 children 是否包含块级元素
           function containsBlock(child: any): boolean {
             if (!child) return false;
             if (Array.isArray(child)) return child.some(containsBlock);
             if (React.isValidElement(child)) {
               const type = (child.type as any)?.toString?.() || child.type;
-              if (["div", "video", "audio"].includes(type)) return true;
+              // 检查所有可能的块级元素
+              if (["div", "video", "audio", "iframe", "embed", "object", "svg", "details", "dl", "ul", "ol", "blockquote", "pre", "table"].includes(type)) return true;
               const props = (child as any).props;
               if (props && props.children) {
                 return containsBlock(props.children);
@@ -968,11 +969,13 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         },
         iframe({ src, ...props }) {
           // 移除原有width/height，统一用样式控制
+          // 过滤掉不支持的属性
+          const { allowTransparency, ...validProps } = props;
           return (
             <div className="w-full my-4 rounded-xl overflow-hidden" style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
               <iframe
                 src={src}
-                {...props}
+                {...validProps}
                 width="100%"
                 height="100%"
                 style={{
@@ -1036,11 +1039,9 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
         },
         svg({ children, ...props }) {
           return (
-            <div className="w-full overflow-auto my-4" style={{ maxWidth: '100%' }}>
-              <svg {...props} style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }}>
-                {children}
-              </svg>
-            </div>
+            <svg {...props} style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }}>
+              {children}
+            </svg>
           );
         },
       }}

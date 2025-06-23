@@ -51,7 +51,6 @@ export function ArticleManagementTabs({
 }: ArticleManagementTabsProps) {
   const { t } = useTranslation();
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
-  const buttonGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
 
   // 标签页配置 - 只显示有权限的按钮
   const tabs = React.useMemo(() => {
@@ -181,11 +180,12 @@ export function ArticleManagementTabs({
                   flex items-center justify-center gap-1 px-1.5 py-2 sm:px-2 sm:py-2.5 rounded-lg text-sm font-medium
                   transition-all duration-200 ease-out
                   hover:scale-[0.98] active:scale-[0.96]
-                  ${buttonGlassClass} text-neutral-600 dark:text-neutral-300
-                  border border-neutral-200/60 dark:border-neutral-700/60
-                  hover:bg-neutral-50 dark:hover:bg-neutral-750
+                  bg-transparent text-neutral-600 dark:text-neutral-300
+                  border border-neutral-300/70 dark:border-neutral-600/70
+                  hover:bg-neutral-50/80 dark:hover:bg-neutral-750/80
                   hover:text-theme dark:hover:text-theme
-                  shadow-enhanced hover:shadow-enhanced-lg
+                  hover:border-theme/50 dark:hover:border-theme/50
+                  shadow-sm hover:shadow-md
                   min-h-[36px] sm:min-h-[44px] w-full
                 `}
               >
@@ -210,8 +210,8 @@ export function ArticleManagementTabs({
                 hover:scale-[0.98] active:scale-[0.96]
                 min-h-[36px] sm:min-h-[44px] w-full
                 ${tab.active
-                  ? 'bg-white dark:bg-neutral-700 text-theme shadow-enhanced-lg border-2 border-theme/40 dark:border-theme/35'
-                  : `${buttonGlassClass} text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme shadow-enhanced hover:shadow-enhanced-lg`
+                  ? 'bg-transparent text-theme shadow-md border-2 border-theme/60 dark:border-theme/50'
+                  : 'bg-transparent text-neutral-600 dark:text-neutral-300 border border-neutral-300/70 dark:border-neutral-600/70 hover:bg-neutral-50/80 dark:hover:bg-neutral-750/80 hover:text-theme dark:hover:text-theme hover:border-theme/50 dark:hover:border-theme/50 shadow-sm hover:shadow-md'
                 }
               `}
               title={tab.title}

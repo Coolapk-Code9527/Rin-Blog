@@ -46,11 +46,11 @@ export function SidebarSkeleton({ className = '' }: SidebarSkeletonProps) {
 function ProfileCardSkeleton({ glassClass }: { glassClass: string }) {
   return (
     <div className={`rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden animate-pulse`}>
-      <div className="p-4">
+      <div className="p-3">
         {/* 头像和基本信息 */}
-        <div className="flex flex-col items-center text-center mb-4">
+        <div className="flex flex-col items-center text-center mb-3">
           {/* 头像 */}
-          <div className="w-16 h-16 rounded-full bg-neutral-200 dark:bg-neutral-700 mb-3"></div>
+          <div className="w-20 h-20 rounded-full bg-neutral-200 dark:bg-neutral-700 mb-2"></div>
           
           {/* 姓名 */}
           <div className="h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-24 mb-2"></div>

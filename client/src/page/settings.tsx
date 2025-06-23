@@ -26,6 +26,7 @@ import UnauthorizedAccess from "../components/UnauthorizedAccess";
 import { AnnouncementManager } from "../components/sidebar/AnnouncementManager";
 import { ExtendedConfigContext } from "../context/ConfigContext";
 import { configUpdateManager } from "../utils/ConfigUpdateManager";
+import type { ViewMode } from "../components/view_toggle";
 
 
 // 定义设置标签页类型
@@ -88,6 +89,17 @@ export function Settings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
                     <ItemSwitch title={t('settings.background.enable.title')} description={t('settings.background.enable.desc')} type="client" configKey="background.enabled" />
                     <ItemInput title={t('settings.background.url.title')} configKeyTitle={t('settings.background.url.title')} description={t('settings.background.url.desc')} type="client" configKey="background.url" />
+                </div>
+            </div>
+
+            {/* 界面显示设置分组 */}
+            <div className="mb-8">
+                <ItemTitle title={t('settings.ui.title', { defaultValue: '界面显示' })} />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                    <ItemViewModeConfig
+                        title={t('settings.ui.defaultViewMode.title', { defaultValue: '默认视图模式' })}
+                        description={t('settings.ui.defaultViewMode.desc', { defaultValue: '设置所有访问者的文章列表页面默认显示模式，可选择网格视图或列表视图' })}
+                    />
                 </div>
             </div>
 
@@ -737,6 +749,139 @@ function ItemWithUpload({
                     <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
                         {description}
                     </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function ItemViewModeConfig({ title, description }: { title: string, description: string }) {
+    const { t } = useTranslation();
+    const config = useContext(ClientConfigContext);
+    const [currentMode, setCurrentMode] = useState<'grid' | 'list'>('grid');
+    const [loading, setLoading] = useState(false);
+    const { showToast } = useToast();
+
+    // 使用智能毛玻璃效果
+    const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
+
+    // 从配置系统读取当前设置
+    useEffect(() => {
+        const configValue = config?.get<string>('ui.defaultViewMode');
+        if (configValue && (configValue === 'grid' || configValue === 'list')) {
+            setCurrentMode(configValue);
+        } else {
+            setCurrentMode('grid'); // 默认值
+        }
+    }, [config]);
+
+    // 更新视图模式配置
+    const updateViewMode = (newMode: 'grid' | 'list') => {
+        setLoading(true);
+
+        // 使用配置更新管理器
+        configUpdateManager.setCallbacks(
+            // 成功回调
+            (updateType, updates) => {
+                if (updateType === 'client' && updates['ui.defaultViewMode'] !== undefined) {
+                    setLoading(false);
+                    setCurrentMode(newMode);
+
+                    // 立即更新sessionStorage中的配置
+                    try {
+                        const config = JSON.parse(sessionStorage.getItem('config') || '{}');
+                        config['ui.defaultViewMode'] = newMode;
+                        sessionStorage.setItem('config', JSON.stringify(config));
+
+                    } catch (error) {
+                        console.warn('Failed to update sessionStorage:', error);
+                    }
+
+                    // 触发全局配置更新事件
+                    window.dispatchEvent(new CustomEvent('configUpdated'));
+                    window.dispatchEvent(new CustomEvent('viewModeConfigChanged', {
+                        detail: { newMode }
+                    }));
+
+                    showToast(t('settings.ui.defaultViewMode.success', {
+                        defaultValue: '默认视图模式已更新',
+                        mode: newMode === 'grid' ? '网格视图' : '列表视图'
+                    }));
+                }
+            },
+            // 失败回调
+            (updateType, error) => {
+                if (updateType === 'client') {
+                    setLoading(false);
+                    showToast(t('settings.ui.defaultViewMode.error', {
+                        defaultValue: '保存失败，请重试'
+                    }));
+                }
+            }
+        );
+
+        // 更新配置
+        configUpdateManager.enqueueUpdate('client', 'ui.defaultViewMode', newMode);
+    };
+
+    const viewOptions = [
+        {
+            key: 'grid' as const,
+            label: t('view.grid', { defaultValue: '网格' }),
+            icon: 'ri-grid-line',
+            description: t('view.grid_tooltip', { defaultValue: '网格视图：以卡片形式展示文章' })
+        },
+        {
+            key: 'list' as const,
+            label: t('view.list', { defaultValue: '列表' }),
+            icon: 'ri-list-unordered',
+            description: t('view.list_tooltip', { defaultValue: '列表视图：以列表形式展示文章' })
+        }
+    ];
+
+    return (
+        <div className={`${glassClass} rounded-2xl shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden`}>
+            <div className="p-4">
+                <div className="flex flex-col space-y-3">
+                    <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                            <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                                {title}
+                            </h3>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                                {description}
+                            </p>
+                        </div>
+                        {loading && (
+                            <div className="ml-3 flex-shrink-0">
+                                <InlineSpinner size="small" />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 视图模式选择器 */}
+                    <div className="flex gap-2 mt-3">
+                        {viewOptions.map((option) => (
+                            <button
+                                key={option.key}
+                                onClick={() => updateViewMode(option.key)}
+                                disabled={loading}
+                                className={`
+                                    flex-1 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                                    flex items-center justify-center gap-2 border
+                                    ${currentMode === option.key
+                                        ? 'bg-theme/10 text-theme border-theme/30 shadow-sm'
+                                        : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-750'
+                                    }
+                                    disabled:opacity-50 disabled:cursor-not-allowed
+                                `}
+                                title={option.description}
+                            >
+                                <i className={`${option.icon} text-sm`}></i>
+                                <span>{option.label}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
