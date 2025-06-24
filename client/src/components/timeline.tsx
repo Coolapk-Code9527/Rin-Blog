@@ -198,7 +198,7 @@ export function Timeline({ feeds, error, t }: { feeds: any, error: string | null
       <div className="relative w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         {/* 修复：主线竖线（全局） - 与节点圆点精确对齐 */}
         <div className="absolute left-4 md:left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-theme/90 via-theme/40 to-pink-400/50 rounded-full z-0 shadow-sm transform -translate-x-1/2" style={{ minHeight: '100%' }}></div>
-        <div className="relative z-10 pb-6">
+        <div className="relative z-10">
           {Object.keys(feeds).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
             <div key={year} className="mb-4">
               <TimelineYear year={year} items={feeds[+year]} t={t} />

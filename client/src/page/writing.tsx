@@ -2499,7 +2499,7 @@ export function WritingPage({ id }: { id?: number }) {
 
       {/* 使用标准的PageContainer，与其他页面保持一致 */}
       <PageContainer>
-        <div className="py-6 writing-content-wrapper">
+        <div className="px-6 writing-content-wrapper">
           {/* 响应式布局：移动端单列，桌面端左右分栏 */}
           <div className="flex flex-col lg:flex-row gap-6 writing-layout">
 

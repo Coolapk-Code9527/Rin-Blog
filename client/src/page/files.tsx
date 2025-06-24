@@ -51,7 +51,7 @@ export function FilesPage() {
   return (
     <PageContainer>
       {/* 页面标题区域 - 与其他页面保持一致 */}
-      <div className="flex flex-col space-y-3 mb-3">
+      <div className="flex flex-col space-y-3">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
           {/* 左侧：标题和容量信息 - 优化移动端布局 */}
           <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">

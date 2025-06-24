@@ -65,7 +65,7 @@ export function SearchPage({ keyword }: { keyword: string }) {
             </Helmet>
             <PageContainer maxWidth="max-w-6xl" className="w-full">
                 <Waiting for={status === 'idle'}>
-                    <main className="w-full flex flex-col mb-3 ani-show">
+                    <main className="w-full flex flex-col ani-show">
                         {/* 页面标题区域 - 与文章列表页面保持一致 */}
                         <div className="flex flex-col space-y-3 mb-3">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
@@ -111,7 +111,7 @@ export function SearchPage({ keyword }: { keyword: string }) {
             {/* 分页控制 - 与其他页面保持一致 */}
             {feeds?.data.length > 0 && (page > 1 || feeds?.hasNext) && (
                 <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-8 transition-all duration-300">
-                    <div className="flex justify-center mt-6 mb-2 w-full">
+                    <div className="flex justify-center mt-6 w-full">
                         <Pagination
                             currentPage={page}
                             totalPages={Math.ceil(feeds?.size / limit) || 1}

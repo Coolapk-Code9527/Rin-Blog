@@ -628,7 +628,7 @@ export function FeedsPage() {
             {/* 分页控制 - 移到ArticleListLayout外部，与侧边栏分离 */}
             {paginatedFeeds.length > 0 && totalPages > 1 && (
                 <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 transition-all duration-300`}>
-                    <div className="flex justify-center mt-6 mb-2 w-full">
+                    <div className="flex justify-center w-full">
                         <Pagination
                             currentPage={page}
                             totalPages={totalPages}

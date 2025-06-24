@@ -82,7 +82,7 @@ export function TimelinePage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <Waiting for={feeds}>
-                <main className="w-full flex flex-col justify-center items-center mb-8 ani-show">
+                <main className="w-full flex flex-col justify-center items-center ani-show">
                     <PageContainer>
                         {/* 页面标题区域 - 与文章列表页面保持一致 */}
                         <div className="flex flex-col space-y-3 mb-3">

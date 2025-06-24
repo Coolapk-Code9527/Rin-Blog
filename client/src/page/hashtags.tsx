@@ -68,7 +68,7 @@ export function HashtagsPage() {
             </Helmet>
             <PageContainer maxWidth="max-w-6xl" className="w-full">
                 <Waiting for={hashtags}>
-                    <main className="w-full flex flex-col mb-3 ani-show">
+                    <main className="w-full flex flex-col ani-show">
                         {/* 页面标题区域 - 与文章列表页面保持一致 */}
                         <div className="flex flex-col space-y-3 mb-3">
                           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
@@ -96,6 +96,7 @@ export function HashtagsPage() {
                         <UnifiedContainer
                           heightType="responsive"
                           layoutType="with-header"
+                          disablePadding={true}
                           className="hover:shadow-enhanced-lg transition-all duration-300"
                           title={
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -123,7 +124,8 @@ export function HashtagsPage() {
                           }
                           enableScroll={true}
                         >
-                          {sortedTags.length === 0 ? (
+                          <div className="px-6 pt-6">
+                            {sortedTags.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-500">
                               <i className="ri-emotion-unhappy-line text-5xl mb-3 text-neutral-300 dark:text-neutral-600"></i>
                               <div className="text-lg font-medium">{t('hashtagsPage.noTags')}</div>
@@ -148,6 +150,7 @@ export function HashtagsPage() {
                               ))}
                             </div>
                           )}
+                          </div>
                         </UnifiedContainer>
 
 

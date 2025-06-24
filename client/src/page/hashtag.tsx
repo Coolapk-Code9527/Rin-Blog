@@ -215,7 +215,7 @@ export function HashtagPage({ name }: { name: string }) {
             {/* 分页控制 - 与文章列表页面保持一致 */}
             {paginatedFeeds.length > 0 && totalPages > 1 && (
                 <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-8 transition-all duration-300">
-                    <div className="flex justify-center mt-6 mb-2 w-full">
+                    <div className="flex justify-center mt-6 w-full">
                         <Pagination
                             currentPage={page}
                             totalPages={totalPages}

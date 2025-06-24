@@ -62,7 +62,7 @@ export function NotFoundPage() {
             {t("error.page_not_exist")}
           </p>
 
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
+          <p className="text-gray-600 dark:text-gray-400">
             {t("error.page_not_exist_desc")}
           </p>
 

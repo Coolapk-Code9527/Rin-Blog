@@ -276,7 +276,7 @@ export function Pagination({
   }
   
   return (
-    <div className={`flex justify-center py-2 sm:py-3 ${className}`}>
+    <div className={`flex justify-center pt-2 sm:pt-3 ${className}`}>
       <div className="flex items-center gap-1.5 sm:gap-2" aria-label={ariaLabel}>
         {renderPreviousButton()}
         

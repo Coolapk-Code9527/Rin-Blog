@@ -482,13 +482,12 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             </article>
             <AdjacentSection id={id} setError={setError}/>
             {feed && <Comments id={`${feed.id}`} />}
-            <div className="h-16" />
           </main>
         )}
         {/* 侧边栏，仅大屏显示，且不是404页面时才显示 */}
         {!error && (
           <aside className="hidden lg:flex flex-col w-[260px] flex-shrink-0 gap-6 mt-5">
-            <section className="sticky top-[5.5rem] max-h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
+            <section className="sticky top-[5.5rem] max-h-[calc(100vh-5.5rem)] flex flex-col overflow-hidden">
               <div className={`flex-shrink-0 mb-6 rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden`}>
                 <div className="px-4 py-3 border-b border-neutral-200/60 dark:border-neutral-700/60">
                   <h3 className="text-lg font-bold flex items-center gap-2 mt-0 mb-0">

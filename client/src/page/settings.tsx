@@ -393,7 +393,7 @@ export function Settings() {
                         </div>
 
                         {/* 标签页内容 */}
-                        <div className="w-full mb-8">
+                        <div className="w-full -mb-8">
                             {renderTabContent()}
                         </div>
                     </PageContainer>
