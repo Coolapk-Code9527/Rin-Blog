@@ -210,7 +210,21 @@
     "partial_display": "... (partial display)"
   },
   "footer": {
-    "rss": "RSS Subscription Link"
+    "rss": "RSS Subscription Link",
+    "stats": {
+      "siteRunning": "Site has been running for",
+      "totalViews": "Total Views",
+      "totalVisitors": "Total Visitors",
+      "todayViews": "Today's Views",
+      "todayVisitors": "Today's Visitors",
+      "loading": "Loading statistics...",
+      "error": "Failed to load statistics",
+      "refresh": "Refresh",
+      "runningTime": {
+        "withYears": "{{years}} years {{days}} days",
+        "daysOnly": "{{days}} days"
+      }
+    }
   },
   "friends": {
     "apply": "Apply for Friend Link",

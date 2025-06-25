@@ -46,7 +46,9 @@ export const defaultClientConfig = new Map(Object.entries({
     "music.volume": 0.7,
     // 公告系统配置
     "announcements.enabled": true,
-    "announcements.data": `[{"id":"welcome_announcement","title":"欢迎来到博客","content":"感谢您访问我的博客！这里会分享技术文章和生活感悟。","priority":"normal","createdAt":"${new Date().toISOString()}"},{"id":"important_notice","title":"重要通知","content":"博客系统已升级，新增了侧边栏功能，包含个人资料、标签云等组件。","priority":"important","createdAt":"${new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()}"}]`
+    "announcements.data": `[{"id":"welcome_announcement","title":"欢迎来到博客","content":"感谢您访问我的博客！这里会分享技术文章和生活感悟。","priority":"normal","createdAt":"${new Date().toISOString()}"},{"id":"important_notice","title":"重要通知","content":"博客系统已升级，新增了侧边栏功能，包含个人资料、标签云等组件。","priority":"important","createdAt":"${new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()}"}]`,
+    // 网站统计配置
+    "site.createdAt": new Date().toISOString(), // 网站创建日期，用于计算运行天数
 }))
 
 export const defaultServerConfig = new Map(Object.entries({

@@ -1,7 +1,7 @@
 import * as Switch from '@radix-ui/react-switch';
 import {ChangeEvent, useContext, useEffect, useRef, useState, useMemo} from "react";
 import {useTranslation} from "react-i18next";
-import { InlineSpinner } from "../components/loading";
+import { InlineSpinner, MacOSLoadingSpinner } from "../components/loading";
 import Modal from "react-modal";
 import {Button} from "../components/button.tsx";
 import {useGlobalDialog} from "../components/dialog";
@@ -332,8 +332,8 @@ export function Settings() {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme mx-auto mb-4"></div>
-                    <p className="text-gray-600 dark:text-gray-400">{t('loading', { defaultValue: '加载中...' })}</p>
+                    <MacOSLoadingSpinner />
+                    <p className="text-gray-600 dark:text-gray-400 mt-4">{t('loading', { defaultValue: '加载中...' })}</p>
                 </div>
             </div>
         );

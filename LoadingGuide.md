@@ -49,7 +49,33 @@ import { MacOSSpinner } from './components/loading';
 <MacOSSpinner size="medium" className="my-4" />
 ```
 
-### 4. 内联Spinner - `InlineSpinner`
+### 4. 呼吸点状Loading - `MacOSLoadingSpinner`
+**用途**: 鉴权相关页面的权限检查loading
+**特点**:
+- 彩色呼吸点状动画
+- macOS风格设计语言
+- 适合重要的权限验证场景
+- 支持深色模式和响应式设计
+
+```tsx
+import { MacOSLoadingSpinner } from './components/loading';
+
+// 权限检查loading
+if (hasToken && !profile) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <MacOSLoadingSpinner />
+        <p className="text-gray-600 dark:text-gray-400 mt-4">
+          {t('loading', { defaultValue: '加载中...' })}
+        </p>
+      </div>
+    </div>
+  );
+}
+```
+
+### 5. 内联Spinner - `InlineSpinner`
 **用途**: 按钮内部、文本旁边
 **特点**:
 - 专为内联使用设计
@@ -77,6 +103,13 @@ import { InlineSpinner } from './components/loading';
 - 页面首次加载: `Waiting`
 - 文章内容加载: `Waiting`
 - 重要操作反馈: `Waiting`
+
+### 鉴权相关场景 (统一化标准)
+- 写作页面权限检查: `MacOSLoadingSpinner`
+- 文件管理页面权限检查: `MacOSLoadingSpinner`
+- 设置页面权限检查: `MacOSLoadingSpinner`
+- OAuth认证流程: `MacOSLoadingSpinner`
+- 所有权限验证loading: `MacOSLoadingSpinner`
 
 ### 尺寸选择
 - `small`: 按钮内部、小组件
@@ -178,3 +211,58 @@ import { InlineSpinner } from './components/loading';
   <ArticleContent />
 </Waiting>
 ```
+
+## 鉴权Loading统一化标准
+
+### 背景
+为了确保Rin博客系统中所有鉴权相关流程的视觉一致性和用户体验连贯性，我们制定了鉴权loading的统一化标准。
+
+### 统一化原则
+1. **视觉一致性**: 所有鉴权相关页面使用相同的loading动画
+2. **macOS设计语言**: 采用Apple macOS风格的呼吸点状动画
+3. **响应式设计**: 确保在所有设备和屏幕尺寸下正常工作
+4. **深色模式兼容**: 自动适配浅色和深色主题
+
+### 适用场景
+- ✅ 写作页面权限检查
+- ✅ 文件管理页面权限检查
+- ✅ 设置页面权限检查
+- ✅ OAuth认证回调页面
+- ✅ 所有需要权限验证的页面loading状态
+
+### 标准实现
+```tsx
+// 权限检查loading的标准模板
+if (hasToken && !profile) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <MacOSLoadingSpinner />
+        <p className="text-gray-600 dark:text-gray-400 mt-4">
+          {t('loading', { defaultValue: '加载中...' })}
+        </p>
+      </div>
+    </div>
+  );
+}
+```
+
+### 技术特性
+- **彩色呼吸点状动画**: 5个彩色圆点，渐变背景，呼吸效果
+- **响应式优化**: 移动端更小的点和间距
+- **深色模式适配**: 自动调整颜色和透明度
+- **性能优化**: 支持低性能设备和减少动画偏好
+- **无障碍支持**: 符合可访问性标准
+
+### 迁移记录
+- 2025-06-26: 完成所有鉴权相关页面的loading统一化
+  - writing.tsx: 传统animate-spin → MacOSLoadingSpinner
+  - files.tsx: 传统animate-spin → MacOSLoadingSpinner
+  - settings.tsx: 传统animate-spin → MacOSLoadingSpinner
+  - callback.tsx: 简单文本 → MacOSLoadingSpinner + 国际化文本
+
+### 维护指南
+1. **新增鉴权页面**: 必须使用MacOSLoadingSpinner
+2. **修改现有页面**: 保持统一的布局结构和样式
+3. **测试要求**: 验证响应式设计和深色模式兼容性
+4. **代码审查**: 确保符合统一化标准

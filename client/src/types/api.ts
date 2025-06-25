@@ -214,4 +214,20 @@ export interface ApiClient {
       post: (data: any, options?: any) => Promise<TreatyResponse<any>>;
     };
   };
-} 
+  // 网站统计API定义
+  stats: {
+    website: {
+      get: (options?: any) => Promise<TreatyResponse<{
+        success: boolean;
+        data: {
+          totalViews: number;
+          totalVisitors: number;
+          todayViews: number;
+          todayVisitors: number;
+          runningDays: number;
+        };
+        error?: string;
+      }>>;
+    };
+  };
+}

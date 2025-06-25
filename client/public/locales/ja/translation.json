@@ -198,7 +198,21 @@
     "partial_display": "...（一部のみ表示）"
   },
   "footer": {
-    "rss": "RSS 購読リンク"
+    "rss": "RSS 購読リンク",
+    "stats": {
+      "siteRunning": "サイト運営期間",
+      "totalViews": "総閲覧数",
+      "totalVisitors": "総訪問者数",
+      "todayViews": "今日の閲覧数",
+      "todayVisitors": "今日の訪問者数",
+      "loading": "統計データを読み込み中...",
+      "error": "統計データの読み込みに失敗しました",
+      "refresh": "更新",
+      "runningTime": {
+        "withYears": "{{years}}年{{days}}日",
+        "daysOnly": "{{days}}日"
+      }
+    }
   },
   "friends": {
     "apply": "友人リンクを申請",

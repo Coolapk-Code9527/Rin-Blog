@@ -14,6 +14,7 @@ import { ToolbarButton, Button } from '../components/button';
 import { useGlobalDialog } from '../components/dialog';
 // import {Checkbox, Input} from "../components/input"; // 不再需要，使用内联编辑
 import {Markdown} from "../components/markdown";
+import { MacOSLoadingSpinner } from '../components/loading';
 import {client} from "../main";
 import {headersWithAuth} from "../utils/auth";
 import {Cache, useCache} from '../utils/cache';
@@ -2481,8 +2482,8 @@ export function WritingPage({ id }: { id?: number }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">{t('loading', { defaultValue: '加载中...' })}</p>
+          <MacOSLoadingSpinner />
+          <p className="text-gray-600 dark:text-gray-400 mt-4">{t('loading', { defaultValue: '加载中...' })}</p>
         </div>
       </div>
     );

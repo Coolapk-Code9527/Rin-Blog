@@ -5,6 +5,8 @@ import { Helmet } from "react-helmet-async";
 import { siteName } from '../utils/constants';
 import { useTranslation } from "react-i18next";
 import { useLoginModal } from '../hooks/useLoginModal';
+import { PersonalInfoSection } from './footer/PersonalInfoSection';
+import { WebsiteStatsSection } from './footer/WebsiteStatsSection';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 function Footer() {
@@ -69,8 +71,14 @@ function Footer() {
                 <link rel="alternate" type="application/atom+xml" title={siteName} href="/sub/atom.xml" />
                 <link rel="alternate" type="application/json" title={siteName} href="/sub/rss.json" />
             </Helmet>
-            <div className="flex flex-col mb-8 space-y-6 justify-center items-center t-primary ani-show">
+            <div className="flex flex-col mb-8 space-y-2 sm:space-y-3 justify-center items-center t-primary ani-show">
                 {footerHtml && <div dangerouslySetInnerHTML={{ __html: footerHtml }} />}
+
+                {/* 个人信息展示区域 */}
+                <PersonalInfoSection />
+
+                {/* 网站统计信息区域 */}
+                <WebsiteStatsSection />
 
                 {/* 标签式页脚信息 */}
                 <div className="flex flex-wrap justify-center items-center gap-2">

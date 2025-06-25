@@ -344,8 +344,8 @@ function RouteMe({ path, children, headerComponent, paddingClassName }:
               </Padding>
             </main>
 
-            {/* 页脚分隔线 - 统一在所有页面的页脚上方，添加适当间距 */}
-            <div className="w-full mt-8 mb-6 relative z-10">
+            {/* 页脚分隔线 - 统一在所有页面的页脚上方，减小间距 */}
+            <div className="w-full mt-6 mb-4 relative z-10">
               <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
                 <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
               </div>

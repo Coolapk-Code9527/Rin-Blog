@@ -198,7 +198,21 @@
     "partial_display": "...（僅顯示部分）"
   },
   "footer": {
-    "rss": "RSS 訂閱連結"
+    "rss": "RSS 訂閱連結",
+    "stats": {
+      "siteRunning": "本站已運行",
+      "totalViews": "總訪問量",
+      "totalVisitors": "總訪客數",
+      "todayViews": "今日訪問",
+      "todayVisitors": "今日訪客",
+      "loading": "載入統計資料...",
+      "error": "統計資料載入失敗",
+      "refresh": "重新整理",
+      "runningTime": {
+        "withYears": "{{years}}年{{days}}天",
+        "daysOnly": "{{days}}天"
+      }
+    }
   },
   "friends": {
     "apply": "申請友情連結",

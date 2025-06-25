@@ -219,7 +219,21 @@
     "partial_display": "...（仅显示部分）"
   },
   "footer": {
-    "rss": "RSS 订阅链接"
+    "rss": "RSS 订阅链接",
+    "stats": {
+      "siteRunning": "本站已运行",
+      "totalViews": "总访问量",
+      "totalVisitors": "总访客数",
+      "todayViews": "今日访问",
+      "todayVisitors": "今日访客",
+      "loading": "加载统计数据...",
+      "error": "统计数据加载失败",
+      "refresh": "刷新",
+      "runningTime": {
+        "withYears": "{{years}}年{{days}}天",
+        "daysOnly": "{{days}}天"
+      }
+    }
   },
   "friend": {
     "add": "添加友链",

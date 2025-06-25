@@ -3,8 +3,11 @@ import {useEffect} from "react";
 import {setCookie} from "typescript-cookie";
 import {useLocation, useSearch} from "wouter";
 import { PageContainer } from "../components/container";
+import { MacOSLoadingSpinner } from "../components/loading";
+import { useTranslation } from "react-i18next";
 
 export function CallbackPage() {
+    const { t } = useTranslation();
     const searchParams = new URLSearchParams(useSearch());
     const [, setLocation] = useLocation();
     useEffect(() => {
@@ -17,9 +20,10 @@ export function CallbackPage() {
     return (<>
         <PageContainer>
             <div className="w-screen h-screen flex justify-center items-center">
-                <div className="text-center text-black p-4 text-xl font-bold">
-                    <p>
-                        Waiting...
+                <div className="text-center">
+                    <MacOSLoadingSpinner />
+                    <p className="text-gray-600 dark:text-gray-400 mt-4 text-lg">
+                        {t('oauth.processing', { defaultValue: '正在处理登录...' })}
                     </p>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 import React from "react";
 
 // macOS风格的呼吸点状loading动画组件（用于主要页面加载）
-function MacOSLoadingSpinner() {
+export function MacOSLoadingSpinner() {
     return (
         <div className="macos-loading-container">
             <div className="macos-loading-dots">
@@ -52,7 +52,7 @@ export function Waiting({ for: wait, children }: { for?: any, children?: React.R
     return (
         <>
             {!wait ?
-                <div className="w-full h-96 flex flex-col justify-center items-center mb-8 ani-show-fast">
+                <div className="w-full min-h-screen flex flex-col justify-center items-center ani-show-fast">
                     <MacOSLoadingSpinner />
                 </div>
                 : children}

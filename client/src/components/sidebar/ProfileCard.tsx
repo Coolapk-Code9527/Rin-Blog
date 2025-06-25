@@ -96,12 +96,12 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
 
   return (
     <div className={`rounded-2xl ${glassClass} shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden ${className}`}>
-      {/* 内容区域 */}
+      {/* 内容区域 - 优化间距 */}
       <div className="p-3">
         {/* 头像和基本信息 */}
-        <div className="flex flex-col items-center text-center mb-3">
+        <div className="flex flex-col items-center text-center mb-2">
           {/* 头像 */}
-          <div className="relative mb-2">
+          <div className="relative mb-1.5">
             {authorConfig.avatar ? (
               <img
                 src={authorConfig.avatar}
@@ -127,25 +127,57 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
           </div>
 
           {/* 姓名 */}
-          <h4 className="text-lg font-semibold t-primary mb-1">
+          <h4 className="text-lg font-semibold t-primary mb-0.5">
             {authorConfig.name}
           </h4>
 
           {/* 简介 */}
           {authorConfig.bio && (
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed line-clamp-3">
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed line-clamp-2">
               {authorConfig.bio}
             </p>
           )}
         </div>
 
-        {/* 社交链接 */}
-        {authorConfig.social && Object.keys(authorConfig.social).length > 0 && (
-          <div className="pt-3">
-            <div className="flex flex-wrap justify-center gap-2">
-              {Object.entries(authorConfig.social)
-                .filter(([_, value]) => value)
-                .map(([platform, value]) => {
+        {/* 社交链接 - 智能适应布局 */}
+        {authorConfig.social && Object.keys(authorConfig.social).length > 0 && (() => {
+          const socialEntries = Object.entries(authorConfig.social).filter(([_, value]) => value);
+          const iconCount = socialEntries.length;
+
+          // 智能布局策略
+          const getLayoutConfig = (count: number) => {
+            if (count <= 3) {
+              return {
+                containerClass: "flex justify-center gap-2",
+                iconSize: "w-10 h-10",
+                iconTextSize: "text-xl",
+                maxIcons: count
+              };
+            } else if (count <= 6) {
+              return {
+                containerClass: "grid grid-cols-3 gap-1.5 max-w-[120px] mx-auto",
+                iconSize: "w-9 h-9",
+                iconTextSize: "text-lg",
+                maxIcons: 6
+              };
+            } else {
+              return {
+                containerClass: "grid grid-cols-3 gap-1.5 max-w-[120px] mx-auto",
+                iconSize: "w-8 h-8",
+                iconTextSize: "text-base",
+                maxIcons: 6
+              };
+            }
+          };
+
+          const config = getLayoutConfig(iconCount);
+          const displayIcons = socialEntries.slice(0, config.maxIcons);
+          const hasMore = iconCount > config.maxIcons;
+
+          return (
+            <div className="pt-2">
+              <div className={config.containerClass}>
+                {displayIcons.map(([platform, value]) => {
                   const iconClass = socialIcons[platform as keyof typeof socialIcons];
                   const link = getSocialLink(platform, value!);
 
@@ -155,17 +187,25 @@ export function ProfileCard({ className = '' }: ProfileCardProps) {
                       href={link}
                       target={platform === 'email' || platform === 'qq' || platform === 'wechat' ? '_self' : '_blank'}
                       rel={platform === 'email' || platform === 'qq' || platform === 'wechat' ? undefined : 'noopener noreferrer'}
-                      className="group flex items-center justify-center w-10 h-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-all duration-300 shadow-sm hover:shadow-md hover:scale-110 active:scale-95"
+                      className={`group flex items-center justify-center ${config.iconSize} rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-all duration-300 shadow-sm hover:shadow-md hover:scale-110 active:scale-95`}
                       title={t(`profile.social.${platform}`, { defaultValue: platform })}
                       aria-label={t(`profile.social.${platform}`, { defaultValue: platform })}
                     >
-                      <i className={`${iconClass} text-base group-hover:scale-110 transition-transform duration-200`}></i>
+                      <i className={`${iconClass} ${config.iconTextSize} group-hover:scale-110 transition-transform duration-200`}></i>
                     </a>
                   );
                 })}
+
+                {/* 更多图标指示器 */}
+                {hasMore && (
+                  <div className={`flex items-center justify-center ${config.iconSize} rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-medium`}>
+                    +{iconCount - config.maxIcons}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* 音乐播放器 */}
         {musicConfig.enabled && musicConfig.url && (
