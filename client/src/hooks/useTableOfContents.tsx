@@ -225,7 +225,7 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?
         TOC: () => {
             // 递归渲染多级目录
             const renderTocTree = (items: TableOfContent[], level = 0): JSX.Element => (
-                <ul ref={level === 0 ? tocListRef : undefined} className="max-h-[calc(100vh-10.25rem)] overflow-auto custom-scrollbar mt-0 pl-2" style={{ scrollbarWidth: "none", margin: 0 }}>
+                <ul ref={level === 0 ? tocListRef : undefined} className="max-h-[calc(100vh-10.25rem)] overflow-auto toc-enhanced mt-0 pl-2 space-y-1" style={{ scrollbarWidth: "none", margin: 0 }}>
                     {items.map((item) => {
                         // 判断自身或子节点是否高亮
                         const isActive = activeId === item.id;
@@ -235,17 +235,42 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?
                             if (node.children) return node.children.some(checkActive);
                             return false;
                         }
+                        // 获取层级信息用于样式
+                        const level = Math.floor(item.marginLeft / 10) + 1;
+                        const getHeadingIcon = (level: number) => {
+                            switch (level) {
+                                case 1: return 'ri-file-text-line';
+                                case 2: return 'ri-bookmark-line';
+                                case 3: return 'ri-list-unordered';
+                                default: return 'ri-arrow-right-s-line';
+                            }
+                        };
+
+                        const getHeadingColor = (level: number) => {
+                            switch (level) {
+                                case 1: return 'border-blue-500 dark:border-blue-400';
+                                case 2: return 'border-green-500 dark:border-green-400';
+                                case 3: return 'border-orange-500 dark:border-orange-400';
+                                default: return 'border-gray-400 dark:border-gray-500';
+                            }
+                        };
+
                         return (
                             <li
                                 key={`toc$${item.index}`}
                                 data-toc-id={item.id}
-                                className={
-                                    isActive
-                                        ? "text-theme font-medium py-[0.2rem] hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2 text-sm"
+                                className={`
+                                    group relative py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 ease-in-out
+                                    border-l-3 ${getHeadingColor(level)}
+                                    ${isActive
+                                        ? 'bg-theme/15 text-theme font-semibold shadow-sm'
                                         : hasActiveChild
-                                            ? "text-theme/80 font-medium py-[0.2rem] hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2 text-sm"
-                                            : "py-[0.2rem] hover:text-theme cursor-pointer transition-colors duration-200 line-clamp-2 text-sm"
-                                }
+                                            ? 'bg-theme/8 text-theme/80 font-medium hover:bg-theme/12'
+                                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/30 hover:shadow-sm'
+                                    }
+                                    ${level === 1 ? 'text-base' : level === 2 ? 'text-sm' : 'text-sm'}
+                                    line-clamp-2
+                                `}
                                 style={{ marginLeft: item.marginLeft }}
                                 onClick={() => {
                                     // 优化的滚动逻辑，使用现代API
@@ -267,7 +292,17 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?
                                     }
                                 }}
                             >
-                                {item.text}
+                                <div className="flex items-center gap-2">
+                                    <i className={`${getHeadingIcon(level)} text-xs flex-shrink-0 ${
+                                        isActive ? 'text-theme' : 'text-gray-400 dark:text-gray-500'
+                                    }`}></i>
+                                    <span className="flex-1 min-w-0">
+                                        {item.text}
+                                    </span>
+                                    {isActive && (
+                                        <div className="w-2 h-2 rounded-full bg-theme animate-pulse flex-shrink-0"></div>
+                                    )}
+                                </div>
                                 {item.children && item.children.length > 0 && renderTocTree(item.children, level + 1)}
                             </li>
                         );
@@ -277,7 +312,15 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?
             return (
                 <div className='py-1 px-1 t-primary'>
                     {tableOfContents.length === 0 ? (
-                        <li className="text-gray-500 italic py-2 text-sm">{t("index.empty.title")}</li>
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                            <i className="ri-file-text-line text-3xl text-gray-400 dark:text-gray-500 mb-3"></i>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">
+                                {t("index.empty.title")}
+                            </p>
+                            <p className="text-gray-400 dark:text-gray-500 text-xs">
+                                {t("toc.empty.description", { defaultValue: "文章内容加载后将显示目录" })}
+                            </p>
+                        </div>
                     ) : (
                         renderTocTree(tableOfContents)
                     )}

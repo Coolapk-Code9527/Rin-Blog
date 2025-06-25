@@ -400,11 +400,14 @@ const scrollbarStyles = `
     }
 
     /* 移动端工具栏隐藏优化 */
-    .mobile-toolbar-hidden {
+    .focus-mode-hidden {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
       height: 0 !important;
       padding: 0 !important;
+      margin: 0 !important;
       overflow: hidden !important;
-      opacity: 0 !important;
       transition: all 0.3s ease !important;
     }
   }
@@ -419,11 +422,14 @@ const scrollbarStyles = `
     }
 
     /* 专注模式工具栏隐藏 */
-    .mobile-toolbar-hidden {
+    .focus-mode-hidden {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
       height: 0 !important;
       padding: 0 !important;
+      margin: 0 !important;
       overflow: hidden !important;
-      opacity: 0 !important;
       transition: all 0.3s ease !important;
     }
   }
@@ -438,11 +444,14 @@ const scrollbarStyles = `
     }
 
     /* 专注模式工具栏隐藏 */
-    .mobile-toolbar-hidden {
+    .focus-mode-hidden {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
       height: 0 !important;
       padding: 0 !important;
+      margin: 0 !important;
       overflow: hidden !important;
-      opacity: 0 !important;
       transition: all 0.3s ease !important;
     }
   }
@@ -457,11 +466,14 @@ const scrollbarStyles = `
     }
 
     /* 专注模式工具栏隐藏 */
-    .mobile-toolbar-hidden {
+    .focus-mode-hidden {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
       height: 0 !important;
       padding: 0 !important;
+      margin: 0 !important;
       overflow: hidden !important;
-      opacity: 0 !important;
       transition: all 0.3s ease !important;
     }
   }
@@ -470,11 +482,14 @@ const scrollbarStyles = `
 // 专注模式全局样式
 const focusStyles = `
   /* 专注模式工具栏隐藏 - 全局样式，适用于所有屏幕尺寸 */
-  .mobile-toolbar-hidden {
+  .focus-mode-hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
     height: 0 !important;
     padding: 0 !important;
+    margin: 0 !important;
     overflow: hidden !important;
-    opacity: 0 !important;
     transition: all 0.3s ease !important;
   }
 `;
@@ -2499,7 +2514,7 @@ export function WritingPage({ id }: { id?: number }) {
 
       {/* 使用标准的PageContainer，与其他页面保持一致 */}
       <PageContainer>
-        <div className="px-6 writing-content-wrapper">
+        <div className="writing-content-wrapper">
           {/* 响应式布局：移动端单列，桌面端左右分栏 */}
           <div className="flex flex-col lg:flex-row gap-6 writing-layout">
 
@@ -2609,10 +2624,13 @@ export function WritingPage({ id }: { id?: number }) {
 
                 </div>
 
-                {/* 区域2：工具栏 - Grid第2行，移动端可隐藏，减小间距 */}
+                {/* 区域2：工具栏 - Grid第2行，专注模式可隐藏，减小间距 */}
                 <div
-                  className={`px-4 py-0 transition-all duration-300 ${focusMode ? 'mobile-toolbar-hidden' : 'opacity-100'}`}
-                  style={{ gridRow: '2' }}
+                  className={`px-4 py-0 transition-all duration-300 ${focusMode ? 'focus-mode-hidden' : 'opacity-100'}`}
+                  style={{
+                    gridRow: '2',
+                    display: focusMode ? 'none' : 'block'
+                  }}
                 >
                   <div className="pb-0 border-b border-neutral-200/60 dark:border-neutral-700/60">
                     {editorLoaded && editorRef.current ? (
@@ -2687,6 +2705,8 @@ export function WritingPage({ id }: { id?: number }) {
                               'editorWidget.border': '#00000000',
                               'editorHoverWidget.background': '#ffffff',
                               'editorSuggestWidget.background': '#ffffff',
+                              // 移除焦点边框 - 关键设置
+                              'focusBorder': '#00000000',
                               // 光标配置 - 使用醒目的蓝色
                               'editorCursor.foreground': '#007ACC',
                               'editorCursor.background': '#ffffff',
@@ -2712,6 +2732,8 @@ export function WritingPage({ id }: { id?: number }) {
                               'editorWidget.border': '#00000000',
                               'editorHoverWidget.background': '#1e1e1e',
                               'editorSuggestWidget.background': '#1e1e1e',
+                              // 移除焦点边框 - 关键设置
+                              'focusBorder': '#00000000',
                               // 光标配置 - 使用醒目的蓝色
                               'editorCursor.foreground': '#007ACC',
                               'editorCursor.background': '#000000',
@@ -2802,7 +2824,7 @@ export function WritingPage({ id }: { id?: number }) {
             </div>
 
             {/* 右侧功能面板 - 与其他页面侧边栏样式统一 */}
-            <div className="w-full lg:w-[320px] lg:flex-shrink-0 writing-sidebar">
+            <div className="w-full lg:w-[280px] lg:flex-shrink-0 writing-sidebar">
               <div className={`${sidebarGlassClass} rounded-2xl shadow-enhanced border border-neutral-200/60 dark:border-neutral-700/60 overflow-hidden flex flex-col mobile-function-panel`}
                 style={{
                   height: 'calc(100vh - 200px)', // 与左侧编辑器完全相同的高度

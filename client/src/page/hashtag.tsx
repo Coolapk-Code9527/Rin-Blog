@@ -193,9 +193,9 @@ export function HashtagPage({ name }: { name: string }) {
                         {/* 文章列表区域 */}
                         <Waiting for={status === 'idle'}>
                             {sortedFeeds.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-                                    <i className="ri-emotion-unhappy-line text-5xl mb-3 text-gray-300 dark:text-gray-600"></i>
-                                    <div className="text-lg font-medium mb-2">{t('hashtagDetail.noArticles')}</div>
+                                <div className="flex flex-col items-center justify-center py-12">
+                                    <i className="ri-emotion-unhappy-line text-5xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                                    <div className="text-lg font-medium text-gray-500 dark:text-gray-400 mb-2">{t('hashtagDetail.noArticles')}</div>
                                     <HotTagsRecommend />
                                 </div>
                             ) : (

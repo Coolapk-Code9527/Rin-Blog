@@ -205,6 +205,12 @@
     },
     "title": "目錄"
   },
+  "toc": {
+    "title": "目錄",
+    "empty": {
+      "description": "文章內容載入後將顯示目錄"
+    }
+  },
   "languages": "語言",
   "languageNames": {
     "en": "English",
@@ -332,6 +338,15 @@
       "title": "RSS 訂閱連結"
     },
     "title": "設定",
+    "ui": {
+      "title": "介面顯示",
+      "defaultViewMode": {
+        "title": "預設視圖模式",
+        "desc": "設定所有訪問者的文章列表頁面預設顯示模式，可選擇網格視圖或列表視圖",
+        "success": "預設視圖模式已更新",
+        "error": "保存失敗，請重試"
+      }
+    },
     "update_failed$message": "更新失敗: {{message}}",
     "wordpress": {
       "desc": "上傳 WordPress 匯出的 XML 文件",
@@ -542,5 +557,13 @@
     "callout": "提示框",
     "mermaid": "Mermaid 圖表",
     "save_success": "自訂模板保存成功！"
-  }
+  },
+  "view": {
+    "grid": "網格",
+    "list": "列表",
+    "grid_tooltip": "網格視圖：以卡片形式展示文章",
+    "list_tooltip": "列表視圖：以列表形式展示文章"
+  },
+  "main_navigation": "主導航",
+  "navigation_menu": "導航選單"
 }

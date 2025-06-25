@@ -218,6 +218,12 @@
     },
     "title": "Index"
   },
+  "toc": {
+    "title": "Table of Contents",
+    "empty": {
+      "description": "Table of contents will appear after article content loads"
+    }
+  },
   "languages": "Languages",
   "languageNames": {
     "en": "English",
@@ -344,6 +350,15 @@
       "title": "RSS Subscription Link"
     },
     "title": "Settings",
+    "ui": {
+      "title": "Interface Display",
+      "defaultViewMode": {
+        "title": "Default View Mode",
+        "desc": "Set the default display mode for article list pages for all visitors, choose between grid view or list view",
+        "success": "Default view mode updated",
+        "error": "Save failed, please try again"
+      }
+    },
     "update_failed$message": "Update failed: {{message}}",
     "wordpress": {
       "desc": "Upload the XML file exported from WordPress",
@@ -741,5 +756,13 @@
       "title": "Artist",
       "desc": "Set the artist name displayed in the music player"
     }
-  }
+  },
+  "view": {
+    "grid": "Grid",
+    "list": "List",
+    "grid_tooltip": "Grid view: Display articles in card format",
+    "list_tooltip": "List view: Display articles in list format"
+  },
+  "main_navigation": "Main Navigation",
+  "navigation_menu": "Navigation Menu"
 }

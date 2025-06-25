@@ -248,8 +248,8 @@ export function UnifiedTimeline({ feeds, t }: { feeds: any[], t: any }) {
           className="flex flex-col items-center justify-center"
           enableScroll={false}
         >
-          <i className="ri-time-line text-4xl text-gray-400 mb-4"></i>
-          <p className="text-gray-500 dark:text-gray-400">{t('no_articles') || '暂无文章'}</p>
+          <i className="ri-time-line text-5xl text-gray-300 dark:text-gray-600 mb-4"></i>
+          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">{t('no_articles') || '暂无文章'}</p>
         </UnifiedContainer>
       </div>
     );

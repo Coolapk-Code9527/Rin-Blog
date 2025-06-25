@@ -419,27 +419,31 @@ function MobileMenu() {
                                 <i className="ri-close-line text-xl"></i>
                             </button>
 
-                            <div className="flex flex-col h-full">
-                                <div className="pt-14"> {/* 为关闭按钮留出空间 */}
-                                    {/* 用户头像及认证区域 */}
-                                    <div className="p-4 border-b border-neutral-200/60 dark:border-neutral-700/60 flex flex-col items-center space-y-4">
+                            {/* 使用CSS Grid重新设计布局结构，精确控制各区域高度 */}
+                            <div className="mobile-sidebar-container mobile-sidebar-performance">
+                                <div className="mobile-sidebar-grid" role="navigation" aria-label={t('main_navigation')}>
+                                {/* 用户头像及认证区域 - 优化高度和间距 */}
+                                <div
+                                    className="p-3 border-b border-neutral-200/60 dark:border-neutral-700/60 flex flex-col items-center space-y-3 pt-16"
+                                    style={{ gridArea: 'header' }}
+                                >
                                         {profile?.avatar ? (
                                             <>
                                                 <div className="relative">
-                                                    <img 
-                                                        src={profile.avatar} 
-                                                        alt={profile.name || t('user')} 
-                                                        className="w-20 h-20 rounded-full border-2 border-gray-300 dark:border-gray-600 shadow-md transition-transform duration-200 hover:scale-105"
+                                                    <img
+                                                        src={profile.avatar}
+                                                        alt={profile.name || t('user')}
+                                                        className="w-16 h-16 rounded-full border-2 border-gray-300 dark:border-gray-600 shadow-md transition-transform duration-200 hover:scale-105"
                                                     />
-                                                    <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900 shadow-sm"></span>
+                                                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900 shadow-sm"></span>
                                                 </div>
                                                 <div className="text-center">
-                                                    <p className="text-lg font-medium text-gray-800 dark:text-gray-200">{profile.name}</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('logged_in')}</p>
+                                                    <p className="text-base font-medium text-gray-800 dark:text-gray-200">{profile.name}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('logged_in')}</p>
                                                 </div>
-                                                <button 
+                                                <button
                                                     onClick={handleLogout}
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm bg-red-50/80 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-all duration-200 font-medium shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]"
+                                                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm bg-red-50/80 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-all duration-200 font-medium shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]"
                                                 >
                                                     <i className="ri-logout-circle-line"></i>
                                                     <span>{t('logout')}</span>
@@ -447,12 +451,12 @@ function MobileMenu() {
                                             </>
                                         ) : (
                                             <>
-                                                <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 shadow-md">
-                                                    <i className="ri-user-fill text-4xl text-gray-500 dark:text-gray-400"></i>
+                                                <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 shadow-md">
+                                                    <i className="ri-user-fill text-3xl text-gray-500 dark:text-gray-400"></i>
                                                 </div>
-                                                <button 
-                                                    onClick={() => setIsLoginModalOpened(true)} 
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm bg-theme/10 hover:bg-theme/20 text-theme transition-all duration-200 font-medium shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]"
+                                                <button
+                                                    onClick={() => setIsLoginModalOpened(true)}
+                                                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm bg-theme/10 hover:bg-theme/20 text-theme transition-all duration-200 font-medium shadow-enhanced hover:shadow-enhanced-lg hover:scale-[0.98] active:scale-[0.96]"
                                                 >
                                                     <i className="ri-github-fill"></i>
                                                     <span>{t('github_login')}</span>
@@ -462,10 +466,13 @@ function MobileMenu() {
                                     </div>
                                     <LoginModal /> {/* Ensure LoginModal is rendered to be usable */}
 
-                                    {/* 搜索和语言区域 */}
-                                    <div className="px-3 py-3 border-b border-neutral-200/60 dark:border-neutral-700/60">
-                                        {/* 搜索栏 */}
-                                        <div ref={searchContainerRef} className="relative flex items-center mb-3" role="search">
+                                    {/* 搜索和语言区域 - 优化间距 */}
+                                    <div
+                                        className="px-3 py-2 border-b border-neutral-200/60 dark:border-neutral-700/60"
+                                        style={{ gridArea: 'search' }}
+                                    >
+                                        {/* 搜索栏 - 优化间距 */}
+                                        <div ref={searchContainerRef} className="relative flex items-center mb-2" role="search">
                                             {!isSearchExpanded ? (
                                                 <button
                                                     onClick={() => setIsSearchExpanded(true)}
@@ -559,8 +566,13 @@ function MobileMenu() {
                                                                     key={index}
                                                                     className="w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/70 text-left flex items-center transition-colors duration-150 group"
                                                                     onClick={() => {
-                                                                        setSearchValue(term);
-                                                                        setTimeout(() => onSearch(), 10);
+                                                                        // 直接执行搜索，避免异步状态更新问题
+                                                                        const key = encodeURIComponent(term.trim());
+                                                                        saveToHistory(term.trim());
+                                                                        setLocation(`/search/${key}`, { replace: false });
+                                                                        setSearchValue('');
+                                                                        setIsSearchExpanded(false);
+                                                                        onClose();
                                                                     }}
                                                                     role="option"
                                                                     aria-selected={searchValue === term}
@@ -569,7 +581,7 @@ function MobileMenu() {
                                                                     <i className="ri-time-line mr-2 text-gray-400 group-hover:text-theme transition-colors duration-150"></i>
                                                                     <span className="truncate flex-1">{term}</span>
                                                                     <span className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded transition-opacity duration-150">
-                                                                        {t('search.use') || '使用'}
+                                                                        {t('article.search.use') || '使用'}
                                                                     </span>
                                                                 </button>
                                                             ))}
@@ -578,17 +590,17 @@ function MobileMenu() {
                                                 </div>
                                             )}
                                         </div>
-                                        
-                                        {/* 语言切换 */}
-                                        <div className="relative mb-3">
-                                            <button 
+
+                                        {/* 语言切换 - 优化间距 */}
+                                        <div className="relative">
+                                            <button
                                                 onClick={() => setShowLanguages(!showLanguages)}
-                                                className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-theme/30 shadow-enhanced hover:shadow-enhanced-lg"
+                                                className="w-full flex items-center justify-between p-2 rounded-lg text-sm bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-theme/30 shadow-enhanced hover:shadow-enhanced-lg"
                                                 aria-expanded={showLanguages}
                                             >
                                                 <div className="flex items-center">
-                                                    <i className="ri-translate-2 mr-2.5 text-gray-500 dark:text-gray-400 text-base"></i>
-                                                    <span className="font-medium">
+                                                    <i className="ri-translate-2 mr-2 text-gray-500 dark:text-gray-400 text-sm"></i>
+                                                    <span className="font-medium text-sm">
                                                         {languages.find(lang => lang.code === i18n.language)?.name || t('languages')}
                                                     </span>
                                                 </div>
@@ -615,11 +627,19 @@ function MobileMenu() {
                                         </div>
                                     </div>
 
-                                    {/* 导航链接区域 */}
-                                    <div className="flex-1 overflow-y-auto overscroll-contain p-3">
-                                        <div className="space-y-1.5">
+                                    {/* 导航链接区域 - 确保足够的滚动空间和添加滚动指示器 */}
+                                    <div
+                                        className="mobile-sidebar-nav p-3 relative mobile-sidebar-scroll mobile-sidebar-touch-optimized"
+                                        role="region"
+                                        aria-label={t('navigation_menu')}
+                                        tabIndex={0}
+                                    >
+                                        <div className="space-y-1.5 pb-4">
                                             <NavBar menu={true} onClick={onClose} />
                                         </div>
+
+                                        {/* iOS安全区域处理 */}
+                                        <div className="mobile-sidebar-safe-area"></div>
                                     </div>
                                 </div>
                             </div>
@@ -819,8 +839,17 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
 
     // 点击搜索历史项
     const handleHistoryClick = (term: string) => {
-        setValue(term);
-        setTimeout(() => onSearch(), 10);
+        // 直接执行搜索，避免异步状态更新问题
+        const key = encodeURIComponent(term.trim());
+        saveToHistory(term.trim()); // 保存到历史
+
+        setTimeout(() => {
+            setIsExpanded(false);
+            onClose?.();
+        }, 100);
+
+        // 使用编程式导航而不改变滚动位置
+        setLocation(`/search/${key}`, { replace: false });
     };
     
     const onSearch = () => {
@@ -1015,7 +1044,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
                                             <i className="ri-time-line mr-2 text-gray-400 group-hover:text-theme transition-colors duration-150"></i>
                                             <span className="truncate flex-1">{term}</span>
                                             <span className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded transition-opacity duration-150">
-                                                {t('search.use') || '使用'}
+                                                {t('article.search.use') || '使用'}
                                             </span>
                                         </button>
                                     ))}

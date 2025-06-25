@@ -205,6 +205,12 @@
     },
     "title": "目次"
   },
+  "toc": {
+    "title": "目次",
+    "empty": {
+      "description": "記事の内容が読み込まれると目次が表示されます"
+    }
+  },
   "languages": "言語",
   "languageNames": {
     "en": "English",
@@ -331,6 +337,15 @@
       "title": "RSS 購読リンク"
     },
     "title": "設定",
+    "ui": {
+      "title": "インターフェース表示",
+      "defaultViewMode": {
+        "title": "デフォルトビューモード",
+        "desc": "すべての訪問者の記事リストページのデフォルト表示モードを設定します。グリッドビューまたはリストビューを選択できます",
+        "success": "デフォルトビューモードが更新されました",
+        "error": "保存に失敗しました。再試行してください"
+      }
+    },
     "update_failed$message": "更新に失敗しました: {{message}}",
     "wordpress": {
       "desc": "WordPressからエクスポートされたXMLファイルをアップロードする",
@@ -541,5 +556,13 @@
     "callout": "コールアウト",
     "mermaid": "Mermaid図表",
     "save_success": "カスタムテンプレートが正常に保存されました！"
-  }
+  },
+  "view": {
+    "grid": "グリッド",
+    "list": "リスト",
+    "grid_tooltip": "グリッドビュー：記事をカード形式で表示",
+    "list_tooltip": "リストビュー：記事をリスト形式で表示"
+  },
+  "main_navigation": "メインナビゲーション",
+  "navigation_menu": "ナビゲーションメニュー"
 }

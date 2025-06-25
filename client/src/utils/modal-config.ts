@@ -82,6 +82,26 @@ export const macOSLargeModalStyles = {
   }
 };
 
+// 文件选择器响应式弹窗样式 - 移动端友好的文件选择
+export const fileSelectorResponsiveModalStyles = {
+  ...macOSModalStyles,
+  content: {
+    ...macOSModalStyles.content,
+    // 桌面端优化尺寸
+    maxWidth: '1000px',
+    width: '80vw',
+    maxHeight: '70vh',
+    height: 'auto',
+    minWidth: '320px', // 移除600px限制，使用更小的最小宽度
+    minHeight: '400px',
+  },
+  overlay: {
+    ...macOSModalStyles.overlay,
+    // 文件选择器使用稍浅的遮罩，突出内容
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  }
+};
+
 // 全屏预览样式（如图片预览）
 export const macOSFullscreenModalStyles = {
   content: {
@@ -141,6 +161,19 @@ export const MODAL_CONTAINER_CLASSES = {
     flex
     flex-col
     animate-modalEnter
+  `,
+
+  // 文件选择器专用容器 - 针对插入文件场景优化
+  fileSelector: `
+    glass-layer-3
+    rounded-2xl
+    shadow-enhanced-2xl
+    overflow-hidden
+    flex
+    flex-col
+    animate-modalEnter
+    h-full
+    max-h-full
   `,
 
   // 全屏预览容器

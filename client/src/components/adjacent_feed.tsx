@@ -23,50 +23,73 @@ export type AdjacentFeeds = {
     previousFeed: AdjacentFeed | null;
 };
 
-// 提取图片URL的辅助函数
+// 获取文章缩略图的优先级逻辑（功能恢复版本）
+const getThumbnailUrl = (article: any): string | null => {
+    // 1. 优先使用专门的缩略图URL（如果API提供）
+    if (article.thumbUrl) {
+        return article.thumbUrl;
+    }
+
+    // 2. 使用API提供的avatar字段（保持性能优化）
+    if (article.avatar) {
+        return article.avatar;
+    }
+
+    // 3. 从完整摘要中提取图片（恢复完整搜索范围）
+    if (article.summary) {
+        const summaryImage = extractImageUrl(article.summary);
+        if (summaryImage) {
+            return summaryImage;
+        }
+    }
+
+    return null; // 暂时不恢复fetchFullArticle，先测试基本功能
+};
+
+// 提取图片URL的辅助函数（功能恢复版本）
 const extractImageUrl = (content: string): string | null => {
     if (!content) return null;
-    
+
     try {
-        // 尝试从Markdown格式提取
+        // 恢复原始的、经过验证的Markdown正则表达式
         const markdownRegex = /!\[.*?\]\((.*?)\)/;
         const markdownMatch = markdownRegex.exec(content);
         if (markdownMatch && markdownMatch[1]) {
-            console.log("从Markdown提取图片URL:", markdownMatch[1]);
             return markdownMatch[1];
         }
-        
-        // 尝试从HTML格式提取
+
+        // 恢复HTML支持作为fallback
         const htmlRegex = /<img.*?src=["'](.*?)["']/;
         const htmlMatch = htmlRegex.exec(content);
         if (htmlMatch && htmlMatch[1]) {
-            console.log("从HTML提取图片URL:", htmlMatch[1]);
             return htmlMatch[1];
         }
     } catch (error) {
-        console.error("提取图片URL时出错:", error);
+        // 保留错误处理，但不输出调试信息
+        return null;
     }
-    
+
     return null;
 };
 
-// 获取完整文章信息以获取avatar字段
+// 智能fallback：有条件地获取完整文章信息
 const fetchFullArticle = async (id: number): Promise<string | null> => {
     try {
         const response = await client.feed({ id: id.toString() }).get();
         if (!response.error && response.data && typeof response.data !== "string") {
             // 检查数据是否包含avatar字段
-            if ('avatar' in response.data) {
+            if ('avatar' in response.data && response.data.avatar) {
                 return response.data.avatar as string;
             }
-            
+
             // 如果没有avatar字段，从content中提取第一张图片
             if ('content' in response.data) {
                 return extractImageUrl(response.data.content as string);
             }
         }
     } catch (error) {
-        console.error(`Failed to fetch article ${id}:`, error);
+        // 静默处理错误，避免影响用户体验
+        return null;
     }
     return null;
 };
@@ -98,32 +121,28 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                     // 为每个相邻文章获取缩略图
                     const extractedThumbnails: Record<string, string> = {};
                     
-                    // 处理上一篇文章
+                    // 处理上一篇文章（智能fallback恢复）
                     if (data.previousFeed) {
-                        // 先尝试从摘要中提取图片
-                        let thumbnail = extractImageUrl(data.previousFeed.summary);
-                        
-                        // 如果摘要中没有图片，获取完整文章信息
+                        let thumbnail = getThumbnailUrl(data.previousFeed);
+
+                        // 只在avatar和summary都没有图片时才调用fetchFullArticle
                         if (!thumbnail) {
                             thumbnail = await fetchFullArticle(data.previousFeed.id);
                         }
-                        
+
                         extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || null;
-                        console.log(`Previous article (ID:${data.previousFeed.id}) thumbnail:`, extractedThumbnails[`prev-${data.previousFeed.id}`]);
                     }
                     
-                    // 处理下一篇文章
+                    // 处理下一篇文章（智能fallback恢复）
                     if (data.nextFeed) {
-                        // 先尝试从摘要中提取图片
-                        let thumbnail = extractImageUrl(data.nextFeed.summary);
-                        
-                        // 如果摘要中没有图片，获取完整文章信息
+                        let thumbnail = getThumbnailUrl(data.nextFeed);
+
+                        // 只在avatar和summary都没有图片时才调用fetchFullArticle
                         if (!thumbnail) {
                             thumbnail = await fetchFullArticle(data.nextFeed.id);
                         }
-                        
+
                         extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || null;
-                        console.log(`Next article (ID:${data.nextFeed.id}) thumbnail:`, extractedThumbnails[`next-${data.nextFeed.id}`]);
                     }
                     
                     setThumbnails(extractedThumbnails);
@@ -131,7 +150,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                 setLoading(false);
             })
             .catch((err) => {
-                console.error("获取相邻文章信息失败:", err);
+                setError("获取相邻文章信息失败");
                 setLoading(false);
             });
     }, [id, setError]);

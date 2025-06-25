@@ -215,7 +215,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               aria-label={feed.title ?? "Unnamed"}
             >
               <div className="relative mb-3">
-                <h1 className="text-center text-3xl sm:text-4xl font-extrabold t-primary break-all leading-tight mx-auto max-w-3xl mt-0">
+                <h1 className="text-center text-2xl sm:text-3xl font-bold t-primary break-all leading-tight mx-auto max-w-3xl mt-0">
                   {feed.title}
                 </h1>
                 {/* 桌面端按钮组，绝对定位右上角 */}

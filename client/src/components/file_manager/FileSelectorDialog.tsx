@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FileManager } from './FileManager';
 import type { FileItem } from '../../types/api';
 import {
-  macOSLargeModalStyles,
+  fileSelectorResponsiveModalStyles,
   MODAL_CONTAINER_CLASSES,
   useModalKeyboard,
   useModalBodyLock
@@ -45,11 +45,21 @@ export function FileSelectorDialog({
       onRequestClose={onClose}
       shouldCloseOnOverlayClick={true}
       shouldCloseOnEsc={true}
-      style={macOSLargeModalStyles}
+      style={fileSelectorResponsiveModalStyles}
       ariaHideApp={false}
     >
-      <div className={MODAL_CONTAINER_CLASSES.large}>
-        {title && <h2 className="text-lg font-bold mb-2 t-primary">{title}</h2>}
+      <div className={`${MODAL_CONTAINER_CLASSES.large} file-selector-modal`}>
+        {/* Header区域 - 紧凑的标题容器 */}
+        {title && (
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm">
+            <div className="flex items-center justify-center w-6 h-6 rounded-md bg-theme/10 text-theme">
+              <i className="ri-folder-open-line text-sm"></i>
+            </div>
+            <h2 className="text-base font-medium text-gray-900 dark:text-white">{title}</h2>
+          </div>
+        )}
+
+        {/* Body区域 - 文件管理器主体 */}
         <div className="flex-1 overflow-auto">
           <FileManager
             onSelect={(files) => {
@@ -61,12 +71,16 @@ export function FileSelectorDialog({
             multiple={multiple}
           />
         </div>
-        <button
-          className="mt-4 px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-          onClick={onClose}
-        >
-          {t('cancel')}
-        </button>
+
+        {/* Footer区域 - 紧凑的操作按钮容器 */}
+        <div className="flex items-center justify-end px-4 py-2.5 border-t border-gray-200/50 dark:border-gray-700/50 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm">
+          <button
+            className="px-4 py-2 rounded-lg bg-theme text-white hover:bg-theme/90 transition-colors duration-200 font-medium shadow-sm"
+            onClick={onClose}
+          >
+            {t('cancel')}
+          </button>
+        </div>
       </div>
     </Modal>
   );

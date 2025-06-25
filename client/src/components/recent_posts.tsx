@@ -13,6 +13,8 @@ interface Post {
   createdAt: Date;
   content?: string;
   avatar?: string;
+  summary?: string;
+  thumbUrl?: string; // 缩略图URL
 }
 
 export function RecentPosts() {
@@ -25,24 +27,48 @@ export function RecentPosts() {
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
+  // 获取文章缩略图的优先级逻辑（功能恢复版本）
+  const getThumbnailUrl = (post: Post): string | null => {
+    // 1. 优先使用专门的缩略图URL（如果API提供）
+    if (post.thumbUrl) {
+      return post.thumbUrl;
+    }
+
+    // 2. 使用API提供的avatar字段（保持性能优化）
+    if (post.avatar) {
+      return post.avatar;
+    }
+
+    // 3. 从完整摘要中提取图片（恢复完整搜索范围）
+    if (post.summary) {
+      const summaryImage = extractImageFromContent(post.summary);
+      if (summaryImage) {
+        return summaryImage;
+      }
+    }
+
+    // 4. 从完整内容中提取图片（恢复重要的fallback）
+    if (post.content) {
+      return extractImageFromContent(post.content);
+    }
+
+    return null;
+  };
+
   const extractImageFromContent = (content: string): string | null => {
-    // 优先从Markdown格式提取
+    if (!content) return null;
+
+    // 恢复原始的、经过验证的Markdown正则表达式
     const markdownRegex = /!\[.*?\]\((.*?)\)/;
     const markdownMatch = markdownRegex.exec(content);
     if (markdownMatch && markdownMatch[1]) {
-      console.log("从Markdown提取图片:", markdownMatch[1]);
       return markdownMatch[1];
     }
-    
-    // 尝试从HTML格式提取
+
+    // 恢复HTML支持作为fallback
     const htmlRegex = /<img.*?src=["'](.*?)["']/;
     const htmlMatch = htmlRegex.exec(content);
-    if (htmlMatch && htmlMatch[1]) {
-      console.log("从HTML提取图片:", htmlMatch[1]);
-      return htmlMatch[1];
-    }
-    
-    return null;
+    return htmlMatch ? htmlMatch[1] : null;
   };
 
   React.useEffect(() => {
@@ -59,20 +85,17 @@ export function RecentPosts() {
             title: item.title,
             createdAt: new Date(item.createdAt),
             content: item.content || "",
-            avatar: item.avatar || ""
+            summary: item.summary || "",
+            avatar: item.avatar || "",
+            thumbUrl: item.thumbUrl || "" // 如果API提供缩略图URL
           }));
           setPosts(postsData);
-          
+
+          // 使用新的优先级逻辑获取缩略图
           const extractedThumbnails: Record<number, string | null> = {};
           postsData.forEach(post => {
-            if (post.avatar) {
-              console.log(`Post ${post.id}: 使用API提供的avatar ${post.avatar}`);
-              extractedThumbnails[post.id] = post.avatar;
-            } else if (post.content) {
-              const thumbnail = extractImageFromContent(post.content);
-              console.log(`Post ${post.id}: 从内容提取缩略图 ${thumbnail}`);
-              extractedThumbnails[post.id] = thumbnail;
-            }
+            const thumbnail = getThumbnailUrl(post);
+            extractedThumbnails[post.id] = thumbnail;
           });
           setThumbnails(extractedThumbnails);
         }

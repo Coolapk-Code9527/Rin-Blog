@@ -359,6 +359,15 @@
       "title": "RSS 订阅链接"
     },
     "title": "设置",
+    "ui": {
+      "title": "界面显示",
+      "defaultViewMode": {
+        "title": "默认视图模式",
+        "desc": "设置所有访问者的文章列表页面默认显示模式，可选择网格视图或列表视图",
+        "success": "默认视图模式已更新",
+        "error": "保存失败，请重试"
+      }
+    },
     "update_failed$message": "更新失败: {{message}}",
     "wordpress": {
       "desc": "上传 WordPress 导出的 XML 文件",
@@ -595,6 +604,12 @@
     },
     "title": "目录"
   },
+  "toc": {
+    "title": "目录",
+    "empty": {
+      "description": "文章内容加载后将显示目录"
+    }
+  },
   "hashtags": "标签",
   "hashtag": {
     "aria_label": "标签: {{name}}",
@@ -817,5 +832,13 @@
   "empty_draft_description": "草稿箱空空如也，快去创建第一篇草稿吧！",
   "empty_unlisted_description": "还没有未列出的文章，创建一篇试试吧！",
   "empty_article_description": "这里还没有任何文章，快去创建第一篇文章吧！",
-  "create_now": "立即创建"
+  "create_now": "立即创建",
+  "view": {
+    "grid": "网格",
+    "list": "列表",
+    "grid_tooltip": "网格视图：以卡片形式展示文章",
+    "list_tooltip": "列表视图：以列表形式展示文章"
+  },
+  "main_navigation": "主导航",
+  "navigation_menu": "导航菜单"
 }
