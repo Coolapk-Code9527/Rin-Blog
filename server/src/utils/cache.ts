@@ -179,7 +179,7 @@ export class CacheImpl {
             await this.save();
             this.pendingSave = false;
             this.saveTimeout = null;
-        }, 1000); // 1秒延迟批量保存
+        }, 1500); // 1.5秒延迟批量保存，进一步减少保存频率
         this.pendingSave = true;
     }
 
@@ -189,10 +189,10 @@ export class CacheImpl {
         // 深度优化：进一步优化序列化，减少CPU消耗
         let serializedData: string;
         try {
-            if (this.cache.size > 50) { // 深度优化：降低阈值从100到50
-                // 深度优化：减少批处理大小，更频繁让出控制权
+            if (this.cache.size > 30) { // 进一步优化：降低阈值到30，减少大对象序列化
+                // 进一步优化：减少批处理大小，更频繁让出控制权
                 const mergedData: Record<string, any> = {};
-                const chunkSize = 20; // 深度优化：从50减少到20
+                const chunkSize = 15; // 进一步优化：从20减少到15
                 let processed = 0;
 
                 for (const [key, value] of this.cache) {
@@ -226,7 +226,7 @@ export class CacheImpl {
             await Promise.race([
                 this.syncUpload(cacheKey, serializedData),
                 new Promise<void>((_, reject) =>
-                    setTimeout(() => reject(new Error('Save timeout')), 8000) // 8秒超时
+                    setTimeout(() => reject(new Error('Save timeout')), 6000) // 6秒超时，平衡性能和可靠性
                 )
             ]);
         } catch (error: any) {

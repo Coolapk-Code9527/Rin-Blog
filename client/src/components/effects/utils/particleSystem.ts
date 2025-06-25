@@ -19,10 +19,8 @@ export class ParticleSystem {
   private ctx: CanvasRenderingContext2D;
   private animationId: number | null = null;
   private lastTime = 0;
-  private fpsFrameCount = 0; // FPS计算用的帧计数
-  private fpsUpdateTime = 0;
-  
-  // 性能监控
+
+  // 简化的性能监控
   private metrics: PerformanceMetrics = {
     fps: 60,
     particleCount: 0,
@@ -462,13 +460,10 @@ export class ParticleSystem {
   }
   
   /**
-   * 动画循环 - 简化版本，移除动态帧率控制
+   * 动画循环 - 优化版本，简化性能监控
    */
   private animate(): void {
     const currentTime = performance.now();
-
-    // 更新FPS（仅用于统计）
-    this.updateFPS(currentTime);
 
     // 更新粒子
     this.updateParticles();
@@ -480,29 +475,16 @@ export class ParticleSystem {
     }
 
     // 渲染
-    const renderStart = performance.now();
     this.render();
-    this.metrics.renderTime = performance.now() - renderStart;
 
-    // 简单的性能检查（只做粒子数量控制）
+    // 简化的性能检查（只做粒子数量控制）
     this.checkPerformance();
 
     this.lastTime = currentTime;
     this.animationId = requestAnimationFrame(() => this.animate());
   }
   
-  /**
-   * 更新FPS
-   */
-  private updateFPS(currentTime: number): void {
-    this.fpsFrameCount++;
 
-    if (currentTime - this.fpsUpdateTime >= 1000) {
-      this.metrics.fps = this.fpsFrameCount;
-      this.fpsFrameCount = 0;
-      this.fpsUpdateTime = currentTime;
-    }
-  }
   
   /**
    * 更新粒子
@@ -594,10 +576,7 @@ export class ParticleSystem {
         continue;
       }
 
-      // 每个粒子独立的Canvas状态，完全避免状态污染
-      this.ctx.save();
-
-      // 设置样式
+      // 优化Canvas状态管理，减少save/restore调用
       this.ctx.globalAlpha = alpha;
       this.ctx.fillStyle = particle.color;
 
@@ -605,9 +584,6 @@ export class ParticleSystem {
       this.ctx.beginPath();
       this.ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
       this.ctx.fill();
-
-      // 恢复状态
-      this.ctx.restore();
     }
   }
   
@@ -629,7 +605,7 @@ export class ParticleSystem {
   }
   
   /**
-   * 检查性能 - 最简版本，只做基本的粒子数量控制
+   * 检查性能 - 简化版本，只做基本的粒子数量控制
    */
   private checkPerformance(): void {
     // 只做简单的粒子数量控制，避免过多粒子
@@ -638,8 +614,7 @@ export class ParticleSystem {
       this.particles.splice(0, removeCount);
     }
 
-    // 更新性能指标但不做任何自动调整
-    this.metrics.shouldDegrade = false; // 禁用自动降级
+    // 简化性能指标更新
     this.metrics.particleCount = this.particles.length;
   }
   

@@ -29,8 +29,8 @@ async function getBatchVisitStats(db: any, feedIds: number[]): Promise<Map<numbe
     const statsMap = new Map<number, { pv: number, uv: number }>();
     const uncachedIds: number[] = [];
 
-    // 优化：先尝试从缓存获取，延长过期时间减少数据库查询
-    const CACHE_EXPIRE_TIME = 10 * 60 * 1000; // 优化：从5分钟延长到10分钟过期
+    // 进一步优化：延长缓存过期时间，减少数据库查询频率
+    const CACHE_EXPIRE_TIME = 15 * 60 * 1000; // 进一步优化：从10分钟延长到15分钟过期
     for (const feedId of feedIds) {
         const cacheKey = `visit_stats_${feedId}`;
         const cached = await cache.get(cacheKey);

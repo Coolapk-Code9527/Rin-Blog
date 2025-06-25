@@ -24,7 +24,7 @@ export class ConfigUpdateManager {
   private serverTimeout: NodeJS.Timeout | null = null;
   
   // 配置
-  private readonly DEBOUNCE_DELAY = 500; // 500ms防抖延迟
+  private readonly DEBOUNCE_DELAY = 800; // 800ms防抖延迟，优化性能减少配置保存频率
   private readonly MAX_QUEUE_SIZE = 50; // 最大队列大小
   
   // 回调函数
@@ -119,7 +119,7 @@ export class ConfigUpdateManager {
     
     if (queue.size === 0) return;
     
-    // 复制并清空队列
+    // 复制并清空队列，优化序列化性能
     const updates = Object.fromEntries(queue);
     queue.clear();
     
