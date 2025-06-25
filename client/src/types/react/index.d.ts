@@ -12,11 +12,4 @@ declare module 'react' {
   }> {}
 }
 
-// 扩展i18next类型
-declare module 'i18next' {
-  interface i18n {
-    use(plugin: any): i18n;
-    init(options?: any): i18n;
-    t(key: string, options?: object): string;
-  }
-} 
+// i18next类型扩展已移动到 i18next.d.ts 文件中，避免重复声明

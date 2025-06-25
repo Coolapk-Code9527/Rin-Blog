@@ -32,19 +32,7 @@ declare module 'lodash' {
   ): T;
 }
 
-// i18next和react-i18next类型声明
-declare module 'i18next' {
-  export default {
-    t(key: string, options?: object): string;
-  };
-}
-
-declare module 'react-i18next' {
-  import * as React from 'react';
-  export function useTranslation(): { t: (key: string, options?: object) => string; i18n: any };
-  export function withTranslation(): (Component: React.ComponentType<any>) => React.ComponentType<any>;
-  export const Trans: React.ComponentType<any>;
-}
+// i18next和react-i18next类型声明已移动到 i18next.d.ts 文件中，避免重复声明
 
 
 

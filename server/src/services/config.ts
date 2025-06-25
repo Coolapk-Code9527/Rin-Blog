@@ -36,7 +36,6 @@ export function ConfigService() {
                             await config.set(key, body[key], false);
                         }
                         await config.save();
-                        console.log(`Config saved successfully for type: ${type}`, Object.keys(body));
                         return 'OK';
                     } catch (error: any) {
                         console.error(`Config save failed for type: ${type}`, error.message);

@@ -5,8 +5,6 @@ if ! bun check; then
     exit 1
 fi
 
-#!/bin/sh
-
 # 获取 commit-msg 钩子传递的参数，即提交信息文件的路径
 COMMIT_MSG_FILE="$1"
 # 读取提交信息文件的内容

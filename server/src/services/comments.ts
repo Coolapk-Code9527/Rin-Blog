@@ -227,7 +227,7 @@ export function CommentService() {
                     } catch (dbError: any) {
                         // 如果是parentId字段不存在的错误，尝试不带parentId插入
                         if (dbError.message && (dbError.message.includes('no such column: parent_id') || dbError.message.includes('parentId'))) {
-                            console.warn("Database doesn't support parentId field, inserting as top-level comment");
+                            // 数据库不支持parentId字段，作为顶级评论插入
                             delete insertData.parentId;
                             await db.insert(comments).values(insertData);
                         } else {

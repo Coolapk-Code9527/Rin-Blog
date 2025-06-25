@@ -1,27 +1,30 @@
+// React类型兼容性修复 - 恢复必要的导出以避免编译错误
 declare module 'react' {
-    export type ReactNode = React.ReactNode;
-    export type RefObject<T> = React.RefObject<T>;
-    export type CSSProperties = React.CSSProperties & { [key: string]: any };
-    export type MouseEvent<T = Element> = React.MouseEvent<T>;
-    export type KeyboardEvent<T = Element> = React.KeyboardEvent<T>;
-    export type ClipboardEvent<T = Element> = React.ClipboardEvent<T>;
-    export type ChangeEvent<T = Element> = React.ChangeEvent<T>;
-    
-    export const memo: typeof React.memo;
-    export const useRef: typeof React.useRef;
-    export const useMemo: typeof React.useMemo;
-    export const useState: typeof React.useState;
-    export const useEffect: typeof React.useEffect;
-    export const useContext: typeof React.useContext;
-    export const useCallback: typeof React.useCallback;
-    export const createContext: typeof React.createContext;
-    export const Children: typeof React.Children;
-    export const StrictMode: typeof React.StrictMode;
-    export const isValidElement: typeof React.isValidElement;
-    export const cloneElement: typeof React.cloneElement;
+  // 修复ReactNode类型兼容性问题
+  export type ReactNode = React.ReactNode;
+  export type RefObject<T> = React.RefObject<T>;
+  export type CSSProperties = React.CSSProperties & { [key: string]: any };
+  export type MouseEvent<T = Element> = React.MouseEvent<T>;
+  export type KeyboardEvent<T = Element> = React.KeyboardEvent<T>;
+  export type ClipboardEvent<T = Element> = React.ClipboardEvent<T>;
+  export type ChangeEvent<T = Element> = React.ChangeEvent<T>;
 
-    // 添加Class组件相关的类型定义
-    export const Component: typeof React.Component;
-    export type ErrorInfo = React.ErrorInfo;
-    export type ComponentType<P = {}> = React.ComponentType<P>;
-  }
+  // 恢复必要的React hooks和组件导出
+  export const memo: typeof React.memo;
+  export const useRef: typeof React.useRef;
+  export const useMemo: typeof React.useMemo;
+  export const useState: typeof React.useState;
+  export const useEffect: typeof React.useEffect;
+  export const useContext: typeof React.useContext;
+  export const useCallback: typeof React.useCallback;
+  export const createContext: typeof React.createContext;
+  export const Children: typeof React.Children;
+  export const StrictMode: typeof React.StrictMode;
+  export const isValidElement: typeof React.isValidElement;
+  export const cloneElement: typeof React.cloneElement;
+
+  // 添加Class组件相关的类型定义
+  export const Component: typeof React.Component;
+  export type ErrorInfo = React.ErrorInfo;
+  export type ComponentType<P = {}> = React.ComponentType<P>;
+}

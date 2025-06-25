@@ -9,7 +9,6 @@ import Modal from 'react-modal'
 import App from './App'
 import './index.css'
 import './components.css'
-import { siteName } from './utils/constants'
 import { listenSystemMode, initializeTheme } from './utils/darkModeUtils'
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { ApiClient } from './types/api';

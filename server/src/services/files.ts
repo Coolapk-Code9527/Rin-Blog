@@ -1,8 +1,6 @@
-import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
-import { eq, sql, and, like, desc, asc, or, isNull, inArray } from "drizzle-orm";
+import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { eq, sql, and, like, desc, asc, or, inArray } from "drizzle-orm";
 import Elysia, { t } from "elysia";
-import path from "node:path";
-import type { Env } from "../db/db";
 import { files, feedFiles, feeds } from "../db/schema";
 import { setup } from "../setup";
 import { getEnv, getDB } from "../utils/di";
@@ -164,7 +162,6 @@ export function FileService() {
     const env = getEnv();
     const endpoint = env.S3_ENDPOINT;
     const bucket = env.S3_BUCKET;
-    const folder = env.S3_FOLDER || '';
     const accessHost = env.S3_ACCESS_HOST || endpoint;
     const accessKeyId = env.S3_ACCESS_KEY_ID;
     const secretAccessKey = env.S3_SECRET_ACCESS_KEY;
@@ -270,7 +267,7 @@ export function FileService() {
                             )
                             .limit(limit)
                             .offset(offset);
-                            resultData = await result;
+                            resultData = result;
                             const countQ = await db
                             .select({ count: sql<number>`count(*)` })
                             .from(files)
@@ -302,8 +299,7 @@ export function FileService() {
                                     .groupBy(feedFiles.fileId);
                                 refs.forEach((r: any) => { referencesMap[r.fileId] = r.count; });
                             } catch (e) {
-                                // 引用计数查询失败不影响主要功能
-                                console.warn('引用计数查询失败:', e);
+                                // 引用计数查询失败不影响主要功能，静默处理
                             }
                         }
                         return {
@@ -450,13 +446,9 @@ export function FileService() {
                     parentPath = normalizePath(parentPath);
                     const env = getEnv();
                     const s3Folders = [env.S3_FOLDER, env.S3_CACHE_FOLDER].filter(Boolean).map(f => '/' + f.replace(/^\/+/g, ''));
-                    let folderName = '';
+                    // 检查是否为S3特殊文件夹路径
                     if (s3Folders.includes(parentPath)) {
-                        folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
-                    } else if (parentPath === '/') {
-                        folderName = '';
-                    } else {
-                        folderName = parentPath.replace(/^\//, '').replace(/\/+$/, '');
+                        // 处理S3文件夹路径
                     }
                     try {
                         let fileBuffer;
@@ -520,8 +512,7 @@ export function FileService() {
                                 // 不再插入files表，只记录hash
                                 thumbnailHash = thumbHash;
                             } catch (e) {
-                                // 缩略图生成失败不影响主流程
-                                console.warn('缩略图生成失败', e);
+                                // 缩略图生成失败不影响主流程，静默处理
                             }
                         }
                         // 主文件插入前查重
@@ -685,8 +676,6 @@ export function FileService() {
 
                             // 统一删除缩略图（thumb_ + thumbnailHash）
                             if (file.thumbnailHash) {
-                                console.log('开始删除缩略图，thumbnailHash:', file.thumbnailHash);
-
                                 try {
                                     // 统一的缩略图路径：thumb_ + hash
                                     const thumbKey = (file.parentPath && file.parentPath !== '/')
@@ -694,9 +683,8 @@ export function FileService() {
                                       : 'thumb_' + file.thumbnailHash;
 
                                     await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
-                                    console.log('成功删除缩略图:', thumbKey);
                                 } catch (e) {
-                                    console.log('缩略图不存在或删除失败:', e);
+                                    // 缩略图删除失败，静默处理
                                 }
                             }
                         } catch (e) {
@@ -806,9 +794,8 @@ export function FileService() {
                                         ContentType: obj.ContentType || 'image/jpeg',
                                     }));
                                     await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldThumbKey }));
-                                    console.log('成功移动缩略图:', oldThumbKey, '到', newThumbKey);
                                 } catch (e) {
-                                    console.warn('移动缩略图失败:', e);
+                                    // 移动缩略图失败，静默处理
                                 }
                             }
                             // 更新自身 path 和 parentPath
@@ -829,7 +816,6 @@ export function FileService() {
                             const newPath = file.parentPath === '/' ? `/${name}` : `${file.parentPath}/${name}`;
                             const newPathKey = newPath.replace(/^\//, '');
                             // 优化：基于数据库查找子文件，避免全量R2扫描
-                            console.log('开始重命名文件夹，避免全量R2扫描...');
                             // 查找所有以 oldPath 为前缀的文件/文件夹（包括多级子文件夹和文件）
                             const children = await db.select().from(files).where(like(files.path, `${'/' + oldPath}/%`));
 
@@ -849,9 +835,8 @@ export function FileService() {
                                             ContentType: obj.ContentType || 'application/octet-stream',
                                         }));
                                         await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: oldR2Key }));
-                                        console.log(`成功移动R2文件: ${oldR2Key} -> ${newR2Key}`);
                                     } catch (e) {
-                                        console.warn(`移动R2文件失败: ${oldR2Key}`, e);
+                                        // 移动R2文件失败，静默处理
                                     }
                                 }
 
@@ -909,7 +894,7 @@ export function FileService() {
                 })
 
                 // 同步文件
-                .post('/sync', async ({ uid, admin, set }) => {
+                .post('/sync', async ({ admin, set }) => {
                     if (!admin) {
                         set.status = 403;
                         return { error: 'Permission denied' };
@@ -950,7 +935,7 @@ export function FileService() {
                 })
 
                 // r2sync接口分页重构（limit最大3，默认2，进一步避免CPU超时）
-                .post('/r2sync', async ({ uid, admin, set, query }) => {
+                .post('/r2sync', async ({ admin, set, query }) => {
                     if (!admin) {
                         set.status = 403;
                         return { error: 'Permission denied' };
@@ -1086,8 +1071,6 @@ export function FileService() {
                                 await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }));
                                 // 统一删除缩略图（thumb_ + thumbnailHash）
                                 if (file.thumbnailHash) {
-                                    console.log('批量删除：开始删除缩略图，thumbnailHash:', file.thumbnailHash);
-
                                     try {
                                         // 统一的缩略图路径：thumb_ + hash
                                         const thumbKey = (file.parentPath && file.parentPath !== '/')
@@ -1095,9 +1078,8 @@ export function FileService() {
                                           : 'thumb_' + file.thumbnailHash;
 
                                         await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }));
-                                        console.log('批量删除：成功删除缩略图:', thumbKey);
                                     } catch (e) {
-                                        console.log('批量删除：缩略图不存在或删除失败:', e);
+                                        // 缩略图删除失败，静默处理
                                     }
                                 }
                             } catch (e) { errors.push({ id: fileId, error: String(e) }); }
@@ -1193,7 +1175,7 @@ export function FileService() {
                         do {
                             requestCount++;
                             if (requestCount > maxRequests) {
-                                console.warn(`R2容量计算达到最大请求限制 (${maxRequests})，返回部分统计结果`);
+                                // R2容量计算达到最大请求限制，返回部分统计结果
                                 break;
                             }
 
@@ -1359,7 +1341,6 @@ export function FileService() {
                             ContentType: contentType,
                         }));
 
-                        console.log('缩略图上传成功:', thumbnailKey);
                         return { success: true, key: thumbnailKey };
                     } catch (error: any) {
                         console.error('Error uploading thumbnail:', error);
@@ -1369,7 +1350,7 @@ export function FileService() {
                 })
 
                 // 清理幽灵缩略图数据
-                .post('/cleanup-thumbnails', async ({ uid, admin, set }) => {
+                .post('/cleanup-thumbnails', async ({ admin, set }) => {
                     if (!admin) {
                         set.status = 403;
                         return { error: 'Permission denied' };
@@ -1386,11 +1367,8 @@ export function FileService() {
                         let errors: any[] = [];
 
                         // 轻量级清理：只清理明确的孤儿数据，避免CPU超时
-                        console.log('开始轻量级清理...');
-
                         // 暂时跳过复杂的清理逻辑以避免CPU超时
                         // 用户可以通过删除文件时的自动清理来处理缩略图
-                        console.log('清理完成（跳过全量扫描以避免CPU超时）');
 
                         return {
                             success: true,
