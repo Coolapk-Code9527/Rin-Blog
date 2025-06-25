@@ -103,7 +103,7 @@ export function CapacityInfo() {
         </span>
         {filesCount !== null && (
           <span className="text-gray-400 ml-1">
-            ({filesCount} {t('files.files_count', { defaultValue: '个文件' })})
+            ({filesCount} {t('files.files_count')})
           </span>
         )}
       </div>
@@ -209,7 +209,7 @@ export function CapacityInfoInline() {
         {r2Usage !== null ? formatFileSize(r2Usage) : '--'}
         {filesCount !== null && (
           <span className="text-neutral-500 dark:text-neutral-400 ml-1">
-            ({filesCount} {t('files.files_count', { defaultValue: '个文件' })})
+            ({filesCount} {t('files.files_count')})
           </span>
         )}
       </span>

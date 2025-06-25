@@ -34,7 +34,8 @@
       "success": "取消置顶成功",
       "title": "取消置顶"
     },
-    "public_description": "公开发布的文章，所有人可见"
+    "public_description": "公开发布的文章，所有人可见",
+    "navigation": "相关文章"
   },
   "avatar": {
     "url": "头像 URL"
@@ -67,7 +68,16 @@
       "next": "下一页",
       "page": "第 {{page}} 页",
       "title": "评论分页"
-    }
+    },
+    "empty_content": "评论内容不能为空",
+    "invalid_email": "请输入有效的邮箱地址",
+    "email_label": "邮箱 (选填)",
+    "email_placeholder": "your@email.com (选填)",
+    "expand_replies": "展开 {{count}} 条",
+    "collapse_replies": "收起",
+    "view_remaining": "查看剩余 {{count}} 条回复",
+    "reply_to": "回复 {{name}}",
+    "close_reply": "关闭回复框"
   },
   "comparison": "对比",
   "confirm": "确认",
@@ -82,6 +92,9 @@
   },
   "create": {
     "success": "创建成功",
+    "title": "创建"
+  },
+  "create_action": {
     "title": "创建"
   },
   "created_at": "发布时间",
@@ -256,7 +269,6 @@
   "status": "状态",
   "summary": "简介",
   "tags": "标签",
-  "timeline": "时间轴",
   "title": "标题",
   "title_empty": "标题不能为空",
   "top": {
@@ -406,6 +418,32 @@
   "menu": "菜单",
   "loading_more": "加载更多...",
   "new_article": "新建文章",
+  "all_articles": "全部文章",
+  "all": "全部",
+  "unlisted_short": "未列出",
+  "new": "新建",
+  "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "系统",
+    "light_mode": "浅色模式",
+    "dark_mode": "深色模式",
+    "system_mode": "跟随系统"
+  },
+  "timeline": {
+    "title": "时间轴",
+    "year_suffix": "年",
+    "article_count": "篇",
+    "no_articles": "暂无文章"
+  },
+  "sort": {
+    "latest": "最新",
+    "popular": "热度",
+    "oldest": "倒序",
+    "by_count": "按文章数",
+    "by_alpha": "按字母",
+    "label": "排序"
+  },
   "no_articles": "暂无文章",
   "no_articles_description": "这里还没有任何文章，之后会添加的~",
   "image_load_error": "图片加载失败",
@@ -430,5 +468,35 @@
   "empty_draft_description": "草稿箱空空如也，快去创建第一篇草稿吧！",
   "empty_unlisted_description": "还没有未列出的文章，创建一篇试试吧！",
   "empty_article_description": "这里还没有任何文章，快去创建第一篇文章吧！",
-  "create_now": "立即创建"
+  "create_now": "立即创建",
+  "view": {
+    "grid": "网格",
+    "list": "列表",
+    "grid_tooltip": "网格视图：以卡片形式展示文章",
+    "list_tooltip": "列表视图：以列表形式展示文章"
+  },
+  "main_navigation": "主导航",
+  "navigation_menu": "导航菜单",
+  "notification": {
+    "upload_success": "文件上传成功",
+    "upload_failed": "文件上传失败",
+    "delete_success": "删除成功",
+    "delete_failed": "删除失败",
+    "save_success": "保存成功",
+    "save_failed": "保存失败",
+    "copy_success": "复制成功",
+    "copy_failed": "复制失败"
+  },
+
+
+  "languageNames": {
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "ja": "日本語"
+  },
+  "recent_posts": {
+    "title": "最近发布",
+    "empty": "暂无最新文章"
+  }
 }

@@ -36,10 +36,10 @@ export function UnifiedTimelineItem({ item, onToggleItem, t }: UnifiedTimelineIt
             className="flex items-center gap-3 hover:text-theme transition-colors duration-200"
           >
             <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {data.year}年
+              {data.year}{t('timeline.year_suffix')}
             </div>
             <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full font-medium">
-              {data.count}篇
+              {data.count}{t('timeline.article_count')}
             </span>
             <i className={`ri-arrow-down-s-line text-gray-400 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}></i>
           </button>
@@ -55,7 +55,7 @@ export function UnifiedTimelineItem({ item, onToggleItem, t }: UnifiedTimelineIt
               {data.month}
             </div>
             <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full font-medium">
-              {data.count}篇
+              {data.count}{t('timeline.article_count')}
             </span>
             <i className={`ri-arrow-down-s-line text-gray-400 transition-transform duration-200 text-sm ${isCollapsed ? '-rotate-90' : ''}`}></i>
           </button>
@@ -249,7 +249,7 @@ export function UnifiedTimeline({ feeds, t }: { feeds: any[], t: any }) {
           enableScroll={false}
         >
           <i className="ri-time-line text-5xl text-gray-300 dark:text-gray-600 mb-4"></i>
-          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">{t('no_articles') || '暂无文章'}</p>
+          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">{t('timeline.no_articles') || t('no_articles')}</p>
         </UnifiedContainer>
       </div>
     );

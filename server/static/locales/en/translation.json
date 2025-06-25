@@ -30,7 +30,8 @@
       "success": "Untopped successfully",
       "title": "Untop"
     },
-    "public_description": "Public articles visible to everyone"
+    "public_description": "Public articles visible to everyone",
+    "navigation": "Related Articles"
   },
   "avatar": {
     "url": "Avatar URL"
@@ -63,7 +64,16 @@
       "next": "Next",
       "page": "Page {{page}}",
       "title": "Comment Pagination"
-    }
+    },
+    "empty_content": "Comment content cannot be empty",
+    "invalid_email": "Please enter a valid email address",
+    "email_label": "Email (optional)",
+    "email_placeholder": "your@email.com (optional)",
+    "expand_replies": "Expand {{count}} replies",
+    "collapse_replies": "Collapse",
+    "view_remaining": "View remaining {{count}} replies",
+    "reply_to": "Reply to {{name}}",
+    "close_reply": "Close reply box"
   },
   "comparison": "Comparison",
   "confirm": "Confirm",
@@ -78,6 +88,9 @@
   },
   "create": {
     "success": "Create Successfully",
+    "title": "Create"
+  },
+  "create_action": {
     "title": "Create"
   },
   "created_at": "Published at",
@@ -237,7 +250,6 @@
   "status": "Status",
   "summary": "Summary",
   "tags": "Tags",
-  "timeline": "Timeline",
   "title": "Title",
   "title_empty": "Title cannot be empty",
   "top": {
@@ -375,5 +387,153 @@
   "empty_draft_description": "Your draft box is empty. Create your first draft now!",
   "empty_unlisted_description": "No unlisted articles yet. Try creating one!",
   "empty_article_description": "No articles here yet. Create your first article now!",
-  "create_now": "Create Now"
+  "create_now": "Create Now",
+  "view": {
+    "grid": "Grid",
+    "list": "List",
+    "grid_tooltip": "Grid View: Display articles in card format",
+    "list_tooltip": "List View: Display articles in list format"
+  },
+  "main_navigation": "Main Navigation",
+  "navigation_menu": "Navigation Menu",
+  "notification": {
+    "upload_success": "File uploaded successfully",
+    "upload_failed": "File upload failed",
+    "delete_success": "Deleted successfully",
+    "delete_failed": "Delete failed",
+    "save_success": "Saved successfully",
+    "save_failed": "Save failed",
+    "copy_success": "Copied successfully",
+    "copy_failed": "Copy failed"
+  },
+  "templates": {
+    "templates": "Templates",
+    "insert": "Insert template",
+    "save": "Save",
+    "cancel": "Cancel",
+    "save_selection": "Save selection",
+    "template_name": "Template name",
+    "default": "Default templates",
+    "custom": "Custom templates",
+    "delete": "Delete template",
+    "table": "Table",
+    "header": "Header",
+    "content": "Content",
+    "code_block": "Code Block",
+    "quote": "Quote",
+    "todo_list": "To-do List",
+    "image_gallery": "Image Gallery",
+    "callout": "Callout",
+    "mermaid": "Mermaid Diagram",
+    "save_success": "Custom template saved successfully!",
+    "preset": "Preset Templates",
+    "article": {
+      "title": "Article Template",
+      "description": "Standard article structure with introduction, main content, and summary",
+      "template_title": "Article Title",
+      "introduction": "Introduction",
+      "introduction_content": "Write your article introduction here...",
+      "main_content": "Main Content",
+      "first_part": "First Part",
+      "second_part": "Second Part",
+      "content_description": "Content description...",
+      "summary": "Summary",
+      "summary_content": "Summarize the key points of the article..."
+    },
+    "technical": {
+      "title": "Technical Documentation",
+      "description": "API documentation structure with installation, usage, and FAQ",
+      "template_title": "Technical Documentation",
+      "overview": "Overview",
+      "overview_content": "Project/technology overview...",
+      "requirements": "Requirements",
+      "requirements_content": "- Node.js >= 16\n- Other dependencies...",
+      "installation": "Installation",
+      "installation_content": "npm install",
+      "usage": "Usage",
+      "usage_comment": "// Code example",
+      "usage_function": "function hello() {\n  console.log(\"Hello World!\");\n}",
+      "api_docs": "API Documentation",
+      "method_name": "Method Name",
+      "parameters": "Parameters:",
+      "returns": "Returns:",
+      "faq": "FAQ",
+      "question": "Q: Question description",
+      "answer": "A: Solution"
+    },
+    "diary": {
+      "title": "Diary Template",
+      "description": "Daily record format with weather, mood, and plans",
+      "template_title": "Diary",
+      "weather": "Today's Weather",
+      "weather_content": "☀️ Sunny",
+      "mood": "Today's Mood",
+      "mood_content": "😊 Happy",
+      "events": "Today's Events",
+      "events_content": "- Event 1\n- Event 2\n- Event 3",
+      "thoughts": "Today's Thoughts",
+      "thoughts_content": "Today's insights and reflections...",
+      "plans": "Tomorrow's Plans",
+      "plans_content": "- [ ] Plan 1\n- [ ] Plan 2\n- [ ] Plan 3"
+    },
+    "meeting": {
+      "title": "Meeting Notes",
+      "description": "Meeting record format with agenda, discussion, and action items",
+      "template_title": "Meeting Notes",
+      "info": "Meeting Information",
+      "time": "Time",
+      "location": "Location",
+      "host": "Host",
+      "attendees": "Attendees",
+      "agenda": "Agenda",
+      "agenda_item1": "Topic 1",
+      "agenda_item2": "Topic 2",
+      "discussion": "Discussion",
+      "discussion_content": "Detailed discussion records...",
+      "decisions": "Decisions",
+      "decisions_content": "1. Decision 1\n2. Decision 2",
+      "action_items": "Action Items",
+      "action_items_content": "- [ ] Action Item 1 - Assignee: XXX - Due Date:\n- [ ] Action Item 2 - Assignee: XXX - Due Date:",
+      "next_meeting": "Next Meeting",
+      "next_meeting_content": "Time:\nLocation:\nTopics:"
+    },
+    "select_text_first": "Please select text to save as template first"
+  },
+  "languageNames": {
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "ja": "日本語"
+  },
+  "new_article": "New Article",
+  "all_articles": "All Articles",
+  "all": "All",
+  "unlisted_short": "Unlisted",
+  "new": "New",
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "light_mode": "Light Mode",
+    "dark_mode": "Dark Mode",
+    "system_mode": "Follow System"
+  },
+  "timeline": {
+    "title": "Timeline",
+    "year_suffix": "",
+    "article_count": " articles",
+    "no_articles": "No articles yet"
+  },
+  "sort": {
+    "latest": "Latest",
+    "popular": "Popular",
+    "oldest": "Oldest",
+    "by_count": "By Article Count",
+    "by_alpha": "Alphabetically",
+    "label": "Sort"
+  },
+  "recent_posts": {
+    "title": "Recent Posts",
+    "empty": "No recent articles"
+  }
 }

@@ -160,10 +160,10 @@ function Footer() {
                                 ? 'bg-yellow-500 text-white'
                                 : 'bg-yellow-100 hover:bg-yellow-200 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                         }`}
-                        aria-label="浅色模式"
+                        aria-label={t('theme.light_mode')}
                     >
                         <i className="ri-sun-line text-sm"></i>
-                        <span>浅色</span>
+                        <span>{t('theme.light')}</span>
                     </button>
                     <button
                         onClick={() => setMode('system')}
@@ -172,10 +172,10 @@ function Footer() {
                                 ? 'bg-teal-500 text-white'
                                 : 'bg-teal-100 hover:bg-teal-200 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
                         }`}
-                        aria-label="跟随系统"
+                        aria-label={t('theme.system_mode')}
                     >
                         <i className="ri-computer-line text-sm"></i>
-                        <span>系统</span>
+                        <span>{t('theme.system')}</span>
                     </button>
                     <button
                         onClick={() => setMode('dark')}
@@ -184,10 +184,10 @@ function Footer() {
                                 ? 'bg-indigo-500 text-white'
                                 : 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
                         }`}
-                        aria-label="深色模式"
+                        aria-label={t('theme.dark_mode')}
                     >
                         <i className="ri-moon-line text-sm"></i>
-                        <span>深色</span>
+                        <span>{t('theme.dark')}</span>
                     </button>
                 </div>
             </div>

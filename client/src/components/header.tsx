@@ -223,10 +223,10 @@ function MobileMenu() {
     }, []);
 
     const languages = [
-        { code: 'en', name: 'English', flag: '🇺🇸' },
-        { code: 'zh-CN', name: '简体中文', flag: '🇨🇳' },
-        { code: 'zh-TW', name: '繁體中文', flag: '🇹🇼' },
-        { code: 'ja', name: '日本語', flag: '🇯🇵' }
+        { code: 'en', name: t('languageNames.en'), flag: '🇺🇸' },
+        { code: 'zh-CN', name: t('languageNames.zh-CN'), flag: '🇨🇳' },
+        { code: 'zh-TW', name: t('languageNames.zh-TW'), flag: '🇹🇼' },
+        { code: 'ja', name: t('languageNames.ja'), flag: '🇯🇵' }
     ];
 
     function onOpen() {
@@ -659,7 +659,7 @@ function NavBar({ menu, onClick }: { menu: boolean, onClick?: () => void }) {
         <div className={`${menu ? 'flex flex-col space-y-1 w-full' : 'flex items-center space-x-1'}`}>
             <NavItem menu={menu} onClick={onClick} title={t('article.title')} iconKey="article.title"
                 selected={location === "/" || location.startsWith('/feed')} href="/" />
-            <NavItem menu={menu} onClick={onClick} title={t('timeline')} iconKey="timeline" selected={location === "/timeline"} href="/timeline" />
+            <NavItem menu={menu} onClick={onClick} title={t('timeline.title')} iconKey="timeline" selected={location === "/timeline"} href="/timeline" />
             <NavItem menu={menu} onClick={onClick} title={t('hashtags')} iconKey="hashtags" selected={location === "/hashtags"} href="/hashtags" />
             <NavItem menu={menu} onClick={onClick} when={profile?.permission == true} title={t('writing.title')} iconKey="writing"
                 selected={location.startsWith("/writing")} href="/writing" />

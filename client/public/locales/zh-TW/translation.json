@@ -70,7 +70,12 @@
     },
     "invalid_email": "請輸入有效的電子郵件地址",
     "email_label": "電子郵件 (選填)",
-    "email_placeholder": "your@email.com (選填)"
+    "email_placeholder": "your@email.com (選填)",
+    "expand_replies": "展開 {{count}} 條",
+    "collapse_replies": "收起",
+    "view_remaining": "查看剩餘 {{count}} 條回覆",
+    "reply_to": "回覆 {{name}}",
+    "close_reply": "關閉回覆框"
   },
   "comparison": "比較",
   "confirm": "確認",
@@ -85,6 +90,9 @@
   },
   "create": {
     "success": "創建成功",
+    "title": "創建"
+  },
+  "create_action": {
     "title": "創建"
   },
   "created_at": "發布時間",
@@ -171,7 +179,18 @@
     "delete_failed_batch": "刪除失敗 {{count}} 個",
     "delete_none": "未刪除任何檔案，可能為歷史資料或路徑不規範",
     "r2_usage": "R2已用容量：{{used}}",
-    "d1_usage": "D1已用容量：{{used}}"
+    "d1_usage": "D1已用容量：{{used}}",
+    "select_title": "選擇要插入的檔案",
+    "performance_tip": "檔案管理已最佳化效能，如需同步R2儲存請點擊同步按鈕",
+    "got_it": "知道了",
+    "upload_cancelled": "使用者取消上傳",
+    "batch_upload": "檔案上傳",
+    "view_details": "檢視詳情",
+    "files_count": "個檔案",
+    "copy_original_link": "原始連結",
+    "copy_link": "複製連結",
+    "open_new_window": "新視窗開啟",
+    "partial_display": "...（僅顯示部分）"
   },
   "footer": {
     "rss": "RSS 訂閱連結"
@@ -246,6 +265,10 @@
   "reload": "重試",
   "save": "已保存",
   "settings": {
+    "unauthorized": {
+      "title": "設定權限受限",
+      "description": "系統設定功能僅限管理員使用。請使用管理員帳戶登入後再試。"
+    },
     "cache": {
       "clear": {
         "confirm": {
@@ -347,6 +370,49 @@
         "error": "保存失敗，請重試"
       }
     },
+    "author": {
+      "name": {
+        "title": "暱稱",
+        "desc": "設定個人資料卡片中顯示的暱稱"
+      },
+      "avatar": {
+        "title": "頭像連結",
+        "desc": "設定個人資料卡片的頭像圖片URL"
+      },
+      "social": {
+        "github": {
+          "title": "GitHub",
+          "desc": "設定GitHub用戶名或完整連結"
+        },
+        "email": {
+          "title": "電子郵件",
+          "desc": "設定聯絡電子郵件地址"
+        }
+      }
+    },
+    "sidebar": {
+      "title": "側邊欄設定",
+      "enable": {
+        "title": "啟用側邊欄",
+        "desc": "在文章列表頁面顯示側邊欄，包含個人資料、標籤雲等組件"
+      },
+      "profile": {
+        "title": "個人資料卡片",
+        "desc": "顯示頭像、暱稱和社交連結"
+      },
+      "tagCloud": {
+        "title": "標籤雲",
+        "desc": "顯示熱門標籤，方便用戶發現內容"
+      },
+      "announcements": {
+        "title": "公告通知",
+        "desc": "顯示重要公告和通知資訊"
+      },
+      "music": {
+        "title": "背景音樂自動播放",
+        "desc": "啟用後背景音樂將在頁面載入時自動播放"
+      }
+    },
     "update_failed$message": "更新失敗: {{message}}",
     "wordpress": {
       "desc": "上傳 WordPress 匯出的 XML 文件",
@@ -361,7 +427,6 @@
   "status": "狀態",
   "summary": "簡介",
   "tags": "標籤",
-  "timeline": "時間軸",
   "title": "標題",
   "title_empty": "標題不能為空",
   "top": {
@@ -391,7 +456,46 @@
   },
   "writing": {
     "title": "寫作",
-    "title_hint": "主標題請在此輸入，正文無需再寫一級標題（# 標題）。"
+    "title_hint": "主標題請在此輸入，正文無需再寫一級標題（# 標題）。",
+    "tag_name_placeholder": "標籤名稱",
+    "title_placeholder": "輸入文章標題...",
+    "add_tag": "新增標籤",
+    "editor_loading": "編輯器載入中...",
+    "save_template_title": "將選中文字儲存為範本",
+    "template_name_placeholder": "輸入範本名稱",
+    "preview_modes": {
+      "edit": {
+        "title": "編輯模式",
+        "label": "編輯"
+      },
+      "preview": {
+        "title": "預覽模式",
+        "label": "預覽"
+      },
+      "comparison": {
+        "title": "對比模式",
+        "label": "對比"
+      }
+    },
+    "advanced_tools": {
+      "title": "進階工具",
+      "draft": "草稿",
+      "history": "歷史",
+      "snapshot": "快照",
+      "files": "檔案",
+      "templates": "範本",
+      "more": "更多"
+    },
+    "publish_settings": {
+      "title": "發布設定",
+      "alias": "文章別名",
+      "alias_short": "別名",
+      "private": "僅自己可見",
+      "private_short": "私密",
+      "listed": "顯示在文章列表",
+      "listed_short": "列表顯示",
+      "publish_button": "發布文章"
+    }
   },
   "year$year": "{{year}} 年",
   "editing": "編輯中...",
@@ -399,6 +503,11 @@
   "published_at": "發布於",
   "date_format": {
     "month_day": "MM/DD"
+  },
+  "locale": "zh-TW",
+  "recent_posts": {
+    "title": "最近發布",
+    "empty": "暫無最新文章"
   },
   "input_required": "所有欄位均不能為空",
   "input_too_long": "欄位長度超出限制",
@@ -417,11 +526,38 @@
   "sort": {
     "latest": "最新",
     "popular": "熱度",
-    "oldest": "倒序"
+    "oldest": "倒序",
+    "by_count": "按文章數",
+    "by_alpha": "按字母",
+    "label": "排序"
   },
   "announcements": {
     "title": "公告通知",
-    "viewMore": "查看更多公告"
+    "viewMore": "查看更多公告",
+    "saveFailed": "保存失敗",
+    "saveSuccess": "保存成功",
+    "deleteTitle": "刪除公告",
+    "deleteConfirm": "確定要刪除公告「{{title}}」嗎？此操作無法撤銷。",
+    "content": "內容",
+    "titlePlaceholder": "請輸入公告標題",
+    "contentPlaceholder": "請輸入公告內容",
+    "priority": "優先級",
+    "normal": "普通",
+    "important": "重要",
+    "expiresAt": "過期時間",
+    "expiresAtPlaceholder": "選擇過期時間（可選）",
+    "add": "新增公告",
+    "update": "更新公告",
+    "cancel": "取消",
+    "edit": "編輯",
+    "delete": "刪除",
+    "empty": "暫無公告",
+    "expired": "已過期",
+    "createdAt": "建立時間",
+    "expires": "過期",
+    "manager": {
+      "title": "公告管理"
+    }
   },
   "tagCloud": {
     "title": "熱門標籤",
@@ -547,6 +683,10 @@
     "default": "預設模板",
     "custom": "自訂模板",
     "delete": "刪除模板",
+    "delete_title": "刪除範本",
+    "select_title": "選擇範本",
+    "table_template": "表格範本",
+    "code_template": "程式碼區塊",
     "table": "表格",
     "header": "表頭",
     "content": "內容",
@@ -556,8 +696,102 @@
     "image_gallery": "圖片庫",
     "callout": "提示框",
     "mermaid": "Mermaid 圖表",
-    "save_success": "自訂模板保存成功！"
+    "save_success": "自訂模板保存成功！",
+    "preset": "預設模板",
+    "article": {
+      "title": "文章模板",
+      "description": "標準文章結構，包含簡介、主要內容和總結",
+      "template_title": "文章標題",
+      "introduction": "簡介",
+      "introduction_content": "在這裡寫文章的簡介...",
+      "main_content": "主要內容",
+      "first_part": "第一部分",
+      "second_part": "第二部分",
+      "content_description": "內容描述...",
+      "summary": "總結",
+      "summary_content": "總結文章要點..."
+    },
+    "technical": {
+      "title": "技術文件",
+      "description": "API文件結構，包含安裝、使用和常見問題",
+      "template_title": "技術文件",
+      "overview": "概述",
+      "overview_content": "專案/技術概述...",
+      "requirements": "環境要求",
+      "requirements_content": "- Node.js >= 16\n- 其他依賴...",
+      "installation": "安裝步驟",
+      "installation_content": "npm install",
+      "usage": "使用方法",
+      "usage_comment": "// 程式碼範例",
+      "usage_function": "function hello() {\n  console.log(\"Hello World!\");\n}",
+      "api_docs": "API 文件",
+      "method_name": "方法名",
+      "parameters": "參數：",
+      "returns": "回傳值：",
+      "faq": "常見問題",
+      "question": "Q: 問題描述",
+      "answer": "A: 解決方案"
+    },
+    "diary": {
+      "title": "日記模板",
+      "description": "日常記錄格式，包含天氣、心情和計劃",
+      "template_title": "日記",
+      "weather": "今日天氣",
+      "weather_content": "☀️ 晴朗",
+      "mood": "今日心情",
+      "mood_content": "😊 愉快",
+      "events": "今日事件",
+      "events_content": "- 事件1\n- 事件2\n- 事件3",
+      "thoughts": "今日感悟",
+      "thoughts_content": "今天的感悟和思考...",
+      "plans": "明日計劃",
+      "plans_content": "- [ ] 計劃1\n- [ ] 計劃2\n- [ ] 計劃3"
+    },
+    "meeting": {
+      "title": "會議記錄",
+      "description": "會議記錄格式，包含議程、討論和行動項",
+      "template_title": "會議記錄",
+      "info": "會議資訊",
+      "time": "時間",
+      "location": "地點",
+      "host": "主持人",
+      "attendees": "參會人員",
+      "agenda": "會議議程",
+      "agenda_item1": "議題一",
+      "agenda_item2": "議題二",
+      "discussion": "討論內容",
+      "discussion_content": "詳細記錄討論過程...",
+      "decisions": "決議事項",
+      "decisions_content": "1. 決議一\n2. 決議二",
+      "action_items": "行動項",
+      "action_items_content": "- [ ] 行動項1 - 負責人：XXX - 截止時間：\n- [ ] 行動項2 - 負責人：XXX - 截止時間：",
+      "next_meeting": "下次會議",
+      "next_meeting_content": "時間：\n地點：\n議題："
+    },
+    "select_text_first": "請先選擇要保存為模板的文字"
   },
+  "languageNames": {
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "ja": "日本語"
+  },
+  "theme": {
+    "light": "淺色",
+    "dark": "深色",
+    "system": "系統",
+    "light_mode": "淺色模式",
+    "dark_mode": "深色模式",
+    "system_mode": "跟隨系統"
+  },
+  "timeline": {
+    "title": "時間軸",
+    "year_suffix": "年",
+    "article_count": "篇",
+    "no_articles": "暫無文章"
+  },
+  "publish_time": "發布時間",
+  "time": "時間",
   "view": {
     "grid": "網格",
     "list": "列表",
@@ -581,5 +815,57 @@
     "loading": "正在載入...",
     "processing": "正在處理...",
     "uploading": "正在上傳 {{filename}}"
+  },
+  "new_article": "新建文章",
+  "all_articles": "全部文章",
+  "all": "全部",
+  "unlisted_short": "未列出",
+  "new": "新建",
+  "toolbar": {
+    "table": {
+      "title": "插入表格"
+    },
+    "separator": {
+      "title": "分隔線"
+    },
+    "details": {
+      "title": "摺疊內容"
+    },
+    "linebreak": {
+      "title": "換行符"
+    },
+    "video": {
+      "title": "插入影片"
+    },
+    "audio": {
+      "title": "插入音訊"
+    },
+    "math": {
+      "title": "數學公式"
+    },
+    "note": {
+      "title": "提示框"
+    },
+    "warning": {
+      "title": "警告框"
+    },
+    "time": {
+      "title": "插入目前時間"
+    },
+    "date": {
+      "title": "插入日期"
+    },
+    "mention": {
+      "title": "提及使用者"
+    },
+    "hashtag": {
+      "title": "插入標籤"
+    },
+    "external_link": {
+      "title": "外部連結"
+    },
+    "download": {
+      "title": "下載連結"
+    }
   }
 }

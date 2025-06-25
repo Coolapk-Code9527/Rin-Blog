@@ -41,7 +41,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
   const [copyMenuOpen, setCopyMenuOpen] = useState(false);
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
   const copyFormats = [
-    { key: 'url', label: '原始链接', value: orig },
+    { key: 'url', label: t('files.copy_original_link'), value: orig },
     { key: 'markdown', label: 'Markdown', value: `[${file?.name || ''}](${orig})` },
     { key: 'html', label: 'HTML', value: `<a href=\"${orig}\">${file?.name || ''}</a>` },
     { key: 'bbcode', label: 'BBCode', value: `[url=${orig}]${file?.name || ''}[/url]` },
@@ -406,12 +406,12 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
               <div className="flex flex-col items-center justify-center w-[min(90vw,800px)] h-[min(80vh,600px)] text-white/80 bg-white/10 glass-layer-1 rounded-2xl border border-white/20 p-6">
                 <i className="ri-file-word-2-line text-6xl mb-4 text-theme"></i>
                 <div className="mb-4 text-center">Word文档（doc/docx）暂仅支持docx在线预览，doc可下载或用文本方式查看</div>
-                <button className="px-4 py-2 rounded-xl bg-theme hover:bg-theme-hover transition-colors text-white font-medium shadow-enhanced flex items-center gap-2" onClick={handleDownload} title="下载文件">
-                  <i className="ri-download-2-line"></i> 下载
+                <button className="px-4 py-2 rounded-xl bg-theme hover:bg-theme-hover transition-colors text-white font-medium shadow-enhanced flex items-center gap-2" onClick={handleDownload} title={t('files.download')}>
+                  <i className="ri-download-2-line"></i> {t('files.download')}
                 </button>
                 {isText && textContent && (
                   <div className="mt-4 w-full overflow-auto bg-white/10 glass-layer-1 rounded-xl border border-white/20 p-4 text-xs text-white/80 flex-1">
-                    <pre>{textContent.slice(0, 2000)}{textContent.length > 2000 ? '...（仅显示部分）' : ''}</pre>
+                    <pre>{textContent.slice(0, 2000)}{textContent.length > 2000 ? t('files.partial_display') : ''}</pre>
                   </div>
                 )}
               </div>
@@ -509,7 +509,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
           <button className="ml-2 w-10 h-10 rounded-xl bg-theme hover:bg-theme-hover transition-colors font-medium shadow-enhanced flex items-center justify-center" onClick={handleDownload} title="下载">
             <i className="ri-download-2-line"></i>
           </button>
-          <button className="w-10 h-10 rounded-xl bg-white/30 hover:bg-white/40 transition-colors flex items-center justify-center" onClick={handleOpenNew} title="新窗口打开">
+          <button className="w-10 h-10 rounded-xl bg-white/30 hover:bg-white/40 transition-colors flex items-center justify-center" onClick={handleOpenNew} title={t('files.open_new_window')}>
             <i className="ri-external-link-line"></i>
           </button>
           {/* 复制链接按钮及菜单 */}
@@ -517,10 +517,10 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
             <button
               className="px-3 py-2 rounded-xl bg-white/30 hover:bg-white/40 transition-colors flex items-center gap-1"
               onClick={() => setCopyMenuOpen(v => !v)}
-              title="复制链接"
+              title={t('files.copy_link')}
             >
               <i className="ri-file-copy-line"></i>
-              <span>复制链接</span>
+              <span>{t('files.copy_link')}</span>
             </button>
             {copyMenuOpen && (
               <div className="absolute bottom-full right-0 mb-2 bg-black/90 text-white rounded-xl shadow-enhanced-2xl border border-white/30 z-30 min-w-[120px]">

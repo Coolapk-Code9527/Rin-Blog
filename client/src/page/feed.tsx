@@ -1236,7 +1236,7 @@ function CommentItem({
             {/* 回复按钮 */}
             <button
               onClick={() => setShowReplyForm(!showReplyForm)}
-              title={`回复 ${isAnonymous ? displayName : comment.user?.username || 'Unknown'}`}
+              title={t('comment.reply_to', { name: isAnonymous ? displayName : comment.user?.username || 'Unknown' })}
               className={`p-1.5 sm:p-2 rounded-lg text-xs sm:text-sm transition-all duration-200 ${
                 showReplyForm
                   ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
@@ -1294,7 +1294,7 @@ function CommentItem({
             <IconButton
               icon="ri-close-line"
               onClick={() => setShowReplyForm(false)}
-              title="关闭回复框"
+              title={t('comment.close_reply')}
               variant="secondary"
               size="small"
             />
@@ -1339,7 +1339,7 @@ function CommentItem({
                 }}
                 className="flex items-center space-x-1 px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg transition-all duration-200 font-medium"
               >
-                <span>{showAllReplies ? '收起' : `展开 ${comment.replies.length} 条`}</span>
+                <span>{showAllReplies ? t('comment.collapse_replies') : t('comment.expand_replies', { count: comment.replies.length })}</span>
                 <i className={`ri-arrow-${showAllReplies ? 'up' : 'down'}-s-line`}></i>
               </button>
             )}
@@ -1388,7 +1388,7 @@ function CommentItem({
                 className="w-full py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 border border-dashed border-blue-200 dark:border-blue-600 flex items-center justify-center space-x-2"
               >
                 <i className="ri-add-line"></i>
-                <span>查看剩余 {comment.replies.length - INITIAL_REPLIES_COUNT} 条回复</span>
+                <span>{t('comment.view_remaining', { count: comment.replies.length - INITIAL_REPLIES_COUNT })}</span>
               </button>
             </div>
           )}

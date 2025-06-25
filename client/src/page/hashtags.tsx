@@ -13,10 +13,7 @@ import { UnifiedContainer } from "../components/UnifiedContainer";
 
 import type { Hashtag } from "../types/api";
 
-const SORT_OPTIONS = [
-  { value: 'count', label: '按文章数' },
-  { value: 'alpha', label: '按字母' },
-];
+// 将排序选项移到组件内部，以便使用翻译函数
 
 export function HashtagsPage() {
     const { t } = useTranslation();
@@ -26,6 +23,12 @@ export function HashtagsPage() {
 
     // 使用智能毛玻璃效果
     const tagGlassClass = useGlassEffect('tag-enhanced');
+
+    // 排序选项（使用翻译）
+    const SORT_OPTIONS = [
+      { value: 'count', label: t('sort.by_count') },
+      { value: 'alpha', label: t('sort.by_alpha') },
+    ];
     useEffect(() => {
         if (ref.current) return;
         client.tag.index.get().then(({ data }) => {
@@ -109,7 +112,7 @@ export function HashtagsPage() {
 
                               {/* 排序切换 */}
                               <div className="flex gap-2 items-center">
-                                <span className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">{t('排序')}:</span>
+                                <span className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">{t('sort.label')}:</span>
                                 {SORT_OPTIONS.map(opt => (
                                   <button
                                     key={opt.value}

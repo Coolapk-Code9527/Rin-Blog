@@ -71,7 +71,12 @@
     },
     "invalid_email": "请输入有效的邮箱地址",
     "email_label": "邮箱 (选填)",
-    "email_placeholder": "your@email.com (选填)"
+    "email_placeholder": "your@email.com (选填)",
+    "expand_replies": "展开 {{count}} 条",
+    "collapse_replies": "收起",
+    "view_remaining": "查看剩余 {{count}} 条回复",
+    "reply_to": "回复 {{name}}",
+    "close_reply": "关闭回复框"
   },
   "comparison": "对比",
   "confirm": "确认",
@@ -84,8 +89,11 @@
     "pv": "浏览数",
     "uv": "访客数"
   },
-  "create_action": {
+  "create": {
     "success": "创建成功",
+    "title": "创建"
+  },
+  "create_action": {
     "title": "创建"
   },
   "created_at": "发布时间",
@@ -197,7 +205,18 @@
     "loading_original": "加载原图...",
     "load_failed": "加载失败",
     "no_original_name": "无原始名",
-    "cannot_delete_system_dir": "不能删除系统目录"
+    "cannot_delete_system_dir": "不能删除系统目录",
+    "select_title": "选择要插入的文件",
+    "performance_tip": "文件管理已优化性能，如需同步R2存储请点击同步按钮",
+    "got_it": "知道了",
+    "upload_cancelled": "用户取消上传",
+    "batch_upload": "文件上传",
+    "view_details": "查看详情",
+    "files_count": "个文件",
+    "copy_original_link": "原始链接",
+    "copy_link": "复制链接",
+    "open_new_window": "新窗口打开",
+    "partial_display": "...（仅显示部分）"
   },
   "footer": {
     "rss": "RSS 订阅链接"
@@ -368,6 +387,49 @@
         "error": "保存失败，请重试"
       }
     },
+    "author": {
+      "name": {
+        "title": "昵称",
+        "desc": "设置个人资料卡片中显示的昵称"
+      },
+      "avatar": {
+        "title": "头像链接",
+        "desc": "设置个人资料卡片中的头像图片URL"
+      },
+      "social": {
+        "github": {
+          "title": "GitHub",
+          "desc": "设置GitHub用户名或完整链接"
+        },
+        "email": {
+          "title": "邮箱",
+          "desc": "设置联系邮箱地址"
+        }
+      }
+    },
+    "sidebar": {
+      "title": "侧边栏设置",
+      "enable": {
+        "title": "启用侧边栏",
+        "desc": "在文章列表页面显示侧边栏，包含个人资料、标签云等组件"
+      },
+      "profile": {
+        "title": "个人资料卡片",
+        "desc": "显示头像、昵称和社交链接"
+      },
+      "tagCloud": {
+        "title": "标签云",
+        "desc": "显示热门标签，方便用户发现内容"
+      },
+      "announcements": {
+        "title": "公告通知",
+        "desc": "显示重要公告和通知信息"
+      },
+      "music": {
+        "title": "背景音乐自动播放",
+        "desc": "启用后背景音乐将在页面加载时自动播放"
+      }
+    },
     "update_failed$message": "更新失败: {{message}}",
     "wordpress": {
       "desc": "上传 WordPress 导出的 XML 文件",
@@ -382,7 +444,6 @@
   "status": "状态",
   "summary": "简介",
   "tags": "标签",
-  "timeline": "时间轴",
   "title": "标题",
   "title_empty": "标题不能为空",
   "top": {
@@ -429,6 +490,45 @@
     "characters": "字符数",
     "words": "单词数",
     "lines": "行数",
+    "tag_name_placeholder": "标签名称",
+    "title_placeholder": "输入文章标题...",
+    "add_tag": "添加标签",
+    "editor_loading": "编辑器加载中...",
+    "save_template_title": "保存选中文本为模板",
+    "template_name_placeholder": "输入模板名称",
+    "preview_modes": {
+      "edit": {
+        "title": "编辑模式",
+        "label": "编辑"
+      },
+      "preview": {
+        "title": "预览模式",
+        "label": "预览"
+      },
+      "comparison": {
+        "title": "对比模式",
+        "label": "对比"
+      }
+    },
+    "advanced_tools": {
+      "title": "高级工具",
+      "draft": "草稿",
+      "history": "历史",
+      "snapshot": "快照",
+      "files": "文件",
+      "templates": "模板",
+      "more": "更多"
+    },
+    "publish_settings": {
+      "title": "发布设置",
+      "alias": "文章别名",
+      "alias_short": "别名",
+      "private": "仅自己可见",
+      "private_short": "私密",
+      "listed": "显示在文章列表",
+      "listed_short": "列表显示",
+      "publish_button": "发布文章"
+    },
     "unauthorized": {
       "title": "写作权限受限",
       "description": "写作功能仅限管理员使用。请使用管理员账户登录后再试。"
@@ -445,6 +545,10 @@
     "default": "默认模板",
     "custom": "自定义模板",
     "delete": "删除模板",
+    "delete_title": "删除模板",
+    "select_title": "选择模板",
+    "table_template": "表格模板",
+    "code_template": "代码块",
     "table": "表格",
     "header": "表头",
     "content": "内容",
@@ -454,26 +558,143 @@
     "image_gallery": "图片库",
     "callout": "提示框",
     "mermaid": "Mermaid 图表",
-    "save_success": "自定义模板保存成功！"
+    "save_success": "自定义模板保存成功！",
+    "preset": "预设模板",
+    "article": {
+      "title": "文章模板",
+      "description": "标准文章结构，包含简介、主要内容和总结",
+      "template_title": "文章标题",
+      "introduction": "简介",
+      "introduction_content": "在这里写文章的简介...",
+      "main_content": "主要内容",
+      "first_part": "第一部分",
+      "second_part": "第二部分",
+      "content_description": "内容描述...",
+      "summary": "总结",
+      "summary_content": "总结文章要点..."
+    },
+    "technical": {
+      "title": "技术文档",
+      "description": "API文档结构，包含安装、使用和常见问题",
+      "template_title": "技术文档",
+      "overview": "概述",
+      "overview_content": "项目/技术概述...",
+      "requirements": "环境要求",
+      "requirements_content": "- Node.js >= 16\n- 其他依赖...",
+      "installation": "安装步骤",
+      "installation_content": "npm install",
+      "usage": "使用方法",
+      "usage_comment": "// 代码示例",
+      "usage_function": "function hello() {\n  console.log(\"Hello World!\");\n}",
+      "api_docs": "API 文档",
+      "method_name": "方法名",
+      "parameters": "参数：",
+      "returns": "返回值：",
+      "faq": "常见问题",
+      "question": "Q: 问题描述",
+      "answer": "A: 解决方案"
+    },
+    "diary": {
+      "title": "日记模板",
+      "description": "日常记录格式，包含天气、心情和计划",
+      "template_title": "日记",
+      "weather": "今日天气",
+      "weather_content": "☀️ 晴朗",
+      "mood": "今日心情",
+      "mood_content": "😊 愉快",
+      "events": "今日事件",
+      "events_content": "- 事件1\n- 事件2\n- 事件3",
+      "thoughts": "今日感悟",
+      "thoughts_content": "今天的感悟和思考...",
+      "plans": "明日计划",
+      "plans_content": "- [ ] 计划1\n- [ ] 计划2\n- [ ] 计划3"
+    },
+    "meeting": {
+      "title": "会议记录",
+      "description": "会议记录格式，包含议程、讨论和行动项",
+      "template_title": "会议记录",
+      "info": "会议信息",
+      "time": "时间",
+      "location": "地点",
+      "host": "主持人",
+      "attendees": "参会人员",
+      "agenda": "会议议程",
+      "agenda_item1": "议题一",
+      "agenda_item2": "议题二",
+      "discussion": "讨论内容",
+      "discussion_content": "详细记录讨论过程...",
+      "decisions": "决议事项",
+      "decisions_content": "1. 决议一\n2. 决议二",
+      "action_items": "行动项",
+      "action_items_content": "- [ ] 行动项1 - 负责人：XXX - 截止时间：\n- [ ] 行动项2 - 负责人：XXX - 截止时间：",
+      "next_meeting": "下次会议",
+      "next_meeting_content": "时间：\n地点：\n议题："
+    },
+    "select_text_first": "请先选择要保存为模板的文本"
   },
-  "drop_or_click_to_upload": "拖放图片至此或点击上传",
-  "editing": "编辑中...",
-  "languages": "语言",
   "languageNames": {
     "en": "English",
     "zh-CN": "简体中文",
     "zh-TW": "繁體中文",
     "ja": "日本語"
   },
+  "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "系统",
+    "light_mode": "浅色模式",
+    "dark_mode": "深色模式",
+    "system_mode": "跟随系统"
+  },
+  "timeline": {
+    "title": "时间轴",
+    "year_suffix": "年",
+    "article_count": "篇",
+    "no_articles": "暂无文章"
+  },
+  "publish_time": "发布时间",
+  "time": "时间",
+  "drop_or_click_to_upload": "拖放图片至此或点击上传",
+  "editing": "编辑中...",
+  "languages": "语言",
   "logged_in": "已登录",
   "unnamed": "未命名",
   "published_at": "发布于",
   "date_format": {
     "month_day": "MM/DD"
   },
+  "locale": "zh-CN",
+  "recent_posts": {
+    "title": "最近发布",
+    "empty": "暂无最新文章"
+  },
   "announcements": {
     "title": "公告通知",
-    "viewMore": "查看更多公告"
+    "viewMore": "查看更多公告",
+    "saveFailed": "保存失败",
+    "saveSuccess": "保存成功",
+    "deleteTitle": "删除公告",
+    "deleteConfirm": "确定要删除公告\"{{title}}\"吗？此操作无法撤销。",
+    "content": "内容",
+    "titlePlaceholder": "请输入公告标题",
+    "contentPlaceholder": "请输入公告内容",
+    "priority": "优先级",
+    "normal": "普通",
+    "important": "重要",
+    "expiresAt": "过期时间",
+    "expiresAtPlaceholder": "选择过期时间（可选）",
+    "add": "添加公告",
+    "update": "更新公告",
+    "cancel": "取消",
+    "edit": "编辑",
+    "delete": "删除",
+    "empty": "暂无公告",
+    "expired": "已过期",
+    "createdAt": "创建时间",
+    "expires": "过期",
+    "manager": {
+      "title": "公告管理"
+    }
   },
   "tagCloud": {
     "title": "热门标签",
@@ -758,6 +979,51 @@
       "title": "键盘按键 - 支持多行",
       "defaultText": "按键"
     },
+    "table": {
+      "title": "插入表格"
+    },
+    "separator": {
+      "title": "分隔线"
+    },
+    "details": {
+      "title": "折叠内容"
+    },
+    "linebreak": {
+      "title": "换行符"
+    },
+    "video": {
+      "title": "插入视频"
+    },
+    "audio": {
+      "title": "插入音频"
+    },
+    "math": {
+      "title": "数学公式"
+    },
+    "note": {
+      "title": "提示框"
+    },
+    "warning": {
+      "title": "警告框"
+    },
+    "time": {
+      "title": "插入当前时间"
+    },
+    "date": {
+      "title": "插入日期"
+    },
+    "mention": {
+      "title": "提及用户"
+    },
+    "hashtag": {
+      "title": "插入标签"
+    },
+    "external_link": {
+      "title": "外部链接"
+    },
+    "download": {
+      "title": "下载链接"
+    },
     "multiline": {
       "warning": "选择行数过多（{{count}}行），仅处理前{{limit}}行",
       "processing": "正在处理多行格式化..."
@@ -804,6 +1070,10 @@
   "menu": "菜单",
   "loading_more": "加载更多...",
   "new_article": "新建文章",
+  "all_articles": "全部文章",
+  "all": "全部",
+  "unlisted_short": "未列出",
+  "new": "新建",
   "no_articles": "暂无文章",
   "no_articles_description": "这里还没有任何文章，之后会添加的~",
   "image_load_error": "图片加载失败",
@@ -826,7 +1096,10 @@
   "sort": {
     "latest": "最新",
     "popular": "热度",
-    "oldest": "倒序"
+    "oldest": "倒序",
+    "by_count": "按文章数",
+    "by_alpha": "按字母",
+    "label": "排序"
   },
   "empty_list": "暂无内容",
   "empty_draft_description": "草稿箱空空如也，快去创建第一篇草稿吧！",

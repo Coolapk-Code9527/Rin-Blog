@@ -506,6 +506,7 @@ function ArticleInfoEditor({ title, setTitle }: {
   title: string;
   setTitle: (title: string) => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
   }, [setTitle]);
@@ -518,7 +519,7 @@ function ArticleInfoEditor({ title, setTitle }: {
           type="text"
           value={title}
           onChange={handleTitleChange}
-          placeholder="输入文章标题..."
+          placeholder={t('writing.title_placeholder')}
           className="w-full text-lg font-bold bg-transparent border-none outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100 focus:ring-0 py-1"
         />
       </div>
@@ -531,6 +532,7 @@ function TagManager({ tags, setTags }: {
   tags: string;
   setTags: (tags: string) => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   const [tagInput, setTagInput] = useState('');
   const [showTagInput, setShowTagInput] = useState(false);
 
@@ -609,7 +611,7 @@ function TagManager({ tags, setTags }: {
                 setShowTagInput(false);
               }
             }}
-            placeholder="标签名称"
+            placeholder={t('writing.tag_name_placeholder')}
             className="px-3 py-2 text-xs border border-orange-300 dark:border-orange-600 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-transparent w-28 backdrop-blur-sm shadow-sm h-8"
             autoFocus
           />
@@ -635,7 +637,7 @@ function TagManager({ tags, setTags }: {
           className="inline-flex items-center px-3 py-2 rounded-lg text-xs border border-dashed border-orange-300/60 dark:border-orange-600/60 text-orange-500 hover:border-orange-400 dark:hover:border-orange-500 hover:bg-orange-50/80 dark:hover:bg-orange-900/20 transition-all shadow-sm h-8 font-medium hover:shadow-md"
         >
           <i className="ri-add-line mr-1.5 text-xs"></i>
-          添加标签
+          {t('writing.add_tag')}
         </button>
       )}
     </div>
@@ -1236,23 +1238,23 @@ function MarkdownToolbar({
       {/* 插入工具 */}
       <ToolbarButton icon="ri-link" onClick={insertSmartLink} title="智能插入链接 (自动识别URL)" variant="ghost" />
       <ToolbarButton icon="ri-image-line" onClick={insertSmartImage} title="智能插入图片 (自动识别图片URL)" variant="ghost" />
-      <ToolbarButton icon="ri-video-line" onClick={() => insertText('<video controls>\n  <source src="视频链接" type="video/mp4">\n</video>', '', '')} title="插入视频" variant="ghost" />
-      <ToolbarButton icon="ri-music-line" onClick={() => insertText('<audio controls>\n  <source src="音频链接" type="audio/mp3">\n</audio>', '', '')} title="插入音频" variant="ghost" />
+      <ToolbarButton icon="ri-video-line" onClick={() => insertText('<video controls>\n  <source src="视频链接" type="video/mp4">\n</video>', '', '')} title={t('toolbar.video.title')} variant="ghost" />
+      <ToolbarButton icon="ri-music-line" onClick={() => insertText('<audio controls>\n  <source src="音频链接" type="audio/mp3">\n</audio>', '', '')} title={t('toolbar.audio.title')} variant="ghost" />
 
       {/* 代码工具 - 支持多行处理 */}
       <ToolbarButton icon="ri-code-line" onClick={() => wrapEachLine('`', '`', t('toolbar.code.inline.defaultText'))} title={t('toolbar.code.inline.title')} variant="ghost" />
       <ToolbarButton icon="ri-code-s-slash-line" onClick={() => insertText('```\n', '\n```', t('toolbar.code.block.defaultText'))} title={t('toolbar.code.block.title')} variant="ghost" />
-      <ToolbarButton icon="ri-functions" onClick={() => insertText('$$\n', '\n$$', 'LaTeX公式')} title="数学公式" variant="ghost" />
+      <ToolbarButton icon="ri-functions" onClick={() => insertText('$$\n', '\n$$', 'LaTeX公式')} title={t('toolbar.math.title')} variant="ghost" />
 
       {/* 结构工具 */}
       <ToolbarButton
         icon="ri-table-line"
         onClick={() => insertText('| 表头1 | 表头2 | 表头3 |\n| --- | --- | --- |\n| 内容1 | 内容2 | 内容3 |\n')}
-        title="插入表格"
+        title={t('toolbar.table.title')}
         variant="ghost"
       />
-      <ToolbarButton icon="ri-separator" onClick={() => insertText('---\n')} title="分隔线" variant="ghost" />
-      <ToolbarButton icon="ri-layout-grid-line" onClick={() => insertText('<details>\n<summary>点击展开</summary>\n\n隐藏内容\n\n</details>', '', '')} title="折叠内容" variant="ghost" />
+      <ToolbarButton icon="ri-separator" onClick={() => insertText('---\n')} title={t('toolbar.separator.title')} variant="ghost" />
+      <ToolbarButton icon="ri-layout-grid-line" onClick={() => insertText('<details>\n<summary>点击展开</summary>\n\n隐藏内容\n\n</details>', '', '')} title={t('toolbar.details.title')} variant="ghost" />
 
       {/* 样式工具 - 支持多行处理 */}
       <ToolbarButton icon="ri-text-spacing" onClick={() => wrapEachLine('<center>', '</center>', t('toolbar.style.center.defaultText'))} title={t('toolbar.style.center.title')} variant="ghost" />
@@ -1265,21 +1267,21 @@ function MarkdownToolbar({
       <ToolbarButton icon="ri-bookmark-line" onClick={() => prefixEachLine('📌 ', t('toolbar.mark.bookmark.defaultText'))} title={t('toolbar.mark.bookmark.title')} variant="ghost" />
 
       {/* 提示工具 */}
-      <ToolbarButton icon="ri-information-line" onClick={() => insertText('> [!NOTE]\n> ', '', '注意事项')} title="提示框" variant="ghost" />
-      <ToolbarButton icon="ri-alert-line" onClick={() => insertText('> [!WARNING]\n> ', '', '警告信息')} title="警告框" variant="ghost" />
+      <ToolbarButton icon="ri-information-line" onClick={() => insertText('> [!NOTE]\n> ', '', '注意事项')} title={t('toolbar.note.title')} variant="ghost" />
+      <ToolbarButton icon="ri-alert-line" onClick={() => insertText('> [!WARNING]\n> ', '', '警告信息')} title={t('toolbar.warning.title')} variant="ghost" />
       <ToolbarButton icon="ri-file-text-line" onClick={() => wrapEachLine('<!-- ', ' -->', t('toolbar.comment.defaultText'))} title={t('toolbar.comment.title')} variant="ghost" />
 
       {/* 快速插入工具 */}
-      <ToolbarButton icon="ri-time-line" onClick={insertCurrentTime} title="插入当前时间" variant="ghost" />
-      <ToolbarButton icon="ri-calendar-2-line" onClick={() => insertText(new Date().toLocaleDateString('zh-CN'))} title="插入日期" variant="ghost" />
-      <ToolbarButton icon="ri-user-line" onClick={() => insertText('@', '', '用户名')} title="提及用户" variant="ghost" />
-      <ToolbarButton icon="ri-hashtag" onClick={() => insertText('#', '', '标签')} title="插入标签" variant="ghost" />
-      <ToolbarButton icon="ri-external-link-line" onClick={() => insertText('[外部链接](https://)', '', '')} title="外部链接" variant="ghost" />
-      <ToolbarButton icon="ri-download-line" onClick={() => insertText('[下载文件](文件链接)', '', '')} title="下载链接" variant="ghost" />
+      <ToolbarButton icon="ri-time-line" onClick={insertCurrentTime} title={t('toolbar.time.title')} variant="ghost" />
+      <ToolbarButton icon="ri-calendar-2-line" onClick={() => insertText(new Date().toLocaleDateString('zh-CN'))} title={t('toolbar.date.title')} variant="ghost" />
+      <ToolbarButton icon="ri-user-line" onClick={() => insertText('@', '', '用户名')} title={t('toolbar.mention.title')} variant="ghost" />
+      <ToolbarButton icon="ri-hashtag" onClick={() => insertText('#', '', '标签')} title={t('toolbar.hashtag.title')} variant="ghost" />
+      <ToolbarButton icon="ri-external-link-line" onClick={() => insertText('[外部链接](https://)', '', '')} title={t('toolbar.external_link.title')} variant="ghost" />
+      <ToolbarButton icon="ri-download-line" onClick={() => insertText('[下载文件](文件链接)', '', '')} title={t('toolbar.download.title')} variant="ghost" />
       <ToolbarButton icon="ri-keyboard-line" onClick={() => wrapEachLine('<kbd>', '</kbd>', t('toolbar.keyboard.defaultText'))} title={t('toolbar.keyboard.title')} variant="ghost" />
 
       {/* 新增常用工具 */}
-      <ToolbarButton icon="ri-text-wrap" onClick={() => insertText('<br>', '', '')} title="换行符" variant="ghost" />
+      <ToolbarButton icon="ri-text-wrap" onClick={() => insertText('<br>', '', '')} title={t('toolbar.linebreak.title')} variant="ghost" />
     </div>
   );
 }
@@ -2392,13 +2394,13 @@ export function WritingPage({ id }: { id?: number }) {
 
     const selection = editorRef.current.getSelection();
     if (!selection) {
-      showAlert('请先选择要保存为模板的文本');
+      showAlert(t('templates.select_text_first'));
       return;
     }
 
     const selectedText = editorRef.current.getModel()?.getValueInRange(selection) || '';
     if (!selectedText.trim()) {
-      showAlert('请先选择要保存为模板的文本');
+      showAlert(t('templates.select_text_first'));
       return;
     }
 
@@ -2547,10 +2549,10 @@ export function WritingPage({ id }: { id?: number }) {
                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                         onClick={() => setPreview('edit')}
-                        title="编辑模式"
+                        title={t('writing.preview_modes.edit.title')}
                       >
                         <i className="ri-edit-line text-sm"></i>
-                        <span className="ml-1 hidden sm:inline text-xs">编辑</span>
+                        <span className="ml-1 hidden sm:inline text-xs">{t('writing.preview_modes.edit.label')}</span>
                       </button>
                       <button
                         className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button min-h-[32px] touch-manipulation ${
@@ -2559,10 +2561,10 @@ export function WritingPage({ id }: { id?: number }) {
                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                         onClick={() => setPreview('preview')}
-                        title="预览模式"
+                        title={t('writing.preview_modes.preview.title')}
                       >
                         <i className="ri-eye-line text-sm"></i>
-                        <span className="ml-1 hidden sm:inline text-xs">预览</span>
+                        <span className="ml-1 hidden sm:inline text-xs">{t('writing.preview_modes.preview.label')}</span>
                       </button>
                       <button
                         className={`px-1.5 py-1 rounded-md text-xs font-medium transition-all duration-200 mobile-preview-button min-h-[32px] touch-manipulation ${
@@ -2571,10 +2573,10 @@ export function WritingPage({ id }: { id?: number }) {
                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                         onClick={() => setPreview('comparison')}
-                        title="对比模式"
+                        title={t('writing.preview_modes.comparison.title')}
                       >
                         <i className="ri-layout-column-line text-sm"></i>
-                        <span className="ml-1 hidden sm:inline text-xs">对比</span>
+                        <span className="ml-1 hidden sm:inline text-xs">{t('writing.preview_modes.comparison.label')}</span>
                       </button>
                     </div>
 
@@ -2637,7 +2639,7 @@ export function WritingPage({ id }: { id?: number }) {
                       <MarkdownToolbar editor={editorRef.current} />
                     ) : (
                       <div className="h-8 flex items-center justify-center text-gray-400 text-sm">
-                        编辑器加载中...
+                        {t('writing.editor_loading')}
                       </div>
                     )}
                   </div>
@@ -2838,7 +2840,7 @@ export function WritingPage({ id }: { id?: number }) {
                     <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-1.5 shadow-sm">
                       <i className="ri-tools-fill text-xs text-blue-600 dark:text-blue-400"></i>
                     </div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 text-xs sm:text-sm">高级工具</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 text-xs sm:text-sm">{t('writing.advanced_tools.title')}</h3>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-1.5 sm:gap-2 mobile-tool-grid">
                     <button
@@ -2846,7 +2848,7 @@ export function WritingPage({ id }: { id?: number }) {
                       className="flex flex-col items-center p-1.5 sm:p-2 bg-blue-50/80 dark:bg-blue-900/30 backdrop-blur-sm rounded-lg hover:bg-blue-100/80 dark:hover:bg-blue-900/40 transition-all duration-200 border border-blue-200/40 dark:border-blue-800/40 mobile-tool-button min-h-[44px] touch-manipulation"
                     >
                       <i className="ri-draft-fill text-sm sm:text-base text-blue-600 dark:text-blue-400 mb-0.5"></i>
-                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">草稿</span>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">{t('writing.advanced_tools.draft')}</span>
                     </button>
 
                     <button
@@ -2854,7 +2856,7 @@ export function WritingPage({ id }: { id?: number }) {
                       className="flex flex-col items-center p-1.5 sm:p-2 bg-green-50/80 dark:bg-green-900/30 backdrop-blur-sm rounded-lg hover:bg-green-100/80 dark:hover:bg-green-900/40 transition-all duration-200 border border-green-200/40 dark:border-green-800/40 mobile-tool-button min-h-[44px] touch-manipulation"
                     >
                       <i className="ri-history-fill text-sm sm:text-base text-green-600 dark:text-green-400 mb-0.5"></i>
-                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">历史</span>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">{t('writing.advanced_tools.history')}</span>
                     </button>
 
                     <button
@@ -2862,7 +2864,7 @@ export function WritingPage({ id }: { id?: number }) {
                       className="flex flex-col items-center p-1.5 sm:p-2 bg-purple-50/80 dark:bg-purple-900/30 backdrop-blur-sm rounded-lg hover:bg-purple-100/80 dark:hover:bg-purple-900/40 transition-all duration-200 border border-purple-200/40 dark:border-purple-800/40 mobile-tool-button min-h-[44px] touch-manipulation"
                     >
                       <i className="ri-save-fill text-sm sm:text-base text-purple-600 dark:text-purple-400 mb-0.5"></i>
-                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">快照</span>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">{t('writing.advanced_tools.snapshot')}</span>
                     </button>
 
                     <button
@@ -2870,7 +2872,7 @@ export function WritingPage({ id }: { id?: number }) {
                       className="flex flex-col items-center p-1.5 sm:p-2 bg-orange-50/80 dark:bg-orange-900/30 backdrop-blur-sm rounded-lg hover:bg-orange-100/80 dark:hover:bg-orange-900/40 transition-all duration-200 border border-orange-200/40 dark:border-orange-800/40 mobile-tool-button min-h-[44px] touch-manipulation"
                     >
                       <i className="ri-file-add-fill text-sm sm:text-base text-orange-600 dark:text-orange-400 mb-0.5"></i>
-                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">文件</span>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">{t('writing.advanced_tools.files')}</span>
                     </button>
 
                     <button
@@ -2878,7 +2880,7 @@ export function WritingPage({ id }: { id?: number }) {
                       className="flex flex-col items-center p-1.5 sm:p-2 bg-pink-50/80 dark:bg-pink-900/30 backdrop-blur-sm rounded-lg hover:bg-pink-100/80 dark:hover:bg-pink-900/40 transition-all duration-200 border border-pink-200/40 dark:border-pink-800/40 mobile-tool-button min-h-[44px] touch-manipulation"
                     >
                       <i className="ri-layout-fill text-sm sm:text-base text-pink-600 dark:text-pink-400 mb-0.5"></i>
-                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">模板</span>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">{t('writing.advanced_tools.templates')}</span>
                     </button>
 
                     <button
@@ -2889,7 +2891,7 @@ export function WritingPage({ id }: { id?: number }) {
                       className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50/80 dark:bg-gray-700/30 backdrop-blur-sm rounded-lg hover:bg-gray-100/80 dark:hover:bg-gray-700/40 transition-all duration-200 border border-gray-200/40 dark:border-gray-700/40 mobile-tool-button min-h-[44px] touch-manipulation"
                     >
                       <i className="ri-more-fill text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-0.5"></i>
-                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">更多</span>
+                      <span className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 font-medium">{t('writing.advanced_tools.more')}</span>
                     </button>
                   </div>
                 </div>
@@ -2900,7 +2902,7 @@ export function WritingPage({ id }: { id?: number }) {
                     <div className="w-5 h-5 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-1.5 shadow-sm">
                       <i className="ri-settings-3-fill text-xs text-green-600 dark:text-green-400"></i>
                     </div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 text-xs sm:text-sm">发布设置</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 text-xs sm:text-sm">{t('writing.publish_settings.title')}</h3>
                   </div>
 
                   {/* 均匀分布的设置区域 */}
@@ -2909,8 +2911,8 @@ export function WritingPage({ id }: { id?: number }) {
                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2.5 shadow-sm flex-1 min-h-0 flex flex-col justify-center">
                       <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center mb-1.5">
                         <i className="ri-link mr-1.5 text-blue-600 dark:text-blue-400"></i>
-                        <span className="hidden sm:inline">文章别名</span>
-                        <span className="sm:hidden">别名</span>
+                        <span className="hidden sm:inline">{t('writing.publish_settings.alias')}</span>
+                        <span className="sm:hidden">{t('writing.publish_settings.alias_short')}</span>
                       </label>
                       <input
                         type="text"
@@ -2927,8 +2929,8 @@ export function WritingPage({ id }: { id?: number }) {
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center">
                             <i className="ri-eye-close-line mr-1.5 text-purple-600 dark:text-purple-400 text-sm"></i>
-                            <span className="hidden sm:inline">仅自己可见</span>
-                            <span className="sm:hidden">私密</span>
+                            <span className="hidden sm:inline">{t('writing.publish_settings.private')}</span>
+                            <span className="sm:hidden">{t('writing.publish_settings.private_short')}</span>
                           </span>
                           <input
                             type="checkbox"
@@ -2941,8 +2943,8 @@ export function WritingPage({ id }: { id?: number }) {
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center">
                             <i className="ri-list-settings-line mr-1.5 text-purple-600 dark:text-purple-400 text-sm"></i>
-                            <span className="hidden sm:inline">显示在文章列表</span>
-                            <span className="sm:hidden">列表显示</span>
+                            <span className="hidden sm:inline">{t('writing.publish_settings.listed')}</span>
+                            <span className="sm:hidden">{t('writing.publish_settings.listed_short')}</span>
                           </span>
                           <input
                             type="checkbox"
@@ -2959,8 +2961,8 @@ export function WritingPage({ id }: { id?: number }) {
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center">
                           <i className="ri-calendar-fill mr-1.5 text-orange-600 dark:text-orange-400 text-sm"></i>
-                          <span className="hidden sm:inline">发布时间</span>
-                          <span className="sm:hidden">时间</span>
+                          <span className="hidden sm:inline">{t('publish_time')}</span>
+                          <span className="sm:hidden">{t('time')}</span>
                         </span>
                       </div>
                       <Calendar
@@ -2991,7 +2993,7 @@ export function WritingPage({ id }: { id?: number }) {
                           ) : (
                             <>
                               <i className="ri-send-plane-fill text-sm sm:text-base"></i>
-                              <span>发布文章</span>
+                              <span>{t('writing.publish_settings.publish_button')}</span>
                             </>
                           )}
                         </button>
@@ -3033,7 +3035,7 @@ export function WritingPage({ id }: { id?: number }) {
         onClose={() => setFileSelectorOpen(false)}
         onSelect={(files) => setSelectedFiles(files)}
         allowedTypes={undefined} // 后续可根据需要传递类型
-        title="选择要插入的文件"
+        title={t('files.select_title')}
       />
 
       {/* 模板对话框 - 重新设计 */}
@@ -3041,7 +3043,7 @@ export function WritingPage({ id }: { id?: number }) {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 max-w-5xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">选择模板</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('templates.select_title')}</h3>
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => setShowSaveTemplateForm(!showSaveTemplateForm)}
@@ -3062,13 +3064,13 @@ export function WritingPage({ id }: { id?: number }) {
             {/* 保存自定义模板表单 */}
             {showSaveTemplateForm && (
               <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">保存选中文本为模板</h4>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">{t('writing.save_template_title')}</h4>
                 <div className="flex items-center space-x-3">
                   <input
                     type="text"
                     value={newTemplateName}
                     onChange={(e) => setNewTemplateName(e.target.value)}
-                    placeholder="输入模板名称"
+                    placeholder={t('writing.template_name_placeholder')}
                     className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <button
@@ -3131,7 +3133,7 @@ export function WritingPage({ id }: { id?: number }) {
                             deleteCustomTemplate(index);
                           }}
                           className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-1 transition-opacity"
-                          title="删除模板"
+                          title={t('templates.delete_title')}
                         >
                           <i className="ri-delete-bin-line text-sm"></i>
                         </button>
@@ -3149,27 +3151,27 @@ export function WritingPage({ id }: { id?: number }) {
             <div>
               <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center">
                 <i className="ri-layout-grid-line mr-2 text-blue-500"></i>
-                预设模板
+                {t('templates.preset')}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* 文章模板 */}
               <div
                 onClick={() => {
-                  const template = `# 文章标题
+                  const template = `# ${t('templates.article.template_title')}
 
-## 简介
-在这里写文章的简介...
+## ${t('templates.article.introduction')}
+${t('templates.article.introduction_content')}
 
-## 主要内容
+## ${t('templates.article.main_content')}
 
-### 第一部分
-内容描述...
+### ${t('templates.article.first_part')}
+${t('templates.article.content_description')}
 
-### 第二部分
-内容描述...
+### ${t('templates.article.second_part')}
+${t('templates.article.content_description')}
 
-## 总结
-总结文章要点...
+## ${t('templates.article.summary')}
+${t('templates.article.summary_content')}
 `;
                   if (editorRef.current) {
                     const selection = editorRef.current.getSelection();
@@ -3187,44 +3189,41 @@ export function WritingPage({ id }: { id?: number }) {
               >
                 <div className="flex items-center mb-3">
                   <i className="ri-article-line text-2xl text-blue-600 dark:text-blue-400 mr-3"></i>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">文章模板</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">{t('templates.article.title')}</h4>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">标准文章结构，包含简介、主要内容和总结</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('templates.article.description')}</p>
               </div>
 
               {/* 技术文档模板 */}
               <div
                 onClick={() => {
-                  const template = `# 技术文档
+                  const template = `# ${t('templates.technical.template_title')}
 
-## 概述
-项目/技术概述...
+## ${t('templates.technical.overview')}
+${t('templates.technical.overview_content')}
 
-## 环境要求
-- Node.js >= 16
-- 其他依赖...
+## ${t('templates.technical.requirements')}
+${t('templates.technical.requirements_content')}
 
-## 安装步骤
+## ${t('templates.technical.installation')}
 \`\`\`bash
-npm install
+${t('templates.technical.installation_content')}
 \`\`\`
 
-## 使用方法
+## ${t('templates.technical.usage')}
 \`\`\`javascript
-// 代码示例
-function hello() {
-  console.log("Hello World!");
-}
+${t('templates.technical.usage_comment')}
+${t('templates.technical.usage_function')}
 \`\`\`
 
-## API 文档
-### 方法名
-- 参数：
-- 返回值：
+## ${t('templates.technical.api_docs')}
+### ${t('templates.technical.method_name')}
+- ${t('templates.technical.parameters')}
+- ${t('templates.technical.returns')}
 
-## 常见问题
-Q: 问题描述
-A: 解决方案
+## ${t('templates.technical.faq')}
+${t('templates.technical.question')}
+${t('templates.technical.answer')}
 `;
                   if (editorRef.current) {
                     const selection = editorRef.current.getSelection();
@@ -3242,35 +3241,31 @@ A: 解决方案
               >
                 <div className="flex items-center mb-3">
                   <i className="ri-code-line text-2xl text-green-600 dark:text-green-400 mr-3"></i>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">技术文档</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">{t('templates.technical.title')}</h4>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">API文档结构，包含安装、使用和常见问题</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('templates.technical.description')}</p>
               </div>
 
               {/* 日记模板 */}
               <div
                 onClick={() => {
                   const today = new Date().toLocaleDateString('zh-CN');
-                  const template = `# ${today} 日记
+                  const template = `# ${today} ${t('templates.diary.template_title')}
 
-## 今日天气
-☀️ 晴朗
+## ${t('templates.diary.weather')}
+${t('templates.diary.weather_content')}
 
-## 今日心情
-😊 愉快
+## ${t('templates.diary.mood')}
+${t('templates.diary.mood_content')}
 
-## 今日事件
-- 事件1
-- 事件2
-- 事件3
+## ${t('templates.diary.events')}
+${t('templates.diary.events_content')}
 
-## 今日感悟
-今天的感悟和思考...
+## ${t('templates.diary.thoughts')}
+${t('templates.diary.thoughts_content')}
 
-## 明日计划
-- [ ] 计划1
-- [ ] 计划2
-- [ ] 计划3
+## ${t('templates.diary.plans')}
+${t('templates.diary.plans_content')}
 `;
                   if (editorRef.current) {
                     const selection = editorRef.current.getSelection();
@@ -3288,42 +3283,42 @@ A: 解决方案
               >
                 <div className="flex items-center mb-3">
                   <i className="ri-calendar-line text-2xl text-purple-600 dark:text-purple-400 mr-3"></i>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">日记模板</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">{t('templates.diary.title')}</h4>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">日常记录格式，包含天气、心情和计划</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('templates.diary.description')}</p>
               </div>
 
               {/* 会议记录模板 */}
               <div
                 onClick={() => {
                   const today = new Date().toLocaleDateString('zh-CN');
-                  const template = `# 会议记录 - ${today}
+                  const template = `# ${t('templates.meeting.template_title')} - ${today}
 
-## 会议信息
-- **时间**：${today}
-- **地点**：
-- **主持人**：
-- **参会人员**：
+## ${t('templates.meeting.info')}
+- **${t('templates.meeting.time')}**：${today}
+- **${t('templates.meeting.location')}**：
+- **${t('templates.meeting.host')}**：
+- **${t('templates.meeting.attendees')}**：
 
-## 会议议程
-1. 议题一
-2. 议题二
-3. 议题三
+## ${t('templates.meeting.agenda')}
+1. ${t('templates.meeting.agenda_item1')}
+2. ${t('templates.meeting.agenda_item2')}
 
-## 讨论内容
-### 议题一
-讨论内容...
+## ${t('templates.meeting.discussion')}
+### ${t('templates.meeting.agenda_item1')}
+${t('templates.meeting.discussion_content')}
 
-### 议题二
-讨论内容...
+### ${t('templates.meeting.agenda_item2')}
+${t('templates.meeting.discussion_content')}
 
-## 决议事项
-- [ ] 行动项1 - 负责人：XXX - 截止时间：
-- [ ] 行动项2 - 负责人：XXX - 截止时间：
+## ${t('templates.meeting.decisions')}
+${t('templates.meeting.decisions_content')}
 
-## 下次会议
-- **时间**：
-- **议题**：
+## ${t('templates.meeting.action_items')}
+${t('templates.meeting.action_items_content')}
+
+## ${t('templates.meeting.next_meeting')}
+${t('templates.meeting.next_meeting_content')}
 `;
                   if (editorRef.current) {
                     const selection = editorRef.current.getSelection();
@@ -3341,9 +3336,9 @@ A: 解决方案
               >
                 <div className="flex items-center mb-3">
                   <i className="ri-team-line text-2xl text-orange-600 dark:text-orange-400 mr-3"></i>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">会议记录</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">{t('templates.meeting.title')}</h4>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">会议纪要格式，包含议程和决议事项</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('templates.meeting.description')}</p>
               </div>
 
               {/* 表格模板 */}
@@ -3370,7 +3365,7 @@ A: 解决方案
               >
                 <div className="flex items-center mb-3">
                   <i className="ri-table-line text-2xl text-indigo-600 dark:text-indigo-400 mr-3"></i>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">表格模板</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">{t('templates.table_template')}</h4>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">标准表格结构，3列示例</p>
               </div>
@@ -3404,7 +3399,7 @@ hello();
               >
                 <div className="flex items-center mb-3">
                   <i className="ri-code-s-slash-line text-2xl text-red-600 dark:text-red-400 mr-3"></i>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">代码块</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">{t('templates.code_template')}</h4>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">代码示例模板，支持语法高亮</p>
               </div>

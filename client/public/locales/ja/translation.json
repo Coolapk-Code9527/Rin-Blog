@@ -70,7 +70,12 @@
     },
     "invalid_email": "有効なメールアドレスを入力してください",
     "email_label": "メール (任意)",
-    "email_placeholder": "your@email.com (任意)"
+    "email_placeholder": "your@email.com (任意)",
+    "expand_replies": "{{count}}件の返信を展開",
+    "collapse_replies": "折りたたむ",
+    "view_remaining": "残り{{count}}件の返信を表示",
+    "reply_to": "{{name}}に返信",
+    "close_reply": "返信ボックスを閉じる"
   },
   "comparison": "対比",
   "confirm": "確認",
@@ -85,6 +90,9 @@
   },
   "create": {
     "success": "正常に作成されました",
+    "title": "作成"
+  },
+  "create_action": {
     "title": "作成"
   },
   "created_at": "公開日",
@@ -171,7 +179,18 @@
     "delete_failed_batch": "{{count}} 個の削除に失敗しました",
     "delete_none": "ファイルが削除されませんでした。古いデータまたはパス不正の可能性があります",
     "r2_usage": "R2使用済み：{{used}}",
-    "d1_usage": "D1使用済み：{{used}}"
+    "d1_usage": "D1使用済み：{{used}}",
+    "select_title": "挿入するファイルを選択",
+    "performance_tip": "ファイル管理のパフォーマンスが最適化されました。R2ストレージを同期するには同期ボタンをクリックしてください",
+    "got_it": "了解しました",
+    "upload_cancelled": "ユーザーがアップロードをキャンセルしました",
+    "batch_upload": "ファイルアップロード",
+    "view_details": "詳細を表示",
+    "files_count": "個のファイル",
+    "copy_original_link": "元のリンク",
+    "copy_link": "リンクをコピー",
+    "open_new_window": "新しいウィンドウで開く",
+    "partial_display": "...（一部のみ表示）"
   },
   "footer": {
     "rss": "RSS 購読リンク"
@@ -245,6 +264,10 @@
   "reload": "再試行",
   "save": "保存済み",
   "settings": {
+    "unauthorized": {
+      "title": "設定アクセス制限",
+      "description": "システム設定は管理者のみ利用可能です。管理者アカウントでログインしてから再試行してください。"
+    },
     "cache": {
       "clear": {
         "confirm": {
@@ -346,6 +369,49 @@
         "error": "保存に失敗しました。再試行してください"
       }
     },
+    "author": {
+      "name": {
+        "title": "ニックネーム",
+        "desc": "プロフィールカードに表示されるニックネームを設定"
+      },
+      "avatar": {
+        "title": "アバターURL",
+        "desc": "プロフィールカードのアバター画像URLを設定"
+      },
+      "social": {
+        "github": {
+          "title": "GitHub",
+          "desc": "GitHubユーザー名または完全なリンクを設定"
+        },
+        "email": {
+          "title": "メール",
+          "desc": "連絡先メールアドレスを設定"
+        }
+      }
+    },
+    "sidebar": {
+      "title": "サイドバー設定",
+      "enable": {
+        "title": "サイドバーを有効にする",
+        "desc": "記事リストページにサイドバーを表示し、プロフィール、タグクラウドなどのコンポーネントを含める"
+      },
+      "profile": {
+        "title": "プロフィールカード",
+        "desc": "アバター、ニックネーム、ソーシャルリンクを表示"
+      },
+      "tagCloud": {
+        "title": "タグクラウド",
+        "desc": "人気のタグを表示してユーザーがコンテンツを発見しやすくする"
+      },
+      "announcements": {
+        "title": "お知らせ",
+        "desc": "重要なお知らせと通知情報を表示"
+      },
+      "music": {
+        "title": "バックグラウンドミュージック自動再生",
+        "desc": "ページ読み込み時にバックグラウンドミュージックが自動的に再生されます"
+      }
+    },
     "update_failed$message": "更新に失敗しました: {{message}}",
     "wordpress": {
       "desc": "WordPressからエクスポートされたXMLファイルをアップロードする",
@@ -360,7 +426,6 @@
   "status": "ステータス",
   "summary": "概要",
   "tags": "タグ",
-  "timeline": "タイムライン",
   "title": "タイトル",
   "title_empty": "タイトルは空にできません",
   "top": {
@@ -390,7 +455,46 @@
   },
   "writing": {
     "title": "執筆",
-    "title_hint": "メインタイトルをここに入力してください。本文にレベル1見出し（# タイトル）を書く必要はありません。"
+    "title_hint": "メインタイトルをここに入力してください。本文にレベル1見出し（# タイトル）を書く必要はありません。",
+    "tag_name_placeholder": "タグ名",
+    "title_placeholder": "記事タイトルを入力...",
+    "add_tag": "タグを追加",
+    "editor_loading": "エディター読み込み中...",
+    "save_template_title": "選択したテキストをテンプレートとして保存",
+    "template_name_placeholder": "テンプレート名を入力",
+    "preview_modes": {
+      "edit": {
+        "title": "編集モード",
+        "label": "編集"
+      },
+      "preview": {
+        "title": "プレビューモード",
+        "label": "プレビュー"
+      },
+      "comparison": {
+        "title": "比較モード",
+        "label": "比較"
+      }
+    },
+    "advanced_tools": {
+      "title": "高度なツール",
+      "draft": "下書き",
+      "history": "履歴",
+      "snapshot": "スナップショット",
+      "files": "ファイル",
+      "templates": "テンプレート",
+      "more": "その他"
+    },
+    "publish_settings": {
+      "title": "公開設定",
+      "alias": "記事エイリアス",
+      "alias_short": "エイリアス",
+      "private": "自分のみ表示",
+      "private_short": "非公開",
+      "listed": "記事一覧に表示",
+      "listed_short": "一覧表示",
+      "publish_button": "記事を公開"
+    }
   },
   "year$year": "{{year}} 年",
   "editing": "編集中...",
@@ -398,6 +502,11 @@
   "published_at": "公開日時",
   "date_format": {
     "month_day": "MM月DD日"
+  },
+  "locale": "ja-JP",
+  "recent_posts": {
+    "title": "最近の投稿",
+    "empty": "最新の記事がありません"
   },
   "input_required": "すべてのフィールドが必須です",
   "input_too_long": "フィールドの長さが制限を超えています",
@@ -416,11 +525,38 @@
   "sort": {
     "latest": "最新",
     "popular": "人気",
-    "oldest": "古い順"
+    "oldest": "古い順",
+    "by_count": "記事数順",
+    "by_alpha": "アルファベット順",
+    "label": "並び替え"
   },
   "announcements": {
     "title": "お知らせ",
-    "viewMore": "もっと見る"
+    "viewMore": "もっと見る",
+    "saveFailed": "保存に失敗しました",
+    "saveSuccess": "保存に成功しました",
+    "deleteTitle": "お知らせを削除",
+    "deleteConfirm": "お知らせ「{{title}}」を削除してもよろしいですか？この操作は元に戻せません。",
+    "content": "内容",
+    "titlePlaceholder": "お知らせのタイトルを入力してください",
+    "contentPlaceholder": "お知らせの内容を入力してください",
+    "priority": "優先度",
+    "normal": "通常",
+    "important": "重要",
+    "expiresAt": "有効期限",
+    "expiresAtPlaceholder": "有効期限を選択（任意）",
+    "add": "お知らせを追加",
+    "update": "お知らせを更新",
+    "cancel": "キャンセル",
+    "edit": "編集",
+    "delete": "削除",
+    "empty": "お知らせがありません",
+    "expired": "期限切れ",
+    "createdAt": "作成日時",
+    "expires": "期限",
+    "manager": {
+      "title": "お知らせ管理"
+    }
   },
   "tagCloud": {
     "title": "人気タグ",
@@ -546,6 +682,10 @@
     "default": "デフォルトテンプレート",
     "custom": "カスタムテンプレート",
     "delete": "テンプレートを削除",
+    "delete_title": "テンプレートを削除",
+    "select_title": "テンプレートを選択",
+    "table_template": "表テンプレート",
+    "code_template": "コードブロック",
     "table": "テーブル",
     "header": "ヘッダー",
     "content": "コンテンツ",
@@ -555,8 +695,102 @@
     "image_gallery": "画像ギャラリー",
     "callout": "コールアウト",
     "mermaid": "Mermaid図表",
-    "save_success": "カスタムテンプレートが正常に保存されました！"
+    "save_success": "カスタムテンプレートが正常に保存されました！",
+    "preset": "プリセットテンプレート",
+    "article": {
+      "title": "記事テンプレート",
+      "description": "導入、本文、まとめを含む標準的な記事構造",
+      "template_title": "記事タイトル",
+      "introduction": "導入",
+      "introduction_content": "記事の導入をここに書いてください...",
+      "main_content": "本文",
+      "first_part": "第一部",
+      "second_part": "第二部",
+      "content_description": "内容の説明...",
+      "summary": "まとめ",
+      "summary_content": "記事の要点をまとめてください..."
+    },
+    "technical": {
+      "title": "技術文書",
+      "description": "インストール、使用方法、FAQを含むAPI文書構造",
+      "template_title": "技術文書",
+      "overview": "概要",
+      "overview_content": "プロジェクト/技術の概要...",
+      "requirements": "環境要件",
+      "requirements_content": "- Node.js >= 16\n- その他の依存関係...",
+      "installation": "インストール手順",
+      "installation_content": "npm install",
+      "usage": "使用方法",
+      "usage_comment": "// コード例",
+      "usage_function": "function hello() {\n  console.log(\"Hello World!\");\n}",
+      "api_docs": "API文書",
+      "method_name": "メソッド名",
+      "parameters": "パラメータ：",
+      "returns": "戻り値：",
+      "faq": "よくある質問",
+      "question": "Q: 質問の説明",
+      "answer": "A: 解決策"
+    },
+    "diary": {
+      "title": "日記テンプレート",
+      "description": "天気、気分、計画を含む日常記録フォーマット",
+      "template_title": "日記",
+      "weather": "今日の天気",
+      "weather_content": "☀️ 晴れ",
+      "mood": "今日の気分",
+      "mood_content": "😊 楽しい",
+      "events": "今日の出来事",
+      "events_content": "- 出来事1\n- 出来事2\n- 出来事3",
+      "thoughts": "今日の感想",
+      "thoughts_content": "今日の気づきと考察...",
+      "plans": "明日の予定",
+      "plans_content": "- [ ] 予定1\n- [ ] 予定2\n- [ ] 予定3"
+    },
+    "meeting": {
+      "title": "会議記録",
+      "description": "議題、討論、アクション項目を含む会議記録フォーマット",
+      "template_title": "会議記録",
+      "info": "会議情報",
+      "time": "時間",
+      "location": "場所",
+      "host": "司会者",
+      "attendees": "参加者",
+      "agenda": "議題",
+      "agenda_item1": "議題1",
+      "agenda_item2": "議題2",
+      "discussion": "討論内容",
+      "discussion_content": "詳細な討論記録...",
+      "decisions": "決定事項",
+      "decisions_content": "1. 決定1\n2. 決定2",
+      "action_items": "アクション項目",
+      "action_items_content": "- [ ] アクション項目1 - 担当者：XXX - 期限：\n- [ ] アクション項目2 - 担当者：XXX - 期限：",
+      "next_meeting": "次回会議",
+      "next_meeting_content": "時間：\n場所：\n議題："
+    },
+    "select_text_first": "テンプレートとして保存するテキストを先に選択してください"
   },
+  "languageNames": {
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "ja": "日本語"
+  },
+  "theme": {
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム",
+    "light_mode": "ライトモード",
+    "dark_mode": "ダークモード",
+    "system_mode": "システムに従う"
+  },
+  "timeline": {
+    "title": "タイムライン",
+    "year_suffix": "年",
+    "article_count": "記事",
+    "no_articles": "記事がありません"
+  },
+  "publish_time": "公開時間",
+  "time": "時間",
   "view": {
     "grid": "グリッド",
     "list": "リスト",
@@ -580,5 +814,57 @@
     "loading": "読み込み中...",
     "processing": "処理中...",
     "uploading": "{{filename}}をアップロード中"
+  },
+  "new_article": "新しい記事",
+  "all_articles": "すべての記事",
+  "all": "すべて",
+  "unlisted_short": "非表示",
+  "new": "新規",
+  "toolbar": {
+    "table": {
+      "title": "表を挿入"
+    },
+    "separator": {
+      "title": "区切り線"
+    },
+    "details": {
+      "title": "折りたたみコンテンツ"
+    },
+    "linebreak": {
+      "title": "改行"
+    },
+    "video": {
+      "title": "動画を挿入"
+    },
+    "audio": {
+      "title": "音声を挿入"
+    },
+    "math": {
+      "title": "数式"
+    },
+    "note": {
+      "title": "ノートボックス"
+    },
+    "warning": {
+      "title": "警告ボックス"
+    },
+    "time": {
+      "title": "現在時刻を挿入"
+    },
+    "date": {
+      "title": "日付を挿入"
+    },
+    "mention": {
+      "title": "ユーザーをメンション"
+    },
+    "hashtag": {
+      "title": "タグを挿入"
+    },
+    "external_link": {
+      "title": "外部リンク"
+    },
+    "download": {
+      "title": "ダウンロードリンク"
+    }
   }
 }

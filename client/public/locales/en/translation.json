@@ -71,7 +71,12 @@
     },
     "invalid_email": "Please enter a valid email address",
     "email_label": "Email (optional)",
-    "email_placeholder": "your@email.com (optional)"
+    "email_placeholder": "your@email.com (optional)",
+    "expand_replies": "Expand {{count}} replies",
+    "collapse_replies": "Collapse",
+    "view_remaining": "View remaining {{count}} replies",
+    "reply_to": "Reply to {{name}}",
+    "close_reply": "Close reply box"
   },
   "comparison": "Comparison",
   "confirm": "Confirm",
@@ -86,6 +91,9 @@
   },
   "create": {
     "success": "Create Successfully",
+    "title": "Create"
+  },
+  "create_action": {
     "title": "Create"
   },
   "created_at": "Published at",
@@ -184,7 +192,18 @@
     "next": "Next",
     "thumbnail": "Thumbnail",
     "loading_original": "Loading original...",
-    "load_failed": "Load failed"
+    "load_failed": "Load failed",
+    "select_title": "Select files to insert",
+    "performance_tip": "File manager optimized for performance, click sync button to sync R2 storage",
+    "got_it": "Got it",
+    "upload_cancelled": "User cancelled upload",
+    "batch_upload": "File Upload",
+    "view_details": "View Details",
+    "files_count": "files",
+    "copy_original_link": "Original Link",
+    "copy_link": "Copy Link",
+    "open_new_window": "Open in New Window",
+    "partial_display": "... (partial display)"
   },
   "footer": {
     "rss": "RSS Subscription Link"
@@ -231,6 +250,22 @@
     "zh-TW": "繁體中文",
     "ja": "日本語"
   },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "light_mode": "Light Mode",
+    "dark_mode": "Dark Mode",
+    "system_mode": "Follow System"
+  },
+  "timeline": {
+    "title": "Timeline",
+    "year_suffix": "",
+    "article_count": " articles",
+    "no_articles": "No articles yet"
+  },
+  "publish_time": "Publish Time",
+  "time": "Time",
   "listed": "Listed in articles",
   "load_failed": "Failed to load, please try again later",
   "login": {
@@ -258,6 +293,10 @@
   "reload": "Retry",
   "save": "Save",
   "settings": {
+    "unauthorized": {
+      "title": "Settings Access Restricted",
+      "description": "System settings are only available to administrators. Please log in with an administrator account and try again."
+    },
     "cache": {
       "clear": {
         "confirm": {
@@ -359,6 +398,49 @@
         "error": "Save failed, please try again"
       }
     },
+    "author": {
+      "name": {
+        "title": "Nickname",
+        "desc": "Set the nickname displayed in the profile card"
+      },
+      "avatar": {
+        "title": "Avatar URL",
+        "desc": "Set the avatar image URL for the profile card"
+      },
+      "social": {
+        "github": {
+          "title": "GitHub",
+          "desc": "Set GitHub username or full link"
+        },
+        "email": {
+          "title": "Email",
+          "desc": "Set contact email address"
+        }
+      }
+    },
+    "sidebar": {
+      "title": "Sidebar Settings",
+      "enable": {
+        "title": "Enable Sidebar",
+        "desc": "Display sidebar on article list pages, including profile, tag cloud and other components"
+      },
+      "profile": {
+        "title": "Profile Card",
+        "desc": "Display avatar, nickname and social links"
+      },
+      "tagCloud": {
+        "title": "Tag Cloud",
+        "desc": "Display popular tags to help users discover content"
+      },
+      "announcements": {
+        "title": "Announcements",
+        "desc": "Display important announcements and notifications"
+      },
+      "music": {
+        "title": "Background Music Autoplay",
+        "desc": "Background music will automatically play when the page loads"
+      }
+    },
     "update_failed$message": "Update failed: {{message}}",
     "wordpress": {
       "desc": "Upload the XML file exported from WordPress",
@@ -373,7 +455,6 @@
   "status": "Status",
   "summary": "Summary",
   "tags": "Tags",
-  "timeline": "Timeline",
   "title": "Title",
   "title_empty": "Title cannot be empty",
   "top": {
@@ -417,7 +498,46 @@
     "statistics": "Statistics",
     "characters": "Characters",
     "words": "Words",
-    "lines": "Lines"
+    "lines": "Lines",
+    "tag_name_placeholder": "Tag name",
+    "title_placeholder": "Enter article title...",
+    "add_tag": "Add Tag",
+    "editor_loading": "Editor loading...",
+    "save_template_title": "Save selected text as template",
+    "template_name_placeholder": "Enter template name",
+    "preview_modes": {
+      "edit": {
+        "title": "Edit Mode",
+        "label": "Edit"
+      },
+      "preview": {
+        "title": "Preview Mode",
+        "label": "Preview"
+      },
+      "comparison": {
+        "title": "Comparison Mode",
+        "label": "Compare"
+      }
+    },
+    "advanced_tools": {
+      "title": "Advanced Tools",
+      "draft": "Draft",
+      "history": "History",
+      "snapshot": "Snapshot",
+      "files": "Files",
+      "templates": "Templates",
+      "more": "More"
+    },
+    "publish_settings": {
+      "title": "Publish Settings",
+      "alias": "Article Alias",
+      "alias_short": "Alias",
+      "private": "Private Only",
+      "private_short": "Private",
+      "listed": "Show in Article List",
+      "listed_short": "Listed",
+      "publish_button": "Publish Article"
+    }
   },
   "year$year": "{{year}}",
   "templates": {
@@ -430,6 +550,10 @@
     "default": "Default templates",
     "custom": "Custom templates",
     "delete": "Delete template",
+    "delete_title": "Delete Template",
+    "select_title": "Select Template",
+    "table_template": "Table Template",
+    "code_template": "Code Block",
     "table": "Table",
     "header": "Header",
     "content": "Content",
@@ -439,12 +563,89 @@
     "image_gallery": "Image Gallery",
     "callout": "Callout",
     "mermaid": "Mermaid Diagram",
-    "save_success": "Custom template saved successfully!"
+    "save_success": "Custom template saved successfully!",
+    "preset": "Preset Templates",
+    "article": {
+      "title": "Article Template",
+      "description": "Standard article structure with introduction, main content, and summary",
+      "template_title": "Article Title",
+      "introduction": "Introduction",
+      "introduction_content": "Write your article introduction here...",
+      "main_content": "Main Content",
+      "first_part": "First Part",
+      "second_part": "Second Part",
+      "content_description": "Content description...",
+      "summary": "Summary",
+      "summary_content": "Summarize the key points of the article..."
+    },
+    "technical": {
+      "title": "Technical Documentation",
+      "description": "API documentation structure with installation, usage, and FAQ",
+      "template_title": "Technical Documentation",
+      "overview": "Overview",
+      "overview_content": "Project/technology overview...",
+      "requirements": "Requirements",
+      "requirements_content": "- Node.js >= 16\n- Other dependencies...",
+      "installation": "Installation",
+      "installation_content": "npm install",
+      "usage": "Usage",
+      "usage_comment": "// Code example",
+      "usage_function": "function hello() {\n  console.log(\"Hello World!\");\n}",
+      "api_docs": "API Documentation",
+      "method_name": "Method Name",
+      "parameters": "Parameters:",
+      "returns": "Returns:",
+      "faq": "FAQ",
+      "question": "Q: Question description",
+      "answer": "A: Solution"
+    },
+    "diary": {
+      "title": "Diary Template",
+      "description": "Daily record format with weather, mood, and plans",
+      "template_title": "Diary",
+      "weather": "Today's Weather",
+      "weather_content": "☀️ Sunny",
+      "mood": "Today's Mood",
+      "mood_content": "😊 Happy",
+      "events": "Today's Events",
+      "events_content": "- Event 1\n- Event 2\n- Event 3",
+      "thoughts": "Today's Thoughts",
+      "thoughts_content": "Today's insights and reflections...",
+      "plans": "Tomorrow's Plans",
+      "plans_content": "- [ ] Plan 1\n- [ ] Plan 2\n- [ ] Plan 3"
+    },
+    "meeting": {
+      "title": "Meeting Notes",
+      "description": "Meeting record format with agenda, discussion, and action items",
+      "template_title": "Meeting Notes",
+      "info": "Meeting Information",
+      "time": "Time",
+      "location": "Location",
+      "host": "Host",
+      "attendees": "Attendees",
+      "agenda": "Agenda",
+      "agenda_item1": "Topic 1",
+      "agenda_item2": "Topic 2",
+      "discussion": "Discussion",
+      "discussion_content": "Detailed discussion records...",
+      "decisions": "Decisions",
+      "decisions_content": "1. Decision 1\n2. Decision 2",
+      "action_items": "Action Items",
+      "action_items_content": "- [ ] Action Item 1 - Assignee: XXX - Due Date:\n- [ ] Action Item 2 - Assignee: XXX - Due Date:",
+      "next_meeting": "Next Meeting",
+      "next_meeting_content": "Time:\nLocation:\nTopics:"
+    },
+    "select_text_first": "Please select text to save as template first"
   },
   "drop_or_click_to_upload": "Drop image here or click to upload",
   "published_at": "Published at",
   "date_format": {
     "month_day": "MM/DD"
+  },
+  "locale": "en-US",
+  "recent_posts": {
+    "title": "Recent Posts",
+    "empty": "No recent articles"
   },
   "history": {
     "title": "Edit History",
@@ -524,7 +725,10 @@
   "sort": {
     "latest": "Latest",
     "popular": "Popular",
-    "oldest": "Oldest"
+    "oldest": "Oldest",
+    "by_count": "By Article Count",
+    "by_alpha": "Alphabetically",
+    "label": "Sort"
   },
   "empty_list": "No content available",
   "empty_draft_description": "Your draft box is empty. Create your first draft now!",
@@ -634,6 +838,51 @@
       "title": "Keyboard Key - Multi-line Support",
       "defaultText": "Key"
     },
+    "table": {
+      "title": "Insert Table"
+    },
+    "separator": {
+      "title": "Separator"
+    },
+    "details": {
+      "title": "Collapsible Content"
+    },
+    "linebreak": {
+      "title": "Line Break"
+    },
+    "video": {
+      "title": "Insert Video"
+    },
+    "audio": {
+      "title": "Insert Audio"
+    },
+    "math": {
+      "title": "Math Formula"
+    },
+    "note": {
+      "title": "Note Box"
+    },
+    "warning": {
+      "title": "Warning Box"
+    },
+    "time": {
+      "title": "Insert Current Time"
+    },
+    "date": {
+      "title": "Insert Date"
+    },
+    "mention": {
+      "title": "Mention User"
+    },
+    "hashtag": {
+      "title": "Insert Tag"
+    },
+    "external_link": {
+      "title": "External Link"
+    },
+    "download": {
+      "title": "Download Link"
+    },
     "multiline": {
       "warning": "Too many lines selected ({{count}} lines), processing first {{limit}} lines only",
       "processing": "Processing multi-line formatting..."
@@ -641,7 +890,31 @@
   },
   "announcements": {
     "title": "Announcements",
-    "viewMore": "View More Announcements"
+    "viewMore": "View More Announcements",
+    "saveFailed": "Save failed",
+    "saveSuccess": "Save successful",
+    "deleteTitle": "Delete Announcement",
+    "deleteConfirm": "Are you sure you want to delete announcement \"{{title}}\"? This action cannot be undone.",
+    "content": "Content",
+    "titlePlaceholder": "Please enter announcement title",
+    "contentPlaceholder": "Please enter announcement content",
+    "priority": "Priority",
+    "normal": "Normal",
+    "important": "Important",
+    "expiresAt": "Expires At",
+    "expiresAtPlaceholder": "Select expiration time (optional)",
+    "add": "Add Announcement",
+    "update": "Update Announcement",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "empty": "No announcements",
+    "expired": "Expired",
+    "createdAt": "Created At",
+    "expires": "Expires",
+    "manager": {
+      "title": "Announcement Manager"
+    }
   },
   "tagCloud": {
     "title": "Popular Tags",
@@ -780,5 +1053,10 @@
     "loading": "Loading...",
     "processing": "Processing...",
     "uploading": "Uploading {{filename}}"
-  }
+  },
+  "new_article": "New Article",
+  "all_articles": "All Articles",
+  "all": "All",
+  "unlisted_short": "Unlisted",
+  "new": "New"
 }

@@ -74,9 +74,9 @@ export function TimelinePage() {
     return (
         <>
             <Helmet>
-                <title>{`${t('timeline')} - ${process.env.NAME}`}</title>
+                <title>{`${t('timeline.title')} - ${process.env.NAME}`}</title>
                 <meta property="og:site_name" content={siteName} />
-                <meta property="og:title" content={t('timeline')} />
+                <meta property="og:title" content={t('timeline.title')} />
                 <meta property="og:image" content={process.env.AVATAR} />
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
@@ -90,7 +90,7 @@ export function TimelinePage() {
                                 {/* 左侧：标题和文章数量 - 优化移动端布局 */}
                                 <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
                                     <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
-                                        {t('timeline')}
+                                        {t('timeline.title')}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                                     </h1>
                                     <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>

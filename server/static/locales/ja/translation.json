@@ -33,7 +33,8 @@
       "confirm": "この記事のトップを解除してもよろしいですか？",
       "success": "トップ解除に成功しました",
       "title": "トップ解除"
-    }
+    },
+    "navigation": "関連記事"
   },
   "avatar": {
     "url": "アバターURL"
@@ -55,7 +56,16 @@
       "next": "次のページ",
       "page": "{{page}}ページ目",
       "title": "コメントページネーション"
-    }
+    },
+    "empty_content": "コメント内容を入力してください",
+    "invalid_email": "有効なメールアドレスを入力してください",
+    "email_label": "メール (任意)",
+    "email_placeholder": "your@email.com (任意)",
+    "expand_replies": "{{count}}件の返信を展開",
+    "collapse_replies": "折りたたむ",
+    "view_remaining": "残り{{count}}件の返信を表示",
+    "reply_to": "{{name}}に返信",
+    "close_reply": "返信ボックスを閉じる"
   },
   "comparison": "対比",
   "confirm": "確認",
@@ -69,6 +79,9 @@
   },
   "create": {
     "success": "正常に作成されました",
+    "title": "作成"
+  },
+  "create_action": {
     "title": "作成"
   },
   "created_at": "公開日",
@@ -231,7 +244,6 @@
   "status": "ステータス",
   "summary": "概要",
   "tags": "タグ",
-  "timeline": "タイムライン",
   "title": "タイトル",
   "title_empty": "タイトルは空にできません",
   "top": {
@@ -264,5 +276,149 @@
   "date_format": {
     "month_day": "MM月DD日"
   },
-  "recommended_posts": "おすすめ記事"
+  "recommended_posts": "おすすめ記事",
+  "view": {
+    "grid": "グリッド",
+    "list": "リスト",
+    "grid_tooltip": "グリッドビュー：記事をカード形式で表示",
+    "list_tooltip": "リストビュー：記事をリスト形式で表示"
+  },
+  "main_navigation": "メインナビゲーション",
+  "navigation_menu": "ナビゲーションメニュー",
+  "notification": {
+    "upload_success": "ファイルのアップロードが成功しました",
+    "upload_failed": "ファイルのアップロードに失敗しました",
+    "delete_success": "削除が成功しました",
+    "delete_failed": "削除に失敗しました",
+    "save_success": "保存が成功しました",
+    "save_failed": "保存に失敗しました",
+    "copy_success": "コピーが成功しました",
+    "copy_failed": "コピーに失敗しました"
+  },
+  "templates": {
+    "templates": "テンプレート",
+    "insert": "テンプレートを挿入",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "save_selection": "選択内容を保存",
+    "template_name": "テンプレート名",
+    "default": "デフォルトテンプレート",
+    "custom": "カスタムテンプレート",
+    "delete": "テンプレートを削除",
+    "table": "テーブル",
+    "header": "ヘッダー",
+    "content": "コンテンツ",
+    "code_block": "コードブロック",
+    "quote": "引用",
+    "todo_list": "TODOリスト",
+    "image_gallery": "画像ギャラリー",
+    "callout": "コールアウト",
+    "mermaid": "Mermaid図表",
+    "save_success": "カスタムテンプレートが正常に保存されました！",
+    "preset": "プリセットテンプレート",
+    "article": {
+      "title": "記事テンプレート",
+      "description": "導入、本文、まとめを含む標準的な記事構造",
+      "template_title": "記事タイトル",
+      "introduction": "導入",
+      "introduction_content": "記事の導入をここに書いてください...",
+      "main_content": "本文",
+      "first_part": "第一部",
+      "second_part": "第二部",
+      "content_description": "内容の説明...",
+      "summary": "まとめ",
+      "summary_content": "記事の要点をまとめてください..."
+    },
+    "technical": {
+      "title": "技術文書",
+      "description": "インストール、使用方法、FAQを含むAPI文書構造",
+      "template_title": "技術文書",
+      "overview": "概要",
+      "overview_content": "プロジェクト/技術の概要...",
+      "requirements": "環境要件",
+      "requirements_content": "- Node.js >= 16\n- その他の依存関係...",
+      "installation": "インストール手順",
+      "installation_content": "npm install",
+      "usage": "使用方法",
+      "usage_comment": "// コード例",
+      "usage_function": "function hello() {\n  console.log(\"Hello World!\");\n}",
+      "api_docs": "API文書",
+      "method_name": "メソッド名",
+      "parameters": "パラメータ：",
+      "returns": "戻り値：",
+      "faq": "よくある質問",
+      "question": "Q: 質問の説明",
+      "answer": "A: 解決策"
+    },
+    "diary": {
+      "title": "日記テンプレート",
+      "description": "天気、気分、計画を含む日常記録フォーマット",
+      "template_title": "日記",
+      "weather": "今日の天気",
+      "weather_content": "☀️ 晴れ",
+      "mood": "今日の気分",
+      "mood_content": "😊 楽しい",
+      "events": "今日の出来事",
+      "events_content": "- 出来事1\n- 出来事2\n- 出来事3",
+      "thoughts": "今日の感想",
+      "thoughts_content": "今日の気づきと考察...",
+      "plans": "明日の予定",
+      "plans_content": "- [ ] 予定1\n- [ ] 予定2\n- [ ] 予定3"
+    },
+    "meeting": {
+      "title": "会議記録",
+      "description": "議題、討論、アクション項目を含む会議記録フォーマット",
+      "template_title": "会議記録",
+      "info": "会議情報",
+      "time": "時間",
+      "location": "場所",
+      "host": "司会者",
+      "attendees": "参加者",
+      "agenda": "議題",
+      "agenda_item1": "議題1",
+      "agenda_item2": "議題2",
+      "discussion": "討論内容",
+      "discussion_content": "詳細な討論記録...",
+      "decisions": "決定事項",
+      "decisions_content": "1. 決定1\n2. 決定2",
+      "action_items": "アクション項目",
+      "action_items_content": "- [ ] アクション項目1 - 担当者：XXX - 期限：\n- [ ] アクション項目2 - 担当者：XXX - 期限：",
+      "next_meeting": "次回会議",
+      "next_meeting_content": "時間：\n場所：\n議題："
+    },
+    "select_text_first": "テンプレートとして保存するテキストを先に選択してください"
+  },
+  "languageNames": {
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "ja": "日本語"
+  },
+  "new_article": "新しい記事",
+  "all_articles": "すべての記事",
+  "all": "すべて",
+  "unlisted_short": "非表示",
+  "new": "新規",
+  "theme": {
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム",
+    "light_mode": "ライトモード",
+    "dark_mode": "ダークモード",
+    "system_mode": "システムに従う"
+  },
+  "timeline": {
+    "title": "タイムライン",
+    "year_suffix": "年",
+    "article_count": "記事",
+    "no_articles": "記事がありません"
+  },
+  "sort": {
+    "latest": "最新",
+    "popular": "人気",
+    "oldest": "古い順",
+    "by_count": "記事数順",
+    "by_alpha": "アルファベット順",
+    "label": "並び替え"
+  }
 }

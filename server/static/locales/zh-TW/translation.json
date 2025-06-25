@@ -33,7 +33,8 @@
       "confirm": "確定取消置頂這篇文章嗎？",
       "success": "取消置頂成功",
       "title": "取消置頂"
-    }
+    },
+    "navigation": "相關文章"
   },
   "avatar": {
     "url": "頭像 URL"
@@ -66,7 +67,16 @@
       "next": "下一頁",
       "page": "第 {{page}} 頁",
       "title": "留言分頁"
-    }
+    },
+    "empty_content": "評論內容不能為空",
+    "invalid_email": "請輸入有效的電子郵件地址",
+    "email_label": "電子郵件 (選填)",
+    "email_placeholder": "your@email.com (選填)",
+    "expand_replies": "展開 {{count}} 條",
+    "collapse_replies": "收起",
+    "view_remaining": "查看剩餘 {{count}} 條回覆",
+    "reply_to": "回覆 {{name}}",
+    "close_reply": "關閉回覆框"
   },
   "comparison": "比較",
   "confirm": "確認",
@@ -81,6 +91,9 @@
   },
   "create": {
     "success": "創建成功",
+    "title": "創建"
+  },
+  "create_action": {
     "title": "創建"
   },
   "created_at": "發布時間",
@@ -245,7 +258,6 @@
   "status": "狀態",
   "summary": "簡介",
   "tags": "標籤",
-  "timeline": "時間軸",
   "title": "標題",
   "title_empty": "標題不能為空",
   "top": {
@@ -295,5 +307,149 @@
     "error": "錯誤",
     "info": "資訊",
     "important": "重要"
+  },
+  "view": {
+    "grid": "網格",
+    "list": "列表",
+    "grid_tooltip": "網格視圖：以卡片形式展示文章",
+    "list_tooltip": "列表視圖：以列表形式展示文章"
+  },
+  "main_navigation": "主導航",
+  "navigation_menu": "導航選單",
+  "notification": {
+    "upload_success": "檔案上傳成功",
+    "upload_failed": "檔案上傳失敗",
+    "delete_success": "刪除成功",
+    "delete_failed": "刪除失敗",
+    "save_success": "保存成功",
+    "save_failed": "保存失敗",
+    "copy_success": "複製成功",
+    "copy_failed": "複製失敗"
+  },
+  "templates": {
+    "templates": "模板",
+    "insert": "插入模板",
+    "save": "保存",
+    "cancel": "取消",
+    "save_selection": "保存所選內容",
+    "template_name": "模板名稱",
+    "default": "預設模板",
+    "custom": "自訂模板",
+    "delete": "刪除模板",
+    "table": "表格",
+    "header": "表頭",
+    "content": "內容",
+    "code_block": "程式碼區塊",
+    "quote": "引用",
+    "todo_list": "待辦清單",
+    "image_gallery": "圖片庫",
+    "callout": "提示框",
+    "mermaid": "Mermaid 圖表",
+    "save_success": "自訂模板保存成功！",
+    "preset": "預設模板",
+    "article": {
+      "title": "文章模板",
+      "description": "標準文章結構，包含簡介、主要內容和總結",
+      "template_title": "文章標題",
+      "introduction": "簡介",
+      "introduction_content": "在這裡寫文章的簡介...",
+      "main_content": "主要內容",
+      "first_part": "第一部分",
+      "second_part": "第二部分",
+      "content_description": "內容描述...",
+      "summary": "總結",
+      "summary_content": "總結文章要點..."
+    },
+    "technical": {
+      "title": "技術文件",
+      "description": "API文件結構，包含安裝、使用和常見問題",
+      "template_title": "技術文件",
+      "overview": "概述",
+      "overview_content": "專案/技術概述...",
+      "requirements": "環境要求",
+      "requirements_content": "- Node.js >= 16\n- 其他依賴...",
+      "installation": "安裝步驟",
+      "installation_content": "npm install",
+      "usage": "使用方法",
+      "usage_comment": "// 程式碼範例",
+      "usage_function": "function hello() {\n  console.log(\"Hello World!\");\n}",
+      "api_docs": "API 文件",
+      "method_name": "方法名",
+      "parameters": "參數：",
+      "returns": "回傳值：",
+      "faq": "常見問題",
+      "question": "Q: 問題描述",
+      "answer": "A: 解決方案"
+    },
+    "diary": {
+      "title": "日記模板",
+      "description": "日常記錄格式，包含天氣、心情和計劃",
+      "template_title": "日記",
+      "weather": "今日天氣",
+      "weather_content": "☀️ 晴朗",
+      "mood": "今日心情",
+      "mood_content": "😊 愉快",
+      "events": "今日事件",
+      "events_content": "- 事件1\n- 事件2\n- 事件3",
+      "thoughts": "今日感悟",
+      "thoughts_content": "今天的感悟和思考...",
+      "plans": "明日計劃",
+      "plans_content": "- [ ] 計劃1\n- [ ] 計劃2\n- [ ] 計劃3"
+    },
+    "meeting": {
+      "title": "會議記錄",
+      "description": "會議記錄格式，包含議程、討論和行動項",
+      "template_title": "會議記錄",
+      "info": "會議資訊",
+      "time": "時間",
+      "location": "地點",
+      "host": "主持人",
+      "attendees": "參會人員",
+      "agenda": "會議議程",
+      "agenda_item1": "議題一",
+      "agenda_item2": "議題二",
+      "discussion": "討論內容",
+      "discussion_content": "詳細記錄討論過程...",
+      "decisions": "決議事項",
+      "decisions_content": "1. 決議一\n2. 決議二",
+      "action_items": "行動項",
+      "action_items_content": "- [ ] 行動項1 - 負責人：XXX - 截止時間：\n- [ ] 行動項2 - 負責人：XXX - 截止時間：",
+      "next_meeting": "下次會議",
+      "next_meeting_content": "時間：\n地點：\n議題："
+    },
+    "select_text_first": "請先選擇要保存為模板的文字"
+  },
+  "languageNames": {
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "ja": "日本語"
+  },
+  "new_article": "新建文章",
+  "all_articles": "全部文章",
+  "all": "全部",
+  "unlisted_short": "未列出",
+  "new": "新建",
+  "theme": {
+    "light": "淺色",
+    "dark": "深色",
+    "system": "系統",
+    "light_mode": "淺色模式",
+    "dark_mode": "深色模式",
+    "system_mode": "跟隨系統"
+  },
+  "timeline": {
+    "title": "時間軸",
+    "year_suffix": "年",
+    "article_count": "篇",
+    "no_articles": "暫無文章"
+  },
+  "sort": {
+    "latest": "最新",
+    "popular": "熱度",
+    "oldest": "倒序",
+    "by_count": "按文章數",
+    "by_alpha": "按字母",
+    "label": "排序"
   }
 }

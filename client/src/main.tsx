@@ -50,9 +50,14 @@ const i18n = i18next;
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    fallbackLng: ['zh-CN', 'en'], // 优先使用zh-CN
+    fallbackLng: 'zh-CN', // 修复：使用单一fallback语言，避免循环依赖
     supportedLngs: ['en', 'zh-CN', 'zh-TW', 'ja'],
-    load: 'currentOnly', // 避免自动降级到zh
+    load: 'languageOnly', // 修复：改为languageOnly，确保正确加载
+    detection: {
+      // 禁用自动检测，完全依赖手动切换
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
+    },
     backend: {
       loadPath: '/locales/{{lng}}/translation.json',
     },
@@ -60,8 +65,7 @@ const i18n = i18next;
       escapeValue: false,
     },
     react: {
-      // 移除 useSuspense: false，使用默认的Suspense行为
-      // 这样组件会等待翻译加载完成后再渲染，避免翻译键显示在浏览器标签页
+      useSuspense: false, // 禁用Suspense，避免加载阻塞
     },
   })
   .then(() => {

@@ -358,10 +358,10 @@ export function FileManager({
     if (!hasShownSyncTip) {
       // 延迟显示提示，避免与加载状态冲突
       const timer = setTimeout(() => {
-        notification.info('文件管理器已优化性能，如需同步R2存储请点击右上角同步按钮', {
+        notification.info(t('files.performance_tip'), {
           duration: 5000,
           action: {
-            label: '知道了',
+            label: t('files.got_it'),
             onClick: () => {
               sessionStorage.setItem('file-manager-sync-tip', 'true');
             }
@@ -469,7 +469,7 @@ export function FileManager({
               progress,
               () => {
                 // 取消上传逻辑（如果需要）
-                console.log('用户取消上传');
+                console.log(t('files.upload_cancelled'));
               }
             );
           }
@@ -479,7 +479,7 @@ export function FileManager({
           // 更新总体进度通知
           if (fileArray.length > 1) {
             notification.batchProgress(
-              '文件上传',
+              t('files.batch_upload'),
               Math.floor((overallProgress / 100) * fileArray.length),
               fileArray.length
             );
@@ -613,7 +613,7 @@ export function FileManager({
         if (data.failed > 0) {
           notification.warning(successMessage, {
             action: {
-              label: '查看详情',
+              label: t('files.view_details'),
               onClick: () => setSyncDetailOpen(true)
             }
           });
