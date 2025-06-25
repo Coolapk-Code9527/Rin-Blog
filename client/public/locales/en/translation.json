@@ -764,5 +764,21 @@
     "list_tooltip": "List view: Display articles in list format"
   },
   "main_navigation": "Main Navigation",
-  "navigation_menu": "Navigation Menu"
+  "navigation_menu": "Navigation Menu",
+  "notification": {
+    "upload_success": "File uploaded successfully",
+    "upload_failed": "File upload failed",
+    "save_success": "Saved successfully",
+    "save_failed": "Save failed",
+    "delete_success": "Deleted successfully",
+    "delete_failed": "Delete failed",
+    "copy_success": "Copied successfully",
+    "copy_failed": "Copy failed",
+    "network_error": "Network connection failed, please check your network settings",
+    "permission_denied": "Permission denied",
+    "operation_cancelled": "Operation cancelled",
+    "loading": "Loading...",
+    "processing": "Processing...",
+    "uploading": "Uploading {{filename}}"
+  }
 }

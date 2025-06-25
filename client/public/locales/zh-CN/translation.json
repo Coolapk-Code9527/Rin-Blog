@@ -840,5 +840,21 @@
     "list_tooltip": "列表视图：以列表形式展示文章"
   },
   "main_navigation": "主导航",
-  "navigation_menu": "导航菜单"
+  "navigation_menu": "导航菜单",
+  "notification": {
+    "upload_success": "文件上传成功",
+    "upload_failed": "文件上传失败",
+    "save_success": "保存成功",
+    "save_failed": "保存失败",
+    "delete_success": "删除成功",
+    "delete_failed": "删除失败",
+    "copy_success": "复制成功",
+    "copy_failed": "复制失败",
+    "network_error": "网络连接失败，请检查网络设置",
+    "permission_denied": "权限不足",
+    "operation_cancelled": "操作已取消",
+    "loading": "正在加载...",
+    "processing": "正在处理...",
+    "uploading": "正在上传 {{filename}}"
+  }
 }

@@ -564,5 +564,21 @@
     "list_tooltip": "リストビュー：記事をリスト形式で表示"
   },
   "main_navigation": "メインナビゲーション",
-  "navigation_menu": "ナビゲーションメニュー"
+  "navigation_menu": "ナビゲーションメニュー",
+  "notification": {
+    "upload_success": "ファイルのアップロードが成功しました",
+    "upload_failed": "ファイルのアップロードに失敗しました",
+    "save_success": "保存に成功しました",
+    "save_failed": "保存に失敗しました",
+    "delete_success": "削除に成功しました",
+    "delete_failed": "削除に失敗しました",
+    "copy_success": "コピーに成功しました",
+    "copy_failed": "コピーに失敗しました",
+    "network_error": "ネットワーク接続に失敗しました。ネットワーク設定を確認してください",
+    "permission_denied": "権限が不足しています",
+    "operation_cancelled": "操作がキャンセルされました",
+    "loading": "読み込み中...",
+    "processing": "処理中...",
+    "uploading": "{{filename}}をアップロード中"
+  }
 }

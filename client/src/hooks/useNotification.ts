@@ -5,6 +5,7 @@
 
 import { useToast } from '../components/toast/Toast';
 import { useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface NotificationOptions {
   duration?: number;
@@ -23,6 +24,7 @@ export interface ProgressNotificationOptions {
 export function useNotification() {
   const { showToast, showProgressToast, showPersistentToast, updateToast, removeToast } = useToast();
   const progressToasts = useRef<Map<string, number>>(new Map());
+  const { t } = useTranslation();
 
   // 基础通知
   const notify = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', options?: NotificationOptions) => {
@@ -66,7 +68,7 @@ export function useNotification() {
   ) => {
     const existingId = progressToasts.current.get(key);
     const action = options?.onCancel ? {
-      label: '取消',
+      label: t('cancel'),
       onClick: options.onCancel
     } : undefined;
 
@@ -93,35 +95,36 @@ export function useNotification() {
   }, [showProgressToast, updateToast, removeToast]);
 
   // 网络状态通知
-  const networkError = useCallback((message: string = '网络连接失败，请检查网络设置') => {
-    return error(message, {
+  const networkError = useCallback((message?: string) => {
+    const defaultMessage = message || t('notification.network_error');
+    return error(defaultMessage, {
       action: {
-        label: '重试',
+        label: t('reload'),
         onClick: () => window.location.reload()
       }
     });
-  }, [error]);
+  }, [error, t]);
 
   // 操作确认通知
   const confirm = useCallback((message: string, onConfirm: () => void, onCancel?: () => void) => {
     return showPersistentToast(message, 'warning', {
-      label: '确认',
+      label: t('confirm'),
       onClick: () => {
         onConfirm();
         // Toast会在action执行后自动关闭
       }
     });
-  }, [showPersistentToast]);
+  }, [showPersistentToast, t]);
 
   // 文件上传进度通知
   const uploadProgress = useCallback((filename: string, percentage: number, onCancel?: () => void) => {
     return progress(
-      `upload_${filename}`, 
-      `正在上传 ${filename}`, 
+      `upload_${filename}`,
+      t('notification.uploading', { filename }),
       percentage,
       { onCancel, showPercentage: true }
     );
-  }, [progress]);
+  }, [progress, t]);
 
   // 批量操作进度通知
   const batchProgress = useCallback((
@@ -182,19 +185,40 @@ export function useNotification() {
   };
 }
 
-// 预定义的常用通知消息
-export const NotificationMessages = {
-  UPLOAD_SUCCESS: '文件上传成功',
-  UPLOAD_FAILED: '文件上传失败',
-  SAVE_SUCCESS: '保存成功',
-  SAVE_FAILED: '保存失败',
-  DELETE_SUCCESS: '删除成功',
-  DELETE_FAILED: '删除失败',
-  COPY_SUCCESS: '复制成功',
-  COPY_FAILED: '复制失败',
-  NETWORK_ERROR: '网络连接失败',
-  PERMISSION_DENIED: '权限不足',
-  OPERATION_CANCELLED: '操作已取消',
-  LOADING: '正在加载...',
-  PROCESSING: '正在处理...',
+// 预定义的常用通知消息键名
+export const NotificationKeys = {
+  UPLOAD_SUCCESS: 'notification.upload_success',
+  UPLOAD_FAILED: 'notification.upload_failed',
+  SAVE_SUCCESS: 'notification.save_success',
+  SAVE_FAILED: 'notification.save_failed',
+  DELETE_SUCCESS: 'notification.delete_success',
+  DELETE_FAILED: 'notification.delete_failed',
+  COPY_SUCCESS: 'notification.copy_success',
+  COPY_FAILED: 'notification.copy_failed',
+  NETWORK_ERROR: 'notification.network_error',
+  PERMISSION_DENIED: 'notification.permission_denied',
+  OPERATION_CANCELLED: 'notification.operation_cancelled',
+  LOADING: 'notification.loading',
+  PROCESSING: 'notification.processing',
 } as const;
+
+// 获取国际化通知消息的辅助函数
+export const useNotificationMessages = () => {
+  const { t } = useTranslation();
+
+  return {
+    UPLOAD_SUCCESS: t(NotificationKeys.UPLOAD_SUCCESS),
+    UPLOAD_FAILED: t(NotificationKeys.UPLOAD_FAILED),
+    SAVE_SUCCESS: t(NotificationKeys.SAVE_SUCCESS),
+    SAVE_FAILED: t(NotificationKeys.SAVE_FAILED),
+    DELETE_SUCCESS: t(NotificationKeys.DELETE_SUCCESS),
+    DELETE_FAILED: t(NotificationKeys.DELETE_FAILED),
+    COPY_SUCCESS: t(NotificationKeys.COPY_SUCCESS),
+    COPY_FAILED: t(NotificationKeys.COPY_FAILED),
+    NETWORK_ERROR: t(NotificationKeys.NETWORK_ERROR),
+    PERMISSION_DENIED: t(NotificationKeys.PERMISSION_DENIED),
+    OPERATION_CANCELLED: t(NotificationKeys.OPERATION_CANCELLED),
+    LOADING: t(NotificationKeys.LOADING),
+    PROCESSING: t(NotificationKeys.PROCESSING),
+  };
+};

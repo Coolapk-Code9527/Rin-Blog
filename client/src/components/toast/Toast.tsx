@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { MODAL_Z_INDEX, MODAL_ANIMATIONS } from '../../utils/modal-config';
 import { useGlassEffect, GLASS_LAYERS } from '../../hooks/useGlassEffect';
 
@@ -33,16 +33,66 @@ export const useToast = () => {
   return ctx;
 };
 
+// Toast队列管理配置
+const MAX_TOASTS = 5; // 最大同时显示数量
+const DUPLICATE_THRESHOLD = 3000; // 重复消息时间窗口(ms)
+
 export function ToastProvider({ children }: { children: React.ReactNode }): JSX.Element {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastId = useRef(0);
   const timeouts = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const recentMessages = useRef<Map<string, number>>(new Map()); // 用于去重
+
+  // 检查重复消息
+  const isDuplicateMessage = useCallback((message: string, type: ToastType) => {
+    const key = `${type}:${message}`;
+    const lastTime = recentMessages.current.get(key);
+    const now = Date.now();
+
+    if (lastTime && (now - lastTime) < DUPLICATE_THRESHOLD) {
+      return true;
+    }
+
+    recentMessages.current.set(key, now);
+
+    // 清理过期的消息记录
+    for (const [msgKey, time] of recentMessages.current.entries()) {
+      if (now - time > DUPLICATE_THRESHOLD) {
+        recentMessages.current.delete(msgKey);
+      }
+    }
+
+    return false;
+  }, []);
 
   const showToast = useCallback((message: string, type: ToastType = 'info', duration = 3000) => {
+    // 检查重复消息
+    if (isDuplicateMessage(message, type)) {
+      return -1; // 返回-1表示被去重
+    }
+
     const id = ++toastId.current;
     const toast: ToastItem = { id, message, type, duration };
 
-    setToasts((prev) => [...prev, toast]);
+    setToasts((prev) => {
+      // 限制最大Toast数量
+      const newToasts = [...prev, toast];
+      if (newToasts.length > MAX_TOASTS) {
+        // 移除最旧的非持久化Toast
+        const oldestNonPersistent = newToasts.find(t => !t.persistent);
+        if (oldestNonPersistent) {
+          const timeout = timeouts.current.get(oldestNonPersistent.id);
+          if (timeout) {
+            clearTimeout(timeout);
+            timeouts.current.delete(oldestNonPersistent.id);
+          }
+          return newToasts.filter(t => t.id !== oldestNonPersistent.id);
+        }
+        // 如果都是持久化Toast，移除最旧的
+        return newToasts.slice(1);
+      }
+      return newToasts;
+    });
 
     if (duration > 0 && !toast.persistent) {
       const timeout = setTimeout(() => {
@@ -52,7 +102,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }): JSX.
     }
 
     return id;
-  }, []);
+  }, [isDuplicateMessage]);
 
   const showProgressToast = useCallback((message: string, progress: number, id?: number) => {
     const currentId = id || ++toastId.current;
@@ -120,6 +170,29 @@ export function ToastProvider({ children }: { children: React.ReactNode }): JSX.
 function ToastItemComponent({ toast, onRemove }: { toast: ToastItem; onRemove: (id: number) => void; key?: number }) {
   // 使用智能毛玻璃效果
   const toastGlassClass = useGlassEffect('glass-toast');
+  const toastRef = useRef<HTMLDivElement>(null);
+
+  // 键盘导航支持
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && toast.persistent) {
+        event.preventDefault();
+        onRemove(toast.id);
+      }
+    };
+
+    if (toast.persistent && toastRef.current) {
+      // 为持久化Toast添加键盘事件监听
+      document.addEventListener('keydown', handleKeyDown);
+
+      // 自动聚焦到Toast（仅限持久化Toast）
+      toastRef.current.focus();
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [toast.persistent, toast.id, onRemove]);
 
   const getToastStyles = () => {
     switch (toast.type) {
@@ -155,9 +228,39 @@ function ToastItemComponent({ toast, onRemove }: { toast: ToastItem; onRemove: (
     }
   };
 
+  // 获取ARIA标签
+  const getAriaLabel = () => {
+    const typeLabels = {
+      success: '成功通知',
+      error: '错误通知',
+      warning: '警告通知',
+      info: '信息通知',
+      loading: '加载通知',
+      progress: '进度通知'
+    };
+    return `${typeLabels[toast.type || 'info']}: ${toast.message}`;
+  };
+
+  // 获取ARIA live属性
+  const getAriaLive = () => {
+    switch (toast.type) {
+      case 'error':
+        return 'assertive'; // 错误消息需要立即通知
+      case 'warning':
+        return 'assertive'; // 警告消息需要立即通知
+      default:
+        return 'polite'; // 其他消息礼貌通知
+    }
+  };
+
   return (
     <div
-      className={`pointer-events-auto min-w-[220px] max-w-sm rounded-lg shadow-enhanced-lg ${toastGlassClass} text-sm font-medium animate-toastSlideIn transition-all duration-300 hover:scale-[0.98] ${getToastStyles()}`}
+      ref={toastRef}
+      role="alert"
+      aria-live={getAriaLive()}
+      aria-label={getAriaLabel()}
+      tabIndex={toast.persistent ? 0 : -1}
+      className={`pointer-events-auto min-w-[220px] max-w-sm rounded-lg shadow-enhanced-lg ${toastGlassClass} text-sm font-medium animate-toastSlideIn transition-all duration-300 hover:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2 ${getToastStyles()}`}
     >
       {/* 进度条（仅在progress类型时显示） */}
       {toast.type === 'progress' && typeof toast.progress === 'number' && (
@@ -192,9 +295,10 @@ function ToastItemComponent({ toast, onRemove }: { toast: ToastItem; onRemove: (
 
           {(toast.persistent || toast.action) && (
             <button
-              className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded-full transition-colors duration-150"
+              className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded-full transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-theme focus:ring-offset-2"
               onClick={() => onRemove(toast.id)}
-              aria-label="关闭"
+              aria-label="关闭通知"
+              title="按 ESC 键或点击关闭"
             >
               <i className="ri-close-line text-sm"></i>
             </button>

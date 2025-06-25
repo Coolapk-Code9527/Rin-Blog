@@ -565,5 +565,21 @@
     "list_tooltip": "列表視圖：以列表形式展示文章"
   },
   "main_navigation": "主導航",
-  "navigation_menu": "導航選單"
+  "navigation_menu": "導航選單",
+  "notification": {
+    "upload_success": "檔案上傳成功",
+    "upload_failed": "檔案上傳失敗",
+    "save_success": "保存成功",
+    "save_failed": "保存失敗",
+    "delete_success": "刪除成功",
+    "delete_failed": "刪除失敗",
+    "copy_success": "複製成功",
+    "copy_failed": "複製失敗",
+    "network_error": "網路連線失敗，請檢查網路設定",
+    "permission_denied": "權限不足",
+    "operation_cancelled": "操作已取消",
+    "loading": "正在載入...",
+    "processing": "正在處理...",
+    "uploading": "正在上傳 {{filename}}"
+  }
 }
