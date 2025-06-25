@@ -940,10 +940,7 @@ function Comments({ id }: { id: string }) {
                           <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                             <i className="ri-chat-3-line text-blue-600 dark:text-blue-400"></i>
                           </div>
-                          全部评论
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                            {totalComments}
-                          </span>
+                          {t('comment.list.title', { count: totalComments })}
                         </h3>
                         <button
                           className="inline-flex items-center px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200"

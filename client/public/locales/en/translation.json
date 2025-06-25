@@ -125,9 +125,13 @@
     "updated$time": "Updated at {{time}}"
   },
   "files": {
-    "title": "Files",
+    "title": "File Manager",
     "page_title": "File Manager",
     "page_description": "Manage your files and folders",
+    "unauthorized": {
+      "title": "File Management Access Restricted",
+      "description": "File management features are only available to administrators. Please log in with an administrator account and try again."
+    },
     "root": "Root",
     "empty": "No files yet",
     "load_error": "Failed to load files: {{error}}",
@@ -246,9 +250,9 @@
   "languages": "Languages",
   "languageNames": {
     "en": "English",
-    "zh-CN": "简体中文",
-    "zh-TW": "繁體中文",
-    "ja": "日本語"
+    "zh-CN": "Simplified Chinese",
+    "zh-TW": "Traditional Chinese",
+    "ja": "Japanese"
   },
   "theme": {
     "light": "Light",
@@ -1058,5 +1062,16 @@
   "all_articles": "All Articles",
   "all": "All",
   "unlisted_short": "Unlisted",
-  "new": "New"
+  "new": "New",
+  "no_articles": "No articles yet",
+  "no_articles_description": "No articles here yet, more will be added later~",
+  "image_load_error": "Image failed to load",
+  "unlisted_description": "Unlisted articles, accessible only with direct link",
+  "draft_description": "Article drafts area, visible only to yourself",
+  "user": "User",
+  "menu": "Menu",
+  "loading_more": "Loading more...",
+  "feed": "Feed",
+  "editing": "Editing...",
+  "logged_in": "Logged in"
 }

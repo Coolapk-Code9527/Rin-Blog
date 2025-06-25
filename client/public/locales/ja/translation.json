@@ -124,8 +124,13 @@
     "updated$time": "{{time}}に更新"
   },
   "files": {
+    "title": "ファイル管理",
     "page_title": "ファイル管理",
     "page_description": "アップロードしたファイルとフォルダの管理",
+    "unauthorized": {
+      "title": "ファイル管理アクセス制限",
+      "description": "ファイル管理機能は管理者のみ利用可能です。管理者アカウントでログインしてから再度お試しください。"
+    },
     "root": "ルート",
     "empty": "ファイルはありません",
     "load_error": "ファイル読み込み失敗: {{error}}",
@@ -232,9 +237,9 @@
   },
   "languages": "言語",
   "languageNames": {
-    "en": "English",
-    "zh-CN": "简体中文",
-    "zh-TW": "繁體中文",
+    "en": "英語",
+    "zh-CN": "簡体中国語",
+    "zh-TW": "繁体中国語",
     "ja": "日本語"
   },
   "listed": "記事一覧に表示",
@@ -508,6 +513,43 @@
     "title": "最近の投稿",
     "empty": "最新の記事がありません"
   },
+  "history": {
+    "title": "編集履歴",
+    "empty": "履歴記録がありません",
+    "restore": "このバージョンを復元",
+    "delete": "記録を削除",
+    "clear_all": "すべての履歴をクリア",
+    "confirm_clear": "すべての履歴記録をクリアしてもよろしいですか？この操作は元に戻せません。",
+    "confirm": "確認",
+    "description": "説明",
+    "untitled": "無題の記事",
+    "auto_save": "自動保存",
+    "manual_save": "手動スナップショット",
+    "save_snapshot": "スナップショットを保存",
+    "save_success": "履歴スナップショットが保存されました",
+    "restored": "復元されました",
+    "restore_success": "履歴から正常に復元されました"
+  },
+  "drafts": {
+    "title": "下書き管理",
+    "count": "件の下書き",
+    "empty": "下書きがありません",
+    "no_results": "一致する下書きが見つかりません",
+    "search": "下書きを検索",
+    "load": "下書きを読み込み",
+    "delete": "下書きを削除",
+    "save_current": "現在の記事を保存",
+    "clear_all": "すべての下書きをクリア",
+    "confirm_clear": "すべての下書きをクリアしてもよろしいですか？この操作は元に戻せません。",
+    "confirm": "確認",
+    "untitled": "無題の下書き",
+    "save_success": "下書きが保存されました",
+    "load_success": "下書きが読み込まれました"
+  },
+  "code": {
+    "copy": "コピー",
+    "copied": "コピーしました!"
+  },
   "input_required": "すべてのフィールドが必須です",
   "input_too_long": "フィールドの長さが制限を超えています",
   "error_messages": {
@@ -530,6 +572,11 @@
     "by_alpha": "アルファベット順",
     "label": "並び替え"
   },
+  "empty_list": "コンテンツがありません",
+  "empty_draft_description": "下書きボックスが空です。最初の下書きを作成しましょう！",
+  "empty_unlisted_description": "非表示の記事はまだありません。作成してみましょう！",
+  "empty_article_description": "まだ記事がありません。最初の記事を作成しましょう！",
+  "create_now": "今すぐ作成",
   "announcements": {
     "title": "お知らせ",
     "viewMore": "もっと見る",
@@ -769,12 +816,6 @@
     },
     "select_text_first": "テンプレートとして保存するテキストを先に選択してください"
   },
-  "languageNames": {
-    "en": "English",
-    "zh-CN": "简体中文",
-    "zh-TW": "繁體中文",
-    "ja": "日本語"
-  },
   "theme": {
     "light": "ライト",
     "dark": "ダーク",
@@ -865,6 +906,21 @@
     },
     "download": {
       "title": "ダウンロードリンク"
+    },
+    "multiline": {
+      "warning": "選択行数が多すぎます（{{count}}行）、最初の{{limit}}行のみ処理します",
+      "processing": "複数行フォーマット処理中..."
     }
+  },
+  "user": "ユーザー",
+  "menu": "メニュー",
+  "loading_more": "さらに読み込み中...",
+  "feed": "フィード",
+  "logged_in": "ログイン済み",
+  "drop_or_click_to_upload": "画像をここにドロップするかクリックしてアップロード",
+  "unauthorized": {
+    "title": "アクセス制限",
+    "description": "このページは管理者のみアクセス可能です。管理者の場合は、まずログインしてください。",
+    "help": "管理者権限を取得するには、ウェブサイト管理者にお問い合わせください。"
   }
 }

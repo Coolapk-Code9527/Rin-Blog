@@ -1076,7 +1076,7 @@ export function FileManager({
                   <button
                     className="p-1 rounded text-red-600 hover:text-red-700 hover:bg-transparent hover:opacity-80 transition-all duration-200"
                     onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleDeleteFile(file); }}
-                    title={t('delete.title')}
+                    title={t('files.delete')}
                   >
                     <i className="ri-delete-bin-line text-xs"></i>
                   </button>
@@ -1234,7 +1234,7 @@ export function FileManager({
                   <button 
                     className="text-red-500 hover:text-red-700 transition-colors p-1"
                     onClick={(e) => { e.stopPropagation(); handleDeleteFile(file); }}
-                    title={t('delete')}
+                    title={t('files.delete')}
                   >
                     <i className="ri-delete-bin-line"></i>
                   </button>
@@ -1701,7 +1701,7 @@ export function FileManager({
                 title={t('files.delete')}
               >
                 <i className="ri-delete-bin-line mr-1"></i>
-                {t('delete.title')}
+                {t('files.delete')}
               </button>
 
               {showSelector && (

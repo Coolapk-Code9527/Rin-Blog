@@ -124,8 +124,13 @@
     "updated$time": "更新於 {{time}}"
   },
   "files": {
+    "title": "檔案管理",
     "page_title": "檔案管理",
     "page_description": "管理你上傳的檔案和資料夾",
+    "unauthorized": {
+      "title": "檔案管理權限受限",
+      "description": "檔案管理功能僅限管理員使用。請使用管理員帳戶登入後再試。"
+    },
     "root": "根目錄",
     "empty": "暫無檔案",
     "load_error": "載入檔案失敗: {{error}}",
@@ -232,10 +237,10 @@
   },
   "languages": "語言",
   "languageNames": {
-    "en": "English",
-    "zh-CN": "简体中文",
+    "en": "英文",
+    "zh-CN": "簡體中文",
     "zh-TW": "繁體中文",
-    "ja": "日本語"
+    "ja": "日文"
   },
   "listed": "展示在文章列表",
   "load_failed": "加載失敗，請稍後重試",
@@ -509,6 +514,43 @@
     "title": "最近發布",
     "empty": "暫無最新文章"
   },
+  "history": {
+    "title": "編輯歷史",
+    "empty": "暫無歷史記錄",
+    "restore": "恢復此版本",
+    "delete": "刪除記錄",
+    "clear_all": "清空全部歷史",
+    "confirm_clear": "確定要清空所有歷史記錄嗎？這個操作無法撤銷。",
+    "confirm": "確認清空",
+    "description": "描述",
+    "untitled": "無標題文章",
+    "auto_save": "自動保存",
+    "manual_save": "手動保存",
+    "save_snapshot": "保存快照",
+    "save_success": "歷史快照已保存",
+    "restored": "已恢復",
+    "restore_success": "已成功恢復歷史版本"
+  },
+  "drafts": {
+    "title": "草稿管理",
+    "count": "個草稿",
+    "empty": "暫無草稿",
+    "no_results": "沒有找到匹配的草稿",
+    "search": "搜尋草稿",
+    "load": "載入草稿",
+    "delete": "刪除草稿",
+    "save_current": "保存當前文章",
+    "clear_all": "清空所有草稿",
+    "confirm_clear": "確定要清空所有草稿嗎？此操作無法撤銷。",
+    "confirm": "確認清空",
+    "untitled": "無標題草稿",
+    "save_success": "草稿已保存",
+    "load_success": "草稿已載入"
+  },
+  "code": {
+    "copy": "複製",
+    "copied": "已複製!"
+  },
   "input_required": "所有欄位均不能為空",
   "input_too_long": "欄位長度超出限制",
   "error_messages": {
@@ -531,6 +573,11 @@
     "by_alpha": "按字母",
     "label": "排序"
   },
+  "empty_list": "暫無內容",
+  "empty_draft_description": "草稿箱空空如也，快去建立第一篇草稿吧！",
+  "empty_unlisted_description": "還沒有未列出的文章，建立一篇試試吧！",
+  "empty_article_description": "這裡還沒有任何文章，快去建立第一篇文章吧！",
+  "create_now": "立即建立",
   "announcements": {
     "title": "公告通知",
     "viewMore": "查看更多公告",
@@ -770,12 +817,6 @@
     },
     "select_text_first": "請先選擇要保存為模板的文字"
   },
-  "languageNames": {
-    "en": "English",
-    "zh-CN": "简体中文",
-    "zh-TW": "繁體中文",
-    "ja": "日本語"
-  },
   "theme": {
     "light": "淺色",
     "dark": "深色",
@@ -866,6 +907,21 @@
     },
     "download": {
       "title": "下載連結"
+    },
+    "multiline": {
+      "warning": "選擇行數過多（{{count}}行），僅處理前{{limit}}行",
+      "processing": "正在處理多行格式化..."
     }
+  },
+  "user": "使用者",
+  "menu": "選單",
+  "loading_more": "載入更多...",
+  "feed": "動態",
+  "logged_in": "已登入",
+  "drop_or_click_to_upload": "拖放圖片至此或點擊上傳",
+  "unauthorized": {
+    "title": "訪問受限",
+    "description": "此頁面僅限管理員訪問。如果您是管理員，請先登入。",
+    "help": "如需獲得管理員權限，請聯絡網站管理員。"
   }
 }

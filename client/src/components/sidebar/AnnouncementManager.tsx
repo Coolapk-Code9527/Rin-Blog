@@ -323,7 +323,7 @@ export function AnnouncementManager({ className = '' }: AnnouncementManagerProps
                     <button
                       onClick={() => handleDeleteAnnouncement(announcement.id)}
                       className="p-1.5 text-neutral-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors duration-200"
-                      title={t('delete', { defaultValue: '删除' })}
+                      title={t('announcements.delete')}
                     >
                       <i className="ri-delete-bin-line text-sm"></i>
                     </button>

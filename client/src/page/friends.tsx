@@ -206,7 +206,7 @@ function Friend(props: any) {
 
     const deleteFriend = useCallback(() => {
         showConfirm(
-            t('delete.title'),
+            t('delete.confirm'),
             t('delete.confirm'),
             () => {
                 client.friend({ id: friend.id }).delete(friend.id, {
@@ -345,7 +345,7 @@ function Friend(props: any) {
                     <Input value={avatar} setValue={setAvatar} placeholder={t('avatar.url')} className="mt-2" />
                     <Input value={url} setValue={setUrl} placeholder={t('url')} className="my-2" />
                     <div className='flex flex-row justify-center space-x-2 mt-2'>
-                        <Button title={t('delete.title')} onClick={deleteFriend} secondary />
+                        <Button title={t('delete.confirm')} onClick={deleteFriend} secondary />
                         <Button title={t('save')} onClick={updateFriend} />
                     </div>
                 </div >

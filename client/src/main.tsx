@@ -50,29 +50,13 @@ const i18n = i18next;
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    fallbackLng: 'zh-CN', // 修复：使用单一fallback语言，避免循环依赖
-    supportedLngs: ['en', 'zh-CN', 'zh-TW', 'ja'],
-    load: 'languageOnly', // 修复：改为languageOnly，确保正确加载
-    detection: {
-      // 禁用自动检测，完全依赖手动切换
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
-    },
     backend: {
-      loadPath: '/locales/{{lng}}/translation.json',
+      loadPath: '/locales/{{lng}}/{{ns}}.json',
     },
+    fallbackLng: "en",
     interpolation: {
-      escapeValue: false,
-    },
-    react: {
-      useSuspense: false, // 禁用Suspense，避免加载阻塞
-    },
-  })
-  .then(() => {
-    console.log('i18n initialization completed, current language:', (i18n as any).language);
-  })
-  .catch((err) => {
-    console.error('i18n initialization failed:', err);
+      escapeValue: false
+    }
   });
 
 const helmetContext = {};
