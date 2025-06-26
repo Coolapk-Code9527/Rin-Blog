@@ -436,12 +436,18 @@ export function FeedService() {
                             feedId: feed.id,
                             ip: ip,
                         });
-                        const visit = await db.query.visits.findMany({
-                            where: eq(visits.feedId, feed.id),
-                            columns: { id: true, ip: true }
-                        });
-                        pv = visit.length;
-                        uv = new Set(visit.map((v) => v.ip)).size;
+
+                        // 性能优化：复用批量访问统计的缓存机制，避免低效的内存计算
+                        // 先清除该文章的访问统计缓存，确保获取最新数据
+                        const cache = PublicCache();
+                        const cacheKey = `visit_stats_${feed.id}`;
+                        await cache.delete(cacheKey);
+
+                        // 使用优化的批量查询函数获取访问统计
+                        const visitStatsMap = await getBatchVisitStats(db, [feed.id]);
+                        const stats = visitStatsMap.get(feed.id) || { pv: 0, uv: 0 };
+                        pv = stats.pv;
+                        uv = stats.uv;
                     }
                     const data = {
                         ...other,
