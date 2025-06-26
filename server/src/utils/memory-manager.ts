@@ -94,27 +94,22 @@ export const ObjectPools = {
 /**
  * 弱引用管理器
  * 用于管理大对象的引用，防止内存泄漏
+ * 注意：简化版本，兼容 Cloudflare Workers 环境
  */
 class WeakReferenceManager {
   private refs = new WeakMap<object, string>();
-  private registry = new FinalizationRegistry((id: string) => {
-    // 对象被垃圾回收时的清理回调
-    console.debug(`Object ${id} has been garbage collected`);
-  });
 
   /**
    * 注册一个对象进行弱引用管理
    */
   register(obj: object, id: string): void {
     this.refs.set(obj, id);
-    this.registry.register(obj, id);
   }
 
   /**
    * 手动取消注册
    */
   unregister(obj: object): void {
-    this.registry.unregister(obj);
     this.refs.delete(obj);
   }
 
@@ -187,7 +182,8 @@ export class MemoryMonitor {
    * 强制垃圾回收（仅在支持的环境中）
    */
   forceGC(): void {
-    if (global.gc) {
+    // Cloudflare Workers 环境中不支持手动 GC
+    if (typeof global !== 'undefined' && global.gc) {
       global.gc();
     }
   }
@@ -200,7 +196,7 @@ export const MemoryUtils = {
   /**
    * 安全地处理大字符串，避免内存泄漏
    */
-  processLargeString(str: string, processor: (chunk: string) => void, chunkSize = 1000): void {
+  async processLargeString(str: string, processor: (chunk: string) => void, chunkSize = 1000): Promise<void> {
     if (str.length <= chunkSize) {
       processor(str);
       return;
@@ -209,13 +205,11 @@ export const MemoryUtils = {
     for (let i = 0; i < str.length; i += chunkSize) {
       const chunk = str.slice(i, i + chunkSize);
       processor(chunk);
-      
+
       // 让出控制权，避免阻塞
       if (i % (chunkSize * 10) === 0) {
         // 在支持的环境中让出控制权
-        if (typeof setImmediate !== 'undefined') {
-          setImmediate(() => {});
-        }
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
     }
   },

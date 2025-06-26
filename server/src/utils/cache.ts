@@ -5,7 +5,7 @@ import type { DB } from "../_worker";
 import type { Env } from "../db/db";
 import { getDB, getEnv } from "./di";
 import { createS3Client } from "./s3";
-import { MemoryMonitor, MemoryUtils, ObjectPools } from "./memory-manager";
+import { MemoryUtils, ObjectPools } from "./memory-manager";
 
 // Cache Utils for storing data in memory and persisting to S3
 // DO NOT USE THIS TO STORE SENSITIVE DATA
