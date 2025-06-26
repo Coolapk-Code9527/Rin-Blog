@@ -189,22 +189,43 @@ export function FeedService() {
                         const feedIds = feedsData.map(f => f.id);
                         const visitStatsMap = await getBatchVisitStats(db, feedIds);
 
-                        feed_list = feedsData.map(({ content, hashtags, summary, ...other }) => {
-                            // 保留查询限制，移除字符限制
-                            const avatar = extractImage(content);
+                        // 性能优化：批量预计算avatar和summary，减少重复计算
+                        const processedFeeds = await Promise.all(
+                            feedsData.map(async ({ content, hashtags, summary, ...other }) => {
+                                // 检查缓存中是否已有预计算的结果
+                                const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
+                                const cached = await cache.get(cacheKey);
 
-                            // 从批量查询结果中获取访问统计
-                            const stats = visitStatsMap.get(other.id) || { pv: 0, uv: 0 };
+                                let avatar: string | undefined;
+                                let processedSummary: string;
 
-                            return {
-                                summary: summary.length > 0 ? summary : markdownToPlainText(content, 300),
-                                hashtags: hashtags.map(({ hashtag }) => hashtag),
-                                avatar,
-                                pv: stats.pv,
-                                uv: stats.uv,
-                                ...other
-                            }
-                        });
+                                if (cached) {
+                                    avatar = cached.avatar;
+                                    processedSummary = cached.summary;
+                                } else {
+                                    // 只在缓存未命中时才进行计算
+                                    avatar = extractImage(content);
+                                    processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+
+                                    // 缓存预计算结果，30分钟过期
+                                    await cache.set(cacheKey, { avatar, summary: processedSummary }, 30 * 60 * 1000);
+                                }
+
+                                // 从批量查询结果中获取访问统计
+                                const stats = visitStatsMap.get(other.id) || { pv: 0, uv: 0 };
+
+                                return {
+                                    summary: processedSummary,
+                                    hashtags: hashtags.map(({ hashtag }) => hashtag),
+                                    avatar,
+                                    pv: stats.pv,
+                                    uv: stats.uv,
+                                    ...other
+                                }
+                            })
+                        );
+
+                        feed_list = processedFeeds;
                     } else {
                         const page_num = (page ? page > 0 ? page : 1 : 1) - 1;
                         cacheKey = `feeds_${type}_${page_num}_${limit_num}_${sortByTime ? 'time' : 'default'}`;
@@ -241,21 +262,43 @@ export function FeedService() {
                     const feedIds2 = feedsData2.map(f => f.id);
                     const visitStatsMap2 = await getBatchVisitStats(db, feedIds2);
 
-                    feed_list = feedsData2.map(({ content, hashtags, summary, ...other }) => {
-                        const avatar = extractImage(content);
+                    // 性能优化：批量预计算avatar和summary，减少重复计算
+                    const processedFeeds2 = await Promise.all(
+                        feedsData2.map(async ({ content, hashtags, summary, ...other }) => {
+                            // 检查缓存中是否已有预计算的结果
+                            const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
+                            const cached = await cache.get(cacheKey);
 
-                        // 从批量查询结果中获取访问统计
-                        const stats = visitStatsMap2.get(other.id) || { pv: 0, uv: 0 };
+                            let avatar: string | undefined;
+                            let processedSummary: string;
 
-                        return {
-                            summary: summary.length > 0 ? summary : markdownToPlainText(content, 300),
-                            hashtags: hashtags.map(({ hashtag }) => hashtag),
-                            avatar,
-                            pv: stats.pv,
-                            uv: stats.uv,
-                            ...other
-                        }
-                    });
+                            if (cached) {
+                                avatar = cached.avatar;
+                                processedSummary = cached.summary;
+                            } else {
+                                // 只在缓存未命中时才进行计算
+                                avatar = extractImage(content);
+                                processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+
+                                // 缓存预计算结果，30分钟过期
+                                await cache.set(cacheKey, { avatar, summary: processedSummary }, 30 * 60 * 1000);
+                            }
+
+                            // 从批量查询结果中获取访问统计
+                            const stats = visitStatsMap2.get(other.id) || { pv: 0, uv: 0 };
+
+                            return {
+                                summary: processedSummary,
+                                hashtags: hashtags.map(({ hashtag }) => hashtag),
+                                avatar,
+                                pv: stats.pv,
+                                uv: stats.uv,
+                                ...other
+                            }
+                        })
+                    );
+
+                    feed_list = processedFeeds2;
                     }
                     
                     let nextCursor = null;
@@ -277,8 +320,9 @@ export function FeedService() {
                     }
                     
                     if (type === undefined || type === 'normal' || type === '') {
-                        // 优化：设置缓存，减少重复查询
-                        await cache.set(cacheKey, data);
+                        // 性能优化：差异化缓存策略，根据数据更新频率设置不同缓存时间
+                        const cacheTime = type === 'draft' ? 5 * 60 * 1000 : 20 * 60 * 1000; // 草稿5分钟，正常文章20分钟
+                        await cache.set(cacheKey, data, cacheTime);
                     }
                     return data
                 }, {
@@ -436,18 +480,12 @@ export function FeedService() {
                             feedId: feed.id,
                             ip: ip,
                         });
-
-                        // 性能优化：复用批量访问统计的缓存机制，避免低效的内存计算
-                        // 先清除该文章的访问统计缓存，确保获取最新数据
-                        const cache = PublicCache();
-                        const cacheKey = `visit_stats_${feed.id}`;
-                        await cache.delete(cacheKey);
-
-                        // 使用优化的批量查询函数获取访问统计
-                        const visitStatsMap = await getBatchVisitStats(db, [feed.id]);
-                        const stats = visitStatsMap.get(feed.id) || { pv: 0, uv: 0 };
-                        pv = stats.pv;
-                        uv = stats.uv;
+                        const visit = await db.query.visits.findMany({
+                            where: eq(visits.feedId, feed.id),
+                            columns: { id: true, ip: true }
+                        });
+                        pv = visit.length;
+                        uv = new Set(visit.map((v) => v.ip)).size;
                     }
                     const data = {
                         ...other,
@@ -713,8 +751,14 @@ export function FeedService() {
             const cacheKey = `search_${keyword}_${admin ? 'admin' : 'public'}_${page_num}_${limit_num}`;
             const searchKeyword = `%${keyword}%`;
 
-            // 修复：恢复完整搜索范围，提高搜索精准度
-            const whereClause = or(
+            // 性能优化：分层搜索策略，优先搜索标题和摘要，必要时再搜索内容
+            const fastSearchClause = or(
+                like(feeds.title, searchKeyword),
+                like(feeds.alias, searchKeyword),
+                like(feeds.summary, searchKeyword)
+            );
+
+            const fullSearchClause = or(
                 like(feeds.title, searchKeyword),
                 like(feeds.alias, searchKeyword),
                 like(feeds.summary, searchKeyword),
@@ -724,19 +768,61 @@ export function FeedService() {
             // 优化：移除搜索结果限制，保持完整搜索功能
             // const maxSearchResults = 100; // 移除限制，保持搜索完整性
 
-            // 修复：优化搜索查询，添加数据库级分页
+            // 性能优化：分层搜索查询，先快速搜索，结果不足时再全文搜索
             const searchResults = await cache.getOrSet(cacheKey, async () => {
-                const baseWhere = admin ? whereClause : and(whereClause, eq(feeds.draft, 0));
+                // 第一层：快速搜索（title, alias, summary）
+                const fastBaseWhere = admin ? fastSearchClause : and(fastSearchClause, eq(feeds.draft, 0));
+
+                // 先尝试快速搜索
+                const fastResults = await db.query.feeds.findMany({
+                    where: fastBaseWhere,
+                    columns: admin ? undefined : {
+                        draft: false,
+                        listed: false
+                    },
+                    with: {
+                        hashtags: {
+                            columns: {},
+                            with: {
+                                hashtag: {
+                                    columns: { id: true, name: true }
+                                }
+                            }
+                        }, user: {
+                            columns: { id: true, username: true, avatar: true }
+                        }
+                    },
+                    orderBy: [desc(feeds.top), desc(feeds.createdAt)],
+                    offset: page_num * limit_num,
+                    limit: limit_num + 1,
+                });
+
+                // 如果快速搜索结果足够，直接返回
+                if (fastResults.length >= limit_num || keyword.length <= 3) {
+                    const totalCount = await db
+                        .select({ count: sql<number>`count(*)` })
+                        .from(feeds)
+                        .where(fastBaseWhere);
+
+                    return {
+                        feedsData: fastResults,
+                        totalCount: totalCount[0].count,
+                        searchType: 'fast'
+                    };
+                }
+
+                // 第二层：全文搜索（包含content）
+                const fullBaseWhere = admin ? fullSearchClause : and(fullSearchClause, eq(feeds.draft, 0));
 
                 // 获取总数（用于分页）
                 const totalCount = await db
                     .select({ count: sql<number>`count(*)` })
                     .from(feeds)
-                    .where(baseWhere);
+                    .where(fullBaseWhere);
 
                 // 获取分页数据
                 const feedsData = await db.query.feeds.findMany({
-                    where: baseWhere,
+                    where: fullBaseWhere,
                     columns: admin ? undefined : {
                         draft: false,
                         listed: false
@@ -760,24 +846,50 @@ export function FeedService() {
                 });
 
                 return {
-                    total: totalCount[0].count,
-                    data: feedsData,
+                    feedsData: feedsData,
+                    totalCount: totalCount[0].count,
+                    searchType: 'full',
                     hasNext: (page_num + 1) * limit_num < totalCount[0].count
                 };
-            });
+            }, 15 * 60 * 1000); // 搜索结果缓存15分钟
 
-            const feed_list = searchResults.data.map(({ content, hashtags, summary, ...other }) => {
-                return {
-                    summary: summary.length > 0 ? summary : markdownToPlainText(content, 300),
-                    hashtags: hashtags.map(({ hashtag }) => hashtag),
-                    ...other
-                }
-            });
+            // 性能优化：批量预计算avatar和summary，减少重复计算
+            const processedFeeds = await Promise.all(
+                searchResults.feedsData.map(async ({ content, hashtags, summary, ...other }) => {
+                    // 检查缓存中是否已有预计算的结果
+                    const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
+                    const cached = await cache.get(cacheKey);
+
+                    let avatar: string | undefined;
+                    let processedSummary: string;
+
+                    if (cached) {
+                        avatar = cached.avatar;
+                        processedSummary = cached.summary;
+                    } else {
+                        // 只在缓存未命中时才进行计算
+                        avatar = extractImage(content);
+                        processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+
+                        // 缓存预计算结果，30分钟过期
+                        await cache.set(cacheKey, { avatar, summary: processedSummary }, 30 * 60 * 1000);
+                    }
+
+                    return {
+                        summary: processedSummary,
+                        hashtags: hashtags.map(({ hashtag }) => hashtag),
+                        avatar,
+                        ...other
+                    }
+                })
+            );
+
             // 修复：使用数据库级分页结果
             return {
-                size: searchResults.total,
-                data: feed_list,
-                hasNext: searchResults.hasNext
+                size: searchResults.totalCount,
+                data: processedFeeds,
+                hasNext: searchResults.hasNext,
+                searchType: searchResults.searchType // 调试信息：显示使用的搜索类型
             }
         }, {
             query: t.Object({
