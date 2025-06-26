@@ -5,6 +5,7 @@ import type { DB } from "../_worker";
 import type { Env } from "../db/db";
 import { getDB, getEnv } from "./di";
 import { createS3Client } from "./s3";
+import { MemoryMonitor, MemoryUtils, ObjectPools } from "./memory-manager";
 
 // Cache Utils for storing data in memory and persisting to S3
 // DO NOT USE THIS TO STORE SENSITIVE DATA
@@ -183,28 +184,35 @@ export class CacheImpl {
     async save() {
         const cacheKey = path.join(this.env.S3_CACHE_FOLDER, `${this.type}.json`);
 
-        // 深度优化：进一步优化序列化，减少CPU消耗
+        // 深度优化：进一步优化序列化，减少CPU消耗和内存使用
         let serializedData: string;
         try {
-            if (this.cache.size > 30) { // 进一步优化：降低阈值到30，减少大对象序列化
-                // 进一步优化：减少批处理大小，更频繁让出控制权
-                const mergedData: Record<string, any> = {};
-                const chunkSize = 15; // 进一步优化：从20减少到15
+            if (this.cache.size > 50) { // 性能优化：提高阈值到50，减少序列化频率
+                // 内存优化：使用对象池减少内存分配
+                const mergedData = ObjectPools.objects.acquire();
+                const chunkSize = 20; // 性能优化：从15增加到20
                 let processed = 0;
 
-                for (const [key, value] of this.cache) {
-                    // 深度优化：跳过过大的值，避免序列化大对象
-                    if (typeof value === 'string' && value.length > 10000) {
-                        continue; // 跳过超过10KB的字符串
+                try {
+                    for (const [key, value] of this.cache) {
+                        // 深度优化：跳过过大的值，避免序列化大对象
+                        if (typeof value === 'string' && value.length > 10000) {
+                            continue; // 跳过超过10KB的字符串
+                        }
+
+                        mergedData[key] = value;
+                        processed++;
+
+                        // 深度优化：更频繁地让出控制权
+                        if (processed % chunkSize === 0) {
+                            await new Promise(resolve => setTimeout(resolve, 0));
+                        }
                     }
 
-                    mergedData[key] = value;
-                    processed++;
-
-                    // 深度优化：更频繁地让出控制权
-                    if (processed % chunkSize === 0) {
-                        await new Promise(resolve => setTimeout(resolve, 0));
-                    }
+                    serializedData = JSON.stringify(mergedData);
+                } finally {
+                    // 内存优化：释放对象池中的对象
+                    MemoryUtils.releasePooledObject(mergedData);
                 }
 
                 serializedData = JSON.stringify(mergedData);

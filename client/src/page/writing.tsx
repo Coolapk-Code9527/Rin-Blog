@@ -1,4 +1,3 @@
-import Editor from '@monaco-editor/react';
 import i18n from 'i18next';
 import _ from 'lodash';
 import {editor} from 'monaco-editor';
@@ -6,6 +5,7 @@ import * as monaco from 'monaco-editor';
 import {Calendar} from 'primereact/calendar';
 import 'primereact/resources/primereact.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
+import Editor from '@monaco-editor/react';
 import React, {useCallback, useContext, useEffect, useRef, useState, useMemo} from "react";
 import {Helmet} from "react-helmet-async";
 import {useTranslation} from "react-i18next";

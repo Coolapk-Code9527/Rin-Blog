@@ -920,25 +920,24 @@ async function clearFeedCache(id: number, alias: string | null, newAlias: string
         await cache.delete(`feed_${newAlias}`, false);
 }
 
+import { CACHED_REGEX } from '../utils/regex-cache';
+
 // 辅助函数：提取内容中的文件引用
 function extractFileReferences(content: string): string[] {
   const references: string[] = [];
   if (!content || typeof content !== 'string') return references;
   try {
     // 图片 ![]()
-    const imageRegex = /!\[.*?\]\((.*?)\)/g;
     let match;
-    while ((match = imageRegex.exec(content)) !== null) {
+    while ((match = CACHED_REGEX.FILE_IMAGE_REF.exec(content)) !== null) {
       references.push(match[1]);
     }
     // 链接 []()
-    const linkRegex = /(?<!!)\[.*?\]\((.*?)\)/g;
-    while ((match = linkRegex.exec(content)) !== null) {
+    while ((match = CACHED_REGEX.FILE_LINK_REF.exec(content)) !== null) {
       references.push(match[1]);
     }
     // 媒体 <audio|video src="...">
-    const mediaRegex = /<(audio|video)[^>]*src=['"](.*?)['"][^>]*>/g;
-    while ((match = mediaRegex.exec(content)) !== null) {
+    while ((match = CACHED_REGEX.FILE_MEDIA_REF.exec(content)) !== null) {
       references.push(match[2]);
     }
   } catch (e) {

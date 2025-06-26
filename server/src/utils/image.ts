@@ -1,4 +1,5 @@
 import { optimizeImage } from 'wasm-image-optimization';
+import { CACHED_REGEX } from './regex-cache';
 
 // 优化：添加缓存机制，避免重复处理相同内容
 const imageCache = new Map<string, string | undefined>();
@@ -15,9 +16,8 @@ export function extractImage(content: string) {
         return imageCache.get(cacheKey);
     }
 
-    // 深度优化：使用更简单的正则表达式，限制匹配长度
-    const img_reg = /!\[[^\]]{0,50}\]\(([^)]{1,200})\)/;
-    const img_match = img_reg.exec(searchContent);
+    // 深度优化：使用缓存的正则表达式
+    const img_match = CACHED_REGEX.IMAGE_EXTRACT.exec(searchContent);
     const avatar = img_match ? img_match[1] : undefined;
 
     // 深度优化：缓存结果，限制缓存大小
