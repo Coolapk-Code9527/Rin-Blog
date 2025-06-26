@@ -1880,14 +1880,14 @@ button[role="option"] > * {
 
 /* 移除重复的动画定义，统一使用modal-animations.css中的定义 */
 
-/* 弹窗遮罩层样式 - 使用统一的层级管理 */
+/* 弹窗遮罩层样式 - 移除z-index让内联样式控制层级 */
 .ReactModal__Overlay {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  z-index: var(--modal-z-index, 10300) !important; /* 使用统一的MODAL层级 */
+  /* z-index由内联样式控制，不在CSS中设置 */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;

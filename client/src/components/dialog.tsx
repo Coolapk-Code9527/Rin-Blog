@@ -4,6 +4,8 @@ import { StrictModeModal } from "./StrictModeModal";
 import { Button, ButtonWithLoading } from "./button";
 import {
     macOSModalStyles,
+    macOSDialogStyles,
+    macOSCriticalStyles,
     MODAL_CONTAINER_CLASSES,
     useModalKeyboard,
     useModalBodyLock
@@ -89,7 +91,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }): JSX
             shouldCloseOnOverlayClick={true}
             shouldCloseOnEsc={true}
             onRequestClose={closeAlert}
-            style={macOSModalStyles}
+            style={macOSCriticalStyles}
         >
             <MacOSModalContainer>
                 <div className="flex flex-col items-center text-center space-y-6">
@@ -113,7 +115,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }): JSX
             shouldCloseOnOverlayClick={!loading}
             shouldCloseOnEsc={!loading}
             onRequestClose={() => { if (!loading) closeConfirm(); }}
-            style={macOSModalStyles}
+            style={macOSDialogStyles}
         >
             <MacOSModalContainer>
                 <div className="flex flex-col items-center text-center space-y-6">

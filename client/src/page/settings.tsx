@@ -368,7 +368,7 @@ export function Settings() {
                         </div>
 
                         {/* 上方分隔线 - 与文章列表页面保持一致 */}
-                        <div className="w-full mb-6">
+                        <div className="w-full mb-2">
                             <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                         </div>
 

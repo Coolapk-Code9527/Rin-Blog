@@ -82,6 +82,24 @@ export const macOSLargeModalStyles = {
   }
 };
 
+// 确认对话框样式（使用关键层级，确保在所有模态框之上）
+export const macOSDialogStyles = {
+  ...macOSModalStyles,
+  overlay: {
+    ...macOSModalStyles.overlay,
+    zIndex: MODAL_Z_INDEX.CRITICAL as ZIndexValue,
+  }
+};
+
+// 关键提示弹窗样式（超高层级，确保在所有弹窗之上）
+export const macOSCriticalStyles = {
+  ...macOSModalStyles,
+  overlay: {
+    ...macOSModalStyles.overlay,
+    zIndex: (MODAL_Z_INDEX.CRITICAL + 100) as ZIndexValue,
+  }
+};
+
 // 文件选择器响应式弹窗样式 - 移动端友好的文件选择
 export const fileSelectorResponsiveModalStyles = {
   ...macOSModalStyles,
