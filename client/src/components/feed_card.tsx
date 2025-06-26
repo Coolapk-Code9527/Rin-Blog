@@ -2,21 +2,29 @@ import {Link} from "wouter";
 import {useTranslation} from "react-i18next";
 import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
-import React from "react";
+import React, { useMemo, useCallback } from "react";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { ViewMode } from "./view_toggle";
 import { generateGradient, generateGradientCSS } from '../utils/placeholderUtils';
 
-export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt, pv, uv, viewMode = 'grid' }:
-    {
-        id: string, avatar?: string,
-        draft?: number, listed?: number, top?: number,
-        title: string, summary: string,
-        hashtags: { id: number, name: string }[],
-        createdAt: Date, updatedAt: Date,
-        pv?: number, uv?: number,
-        viewMode?: ViewMode
-    }) {
+// 定义FeedCard组件的props类型
+interface FeedCardProps {
+    id: string;
+    avatar?: string;
+    draft?: number;
+    listed?: number;
+    top?: number;
+    title: string;
+    summary: string;
+    hashtags: { id: number; name: string }[];
+    createdAt: Date;
+    updatedAt: Date;
+    pv?: number;
+    uv?: number;
+    viewMode?: ViewMode;
+}
+
+function FeedCardComponent({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt, pv, uv, viewMode = 'grid' }: FeedCardProps) {
     const { t } = useTranslation();
     const [imageLoaded, setImageLoaded] = React.useState(false);
     const [imageError, setImageError] = React.useState(false);
@@ -43,16 +51,16 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         return `${d.getMonth()+1}-${d.getDate()}`;
     };
 
-    // 预加载文章详情页（当用户悬停卡片时）
-    const prefetchArticle = () => {
+    // 预加载文章详情页（当用户悬停卡片时）- 使用useCallback缓存
+    const prefetchArticle = useCallback(() => {
         const link = document.createElement('link');
         link.rel = 'prefetch';
         link.href = `/feed/${id}`;
         document.head.appendChild(link);
-    };
-    
-    // 使用统一的渐变生成工具
-    const gradientConfig = React.useMemo(() => generateGradient(id, title), [id, title]);
+    }, [id]);
+
+    // 使用统一的渐变生成工具 - 已经使用useMemo优化
+    const gradientConfig = useMemo(() => generateGradient(id, title), [id, title]);
 
     // CSS变量定义，用于支持渐变遮罩效果
     const cardStyle = {
@@ -60,8 +68,8 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         '--card-bg-dark': '#1f2937',
     } as React.CSSProperties;
 
-    // 根据视图模式确定布局类名
-    const getLayoutClasses = () => {
+    // 根据视图模式确定布局类名 - 使用useMemo缓存计算结果
+    const layoutClasses = useMemo(() => {
         const baseClasses = `group block w-full rounded-2xl overflow-hidden transition-all border ${top === 1
             ? `${glassClass} border-theme/40 dark:border-theme/30 shadow-enhanced-lg ring-2 ring-theme/15`
             : `${glassClass} border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced hover:border-neutral-400/80 dark:hover:border-neutral-500/80`}
@@ -76,11 +84,11 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
             // 优化网格视图布局：增加移动端高度以适应更高的图片显示
             return `${baseClasses} grid-view-card flex flex-col h-[380px] sm:h-[400px] md:h-[420px]`;
         }
-    };
+    }, [viewMode, top, glassClass]);
 
     return (
             <Link href={`/feed/${id}`}
-            className={getLayoutClasses()}
+            className={layoutClasses}
             aria-labelledby={`article-title-${id}`}
             onMouseEnter={prefetchArticle}
             style={{
@@ -277,3 +285,6 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         </Link>
     )
 }
+
+// 使用React.memo优化组件，避免不必要的重新渲染
+export const FeedCard: React.ComponentType<FeedCardProps> = React.memo(FeedCardComponent);

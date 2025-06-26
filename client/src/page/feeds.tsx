@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useMemo, useCallback } from "react"
 import { Helmet } from 'react-helmet-async'
 import { Link, useSearch, useLocation } from "wouter"
 import { FeedCard } from "../components/feed_card"
@@ -35,7 +35,7 @@ type FeedsMap = {
 
 
 // 懒加载Feed卡片组件
-function LazyFeedCard({ id, viewMode, ...props }: any) {
+function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
     const [isVisible, setIsVisible] = React.useState(false);
     const [isIntersecting, setIsIntersecting] = React.useState(false); // 新增状态跟踪元素是否在视口内
     const cardRef = React.useRef<HTMLDivElement>(null);
@@ -44,8 +44,8 @@ function LazyFeedCard({ id, viewMode, ...props }: any) {
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
     
-    // 为占位符生成渐变背景
-    const generatePlaceholderGradient = () => {
+    // 为占位符生成渐变背景 - 使用useMemo缓存计算结果
+    const placeholderGradient = useMemo(() => {
         // 使用ID保持一致的随机颜色
         const getHashCode = (str: string) => {
             let hash = 0;
@@ -55,7 +55,7 @@ function LazyFeedCard({ id, viewMode, ...props }: any) {
             }
             return Math.abs(hash);
         };
-        
+
         const gradients = [
             'from-blue-100 to-purple-200 dark:from-blue-900/40 dark:to-purple-900/40',
             'from-green-100 to-blue-200 dark:from-green-900/40 dark:to-blue-900/40',
@@ -64,12 +64,10 @@ function LazyFeedCard({ id, viewMode, ...props }: any) {
             'from-pink-100 to-rose-200 dark:from-pink-900/40 dark:to-rose-900/40',
             'from-indigo-100 to-blue-200 dark:from-indigo-900/40 dark:to-blue-900/40'
         ];
-        
+
         const hash = getHashCode(id);
         return gradients[hash % gradients.length];
-    };
-    
-    const placeholderGradient = generatePlaceholderGradient();
+    }, [id]);
 
     React.useEffect(() => {
         const observer = new IntersectionObserver(
@@ -160,6 +158,9 @@ function LazyFeedCard({ id, viewMode, ...props }: any) {
         </div>
     );
 }
+
+// 使用React.memo优化LazyFeedCard组件，避免不必要的重新渲染
+const LazyFeedCard: React.ComponentType<any> = React.memo(LazyFeedCardComponent);
 
 export function FeedsPage() {
     const { t } = useTranslation()
