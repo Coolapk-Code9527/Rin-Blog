@@ -2816,7 +2816,7 @@ export function WritingPage({ id }: { id?: number }) {
                       <div
                         ref={previewRef}
                         onScroll={handlePreviewScroll}
-                        className="h-full overflow-auto p-4"
+                        className="h-full overflow-auto p-4 [&_a]:break-all [&_a]:max-w-full"
                       >
                         <Markdown content={content ? content : `> ${t('content.writing_placeholder')}`} />
                       </div>

@@ -75,7 +75,12 @@
     "collapse_replies": "折りたたむ",
     "view_remaining": "残り{{count}}件の返信を表示",
     "reply_to": "{{name}}に返信",
-    "close_reply": "返信ボックスを閉じる"
+    "close_reply": "返信ボックスを閉じる",
+    "reply_to_prefix": "返信先",
+    "reply_level": "第{{level}}層の返信",
+    "replies_count": "{{count}}件の返信",
+    "popular": "人気",
+    "reply_to_deep": "深層返信"
   },
   "comparison": "対比",
   "confirm": "確認",

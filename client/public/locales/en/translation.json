@@ -76,7 +76,12 @@
     "collapse_replies": "Collapse",
     "view_remaining": "View remaining {{count}} replies",
     "reply_to": "Reply to {{name}}",
-    "close_reply": "Close reply box"
+    "close_reply": "Close reply box",
+    "reply_to_prefix": "Reply to",
+    "reply_level": "Level {{level}} reply",
+    "replies_count": "{{count}} replies",
+    "popular": "Popular",
+    "reply_to_deep": "Deep Reply"
   },
   "comparison": "Comparison",
   "confirm": "Confirm",

@@ -76,7 +76,12 @@
     "collapse_replies": "收起",
     "view_remaining": "查看剩余 {{count}} 条回复",
     "reply_to": "回复 {{name}}",
-    "close_reply": "关闭回复框"
+    "close_reply": "关闭回复框",
+    "reply_to_prefix": "回复",
+    "reply_level": "第 {{level}} 层回复",
+    "replies_count": "{{count}} 条回复",
+    "popular": "热门",
+    "reply_to_deep": "深层回复"
   },
   "comparison": "对比",
   "confirm": "确认",

@@ -75,7 +75,12 @@
     "collapse_replies": "收起",
     "view_remaining": "查看剩餘 {{count}} 條回覆",
     "reply_to": "回覆 {{name}}",
-    "close_reply": "關閉回覆框"
+    "close_reply": "關閉回覆框",
+    "reply_to_prefix": "回覆",
+    "reply_level": "第 {{level}} 層回覆",
+    "replies_count": "{{count}} 條回覆",
+    "popular": "熱門",
+    "reply_to_deep": "深層回覆"
   },
   "comparison": "比較",
   "confirm": "確認",
