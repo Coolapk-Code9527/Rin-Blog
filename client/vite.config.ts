@@ -53,7 +53,8 @@ export default defineConfig(({ mode }) => {
               if (id.includes('jszip') ||
                   id.includes('xlsx') ||
                   id.includes('mammoth') ||
-                  id.includes('file-saver')) {
+                  id.includes('file-saver') ||
+                  id.includes('epubjs')) {
                 return 'file-vendor';
               }
               // 数学公式库

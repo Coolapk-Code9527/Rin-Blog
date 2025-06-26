@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FileItem } from '../../types/api';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneLight, oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
 import JSZip from 'jszip';
+// 动态导入epubjs避免初始化问题
 // @ts-ignore
-import ePub from 'epubjs';
+const ePub = typeof window !== 'undefined' ? require('epubjs') : null;
 import {
   MODAL_Z_INDEX,
   MODAL_CONTAINER_CLASSES,
@@ -114,7 +115,7 @@ export function FilePreview({ files, current, onClose }: FilePreviewProps) {
   // epub预览
   const epubContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (isEPUB && file.url && epubContainerRef.current) {
+    if (isEPUB && file.url && epubContainerRef.current && ePub) {
       epubContainerRef.current.innerHTML = '';
       const book = ePub(file.url);
       book.renderTo(epubContainerRef.current, { width: '100%', height: 500 });
