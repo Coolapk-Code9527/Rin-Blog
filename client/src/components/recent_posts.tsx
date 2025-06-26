@@ -72,12 +72,23 @@ function PostItemComponent({ post, thumbnail, t }: PostItemProps) {
   );
 }
 
-// 优化的比较函数
+// 优化的比较函数 - 添加防御性编程
 const arePostItemPropsEqual = (prevProps: PostItemProps, nextProps: PostItemProps) => {
+  // 安全的日期比较函数
+  const getDateValue = (date: Date | string | number) => {
+    if (date instanceof Date) {
+      return date.getTime();
+    }
+    if (typeof date === 'string' || typeof date === 'number') {
+      return new Date(date).getTime();
+    }
+    return 0; // fallback
+  };
+
   return (
     prevProps.post.id === nextProps.post.id &&
     prevProps.post.title === nextProps.post.title &&
-    prevProps.post.createdAt.getTime() === nextProps.post.createdAt.getTime() &&
+    getDateValue(prevProps.post.createdAt) === getDateValue(nextProps.post.createdAt) &&
     prevProps.thumbnail === nextProps.thumbnail
   );
 };
@@ -148,15 +159,29 @@ export function RecentPosts() {
         if (error) {
           setError(error.value as string);
         } else if (data && Array.isArray(data.data)) {
-          const postsData = data.data.map((item: any) => ({
-            id: item.id,
-            title: item.title,
-            createdAt: new Date(item.createdAt),
-            content: item.content || "",
-            summary: item.summary || "",
-            avatar: item.avatar || "",
-            thumbUrl: item.thumbUrl || "" // 如果API提供缩略图URL
-          }));
+          const postsData = data.data.map((item: any) => {
+            // 安全的日期转换
+            let createdAt: Date;
+            try {
+              createdAt = new Date(item.createdAt);
+              // 检查日期是否有效
+              if (isNaN(createdAt.getTime())) {
+                createdAt = new Date(); // fallback到当前时间
+              }
+            } catch {
+              createdAt = new Date(); // fallback到当前时间
+            }
+
+            return {
+              id: item.id,
+              title: item.title,
+              createdAt,
+              content: item.content || "",
+              summary: item.summary || "",
+              avatar: item.avatar || "",
+              thumbUrl: item.thumbUrl || "" // 如果API提供缩略图URL
+            };
+          });
           setPosts(postsData);
 
           // 使用新的优先级逻辑获取缩略图

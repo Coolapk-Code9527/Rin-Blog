@@ -301,9 +301,20 @@ const arePropsEqual = (prevProps: FeedCardProps, nextProps: FeedCardProps) => {
         return false;
     }
 
+    // 安全的日期比较函数
+    const getDateValue = (date: Date | string | number) => {
+        if (date instanceof Date) {
+            return date.getTime();
+        }
+        if (typeof date === 'string' || typeof date === 'number') {
+            return new Date(date).getTime();
+        }
+        return 0; // fallback
+    };
+
     // 比较日期（转换为时间戳比较）
-    if (prevProps.createdAt.getTime() !== nextProps.createdAt.getTime() ||
-        prevProps.updatedAt.getTime() !== nextProps.updatedAt.getTime()) {
+    if (getDateValue(prevProps.createdAt) !== getDateValue(nextProps.createdAt) ||
+        getDateValue(prevProps.updatedAt) !== getDateValue(nextProps.updatedAt)) {
         return false;
     }
 
