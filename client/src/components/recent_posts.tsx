@@ -17,6 +17,74 @@ interface Post {
   thumbUrl?: string; // 缩略图URL
 }
 
+// 优化的文章项组件
+interface PostItemProps {
+  post: Post;
+  thumbnail: string | null;
+  t: (key: string) => string;
+}
+
+// 内部PostItem组件实现
+function PostItemComponent({ post, thumbnail, t }: PostItemProps) {
+  // 使用useMemo缓存占位符属性计算
+  const placeholderProps = React.useMemo(() => {
+    return generatePlaceholderProps(post.id, post.title || '', PLACEHOLDER_PRESETS.THUMBNAIL_SMALL);
+  }, [post.id, post.title]);
+
+  // 使用useMemo缓存时间格式化
+  const formattedTime = React.useMemo(() => {
+    return timeago(post.createdAt);
+  }, [post.createdAt]);
+
+  return (
+    <li>
+      <Link href={`/feed/${post.id}`} className="group block">
+        <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+          <div className="flex-shrink-0">
+            {thumbnail ? (
+              <img
+                src={thumbnail}
+                alt={post.title || t("unnamed")}
+                className="w-16 h-16 rounded-md object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div
+                className="w-16 h-16 rounded-md flex items-center justify-center"
+                style={placeholderProps.style}
+              >
+                <i className="ri-article-line text-white/80 text-xl"></i>
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-gray-800 dark:text-gray-100 group-hover:text-theme line-clamp-2 transition-colors">
+              {post.title || t("unnamed")}
+            </div>
+            <div className="text-xs text-gray-400 mt-1.5 flex items-center">
+              <i className="ri-calendar-line mr-1"></i>
+              {formattedTime}
+            </div>
+          </div>
+        </div>
+      </Link>
+    </li>
+  );
+}
+
+// 优化的比较函数
+const arePostItemPropsEqual = (prevProps: PostItemProps, nextProps: PostItemProps) => {
+  return (
+    prevProps.post.id === nextProps.post.id &&
+    prevProps.post.title === nextProps.post.title &&
+    prevProps.post.createdAt.getTime() === nextProps.post.createdAt.getTime() &&
+    prevProps.thumbnail === nextProps.thumbnail
+  );
+};
+
+// 使用React.memo优化的PostItem组件
+const PostItem: React.ComponentType<PostItemProps> = React.memo(PostItemComponent, arePostItemPropsEqual);
+
 export function RecentPosts() {
   const { t } = useTranslation();
   const [posts, setPosts] = React.useState<Post[]>([]);
@@ -122,52 +190,13 @@ export function RecentPosts() {
         <div className="recent-posts-content overflow-y-auto flex-1 min-h-0 custom-scrollbar pr-1">
           <ul className="space-y-4">
             {posts.map((post, index) => (
-              <li key={post.id} className={`py-3 ${index !== posts.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
-                <Link href={`/feed/${post.id}`} className="block group">
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0">
-                      {thumbnails[post.id] ? (
-                        <img 
-                          src={thumbnails[post.id] || ''} 
-                          alt={post.title || t("unnamed")} 
-                          className="w-16 h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700 transition-transform group-hover:scale-[1.02]"
-                          loading="lazy"
-                          onError={(e) => {
-                            console.log(`图片加载失败: ${post.id}, 路径: ${thumbnails[post.id]}`);
-                            const target = e.currentTarget as HTMLImageElement;
-                            target.style.display = "none";
-                            const container = target.parentElement;
-                            if (container) {
-                              const placeholderProps = generatePlaceholderProps(post.id, post.title || '', PLACEHOLDER_PRESETS.THUMBNAIL_SMALL);
-                              container.innerHTML = `
-                                <div class="w-16 h-16 rounded-md flex items-center justify-center" style="background: ${placeholderProps.gradientCSS}">
-                                  <i class="ri-article-line text-white/80 text-xl"></i>
-                                </div>
-                              `;
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div
-                          className="w-16 h-16 rounded-md flex items-center justify-center"
-                          style={generatePlaceholderProps(post.id, post.title || '', PLACEHOLDER_PRESETS.THUMBNAIL_SMALL).style}
-                        >
-                          <i className="ri-article-line text-white/80 text-xl"></i>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-800 dark:text-gray-100 group-hover:text-theme line-clamp-2 transition-colors">
-                        {post.title || t("unnamed")}
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1.5 flex items-center">
-                        <i className="ri-calendar-line mr-1"></i>
-                        {timeago(post.createdAt)}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </li>
+              <div key={post.id} className={`py-3 ${index !== posts.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
+                <PostItem
+                  post={post}
+                  thumbnail={thumbnails[post.id] || null}
+                  t={t}
+                />
+              </div>
             ))}
           </ul>
         </div>

@@ -7,16 +7,25 @@ import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { ViewMode } from "./view_toggle";
 import { generateGradient, generateGradientCSS } from '../utils/placeholderUtils';
 
-export function FeedCard({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt, pv, uv, viewMode = 'grid' }:
-    {
-        id: string, avatar?: string,
-        draft?: number, listed?: number, top?: number,
-        title: string, summary: string,
-        hashtags: { id: number, name: string }[],
-        createdAt: Date, updatedAt: Date,
-        pv?: number, uv?: number,
-        viewMode?: ViewMode
-    }) {
+// 优化的文章卡片组件接口
+interface FeedCardProps {
+    id: string;
+    title: string;
+    avatar?: string;
+    draft?: number;
+    listed?: number;
+    top?: number;
+    summary: string;
+    hashtags: { id: number; name: string }[];
+    createdAt: Date;
+    updatedAt: Date;
+    pv?: number;
+    uv?: number;
+    viewMode?: ViewMode;
+}
+
+// 内部FeedCard组件实现
+function FeedCardComponent({ id, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt, pv, uv, viewMode = 'grid' }: FeedCardProps) {
     const { t } = useTranslation();
     const [imageLoaded, setImageLoaded] = React.useState(false);
     const [imageError, setImageError] = React.useState(false);
@@ -24,32 +33,30 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
-    // 移除复杂的动态截断Hook，使用简单可靠的固定行数
-
-
-
-    // 判断是否为"今天"发布的文章
-    const isToday = () => {
+    // 使用useMemo缓存计算结果，避免重复计算
+    const isToday = React.useMemo(() => {
         const today = new Date();
         const pubDate = new Date(createdAt);
-        return today.getDate() === pubDate.getDate() && 
+        return today.getDate() === pubDate.getDate() &&
                today.getMonth() === pubDate.getMonth() &&
                today.getFullYear() === pubDate.getFullYear();
-    };
-    
-    // 格式化日期显示
-    const formatDate = (date: Date) => {
-        const d = new Date(date);
-        return `${d.getMonth()+1}-${d.getDate()}`;
-    };
+    }, [createdAt]);
 
-    // 预加载文章详情页（当用户悬停卡片时）
-    const prefetchArticle = () => {
+    // 使用useMemo缓存格式化日期函数
+    const formatDate = React.useMemo(() => {
+        return (date: Date) => {
+            const d = new Date(date);
+            return `${d.getMonth()+1}-${d.getDate()}`;
+        };
+    }, []);
+
+    // 使用useCallback优化事件处理函数
+    const prefetchArticle = React.useCallback(() => {
         const link = document.createElement('link');
         link.rel = 'prefetch';
         link.href = `/feed/${id}`;
         document.head.appendChild(link);
-    };
+    }, [id]);
     
     // 使用统一的渐变生成工具
     const gradientConfig = React.useMemo(() => generateGradient(id, title), [id, title]);
@@ -158,7 +165,7 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                 )}
 
                 {/* 今日发布标识 */}
-                {isToday() && (
+                {isToday && (
                     <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-medium px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full shadow-md z-30 flex items-center justify-center gap-1">
                         <i className="ri-time-line"></i>
                         <span className="hidden xs:inline">{t('today')}</span>
@@ -277,3 +284,43 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
         </Link>
     )
 }
+
+// 优化的比较函数，只在关键props变化时重新渲染
+const arePropsEqual = (prevProps: FeedCardProps, nextProps: FeedCardProps) => {
+    // 比较基本属性
+    if (prevProps.id !== nextProps.id ||
+        prevProps.title !== nextProps.title ||
+        prevProps.summary !== nextProps.summary ||
+        prevProps.avatar !== nextProps.avatar ||
+        prevProps.draft !== nextProps.draft ||
+        prevProps.listed !== nextProps.listed ||
+        prevProps.top !== nextProps.top ||
+        prevProps.pv !== nextProps.pv ||
+        prevProps.uv !== nextProps.uv ||
+        prevProps.viewMode !== nextProps.viewMode) {
+        return false;
+    }
+
+    // 比较日期（转换为时间戳比较）
+    if (prevProps.createdAt.getTime() !== nextProps.createdAt.getTime() ||
+        prevProps.updatedAt.getTime() !== nextProps.updatedAt.getTime()) {
+        return false;
+    }
+
+    // 比较hashtags数组
+    if (prevProps.hashtags.length !== nextProps.hashtags.length) {
+        return false;
+    }
+
+    for (let i = 0; i < prevProps.hashtags.length; i++) {
+        if (prevProps.hashtags[i].id !== nextProps.hashtags[i].id ||
+            prevProps.hashtags[i].name !== nextProps.hashtags[i].name) {
+            return false;
+        }
+    }
+
+    return true;
+};
+
+// 使用React.memo优化的FeedCard组件
+export const FeedCard: React.ComponentType<FeedCardProps> = React.memo(FeedCardComponent, arePropsEqual);
