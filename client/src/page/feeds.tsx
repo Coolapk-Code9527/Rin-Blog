@@ -19,6 +19,7 @@ import { ArticleManagementTabs, type ListState, type SortType } from '../compone
 import { ClientConfigContext } from "../state/config"
 import { getSidebarConfig } from "../utils/sidebarConfig"
 import { useSmartGrid } from "../hooks/useSmartGrid"
+import { useFeedsCache, FeedType as CacheFeedType } from "../hooks/useFeedsCache"
 
 type FeedsData = {
     size: number,

@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from "react"
+import React, { useEffect } from "react"
 import {Helmet} from 'react-helmet-async'
 import {Link, useLocation} from "wouter"
 import {Waiting} from "../components/loading"
-import {client} from "../main"
-import {headersWithAuth} from "../utils/auth"
 import {siteName} from "../utils/constants"
 import {useTranslation} from "react-i18next";
 import { PageContainer } from "../components/container";
 import { SimpleTimeline } from "../components/simple-timeline";
 import {useGlassEffect} from "../hooks/useGlassEffect";
+import { useTimelineCache } from "../hooks/useFeedsCache";
 
 // Object.groupBy polyfill（如原生不支持则自动挂载）
 if (!Object.groupBy) {
@@ -24,52 +23,26 @@ if (!Object.groupBy) {
 }
 
 export function TimelinePage() {
-    const [feeds, setFeeds] = useState<any[]>([]);
-    const [length, setLength] = useState(0);
     const { t } = useTranslation();
 
     // 使用智能毛玻璃效果
     const tagGlassClass = useGlassEffect('tag-enhanced');
     const [location] = useLocation();
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
 
-    function fetchFeeds() {
-        setError(null);
-        setLoading(true);
-        // 获取简化的文章列表（只需要基本信息：id, title, createdAt, pv）
-        client.feed.index.get({
-            query: { page: 1, limit: 9999 },
-            headers: headersWithAuth()
-        }).then(({ data, error: apiError }) => {
-            setLoading(false);
-            if (apiError) {
-                setError(apiError.value as string);
-                setFeeds([]);
-                return;
-            }
-            if (data && typeof data !== 'string') {
-                setLength(data.size || data.data.length);
-                // 直接使用数组，让SimpleTimeline组件内部处理分组
+    // 使用新的缓存Hook获取时间线数据
+    const { data: timelineData, loading, error: cacheError, refetch } = useTimelineCache();
 
-                setFeeds(data.data || []);
-                setError(null);
-            } else if (data === null || (typeof data === 'object' && Object.keys(data).length === 0)) {
-                setLength(0);
-                setFeeds([]);
-                setError(null);
-            }
-        }).catch(err => {
-            console.error("Error fetching timeline feeds:", err);
-            setLoading(false);
-            setFeeds([]);
-            setError(t('load_failed') || '加载失败');
-        });
-    }
+    // 从缓存数据中提取feeds和length
+    const feeds = timelineData?.data || [];
+    const length = timelineData?.size || feeds.length;
+    const error = cacheError;
 
+    // 当路由变化时刷新数据
     useEffect(() => {
-        fetchFeeds();
-    }, [location[0]]);
+        if (refetch) {
+            refetch();
+        }
+    }, [location, refetch]);
 
     return (
         <>
@@ -110,7 +83,7 @@ export function TimelinePage() {
                           <div className="mt-2 mb-4 flex flex-col items-start">
                             <span className="text-red-500 text-sm mb-2">{error}</span>
                             <button
-                              onClick={fetchFeeds}
+                              onClick={refetch}
                               className="px-4 py-2.5 bg-theme text-white rounded-xl hover:bg-theme-hover active:bg-theme-active focus:outline-none focus:ring-2 focus:ring-theme/30 focus:ring-offset-2 dark:focus:ring-offset-gray-900 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
                               aria-label={t('reload') || "Reload"}
                               disabled={loading}
@@ -140,8 +113,6 @@ export function TimelinePage() {
 }
 
 export function FeedItem({ id, title, createdAt, ...rest }: { id: string, title: string, createdAt: number } & Record<string, any>) {
-    const { t } = useTranslation();
-    const locale = t('date_format.month_day', { returnObjects: true });
     const formatter = new Intl.DateTimeFormat(undefined, { day: '2-digit', month: '2-digit', year: undefined });
     return (
         <div className="flex flex-row pl-8" {...rest}>

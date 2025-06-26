@@ -2,10 +2,10 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { MacOSSpinner } from './loading';
 import { Link } from "wouter";
-import { client } from "../main";
 import { timeago } from "../utils/timeago";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
+import { useRecentPostsCache } from '../hooks/useFeedsCache';
 
 interface Post {
   id: number;
@@ -19,10 +19,10 @@ interface Post {
 
 export function RecentPosts() {
   const { t } = useTranslation();
-  const [posts, setPosts] = React.useState<Post[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
   const [thumbnails, setThumbnails] = React.useState<Record<number, string | null>>({});
+
+  // 使用新的缓存Hook获取最近文章
+  const { data: posts = [], loading, error } = useRecentPostsCache(3);
 
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -71,40 +71,17 @@ export function RecentPosts() {
     return htmlMatch ? htmlMatch[1] : null;
   };
 
+  // 当posts数据更新时，重新计算缩略图
   React.useEffect(() => {
-    setLoading(true);
-    setError(null);
-    client.feed.index.get({ query: { page: 1, limit: 3, sortByTime: true }, headers: {} })
-      .then(({ data, error }) => {
-        setLoading(false);
-        if (error) {
-          setError(error.value as string);
-        } else if (data && Array.isArray(data.data)) {
-          const postsData = data.data.map((item: any) => ({
-            id: item.id,
-            title: item.title,
-            createdAt: new Date(item.createdAt),
-            content: item.content || "",
-            summary: item.summary || "",
-            avatar: item.avatar || "",
-            thumbUrl: item.thumbUrl || "" // 如果API提供缩略图URL
-          }));
-          setPosts(postsData);
-
-          // 使用新的优先级逻辑获取缩略图
-          const extractedThumbnails: Record<number, string | null> = {};
-          postsData.forEach(post => {
-            const thumbnail = getThumbnailUrl(post);
-            extractedThumbnails[post.id] = thumbnail;
-          });
-          setThumbnails(extractedThumbnails);
-        }
-      })
-      .catch((err) => {
-        setLoading(false);
-        setError(String(err));
+    if (posts.length > 0) {
+      const extractedThumbnails: Record<number, string | null> = {};
+      posts.forEach(post => {
+        const thumbnail = getThumbnailUrl(post);
+        extractedThumbnails[post.id] = thumbnail;
       });
-  }, []);
+      setThumbnails(extractedThumbnails);
+    }
+  }, [posts]);
 
   return (
     <section className={`${glassClass} rounded-2xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60 h-full flex flex-col`} aria-label={t("recent_posts.title", { defaultValue: "最近发布" })}>
