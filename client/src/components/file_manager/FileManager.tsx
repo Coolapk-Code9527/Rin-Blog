@@ -196,17 +196,17 @@ export function FileManager({
   // 获取当前目录下所有可预览文件（类型与isPreviewable保持一致）
   const previewableFiles = files.filter(isPreviewable);
 
-  // 使用useCallback优化预览文件点击处理
-  const handlePreviewClick = React.useCallback((file: FileItem) => {
+  // 处理可预览文件点击
+  const handlePreviewClick = (file: FileItem) => {
     const idx = previewableFiles.findIndex(f => f.id === file.id);
     if (idx !== -1) {
       setPreviewIndex(idx);
       setPreviewOpen(true);
     }
-  }, [previewableFiles]);
+  };
 
-  // 使用useCallback优化文件点击处理
-  const handleFileClick = React.useCallback((file: FileItem) => {
+  // 修改图片点击、文件点击逻辑
+  const handleFileClick = (file: FileItem) => {
     if (isLoading) return;
     if (file.isFolder) {
       setCurrentPath(file.path);
@@ -220,7 +220,7 @@ export function FileManager({
       if (multipleState) {
         setSelectedFiles(prev => {
           const exists = prev.some(f => f.id === file.id);
-          return exists
+          return exists 
             ? prev.filter(f => f.id !== file.id)
             : [...prev, file];
         });
@@ -229,7 +229,7 @@ export function FileManager({
         onSelect?.(file);
       }
     }
-  }, [isLoading, showSelector, multipleState, handlePreviewClick, onSelect]);
+  };
 
   // 加载文件列表
   const loadFiles = async (reload = false) => {
@@ -575,15 +575,15 @@ export function FileManager({
     );
   };
 
-  // 使用useCallback优化排序变化处理
-  const handleSortChange = React.useCallback((newSortBy: string) => {
+  // 处理排序变化
+  const handleSortChange = (newSortBy: string) => {
     if (sortBy === newSortBy) {
       setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
       setSortBy(newSortBy);
       setSortOrder('asc');
     }
-  }, [sortBy]);
+  };
 
   // 同步处理函数
   const handleSyncFiles = async () => {
@@ -825,26 +825,25 @@ export function FileManager({
   // 拖拽上传事件处理 - 优化拖拽体验
   const [dragCounter, setDragCounter] = useState(0);
 
-  // 使用useCallback优化拖拽事件处理
-  const handleDragEnter = React.useCallback((e: any) => {
+  const handleDragEnter = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
     setDragCounter(prev => prev + 1);
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
       setDragActive(true);
     }
-  }, []);
+  };
 
-  const handleDragOver = React.useCallback((e: any) => {
+  const handleDragOver = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
     // 设置拖拽效果
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'copy';
     }
-  }, []);
+  };
 
-  const handleDragLeave = React.useCallback((e: any) => {
+  const handleDragLeave = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
     setDragCounter(prev => {
@@ -854,7 +853,7 @@ export function FileManager({
       }
       return newCounter;
     });
-  }, []);
+  };
 
   const handleDrop = async (e: any) => {
     e.preventDefault();

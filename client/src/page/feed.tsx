@@ -912,27 +912,23 @@ function Comments({ id }: { id: string }) {
     ref.current = id;
   }, [id]);
 
-  // 使用useMemo缓存当前页评论计算
-  const currentComments = React.useMemo(() => {
-    return comments.slice(
-      (currentPage - 1) * commentsPerPage,
-      currentPage * commentsPerPage
-    );
-  }, [comments, currentPage, commentsPerPage]);
+  // 获取当前页的评论
+  const currentComments = comments.slice(
+    (currentPage - 1) * commentsPerPage,
+    currentPage * commentsPerPage
+  );
+  
+  // 计算总页数
+  const totalPages = Math.ceil(totalComments / commentsPerPage);
 
-  // 使用useMemo缓存总页数计算
-  const totalPages = React.useMemo(() => {
-    return Math.ceil(totalComments / commentsPerPage);
-  }, [totalComments, commentsPerPage]);
-
-  // 使用useCallback优化页码变化处理函数
-  const handlePageChange = React.useCallback((page: number) => {
+  // 页码变化处理函数
+  const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({
       top: document.getElementById('comments-section')?.offsetTop || 0,
       behavior: 'smooth'
     });
-  }, []);
+  };
   
   return (
     <>
@@ -1029,21 +1025,17 @@ function Comments({ id }: { id: string }) {
   );
 }
 
-// 评论项组件接口
-interface CommentItemProps {
-  comment: Comment;
-  onRefresh: () => void;
-  feedId: string;
-  depth?: number;
-}
-
-// 内部CommentItem组件实现
-function CommentItemComponent({
+function CommentItem({
   comment,
   onRefresh,
   feedId,
   depth = 0
-}: CommentItemProps) {
+}: {
+  comment: Comment;
+  onRefresh: () => void;
+  feedId: string;
+  depth?: number;
+}) {
   const { showConfirm } = useGlobalDialog();
   const { t, i18n } = useTranslation();
   const profile = React.useContext(ProfileContext);
@@ -1059,23 +1051,23 @@ function CommentItemComponent({
   const repliesArray = Array.isArray(comment.replies) ? comment.replies : [];
   const hasMoreReplies = repliesArray.length > INITIAL_REPLIES_COUNT;
 
-  // 使用useMemo缓存回复排序逻辑
-  const sortedReplies = React.useMemo(() => {
-    if (!repliesArray || repliesArray.length === 0) return [];
+  // 修复：统一回复排序逻辑，与后端保持一致
+  const getSortedReplies = (replies: any[]) => {
+    if (!replies) return [];
 
     // 修复：回复按时间正序排序（旧的在前），保持对话的连续性
     // 这与后端的排序逻辑保持一致，确保回复显示在正确位置
-    return [...repliesArray].sort((a, b) =>
+    const sorted = [...replies].sort((a, b) =>
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
-  }, [repliesArray]);
 
-  // 使用useMemo缓存显示的回复列表
-  const displayedReplies = React.useMemo(() => {
-    return showAllReplies
-      ? sortedReplies
-      : sortedReplies.slice(0, INITIAL_REPLIES_COUNT);
-  }, [sortedReplies, showAllReplies, INITIAL_REPLIES_COUNT]);
+    return sorted;
+  };
+
+  const sortedReplies = getSortedReplies(repliesArray);
+  const displayedReplies = showAllReplies
+    ? sortedReplies
+    : sortedReplies.slice(0, INITIAL_REPLIES_COUNT);
 
   // 优化展开/收起处理函数
   const handleToggleReplies = React.useCallback(() => {
@@ -1447,36 +1439,3 @@ function CommentItemComponent({
     </div>
   );
 }
-
-// 优化的比较函数，只在关键props变化时重新渲染
-const areCommentItemPropsEqual = (prevProps: CommentItemProps, nextProps: CommentItemProps) => {
-  // 比较基本属性
-  if (prevProps.feedId !== nextProps.feedId ||
-      prevProps.depth !== nextProps.depth) {
-    return false;
-  }
-
-  // 比较评论对象的关键属性
-  const prevComment = prevProps.comment;
-  const nextComment = nextProps.comment;
-
-  if (prevComment.id !== nextComment.id ||
-      prevComment.content !== nextComment.content ||
-      prevComment.nickname !== nextComment.nickname ||
-      prevComment.createdAt !== nextComment.createdAt) {
-    return false;
-  }
-
-  // 比较回复数组长度（简化比较）
-  const prevReplies = Array.isArray(prevComment.replies) ? prevComment.replies : [];
-  const nextReplies = Array.isArray(nextComment.replies) ? nextComment.replies : [];
-
-  if (prevReplies.length !== nextReplies.length) {
-    return false;
-  }
-
-  return true;
-};
-
-// 使用React.memo优化的CommentItem组件
-const CommentItem = React.memo(CommentItemComponent, areCommentItemPropsEqual) as React.ComponentType<CommentItemProps>;

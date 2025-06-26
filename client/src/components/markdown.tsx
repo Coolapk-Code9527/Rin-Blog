@@ -128,16 +128,7 @@ const OptimizedImage = React.memo(({
   );
 });
 
-// 优化的换行计算函数，使用简单缓存避免重复计算
-const newlineCache = new Map<string, number>();
-
 const countNewlinesBeforeNode = (text: string, offset: number) => {
-  const cacheKey = `${text.length}_${offset}`;
-
-  if (newlineCache.has(cacheKey)) {
-    return newlineCache.get(cacheKey)!;
-  }
-
   let newlinesBefore = 0;
   for (let i = offset - 1; i >= 0; i--) {
     if (text[i] === "\n") {
@@ -146,14 +137,6 @@ const countNewlinesBeforeNode = (text: string, offset: number) => {
       break;
     }
   }
-
-  // 限制缓存大小，避免内存泄漏
-  if (newlineCache.size > 100) {
-    const firstKey = newlineCache.keys().next().value;
-    if (firstKey) newlineCache.delete(firstKey);
-  }
-
-  newlineCache.set(cacheKey, newlinesBefore);
   return newlinesBefore;
 };
 

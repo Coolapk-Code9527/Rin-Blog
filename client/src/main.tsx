@@ -13,10 +13,6 @@ import { listenSystemMode, initializeTheme } from './utils/darkModeUtils'
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { ApiClient } from './types/api';
 import { StagewiseToolbar } from '@stagewise/toolbar-react';
-import { registerServiceWorker } from './utils/serviceWorker';
-import { clearExpiredCache } from './hooks/useApiCache';
-import { initializeComputeCache } from './hooks/useComputedCache';
-// import { enhanceTreatyWithCache } from './utils/apiCacheInterceptor';
 
 // 模拟API服务器类型，临时替代 'rin-server/src/server' 模块
 // 在实际使用中，应该导入正确的服务器类型
@@ -40,49 +36,10 @@ if (!isDev && !endpoint) {
 
 // OAuth URL同样从API端点派生
 export const oauth_url = endpoint + '/user/github';
-
-// 创建treaty客户端（暂时不使用缓存增强，避免运行时错误）
 export const client = treaty<ServerType>(endpoint) as unknown as ApiClient;
-
-// TODO: 在后续版本中重新启用缓存增强
-// const baseClient = treaty<ServerType>(endpoint) as unknown as ApiClient;
-// export const client = enhanceTreatyWithCache(baseClient, {
-//   enabled: true,
-//   defaultTTL: 5 * 60 * 1000,
-//   useConditionalRequests: true,
-//   cacheStrategies: {
-//     '/api/tag/index': 'API_LONG_TERM',
-//     '/api/config': 'API_LONG_TERM',
-//     '/api/feed/index': 'API_MEDIUM_TERM',
-//     '/api/feed/': 'API_MEDIUM_TERM',
-//     '/api/feed/comment': 'API_SHORT_TERM',
-//     '/api/search': 'API_SHORT_TERM'
-//   }
-// });
 
 // 立即初始化主题，确保在React渲染前应用正确的主题
 initializeTheme();
-
-// 清理过期缓存
-clearExpiredCache();
-
-// 初始化计算缓存
-initializeComputeCache();
-
-// 注册Service Worker（仅在生产环境）
-if (import.meta.env.PROD) {
-  registerServiceWorker({
-    enabled: true,
-    updateCheckInterval: 60 * 60 * 1000, // 1小时检查一次更新
-    skipWaiting: false
-  }).then((registration) => {
-    if (registration) {
-      console.log('Service Worker registered successfully');
-    }
-  }).catch((error) => {
-    console.error('Service Worker registration failed:', error);
-  });
-}
 
 // 初始化i18n
 // 使用变量中转来避免类型问题

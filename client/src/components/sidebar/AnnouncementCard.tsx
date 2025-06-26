@@ -55,46 +55,42 @@ export function AnnouncementCard({ className = '', maxAnnouncements = 3 }: Annou
     return null;
   }
 
-  // 使用useMemo优化时间格式化计算
-  const formatRelativeTime = React.useMemo(() => {
-    return (dateString: string) => {
-      try {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffMs = now.getTime() - date.getTime();
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  // 格式化相对时间（简化版本，不依赖date-fns）
+  const formatRelativeTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
-        if (diffDays > 0) {
-          return t('time.daysAgo', { defaultValue: `${diffDays}天前`, count: diffDays });
-        } else if (diffHours > 0) {
-          return t('time.hoursAgo', { defaultValue: `${diffHours}小时前`, count: diffHours });
-        } else if (diffMinutes > 0) {
-          return t('time.minutesAgo', { defaultValue: `${diffMinutes}分钟前`, count: diffMinutes });
-        } else {
-          return t('time.justNow', { defaultValue: '刚刚' });
-        }
-      } catch {
-        return dateString;
+      if (diffDays > 0) {
+        return t('time.daysAgo', { defaultValue: `${diffDays}天前`, count: diffDays });
+      } else if (diffHours > 0) {
+        return t('time.hoursAgo', { defaultValue: `${diffHours}小时前`, count: diffHours });
+      } else if (diffMinutes > 0) {
+        return t('time.minutesAgo', { defaultValue: `${diffMinutes}分钟前`, count: diffMinutes });
+      } else {
+        return t('time.justNow', { defaultValue: '刚刚' });
       }
-    };
-  }, [t]); // 依赖t函数，当语言变化时重新计算
+    } catch {
+      return dateString;
+    }
+  };
 
-  // 使用useMemo优化日期格式化
-  const formatDate = React.useMemo(() => {
-    return (dateString: string) => {
-      try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('zh-CN', {
-          month: 'numeric',
-          day: 'numeric'
-        }).replace('/', '月') + '日';
-      } catch {
-        return formatRelativeTime(dateString);
-      }
-    };
-  }, [formatRelativeTime]); // 依赖formatRelativeTime函数
+  // 格式化日期显示
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN', {
+        month: 'numeric',
+        day: 'numeric'
+      }).replace('/', '月') + '日';
+    } catch {
+      return formatRelativeTime(dateString);
+    }
+  };
 
   // 获取优先级图标和样式
   const getPriorityStyle = (priority: string) => {
@@ -135,7 +131,7 @@ export function AnnouncementCard({ className = '', maxAnnouncements = 3 }: Annou
       {/* 公告列表 - 添加滚动支持 */}
       <div className="p-4 max-h-[200px] overflow-y-auto custom-scrollbar">
         <div className="space-y-3 pr-1">
-        {validAnnouncements.map((announcement) => {
+        {validAnnouncements.map((announcement, index) => {
           const priorityStyle = getPriorityStyle(announcement.priority);
 
           return (
