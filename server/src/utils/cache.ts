@@ -32,7 +32,6 @@ export class CacheImpl {
     }
 
     async load() {
-        console.log('Cache load', this.cacheUrl);
         try {
             const response = await fetch(new Request(this.cacheUrl))
             const data = await response.json<any>()
@@ -95,10 +94,8 @@ export class CacheImpl {
     async getOrSet<T>(key: string, value: () => Promise<T>) {
         const cached = await this.get(key)
         if (cached !== undefined) {
-            console.log('Cache hit', key);
             return cached as T;
         }
-        console.log('Cache miss', key);
         const newValue = await value();
         await this.set(key, newValue);
         return newValue;
@@ -246,7 +243,6 @@ export class CacheImpl {
                 Key: cacheKey,
                 Body: data
             }));
-            console.log(`Cache saved successfully: ${cacheKey}`);
         } catch (e: any) {
             if (e.code !== 'NoSuchBucket') {
                 console.error('Cache save failed:', e.message);

@@ -81,8 +81,8 @@ export function useDynamicTextTruncation(options: TruncationOptions = {}) {
       summary.style.overflow = 'hidden';
       summary.style.textOverflow = 'ellipsis';
 
-      // 调试信息（开发环境）- 增强版
-      if (process.env.NODE_ENV === 'development') {
+      // 调试信息（开发环境且明确启用调试时）
+      if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_DEBUG_TRUNCATION) {
         console.log('🔍 Dynamic truncation (flex-aware):', {
           summaryContainerHeight,
           summaryPadding,
