@@ -49,12 +49,18 @@ export default defineConfig(({ mode }) => {
               if (id.includes('mermaid')) {
                 return 'chart-vendor';
               }
-              // 文件处理库
-              if (id.includes('jszip') ||
-                  id.includes('xlsx') ||
-                  id.includes('mammoth') ||
-                  id.includes('file-saver')) {
-                return 'file-vendor';
+              // 文件处理库 - 分开处理避免循环依赖
+              if (id.includes('jszip')) {
+                return 'jszip-vendor';
+              }
+              if (id.includes('xlsx')) {
+                return 'xlsx-vendor';
+              }
+              if (id.includes('mammoth')) {
+                return 'mammoth-vendor';
+              }
+              if (id.includes('file-saver')) {
+                return 'file-saver-vendor';
               }
               // 数学公式库
               if (id.includes('katex')) {
