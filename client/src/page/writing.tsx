@@ -1,5 +1,6 @@
-import { LazyMonacoEditor } from '../components/LazyMonacoEditor';
+import Editor from '@monaco-editor/react';
 import i18n from 'i18next';
+import _ from 'lodash';
 import {editor} from 'monaco-editor';
 import * as monaco from 'monaco-editor';
 import {Calendar} from 'primereact/calendar';
@@ -2686,7 +2687,7 @@ export function WritingPage({ id }: { id?: number }) {
                     )}
 
                     <div className="w-full h-full">
-                      <LazyMonacoEditor
+                      <Editor
                         onMount={(editor, monaco) => {
                           editorRef.current = editor;
                           setEditorLoaded(true);

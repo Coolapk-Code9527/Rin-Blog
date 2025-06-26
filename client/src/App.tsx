@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { getCookie } from 'typescript-cookie'
 import { DefaultParams, PathPattern, Route, Switch, useRoute } from 'wouter'
@@ -12,28 +12,18 @@ import { BackgroundManager, GlassOverlay } from './components/BackgroundManager'
 import { CallbackPage } from './page/callback'
 import { FeedPage, TOCHeader } from './page/feed'
 import { FeedsPage } from './page/feeds'
+import { FilesPage } from './page/files'
+import { FriendsPage } from './page/friends'
 import { HashtagPage } from './page/hashtag.tsx'
-
-// 使用类型断言解决React 19懒加载问题
-const { Suspense, lazy } = React as any;
-
-// 懒加载大型页面组件 - 第一优先级
-const WritingPage = lazy(() => import('./page/writing').then((module: any) => ({ default: module.WritingPage })));
-const FilesPage = lazy(() => import('./page/files').then((module: any) => ({ default: module.FilesPage })));
-const Settings = lazy(() => import('./page/settings').then((module: any) => ({ default: module.Settings })));
-
-// 懒加载中等优先级页面组件
-const FriendsPage = lazy(() => import('./page/friends').then((module: any) => ({ default: module.FriendsPage })));
-const HashtagsPage = lazy(() => import('./page/hashtags').then((module: any) => ({ default: module.HashtagsPage })));
-const TimelinePage = lazy(() => import('./page/timeline').then((module: any) => ({ default: module.TimelinePage })));
-
-// 懒加载低优先级页面组件
-const SearchPage = lazy(() => import('./page/search').then((module: any) => ({ default: module.SearchPage })));
-
+import { HashtagsPage } from './page/hashtags.tsx'
+import { Settings } from "./page/settings.tsx"
+import { TimelinePage } from './page/timeline'
+import { WritingPage } from './page/writing'
 import { ClientConfigContext, ConfigWrapper, defaultClientConfig } from './state/config.tsx'
 import { Profile, ProfileContext } from './state/profile'
 import { headersWithAuth } from './utils/auth'
 import { tryInt } from './utils/int'
+import { SearchPage } from './page/search.tsx'
 import { Tips, TipsPage } from './components/tips.tsx'
 import { useTranslation } from 'react-i18next'
 import { NotFoundPage } from './page/not-found.tsx'
@@ -44,18 +34,6 @@ import { MusicProvider } from './context/MusicContext'
 import { ExtendedConfigProvider } from './context/ConfigContext'
 import { clearExpiredTagsCache } from './hooks/useTagsWithCache'
 import { SimpleClickEffectCanvas } from './components/effects/ClickEffectCanvas'
-
-// 页面加载组件
-function PageLoadingFallback() {
-  return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="flex flex-col items-center space-y-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme"></div>
-        <p className="text-sm text-neutral-600 dark:text-neutral-400">加载中...</p>
-      </div>
-    </div>
-  );
-}
 
 // 返回顶部按钮组件
 function BackToTop() {
@@ -237,27 +215,19 @@ function App() {
                 </RouteMe>
 
                 <RouteMe path="/timeline">
-                  <Suspense fallback={<PageLoadingFallback />}>
-                    <TimelinePage />
-                  </Suspense>
+                  <TimelinePage />
                 </RouteMe>
 
                 <RouteMe path="/files">
-                  <Suspense fallback={<PageLoadingFallback />}>
-                    <FilesPage />
-                  </Suspense>
+                  <FilesPage />
                 </RouteMe>
 
                 <RouteMe path="/friends">
-                  <Suspense fallback={<PageLoadingFallback />}>
-                    <FriendsPage />
-                  </Suspense>
+                  <FriendsPage />
                 </RouteMe>
 
                 <RouteMe path="/hashtags">
-                  <Suspense fallback={<PageLoadingFallback />}>
-                    <HashtagsPage />
-                  </Suspense>
+                  <HashtagsPage />
                 </RouteMe>
 
                 <RouteMe path="/hashtag/:name">
@@ -268,42 +238,28 @@ function App() {
 
                 <RouteMe path="/search/:keyword">
                   {params => {
-                    return (
-                      <Suspense fallback={<PageLoadingFallback />}>
-                        <SearchPage keyword={params.keyword || ""} />
-                      </Suspense>
-                    )
+                    return (<SearchPage keyword={params.keyword || ""} />)
                   }}
                 </RouteMe>
 
                 <RouteMe path="/settings">
-                  <Suspense fallback={<PageLoadingFallback />}>
-                    <Settings />
-                  </Suspense>
+                  <Settings />
                 </RouteMe>
 
 
                 <RouteMe path="/writing">
-                  <Suspense fallback={<PageLoadingFallback />}>
-                    <WritingPage />
-                  </Suspense>
+                  <WritingPage />
                 </RouteMe>
 
                 <RouteMe path="/writing/:id">
                   {({ id }) => {
                     // 如果id是"new"，则不传递id参数，保持与/writing路由一致
                     if (id === "new") {
-                      return (
-                        <Suspense fallback={<PageLoadingFallback />}>
-                          <WritingPage />
-                        </Suspense>
-                      )
+                      return <WritingPage />
                     }
                     const id_num = tryInt(0, id)
                     return (
-                      <Suspense fallback={<PageLoadingFallback />}>
-                        <WritingPage id={id_num} />
-                      </Suspense>
+                      <WritingPage id={id_num} />
                     )
                   }}
                 </RouteMe>

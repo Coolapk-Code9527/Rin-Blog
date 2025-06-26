@@ -5,7 +5,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   oneLight as oneLightStyle,
   oneDark as oneDarkStyle,
-} from "react-syntax-highlighter/dist/cjs/styles/prism";
+} from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import gfm from "remark-gfm";
