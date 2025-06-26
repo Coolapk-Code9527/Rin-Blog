@@ -162,21 +162,31 @@ export function useApiCache<T>({
         setLoading(true);
         setError(null);
 
-        // 尝试从缓存获取数据
-        const cachedData = getCachedData();
-        if (cachedData) {
-          setData(cachedData.data);
-          setLoading(false);
-          onSuccess?.(cachedData.data);
-          return;
+        // 尝试从缓存获取数据（添加错误处理）
+        try {
+          const cachedData = getCachedData();
+          if (cachedData) {
+            setData(cachedData.data);
+            setLoading(false);
+            onSuccess?.(cachedData.data);
+            return;
+          }
+        } catch (cacheError) {
+          console.warn(`Cache read failed for ${key}, falling back to API:`, cacheError);
+          // 缓存失败时继续从API获取
         }
 
         // 从API获取数据
         const result = await fetcher(...params);
         setData(result);
 
-        // 保存到缓存
-        setCachedData(result);
+        // 保存到缓存（添加错误处理）
+        try {
+          setCachedData(result);
+        } catch (cacheError) {
+          console.warn(`Cache write failed for ${key}:`, cacheError);
+          // 缓存写入失败不影响数据返回
+        }
 
         onSuccess?.(result);
 

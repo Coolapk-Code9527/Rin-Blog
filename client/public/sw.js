@@ -34,11 +34,11 @@ const API_CACHE_CONFIG = {
   ]
 };
 
-// 缓存持续时间（毫秒）
+// 简化的缓存持续时间（毫秒）
 const CACHE_DURATIONS = {
-  longTerm: 60 * 60 * 1000,    // 1小时
-  mediumTerm: 15 * 60 * 1000,  // 15分钟
-  shortTerm: 5 * 60 * 1000     // 5分钟
+  longTerm: 30 * 60 * 1000,    // 30分钟，减少缓存时间
+  mediumTerm: 10 * 60 * 1000,  // 10分钟
+  shortTerm: 3 * 60 * 1000     // 3分钟
 };
 
 /**

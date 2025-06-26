@@ -66,11 +66,11 @@ export function useAsyncComputedCache<T>(
  * 预定义的计算缓存函数
  */
 
-// 创建专用的计算缓存实例
+// 简化的计算缓存实例
 const computeCache = createCache({
-  maxSize: 500,
-  defaultTTL: 10 * 60 * 1000, // 10分钟
-  cleanupInterval: 2 * 60 * 1000 // 2分钟清理一次
+  maxSize: 100, // 大幅减少
+  defaultTTL: 5 * 60 * 1000, // 5分钟
+  cleanupInterval: 10 * 60 * 1000 // 10分钟清理一次，减少频率
 });
 
 /**

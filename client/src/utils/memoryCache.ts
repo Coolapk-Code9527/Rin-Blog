@@ -30,7 +30,7 @@ interface CacheStats {
 }
 
 /**
- * 内存缓存类
+ * 简化的内存缓存类
  */
 export class MemoryCache<T = any> {
   private cache = new Map<string, CacheItem<T>>();
@@ -40,9 +40,9 @@ export class MemoryCache<T = any> {
 
   constructor(options: CacheOptions = {}) {
     this.options = {
-      maxSize: options.maxSize || 1000,
+      maxSize: options.maxSize || 500, // 减少默认大小
       defaultTTL: options.defaultTTL || 5 * 60 * 1000, // 5分钟
-      cleanupInterval: options.cleanupInterval || 60 * 1000, // 1分钟
+      cleanupInterval: options.cleanupInterval || 2 * 60 * 1000, // 2分钟，减少清理频率
       enableStats: options.enableStats !== false
     };
 
@@ -56,7 +56,7 @@ export class MemoryCache<T = any> {
       memoryUsage: 0
     };
 
-    // 启动定期清理
+    // 启动定期清理（减少频率）
     this.startCleanup();
   }
 
@@ -350,12 +350,12 @@ export class MemoryCache<T = any> {
 }
 
 /**
- * 全局缓存实例
+ * 简化的全局缓存实例
  */
 export const globalCache = new MemoryCache({
-  maxSize: 1000,
-  defaultTTL: 5 * 60 * 1000, // 5分钟
-  cleanupInterval: 60 * 1000, // 1分钟
+  maxSize: 200, // 大幅减少缓存大小
+  defaultTTL: 3 * 60 * 1000, // 3分钟，减少缓存时间
+  cleanupInterval: 5 * 60 * 1000, // 5分钟清理一次，减少频率
   enableStats: true
 });
 
