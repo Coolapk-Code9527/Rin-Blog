@@ -9,6 +9,7 @@ import { syncFeedFileReferences } from './feed';
 import { listAllR2Files, getR2FileMeta, normalizePath, setR2FileMeta } from '../utils/s3';
 import { generateThumbnail } from '../utils/image';
 import { Container } from 'typedi';
+import { safeParseId, safeParsePage, safeParseLimit } from "../utils/validation";
 
 // 优化：哈希计算缓存，避免重复计算（扩大缓存容量）
 const hashCache = new Map<string, string>();
@@ -183,8 +184,23 @@ export function FileService() {
                         return { error: 'Database connection not available' };
                     }
                     const { path = '/', type, search, sort = 'name', order = 'asc', page: pageRaw = 1, limit: limitRaw = 20, all } = query;
-                    const page = typeof pageRaw === 'string' ? parseInt(pageRaw) : pageRaw;
-                    const limit = typeof limitRaw === 'string' ? parseInt(limitRaw) : limitRaw;
+
+                    // 安全的分页参数解析
+                    const pageParseResult = safeParsePage(pageRaw);
+                    const limitParseResult = safeParseLimit(limitRaw);
+
+                    if (!pageParseResult.success) {
+                        set.status = 400;
+                        return { error: `Invalid page parameter: ${pageParseResult.error}` };
+                    }
+
+                    if (!limitParseResult.success) {
+                        set.status = 400;
+                        return { error: `Invalid limit parameter: ${limitParseResult.error}` };
+                    }
+
+                    const page = pageParseResult.value!;
+                    const limit = Math.min(limitParseResult.value!, 100); // 限制最大值为100
                     const offset = (page - 1) * limit;
                     try {
                         // 管理员可查所有用户文件
@@ -1275,11 +1291,13 @@ export function FileService() {
                     }
 
                     try {
-                        const fileId = parseInt(id);
-                        if (isNaN(fileId)) {
+                        // 安全的文件ID解析
+                        const parseResult = safeParseId(id);
+                        if (!parseResult.success) {
                             set.status = 400;
-                            return 'Invalid file ID';
+                            return `Invalid file ID: ${parseResult.error}`;
                         }
+                        const fileId = parseResult.value!;
 
                         // 检查文件是否存在且属于当前用户
                         const existingFile = await db.select().from(files).where(eq(files.id, fileId)).limit(1);

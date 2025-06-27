@@ -8,6 +8,7 @@ import { ServerConfig, ClientConfig } from "../utils/cache";
 import { Config } from "../utils/config";
 import { getDB, getEnv } from "../utils/di";
 import { notify } from "../utils/webhook";
+import { safeParseId, validateStringLength, validateEmail, createSafeErrorResponse } from "../utils/validation";
 
 // 匿名评论时使用的系统用户ID，通常是第一个用户
 const ANONYMOUS_USER_ID = 1;
@@ -19,14 +20,20 @@ export function CommentService() {
         .use(setup())
         .group('/feed/comment', (group) =>
             group
-                .get('/:feed', async ({ params: { feed } }) => {
+                .get('/:feed', async ({ params: { feed }, set }) => {
                     // 检查评论功能是否启用
                     const commentEnabled = await ClientConfig().getOrDefault('comment.enabled', true);
                     if (!commentEnabled) {
                         return [];
                     }
 
-                    const feedId = parseInt(feed);
+                    // 安全的feed ID解析
+                    const parseResult = safeParseId(feed);
+                    if (!parseResult.success) {
+                        set.status = 400;
+                        return `Invalid feed ID: ${parseResult.error}`;
+                    }
+                    const feedId = parseResult.value!;
                     try {
                     try {
                         // 优化：限制评论数量，避免CPU超时
@@ -137,12 +144,36 @@ export function CommentService() {
                         return 'Comment feature is disabled';
                     }
 
-                    if (!content) {
+                    // 验证输入参数
+                    const contentValidation = validateStringLength(content, 1, 500);
+                    if (!contentValidation.valid) {
                         set.status = 400;
-                        return 'Content is required';
+                        return contentValidation.error;
                     }
 
-                    const feedId = parseInt(feed);
+                    if (nickname) {
+                        const nicknameValidation = validateStringLength(nickname, 1, 50);
+                        if (!nicknameValidation.valid) {
+                            set.status = 400;
+                            return `Invalid nickname: ${nicknameValidation.error}`;
+                        }
+                    }
+
+                    if (email) {
+                        const emailValidation = validateEmail(email);
+                        if (!emailValidation.valid) {
+                            set.status = 400;
+                            return emailValidation.error;
+                        }
+                    }
+
+                    // 安全的feed ID解析
+                    const feedParseResult = safeParseId(feed);
+                    if (!feedParseResult.success) {
+                        set.status = 400;
+                        return `Invalid feed ID: ${feedParseResult.error}`;
+                    }
+                    const feedId = feedParseResult.value!;
                     const exist = await db.query.feeds.findFirst({ where: eq(feeds.id, feedId) });
                     if (!exist) {
                         set.status = 400;
@@ -169,9 +200,14 @@ export function CommentService() {
                                     content
                                 };
 
-                                // 如果有parentId，添加到插入数据中
+                                // 如果有parentId，安全解析并添加到插入数据中
                                 if (parentId) {
-                                    insertData.parentId = parseInt(parentId);
+                                    const parentIdParseResult = safeParseId(parentId);
+                                    if (!parentIdParseResult.success) {
+                                        set.status = 400;
+                                        return `Invalid parent comment ID: ${parentIdParseResult.error}`;
+                                    }
+                                    insertData.parentId = parentIdParseResult.value!;
                                 }
 
                                 try {
@@ -204,23 +240,35 @@ export function CommentService() {
                             return 'Unauthorized';
                         }
                         
-                        const userId = parseInt(uid);
+                        // 安全的用户ID解析
+                        const userIdParseResult = safeParseId(uid);
+                        if (!userIdParseResult.success) {
+                            set.status = 400;
+                            return `Invalid user ID: ${userIdParseResult.error}`;
+                        }
+                        const userId = userIdParseResult.value!;
+
                         const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
                         if (!user) {
                             set.status = 400;
                             return 'User not found';
-                    }
+                        }
 
-                    const insertData: any = {
-                        feedId,
-                        userId,
-                        content
-                    };
+                        const insertData: any = {
+                            feedId,
+                            userId,
+                            content
+                        };
 
-                    // 如果有parentId，添加到插入数据中
-                    if (parentId) {
-                        insertData.parentId = parseInt(parentId);
-                    }
+                        // 如果有parentId，安全解析并添加到插入数据中
+                        if (parentId) {
+                            const parentIdParseResult = safeParseId(parentId);
+                            if (!parentIdParseResult.success) {
+                                set.status = 400;
+                                return `Invalid parent comment ID: ${parentIdParseResult.error}`;
+                            }
+                            insertData.parentId = parentIdParseResult.value!;
+                        }
 
                     try {
                         await db.insert(comments).values(insertData);

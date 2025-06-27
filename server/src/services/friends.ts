@@ -10,6 +10,7 @@ import { ClientConfig, ServerConfig } from "../utils/cache";
 import { Config } from "../utils/config";
 import { getDB, getEnv } from "../utils/di";
 import { notify } from "../utils/webhook";
+import { safeParseId } from "../utils/validation";
 
 export function FriendService() {
     const db: DB = getDB();
@@ -17,10 +18,19 @@ export function FriendService() {
     return new Elysia({ aot: false })
         .use(setup())
         .group('/friend', (group) =>
-            group.get('/', async ({ admin, uid }) => {
+            group.get('/', async ({ admin, uid, set }) => {
                 const friend_list = await (admin ? db.query.friends.findMany() : db.query.friends.findMany({ where: eq(friends.accepted, 1) }));
-                const uid_num = parseInt(uid);
-                const apply_list = await db.query.friends.findFirst({ where: eq(friends.uid, uid_num ?? null) });
+
+                let apply_list = null;
+                if (uid) {
+                    // 安全的用户ID解析
+                    const parseResult = safeParseId(uid);
+                    if (parseResult.success) {
+                        const uid_num = parseResult.value!;
+                        apply_list = await db.query.friends.findFirst({ where: eq(friends.uid, uid_num) });
+                    }
+                }
+
                 return { friend_list, apply_list };
             })
                 .post('/', async ({ admin, uid, username, set, body: { name, desc, avatar, url } }) => {
@@ -51,7 +61,13 @@ export function FriendService() {
                             return 'Already sent';
                         }
                     }
-                    const uid_num = parseInt(uid);
+                    // 安全的用户ID解析
+                    const parseResult = safeParseId(uid);
+                    if (!parseResult.success) {
+                        set.status = 400;
+                        return `Invalid user ID: ${parseResult.error}`;
+                    }
+                    const uid_num = parseResult.value!;
                     const accepted = admin ? 1 : 0;
                     await db.insert(friends).values({
                         name,
@@ -88,8 +104,16 @@ export function FriendService() {
                         set.status = 401;
                         return 'Unauthorized';
                     }
+                    // 安全的ID解析
+                    const parseResult = safeParseId(id);
+                    if (!parseResult.success) {
+                        set.status = 400;
+                        return `Invalid friend ID: ${parseResult.error}`;
+                    }
+                    const friendId = parseResult.value!;
+
                     const exist = await db.query.friends.findFirst({
-                        where: eq(friends.id, parseInt(id)),
+                        where: eq(friends.id, friendId),
                     });
                     if (!exist) {
                         set.status = 404;
@@ -111,7 +135,7 @@ export function FriendService() {
                         avatar: wrap(avatar),
                         url: wrap(url),
                         accepted: accepted === undefined ? undefined : accepted,
-                    }).where(eq(friends.id, parseInt(id)));
+                    }).where(eq(friends.id, friendId));
                     if (!admin) {
                         const webhookUrl = await ServerConfig().get(Config.webhookUrl) || env.WEBHOOK_URL;
                         const content = `${env.FRONTEND_URL}/friends\n${username} 更新友链: ${name}\n${desc}\n${url}`;
@@ -133,8 +157,17 @@ export function FriendService() {
                         set.status = 401;
                         return 'Unauthorized';
                     }
+
+                    // 安全的ID解析
+                    const parseResult = safeParseId(id);
+                    if (!parseResult.success) {
+                        set.status = 400;
+                        return `Invalid friend ID: ${parseResult.error}`;
+                    }
+                    const friendId = parseResult.value!;
+
                     const exist = await db.query.friends.findFirst({
-                        where: eq(friends.id, parseInt(id)),
+                        where: eq(friends.id, friendId),
                     });
                     if (!exist) {
                         set.status = 404;
@@ -144,7 +177,7 @@ export function FriendService() {
                         set.status = 403;
                         return 'Permission denied';
                     }
-                    await db.delete(friends).where(eq(friends.id, parseInt(id)));
+                    await db.delete(friends).where(eq(friends.id, friendId));
                     return 'OK';
                 })
         )

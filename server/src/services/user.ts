@@ -4,6 +4,7 @@ import type { DB } from "../_worker";
 import { users } from "../db/schema";
 import { setup } from "../setup";
 import { getDB } from "../utils/di";
+import { safeParseId } from "../utils/validation";
 
 export function UserService() {
     const db: DB = getDB();
@@ -94,7 +95,15 @@ export function UserService() {
                         set.status = 403
                         return 'Permission denied'
                     }
-                    const uid_num = parseInt(uid)
+
+                    // 安全的用户ID解析
+                    const parseResult = safeParseId(uid);
+                    if (!parseResult.success) {
+                        set.status = 400;
+                        return `Invalid user ID: ${parseResult.error}`;
+                    }
+                    const uid_num = parseResult.value!;
+
                     const user = await db.query.users.findFirst({ where: eq(users.id, uid_num) })
                     if (!user) {
                         set.status = 404

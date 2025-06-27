@@ -111,6 +111,7 @@ import {getDB} from "../utils/di";
 import {extractImage} from "../utils/image";
 import {markdownToPlainText} from "../utils/markdown";
 import {bindTagToPost} from "./tag";
+import {safeParseId, safeParseInt, safeParsePage, safeParseLimit, createSafeErrorResponse} from "../utils/validation";
 import { getR2FileMeta, setR2FileMeta } from '../utils/s3';
 import { getEnv } from '../utils/di';
 import { normalizePath } from '../utils/s3';
@@ -127,7 +128,14 @@ export function FeedService() {
                         return 'Permission denied';
                     }
                     const cache = PublicCache();
-                    const limit_num = limit ? +limit > 50 ? 50 : +limit : 20;
+
+                    // 安全的limit参数解析
+                    const limitParseResult = safeParseLimit(limit || '20');
+                    if (!limitParseResult.success) {
+                        set.status = 400;
+                        return `Invalid limit parameter: ${limitParseResult.error}`;
+                    }
+                    const limit_num = Math.min(limitParseResult.value!, 50); // 限制最大值为50
                     
                     let cacheKey = '';
                     let hasNext = false;
@@ -149,8 +157,22 @@ export function FeedService() {
                         // 游标分页不使用缓存，因为数据是动态的
                         // 深度优化：优化cursor解析，减少字符串操作
                         const pipeIndex = cursor.indexOf('|');
-                        const cursorTimestamp = parseInt(cursor.slice(0, pipeIndex));
-                        const cursorId = parseInt(cursor.slice(pipeIndex + 1));
+                        if (pipeIndex === -1) {
+                            set.status = 400;
+                            return 'Invalid cursor format';
+                        }
+
+                        // 安全的cursor解析
+                        const timestampParseResult = safeParseInt(cursor.slice(0, pipeIndex), { allowNegative: false, min: 0 });
+                        const idParseResult = safeParseId(cursor.slice(pipeIndex + 1));
+
+                        if (!timestampParseResult.success || !idParseResult.success) {
+                            set.status = 400;
+                            return 'Invalid cursor format';
+                        }
+
+                        const cursorTimestamp = timestampParseResult.value!;
+                        const cursorId = idParseResult.value!;
 
                         const cursorCondition = or(
                             lt(feeds.createdAt, new Date(cursorTimestamp)),
@@ -207,8 +229,8 @@ export function FeedService() {
                                     avatar = extractImage(content);
                                     processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
 
-                                    // 缓存预计算结果，30分钟过期
-                                    await cache.set(cacheKey, { avatar, summary: processedSummary }, 30 * 60 * 1000);
+                                    // 缓存预计算结果
+                                    await cache.set(cacheKey, { avatar, summary: processedSummary });
                                 }
 
                                 // 从批量查询结果中获取访问统计
@@ -227,7 +249,14 @@ export function FeedService() {
 
                         feed_list = processedFeeds;
                     } else {
-                        const page_num = (page ? page > 0 ? page : 1 : 1) - 1;
+                        // 安全的page参数解析
+                        const pageParseResult = safeParsePage(page || '1');
+                        if (!pageParseResult.success) {
+                            set.status = 400;
+                            return `Invalid page parameter: ${pageParseResult.error}`;
+                        }
+
+                        const page_num = pageParseResult.value! - 1; // 转换为0基索引
                         cacheKey = `feeds_${type}_${page_num}_${limit_num}_${sortByTime ? 'time' : 'default'}`;
                         
                         const cached = await cache.get(cacheKey);
@@ -280,8 +309,8 @@ export function FeedService() {
                                 avatar = extractImage(content);
                                 processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
 
-                                // 缓存预计算结果，30分钟过期
-                                await cache.set(cacheKey, { avatar, summary: processedSummary }, 30 * 60 * 1000);
+                                // 缓存预计算结果
+                                await cache.set(cacheKey, { avatar, summary: processedSummary });
                             }
 
                             // 从批量查询结果中获取访问统计
@@ -320,9 +349,8 @@ export function FeedService() {
                     }
                     
                     if (type === undefined || type === 'normal' || type === '') {
-                        // 性能优化：差异化缓存策略，根据数据更新频率设置不同缓存时间
-                        const cacheTime = type === 'draft' ? 5 * 60 * 1000 : 20 * 60 * 1000; // 草稿5分钟，正常文章20分钟
-                        await cache.set(cacheKey, data, cacheTime);
+                        // 性能优化：缓存正常文章数据
+                        await cache.set(cacheKey, data);
                     }
                     return data
                 }, {
@@ -429,13 +457,26 @@ export function FeedService() {
                 })
                 .get('/:id', async ({ uid, admin, set, headers, params: { id } }) => {
                     const db: DB = getDB();
-                    const id_num = parseInt(id);
+
+                    // 安全的ID解析
+                    const parseResult = safeParseId(id);
+                    let id_num: number | undefined;
+
+                    if (parseResult.success) {
+                        id_num = parseResult.value;
+                    }
+
                     const cache = PublicCache();
                     const cacheKey = `feed_${id}`;
 
                     // 先直接查询文章，不使用缓存
+                    // 支持通过ID或别名查询
+                    const whereCondition = id_num
+                        ? or(eq(feeds.id, id_num), eq(feeds.alias, id))
+                        : eq(feeds.alias, id);
+
                     const feed = await db.query.feeds.findFirst({
-                        where: or(eq(feeds.id, id_num), eq(feeds.alias, id)),
+                        where: whereCondition,
                         with: {
                             hashtags: {
                                 columns: {},
@@ -498,7 +539,13 @@ export function FeedService() {
                 .get("/adjacent/:id", async ({ set, params: { id } }) => {
                     const db: DB = getDB();
                     let id_num: number;
-                    if (isNaN(parseInt(id))) {
+
+                    // 安全的ID解析
+                    const parseResult = safeParseId(id);
+                    if (parseResult.success) {
+                        id_num = parseResult.value!;
+                    } else {
+                        // 如果不是有效数字，尝试作为别名查询
                         const aliasRecord = await db
                             .select({ id: feeds.id })
                             .from(feeds)
@@ -508,8 +555,6 @@ export function FeedService() {
                             return "Not found";
                         }
                         id_num = aliasRecord[0].id;
-                    } else {
-                        id_num = parseInt(id);
                     }
 
                     const feed = await db.query.feeds.findFirst({
@@ -625,7 +670,15 @@ export function FeedService() {
                     body: { title, listed, content, summary, alias, draft, top, tags, createdAt }
                 }) => {
                     const db: DB = getDB();
-                    const id_num = parseInt(id);
+
+                    // 安全的ID解析
+                    const parseResult = safeParseId(id);
+                    if (!parseResult.success) {
+                        set.status = 400;
+                        return `Invalid feed ID: ${parseResult.error}`;
+                    }
+
+                    const id_num = parseResult.value!;
                     const feed = await db.query.feeds.findFirst({
                         where: eq(feeds.id, id_num)
                     });
@@ -678,7 +731,15 @@ export function FeedService() {
                     body: { top }
                 }) => {
                     const db: DB = getDB();
-                    const id_num = parseInt(id);
+
+                    // 安全的ID解析
+                    const parseResult = safeParseId(id);
+                    if (!parseResult.success) {
+                        set.status = 400;
+                        return `Invalid feed ID: ${parseResult.error}`;
+                    }
+
+                    const id_num = parseResult.value!;
                     const feed = await db.query.feeds.findFirst({
                         where: eq(feeds.id, id_num)
                     });
@@ -702,7 +763,15 @@ export function FeedService() {
                 })
                 .delete('/:id', async ({ admin, set, uid, params: { id } }) => {
                     const db: DB = getDB();
-                    const id_num = parseInt(id);
+
+                    // 安全的ID解析
+                    const parseResult = safeParseId(id);
+                    if (!parseResult.success) {
+                        set.status = 400;
+                        return `Invalid feed ID: ${parseResult.error}`;
+                    }
+
+                    const id_num = parseResult.value!;
                     const feed = await db.query.feeds.findFirst({
                         where: eq(feeds.id, id_num)
                     });
@@ -723,8 +792,21 @@ export function FeedService() {
             const db: DB = getDB();
             keyword = decodeURI(keyword);
             const cache = PublicCache();
-            const page_num = (page ? page > 0 ? page : 1 : 1) - 1;
-            const limit_num = limit ? +limit > 50 ? 50 : +limit : 20;
+
+            // 安全的分页参数解析
+            const pageParseResult = safeParsePage(page || '1');
+            const limitParseResult = safeParseLimit(limit || '20');
+
+            if (!pageParseResult.success) {
+                return createSafeErrorResponse(`Invalid page parameter: ${pageParseResult.error}`, 400);
+            }
+
+            if (!limitParseResult.success) {
+                return createSafeErrorResponse(`Invalid limit parameter: ${limitParseResult.error}`, 400);
+            }
+
+            const page_num = pageParseResult.value! - 1; // 转换为0基索引
+            const limit_num = Math.min(limitParseResult.value!, 50); // 限制最大值为50
             if (keyword === undefined || keyword.trim().length === 0) {
                 return {
                     size: 0,
@@ -802,7 +884,7 @@ export function FeedService() {
                     data: feedsData,
                     hasNext: (page_num + 1) * limit_num < totalCount[0].count
                 };
-            }, 15 * 60 * 1000); // 搜索结果缓存15分钟
+            }); // 搜索结果缓存
 
             const feed_list = searchResults.data.map(({ content, hashtags, summary, ...other }) => {
                 return {
