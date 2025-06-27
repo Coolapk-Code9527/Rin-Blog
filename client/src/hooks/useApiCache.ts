@@ -62,8 +62,8 @@ export function useApiCache<T>(
   config: ApiCacheConfig = {}
 ): UseApiCacheReturn<T> {
   const {
-    staleTime = 5 * 60 * 1000, // 5分钟
-    cacheTime = 30 * 60 * 1000, // 30分钟
+    staleTime = 10 * 60 * 1000, // 优化：默认10分钟（从5分钟延长）
+    cacheTime = 60 * 60 * 1000, // 优化：默认60分钟（从30分钟延长）
     refetchOnWindowFocus = true,
     enabled = true,
     retryCount = 3,

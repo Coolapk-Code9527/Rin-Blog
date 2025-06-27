@@ -33,6 +33,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(false);
   const [waitingForInteraction, setWaitingForInteraction] = useState(false);
+  const [shouldPreload, setShouldPreload] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const playAttemptRef = useRef<NodeJS.Timeout | null>(null);
   const hasUserInteractedRef = useRef(false);
@@ -115,6 +116,53 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   };
+
+  // 完全异步音频预加载 - 使用空闲时间，不影响任何其他资源
+  useEffect(() => {
+    if (musicConfig.enabled && musicConfig.url) {
+      // 使用requestIdleCallback确保在浏览器空闲时才加载
+      const idleCallback = (deadline: IdleDeadline) => {
+        if (deadline.timeRemaining() > 0) {
+          // 使用fetch预加载音频，不占用媒体加载队列
+          fetch(musicConfig.url, {
+            mode: 'cors',
+            cache: 'force-cache' // 强制缓存
+          })
+          .then(response => response.blob())
+          .then(() => {
+            // 音频预加载完成，现在可以设置preload
+            setShouldPreload(true);
+            console.log('Audio preloaded successfully');
+          })
+          .catch(error => {
+            console.warn('Audio preload failed, will load on demand:', error);
+            // 预加载失败，仍然允许用户点击播放时加载
+            setShouldPreload(true);
+          });
+        } else {
+          // 如果没有空闲时间，延迟重试
+          setTimeout(() => {
+            if (window.requestIdleCallback) {
+              window.requestIdleCallback(idleCallback);
+            } else {
+              // 降级方案：延迟5秒后加载
+              setTimeout(() => setShouldPreload(true), 5000);
+            }
+          }, 1000);
+        }
+      };
+
+      // 延迟2秒后开始尝试空闲加载，确保首屏资源优先
+      setTimeout(() => {
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(idleCallback);
+        } else {
+          // 降级方案：延迟5秒后加载
+          setTimeout(() => setShouldPreload(true), 5000);
+        }
+      }, 2000);
+    }
+  }, [musicConfig.enabled, musicConfig.url]);
 
   // 用户交互检测
   useEffect(() => {
@@ -226,7 +274,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
           ref={audioRef}
           src={musicConfig.url}
           volume={musicConfig.volume}
-          preload="metadata"
+          preload={shouldPreload ? "metadata" : "none"}
           loop // 循环播放背景音乐
         />
       )}

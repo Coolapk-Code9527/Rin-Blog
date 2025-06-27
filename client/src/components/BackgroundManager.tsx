@@ -22,8 +22,8 @@ export const BackgroundManager = () => {
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
-  // 如果背景未启用或图片未加载，不渲染任何内容
-  if (!state.enabled || !state.url || !state.isImageLoaded) {
+  // 如果背景未启用或没有URL，不渲染任何内容
+  if (!state.enabled || !state.url) {
     return null;
   }
 
@@ -39,7 +39,9 @@ export const BackgroundManager = () => {
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
     zIndex: -1,
-    willChange: 'transform'
+    willChange: 'transform',
+    opacity: state.isImageLoaded ? 1 : 0,
+    transition: 'opacity 0.5s ease-in-out'
   };
 
   // 桌面端使用优化的背景处理
@@ -55,7 +57,9 @@ export const BackgroundManager = () => {
     backgroundRepeat: 'no-repeat',
     zIndex: -1,
     willChange: 'transform',
-    transform: 'translateZ(0)' // 启用硬件加速
+    transform: 'translateZ(0)', // 启用硬件加速
+    opacity: state.isImageLoaded ? 1 : 0,
+    transition: 'opacity 0.5s ease-in-out'
   };
 
   return (

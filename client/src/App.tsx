@@ -102,6 +102,9 @@ function App() {
 
   const [contentReady, setContentReady] = useState(false);
 
+  // 初始加载状态 - 用于控制首屏渲染
+  const [initialLoading, setInitialLoading] = useState(true);
+
 
 
   // 加载配置的函数
@@ -143,27 +146,48 @@ function App() {
 
   useEffect(() => {
     if (ref.current) return
-    if (getCookie('token')?.length ?? 0 > 0) {
-      client.user.profile.get({
-        headers: headersWithAuth()
-      }).then(({ data }) => {
-        if (data && typeof data !== 'string') {
-          setProfile({
-            id: data.id,
-            avatar: data.avatar || '',
-            permission: data.permission,
-            name: data.username
+
+    // API调用优先级优化：配置API优先，其他API延迟
+    const initializeApp = async () => {
+      // 第一优先级：配置API（关键路径）
+      loadConfig(true);
+
+      // 延迟100ms后加载用户信息（优化：添加错误处理）
+      setTimeout(() => {
+        if (getCookie('token')?.length ?? 0 > 0) {
+          client.user.profile.get({
+            headers: headersWithAuth()
+          }).then(({ data }) => {
+            if (data && typeof data !== 'string') {
+              setProfile({
+                id: data.id,
+                avatar: data.avatar || '',
+                permission: data.permission,
+                name: data.username
+              })
+            }
+          }).catch((error) => {
+            console.warn('Failed to load user profile:', error);
+            // 用户信息加载失败不影响主要功能
           })
         }
-      })
-    }
+      }, 100);
 
-    // 清理过期的标签缓存
-    clearExpiredTagsCache();
+      // 清理过期的标签缓存（低优先级）
+      setTimeout(() => {
+        clearExpiredTagsCache();
+      }, 200);
+    };
 
-    // 页面初始加载时强制从服务器获取最新配置
-    loadConfig(true)
-    ref.current = true
+    initializeApp();
+    ref.current = true;
+
+    // 短暂延迟后隐藏初始loading，允许内容渲染
+    const timer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 300); // 300ms后开始渲染内容
+
+    return () => clearTimeout(timer);
   }, [])
 
   // 监听配置更新事件
@@ -191,7 +215,7 @@ function App() {
         <ToastProvider>
           {/* @ts-ignore - React Context Provider类型兼容性问题 */}
           <ClientConfigContext.Provider value={config}>
-            <ExtendedConfigProvider value={{ config, configLoaded }}>
+            <ExtendedConfigProvider value={{ config, configLoaded, initialLoading }}>
               <MusicProvider>
               {/* @ts-ignore - React Context Provider类型兼容性问题 */}
               <ProfileContext.Provider value={profile}>

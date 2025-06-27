@@ -195,24 +195,13 @@ export function FeedsPage() {
 
     // 获取配置加载状态
     const extendedConfig = useContext(ExtendedConfigContext);
-    const configLoaded = extendedConfig?.configLoaded ?? false;
+    const initialLoading = extendedConfig?.initialLoading ?? false;
 
-    // 视图模式状态管理 - 等待配置加载完成后再初始化
+    // 视图模式状态管理
     const { viewMode, setViewMode } = useViewMode();
 
-    // 检查是否有用户主动选择的视图模式
-    const hasUserChoice = () => {
-        try {
-            const userChoice = localStorage.getItem('rin-blog-view-mode-user');
-            const oldChoice = localStorage.getItem('rin-blog-view-mode');
-            return !!(userChoice || oldChoice);
-        } catch {
-            return false;
-        }
-    };
-
-    // 如果配置未加载且用户没有主动选择，显示loading状态
-    const shouldShowLoading = !configLoaded && !hasUserChoice();
+    // 优化加载状态：只在初始加载时显示loading，不等待配置
+    const shouldShowLoading = initialLoading;
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -480,8 +469,8 @@ export function FeedsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
 
-            {/* 等待配置和数据加载完成 */}
-            <Waiting for={status === 'idle' && configLoaded}>
+            {/* 等待数据加载完成，不等待配置 */}
+            <Waiting for={status === 'idle' && !initialLoading}>
                 {/* 页面标题和工具栏区域 */}
                 <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 mb-0 transition-all duration-300`}>
                     <div className="flex flex-col space-y-4 mb-0">

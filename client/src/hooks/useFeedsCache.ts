@@ -55,7 +55,7 @@ export function useFeedsCache(config: UseFeedsCacheConfig = {}) {
     page = 1,
     limit = 9999, // 获取所有数据，参考现有实现
     sortByTime = false,
-    staleTime = 5 * 60 * 1000, // 5分钟缓存
+    staleTime = 8 * 60 * 1000, // 优化：8分钟缓存（文章列表更新频率较低）
     enabled = true
   } = config;
 
@@ -165,7 +165,7 @@ export function useRecentPostsCache(limit: number = 3) {
   }, [limit]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 10 * 60 * 1000, // 10分钟缓存
+    staleTime: 15 * 60 * 1000, // 优化：15分钟缓存（最近文章更新频率更低）
     refetchOnWindowFocus: true
   });
 }
@@ -202,7 +202,7 @@ export function useTimelineCache() {
   }, []);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 5 * 60 * 1000, // 5分钟缓存
+    staleTime: 8 * 60 * 1000, // 优化：8分钟缓存（时间线更新频率适中）
     refetchOnWindowFocus: true
   });
 }
@@ -232,7 +232,7 @@ export function useFeedCache(id: string, enabled: boolean = true) {
   }, [id]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 10 * 60 * 1000, // 10分钟缓存
+    staleTime: 20 * 60 * 1000, // 优化：20分钟缓存（单篇文章内容相对稳定）
     enabled: enabled && !!id,
     refetchOnWindowFocus: false // 文章内容不需要频繁刷新
   });
@@ -264,7 +264,7 @@ export function useHashtagFeedsCache(tagName: string, enabled: boolean = true) {
   }, [tagName]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 5 * 60 * 1000, // 5分钟缓存
+    staleTime: 12 * 60 * 1000, // 优化：12分钟缓存（标签页面更新频率较低）
     enabled: enabled && !!tagName,
     refetchOnWindowFocus: true
   });

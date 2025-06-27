@@ -7,6 +7,8 @@ interface BackgroundState {
   url: string;
   isLoading: boolean;
   isImageLoaded: boolean;
+  error?: string; // 添加错误信息
+  retryCount?: number; // 添加重试计数
 }
 
 interface BackgroundContextType {
@@ -33,55 +35,119 @@ export const BackgroundProvider = ({ children }: BackgroundProviderProps) => {
     enabled: false,
     url: '',
     isLoading: true,
-    isImageLoaded: false
+    isImageLoaded: false,
+    error: undefined,
+    retryCount: 0
   });
 
-  // 预加载图片
-  const preloadImage = useCallback((url: string): Promise<void> => {
+  // 预加载图片 - 修复重试机制
+  const preloadImage = useCallback((url: string, retryCount = 0): Promise<void> => {
     return new Promise((resolve, reject) => {
       if (!url) {
         resolve();
         return;
       }
-      
+
       const img = new Image();
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Failed to load image'));
+      let isResolved = false;
+
+      // 设置超时
+      const timeout = setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
+          img.onload = null;
+          img.onerror = null;
+
+          const maxRetries = 2;
+          if (retryCount < maxRetries) {
+            // 超时重试
+            const delay = (retryCount + 1) * 1500; // 递增延迟
+            setTimeout(() => {
+              preloadImage(url, retryCount + 1)
+                .then(resolve)
+                .catch(reject);
+            }, delay);
+          } else {
+            reject(new Error(`Background image load timeout after ${maxRetries + 1} attempts`));
+          }
+        }
+      }, 8000); // 8秒超时，给网络更多时间
+
+      img.onload = () => {
+        if (!isResolved) {
+          isResolved = true;
+          clearTimeout(timeout);
+          resolve();
+        }
+      };
+
+      img.onerror = () => {
+        if (!isResolved) {
+          isResolved = true;
+          clearTimeout(timeout);
+
+          const maxRetries = 2;
+          if (retryCount < maxRetries) {
+            // 错误重试，延迟递增
+            const delay = (retryCount + 1) * 1000;
+            setTimeout(() => {
+              preloadImage(url, retryCount + 1)
+                .then(resolve)
+                .catch(reject);
+            }, delay);
+          } else {
+            reject(new Error(`Failed to load background image after ${maxRetries + 1} attempts`));
+          }
+        }
+      };
+
       img.src = url;
     });
   }, []);
 
-  // 更新背景配置
-  const updateConfig = useCallback(async (enabled: boolean, url: string) => {
-    setState(prev => ({ ...prev, isLoading: true, isImageLoaded: false }));
-    
-    try {
-      if (enabled && url) {
-        await preloadImage(url);
-      }
-      
-      setState({
-        enabled,
-        url,
-        isLoading: false,
-        isImageLoaded: enabled && !!url
-      });
-    } catch (error) {
-      console.error('Failed to load background image:', error);
-      setState({
-        enabled: false,
-        url: '',
-        isLoading: false,
-        isImageLoaded: false
-      });
+  // 更新背景配置 - 异步预加载优化
+  const updateConfig = useCallback((enabled: boolean, url: string) => {
+    // 立即更新状态，不等待图片加载
+    setState({
+      enabled,
+      url,
+      isLoading: false,
+      isImageLoaded: false, // 初始设为false，图片加载完成后更新
+      error: undefined,
+      retryCount: 0
+    });
+
+    // 异步预加载图片，不阻塞主流程
+    if (enabled && url) {
+      preloadImage(url)
+        .then(() => {
+          // 图片加载成功，更新状态
+          setState(prev => ({
+            ...prev,
+            isImageLoaded: true
+          }));
+        })
+        .catch((error) => {
+          console.warn('Background image load failed:', error.message);
+          // 图片加载失败，记录错误但不影响用户体验
+          setState(prev => ({
+            ...prev,
+            isImageLoaded: false,
+            error: error.message,
+            retryCount: (prev.retryCount || 0) + 1
+          }));
+
+          // 可选：尝试降级到默认背景
+          // 这里可以设置一个默认的背景图片URL作为fallback
+        });
     }
   }, [preloadImage]);
 
-  // 从配置加载背景状态
-  const loadFromConfig = useCallback(async (configWrapper: ConfigWrapper) => {
+  // 从配置加载背景状态 - 异步优化
+  const loadFromConfig = useCallback((configWrapper: ConfigWrapper) => {
     const enabled = configWrapper.get<boolean>('background.enabled') === true;
     const url = configWrapper.get<string>('background.url') || '';
-    await updateConfig(enabled, url);
+    updateConfig(enabled, url); // 不再等待，立即返回
   }, [updateConfig]);
 
   // 初始化配置加载
@@ -94,7 +160,7 @@ export const BackgroundProvider = ({ children }: BackgroundProviderProps) => {
           if (!('background.enabled' in configObj)) configObj['background.enabled'] = false;
           if (!('background.url' in configObj)) configObj['background.url'] = '';
           const configWrapper = new ConfigWrapper(configObj, defaultClientConfig);
-          await loadFromConfig(configWrapper);
+          loadFromConfig(configWrapper);
         } catch (error) {
           console.error('Failed to parse config:', error);
           loadFromServer();
@@ -112,7 +178,7 @@ export const BackgroundProvider = ({ children }: BackgroundProviderProps) => {
           if (!('background.url' in data)) data['background.url'] = '';
           sessionStorage.setItem('config', JSON.stringify(data));
           const configWrapper = new ConfigWrapper(data, defaultClientConfig);
-          await loadFromConfig(configWrapper);
+          loadFromConfig(configWrapper);
         }
       } catch (error) {
         console.error('Failed to load config from server:', error);
@@ -131,7 +197,7 @@ export const BackgroundProvider = ({ children }: BackgroundProviderProps) => {
         try {
           const configObj = JSON.parse(config);
           const configWrapper = new ConfigWrapper(configObj, defaultClientConfig);
-          await loadFromConfig(configWrapper);
+          loadFromConfig(configWrapper);
         } catch (error) {
           console.error('Failed to handle config update:', error);
         }

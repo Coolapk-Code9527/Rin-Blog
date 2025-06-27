@@ -11,6 +11,8 @@ export interface ExtendedConfigContextType {
   config: ConfigWrapper;
   /** 配置是否已从服务器加载完成 */
   configLoaded: boolean;
+  /** 初始加载状态 - 用于控制首屏渲染 */
+  initialLoading?: boolean;
 }
 
 /**
