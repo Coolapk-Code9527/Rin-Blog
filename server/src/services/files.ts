@@ -476,8 +476,9 @@ export function FileService() {
                             throw new Error('Unsupported file type for hash calculation: ' + Object.prototype.toString.call(file));
                         }
                         // 优化：使用缓存的哈希计算，避免重复计算，传入文件大小用于大文件优化
-                        const cacheKey = `file_${file.size}_${file.name}`;
-                        const hash = await calculateFileHash(fileBuffer, cacheKey, file.size);
+                        // 注意：不使用缓存键，因为相同大小和名称的不同文件会导致错误缓存
+                        // 让calculateFileHash函数内部基于内容生成安全的缓存键
+                        const hash = await calculateFileHash(fileBuffer, undefined, file.size);
                         let s3Key = (parentPath === '/' ? '' : parentPath.replace(/^\//, '') + '/') + hash;
                         // 修复：文本类型Content-Type加charset，防止中文乱码
                         let uploadMimeType = file.type || getMimeTypeFromFileName(name || file.name);
@@ -516,6 +517,7 @@ export function FileService() {
                                 // 优化：使用默认参数（150x150, 质量60）减少CPU消耗
                                 const thumbBuffer = await generateThumbnail(arrBuf);
                                 // 优化：使用缓存的哈希计算，避免重复计算缩略图哈希
+                                // 缩略图可以使用基于原文件哈希的缓存键，因为相同文件的缩略图是相同的
                                 const thumbCacheKey = `thumb_${hash}_150_60`;
                                 const thumbHash = await calculateFileHash(thumbBuffer, thumbCacheKey, thumbBuffer.byteLength);
                                 let thumbKey = (parentPath === '/' ? '' : parentPath.replace(/^\//, '') + '/') + 'thumb_' + thumbHash;
@@ -962,11 +964,19 @@ export function FileService() {
 
                     // 添加超时保护，避免CPU超时
                     try {
+                        // 资源泄漏修复：确保超时定时器能被正确清理
+                        let timeoutId: any = null;
                         const r2Files = await Promise.race([
-                            listAllR2Files(),
-                            new Promise((_, reject) =>
-                                setTimeout(() => reject(new Error('R2扫描超时')), 6000) // 减少超时时间
-                            )
+                            listAllR2Files().finally(() => {
+                                // 清理超时定时器
+                                if (timeoutId) {
+                                    clearTimeout(timeoutId);
+                                    timeoutId = null;
+                                }
+                            }),
+                            new Promise((_, reject) => {
+                                timeoutId = setTimeout(() => reject(new Error('R2扫描超时')), 6000); // 减少超时时间
+                            })
                         ]) as string[];
                     // 分页参数 - 进一步减少批处理大小
                     let limit = Number(query?.limit) || 2; // 默认改为2个文件

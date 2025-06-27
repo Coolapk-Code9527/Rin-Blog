@@ -88,7 +88,15 @@ export const useClickEffect = () => {
     } catch (error) {
       console.error('Failed to initialize particle system:', error);
     }
-  }, [effectConfig.enabled, effectConfig.maxParticles]);
+  }, [
+    effectConfig.enabled,
+    effectConfig.maxParticles,
+    effectConfig.enableOnMobile,
+    effectConfig.normalClickParticles.min,
+    effectConfig.normalClickParticles.max,
+    effectConfig.longPressParticles.min,
+    effectConfig.longPressParticles.max
+  ]);
   
   /**
    * 销毁粒子系统
@@ -159,21 +167,12 @@ export const useClickEffect = () => {
     }
   }, [effectConfig.enabled, configLoaded]);
 
-  // 组件卸载时清理
-  useEffect(() => {
-    return () => {
-      if (particleSystemRef.current) {
-        destroyParticleSystem();
-      }
-    };
-  }, []);
-  
   // 主题变化处理
   useEffect(() => {
     if (particleSystemRef.current) {
       updateTheme(currentTheme);
     }
-  }, [currentTheme]);
+  }, [currentTheme, updateTheme]);
 
   // 配置变化处理 - 修复移动端开关不生效问题
   useEffect(() => {
@@ -189,16 +188,16 @@ export const useClickEffect = () => {
     effectConfig.longPressParticles.min,
     effectConfig.longPressParticles.max
   ]);
-  
+
   // 性能监控
   useEffect(() => {
     if (!effectConfig.enabled || !isInitialized) return;
-    
+
     const interval = setInterval(updateMetrics, 1000);
     return () => clearInterval(interval);
   }, [effectConfig.enabled, isInitialized, updateMetrics]);
-  
-  // 页面卸载清理
+
+  // 组件卸载时清理 - 统一的清理机制
   useEffect(() => {
     return () => {
       destroyParticleSystem();

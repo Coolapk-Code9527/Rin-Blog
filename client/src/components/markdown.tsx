@@ -306,7 +306,8 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
         img({ node, src, ...props }) {
-          const offset = node!.position!.start.offset!;
+          // 类型安全修复：安全地获取offset，避免非空断言风险
+          const offset = node?.position?.start?.offset ?? 0;
           const previousContent = content.slice(0, offset);
           const newlinesBefore = countNewlinesBeforeNode(
             previousContent,

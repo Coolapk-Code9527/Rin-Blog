@@ -47,7 +47,8 @@ export function StorageService() {
                         set.status = 401;
                         return 'Unauthorized';
                     }
-                    const suffix = key.includes(".") ? key.split('.').pop() : "";
+                    // 安全的文件扩展名提取，防止undefined
+                    const suffix = key.includes(".") ? (key.split('.').pop() || "") : "";
                     const hashArray = await crypto.subtle.digest(
                         { name: 'SHA-1' },
                         await file.arrayBuffer()
@@ -56,7 +57,7 @@ export function StorageService() {
                     const hashkey = path.join(folder, hash + "." + suffix);
                     try {
                         const response = await s3.send(new PutObjectCommand({ Bucket: bucket, Key: hashkey, Body: file, ContentType: file.type }))
-                        console.info(response);
+                        // 移除生产环境调试输出
                         return `${accessHost}/${hashkey}`
                     } catch (e: any) {
                         set.status = 400;

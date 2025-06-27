@@ -209,10 +209,11 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
 
         const promises = batch.map(async (friend) => {
             // 优化：移除调试日志，减少CPU消耗
+            let timeoutId: NodeJS.Timeout | null = null;
             try {
                 // 添加超时保护
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), timeout);
+                timeoutId = setTimeout(() => controller.abort(), timeout);
 
                 const response = await fetch(new Request(friend.url, {
                     method: 'GET',
@@ -220,7 +221,11 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
                     signal: controller.signal
                 }));
 
-                clearTimeout(timeoutId);
+                // 资源泄漏修复：确保定时器被清理
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
                 // 优化：移除调试日志，减少CPU消耗
 
                 if (response.ok) {
@@ -231,6 +236,11 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
                     return 'unhealthy';
                 }
             } catch (e: any) {
+                // 资源泄漏修复：确保在异常情况下也清理定时器
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
                 // 优化：移除调试日志，减少CPU消耗
                 ctx.waitUntil(db.update(schema.friends).set({ health: e.message }).where(eq(schema.friends.id, friend.id)))
                 return 'unhealthy';

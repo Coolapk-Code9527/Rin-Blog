@@ -79,12 +79,16 @@ export function useApiCache<T>(
   const fetchingRef = useRef(false);
   const retryCountRef = useRef(0);
   const mountedRef = useRef(true);
+  const retryTimersRef = useRef<NodeJS.Timeout[]>([]);
 
   // 组件卸载时清理
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      // 清理所有重试定时器
+      retryTimersRef.current.forEach(timer => clearTimeout(timer));
+      retryTimersRef.current = [];
     };
   }, []);
 
@@ -190,12 +194,15 @@ export function useApiCache<T>(
       // 重试逻辑（只有组件仍然挂载时才重试）
       if (retryCountRef.current < retryCount && mountedRef.current) {
         retryCountRef.current++;
-        setTimeout(() => {
+        const retryTimer = setTimeout(() => {
           if (mountedRef.current) {
             fetchingRef.current = false;
             fetchData(false);
           }
         }, retryDelay * retryCountRef.current);
+
+        // 跟踪定时器以便清理
+        retryTimersRef.current.push(retryTimer);
         return;
       }
 

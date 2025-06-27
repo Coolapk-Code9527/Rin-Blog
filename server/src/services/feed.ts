@@ -19,11 +19,29 @@ async function getBatchVisitStats(db: any, feedIds: number[]): Promise<Map<numbe
         return new Map();
     }
 
-    // 限制单次查询的文章数量，避免CPU超时
+    // 数据一致性修复：分批处理而不是截断，确保所有数据都被处理
     const MAX_BATCH_SIZE = 50;
+    const statsMap = new Map<number, { pv: number, uv: number }>();
+
+    // 如果数据量大，分批处理以保证数据完整性
     if (feedIds.length > MAX_BATCH_SIZE) {
-        feedIds = feedIds.slice(0, MAX_BATCH_SIZE);
+        for (let i = 0; i < feedIds.length; i += MAX_BATCH_SIZE) {
+            const batchIds = feedIds.slice(i, i + MAX_BATCH_SIZE);
+            const batchStats = await processBatchVisitStats(db, batchIds);
+            // 合并批次结果
+            for (const [id, stats] of batchStats) {
+                statsMap.set(id, stats);
+            }
+        }
+        return statsMap;
     }
+
+    // 小批量直接处理
+    return await processBatchVisitStats(db, feedIds);
+}
+
+// 处理单个批次的访问统计数据
+async function processBatchVisitStats(db: any, feedIds: number[]): Promise<Map<number, { pv: number, uv: number }>> {
 
     const cache = PublicCache();
     const statsMap = new Map<number, { pv: number, uv: number }>();

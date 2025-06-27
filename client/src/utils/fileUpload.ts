@@ -20,6 +20,10 @@ export interface UploadResult {
   name: string;
   size: number;
   mimeType: string;
+  // 错误处理字段
+  success?: boolean;
+  error?: string;
+  fileName?: string;
 }
 
 /**
@@ -68,11 +72,10 @@ export async function uploadFile(
     // 如果是视频文件且需要生成缩略图
     if (generateThumbnail && isVideoFile(file)) {
       try {
-        console.log('开始为视频生成缩略图:', file.name);
-        
+        // 生产环境移除调试输出
+
         // 生成视频缩略图
         const thumbnailBlob = await generateVideoThumbnail(file, 1, 400, 300, 0.8);
-        console.log('缩略图生成成功，大小:', thumbnailBlob.size, 'bytes');
 
         onProgress?.(70);
 
@@ -185,6 +188,18 @@ export async function uploadFiles(
       results.push(result);
     } catch (error) {
       console.error(`文件 ${file.name} 上传失败:`, error);
+      // 将错误信息添加到结果中，让用户知道哪些文件上传失败
+      results.push({
+        id: -1, // 错误标识
+        url: '',
+        hash: '',
+        name: file.name,
+        size: file.size,
+        mimeType: file.type,
+        success: false,
+        error: error instanceof Error ? error.message : '上传失败',
+        fileName: file.name
+      });
       // 继续上传其他文件
     }
   }

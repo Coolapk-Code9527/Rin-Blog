@@ -418,11 +418,11 @@ export class ParticleSystem {
    */
   start(): void {
     if (this.animationId) {
-      console.log('ClickEffect: Animation already running');
+      // 生产环境移除调试输出
       return;
     }
 
-    // console.log('ClickEffect: Starting animation loop');
+    // 生产环境移除调试输出
     this.lastTime = performance.now();
     this.animate();
   }

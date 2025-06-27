@@ -24,6 +24,7 @@ declare module 'i18next' {
     t,
     use: (plugin: any) => any,
     init: (options: any) => Promise<any>,
+    language: string, // 类型安全修复：添加缺失的language属性
   } as any;
 }
 

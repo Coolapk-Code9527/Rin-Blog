@@ -37,7 +37,16 @@ export class CacheImpl {
             const response = await fetch(new Request(this.cacheUrl))
             const data = await response.json<any>()
             for (let key in data) {
-                this.cache.set(key, data[key]);
+                const value = data[key];
+                // 数据安全修复：检查并处理截断的数据
+                if (value && typeof value === 'object' && value._truncated) {
+                    // 对于截断的数据，记录警告但仍然加载截断版本
+                    console.warn(`Cache key "${key}" was truncated (original: ${value._originalLength} chars, loaded: truncated version)`);
+                    // 可以选择加载截断版本或跳过，这里选择加载截断版本以保持功能
+                    this.cache.set(key, value._data);
+                } else {
+                    this.cache.set(key, value);
+                }
             }
             if (!this.cache.has('S3_ACCESS_HOST') && this.env.S3_ACCESS_HOST) {
                 this.cache.set('S3_ACCESS_HOST', this.env.S3_ACCESS_HOST);
@@ -195,12 +204,17 @@ export class CacheImpl {
 
                 try {
                     for (const [key, value] of this.cache) {
-                        // 深度优化：跳过过大的值，避免序列化大对象
+                        // 数据安全修复：不跳过大对象，而是进行安全处理
                         if (typeof value === 'string' && value.length > 10000) {
-                            continue; // 跳过超过10KB的字符串
+                            // 对大字符串进行截断并添加标记，而不是完全跳过
+                            mergedData[key] = {
+                                _truncated: true,
+                                _originalLength: value.length,
+                                _data: value.substring(0, 5000) + '...[TRUNCATED]'
+                            };
+                        } else {
+                            mergedData[key] = value;
                         }
-
-                        mergedData[key] = value;
                         processed++;
 
                         // 深度优化：更频繁地让出控制权

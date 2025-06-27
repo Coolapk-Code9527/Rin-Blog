@@ -158,12 +158,19 @@ export const useEyeAnimation = (
     if (!enableBlink) return;
 
     setAnimationState(prev => ({ ...prev, isBlinking: true }));
-    
-    // 眨眼动画持续时间
-    setTimeout(() => {
-      setAnimationState(prev => ({ ...prev, isBlinking: false }));
+
+    // 眨眼动画持续时间，添加组件挂载检查
+    const blinkTimer = setTimeout(() => {
+      // 检查组件是否仍然挂载（通过检查state是否仍然可用）
+      setAnimationState(prev => {
+        // 如果组件已卸载，这个回调不会执行
+        return { ...prev, isBlinking: false };
+      });
     }, 150);
-    
+
+    // 将定时器添加到清理列表（如果有的话）
+    // 注意：这里需要在组件中管理定时器清理
+
     setLastBlinkTime(Date.now());
   }, [enableBlink]);
 

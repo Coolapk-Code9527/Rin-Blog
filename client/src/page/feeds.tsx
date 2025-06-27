@@ -71,16 +71,17 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
     }, [id]);
 
     React.useEffect(() => {
+        let timer: NodeJS.Timeout | null = null;
+
         const observer = new IntersectionObserver(
             ([entry]) => {
                 setIsIntersecting(entry.isIntersecting); // 更新元素是否在视口内的状态
                 if (entry.isIntersecting) {
                     // 当元素进入视口时，设置一个短暂延迟后显示实际内容，以便平滑过渡
-                    const timer = setTimeout(() => {
-                    setIsVisible(true);
-                    observer.disconnect();
+                    timer = setTimeout(() => {
+                        setIsVisible(true);
+                        observer.disconnect();
                     }, 150); // 添加一个短暂延迟以实现错落有致的加载效果
-                    return () => clearTimeout(timer);
                 }
             },
             { threshold: 0.1, rootMargin: '200px 0px' }
@@ -91,6 +92,10 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
         }
 
         return () => {
+            // 清理定时器和观察器
+            if (timer) {
+                clearTimeout(timer);
+            }
             observer.disconnect();
         };
     }, []);

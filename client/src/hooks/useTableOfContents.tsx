@@ -19,6 +19,9 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?
     const io = useRef<IntersectionObserver | null>(null);
     // 目录高亮项自动滚动到可视区域
     const tocListRef = useRef<HTMLUListElement>(null);
+    // 内存泄漏防护
+    const timersRef = useRef<NodeJS.Timeout[]>([]);
+    const mountedRef = useRef(true);
 
     const ensureValidIds = useCallback((headers: NodeListOf<HTMLElement>) => {
         headers.forEach((header, index) => {
@@ -158,30 +161,38 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?
 
         // 检查是否已经有内容加载
         const checkContentExistence = () => {
+            // 检查组件是否仍然挂载
+            if (!mountedRef.current) return;
+
             const contentElement = document.querySelector(selector);
             if (contentElement) {
                 // 如果内容元素存在，但没有标题，设置一个更长的延迟
                 const headers = contentElement.querySelectorAll('h1, h2, h3, h4, h5, h6');
                 if (headers.length === 0) {
-                    if (retryCount < MAX_RETRY) {
+                    if (retryCount < MAX_RETRY && mountedRef.current) {
                         retryCount++;
-                        setTimeout(() => {
+                        const timer = setTimeout(() => {
                             checkContentExistence();
                         }, 500);
-                    } else {
+                        timersRef.current.push(timer);
+                    } else if (mountedRef.current) {
                         setTableOfContents([]); // 明确无目录
                     }
                 } else {
                     // 内容和标题都已存在，立即处理
-                    setTimeout(() => {
-                        processHeaders(headers);
+                    const timer = setTimeout(() => {
+                        if (mountedRef.current) {
+                            processHeaders(headers);
+                        }
                     }, 100);
+                    timersRef.current.push(timer);
                 }
-            } else {
+            } else if (mountedRef.current) {
                 // 内容元素不存在，延迟尝试
-                setTimeout(() => {
+                const timer = setTimeout(() => {
                     checkContentExistence();
                 }, 300);
+                timersRef.current.push(timer);
             }
         };
 
@@ -220,6 +231,21 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?
 
         return () => clearTimeout(scrollTimeout);
     }, [activeId]);
+
+    // 组件卸载时清理所有定时器和状态，防止内存泄漏
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+            // 清理所有定时器
+            timersRef.current.forEach(timer => clearTimeout(timer));
+            timersRef.current = [];
+            // 断开IntersectionObserver
+            if (io.current) {
+                io.current.disconnect();
+            }
+        };
+    }, []);
 
     return {
         TOC: () => {

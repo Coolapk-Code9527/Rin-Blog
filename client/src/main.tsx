@@ -34,8 +34,8 @@ if (!isDev && !endpoint) {
   console.error('Warning: API_URL environment variable not set in production, API requests may not work properly');
 }
 
-// OAuth URL同样从API端点派生
-export const oauth_url = endpoint + '/user/github';
+// OAuth URL同样从API端点派生，确保endpoint不为空
+export const oauth_url = endpoint ? endpoint + '/user/github' : '/user/github';
 export const client = treaty<ServerType>(endpoint) as unknown as ApiClient;
 
 // 立即初始化主题，确保在React渲染前应用正确的主题
@@ -60,14 +60,18 @@ const i18n = i18next;
 
 const helmetContext = {};
 
-// 重新启用React.StrictMode进行深入分析
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  // @ts-ignore - React.StrictMode类型兼容性问题
-  <React.StrictMode>
-    <HelmetProvider context={helmetContext}>
-      <App />
-    </HelmetProvider>
-  </React.StrictMode>
+// React 19版本的StrictMode存在类型兼容性问题，暂时移除
+// 在React 19类型定义修复后可以重新启用
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Root element not found. Please ensure there is a div with id="root" in your HTML.');
+}
+const root = ReactDOM.createRoot(rootElement);
+
+root.render(
+  <HelmetProvider context={helmetContext}>
+    <App />
+  </HelmetProvider>
 )
 Modal.setAppElement('#root');
 

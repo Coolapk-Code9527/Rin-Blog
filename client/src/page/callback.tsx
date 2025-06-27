@@ -16,7 +16,7 @@ export function CallbackPage() {
             setCookie('token', token, { expires: 7, path: '/' })
             setLocation("/");
         }
-    }, [searchParams]);
+    }, [searchParams, setLocation]);
     return (<>
         <PageContainer>
             <div className="w-screen h-screen flex justify-center items-center">

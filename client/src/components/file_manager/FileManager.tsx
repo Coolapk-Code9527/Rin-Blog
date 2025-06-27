@@ -115,6 +115,7 @@ export function FileManager({
   // 引用
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const folderNameInputRef = useRef<HTMLInputElement>(null);
+  const cleanupTimersRef = useRef<NodeJS.Timeout[]>([]);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState<boolean>(false);
   const [isUploading] = useState<boolean>(false);
   
@@ -173,6 +174,21 @@ export function FileManager({
     if (debouncedSearch !== search) return; // 只有当防抖完成时才执行
     setCurrentPage(1);
   }, [debouncedSearch]);
+
+  // 组件卸载时清理所有定时器，防止内存泄漏
+  useEffect(() => {
+    return () => {
+      // 清理所有定时器
+      if (cleanupTimersRef.current) {
+        cleanupTimersRef.current.forEach(timer => clearTimeout(timer));
+        cleanupTimersRef.current = [];
+      }
+      // 取消正在进行的请求
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // 新增拖拽上传状态
   const [dragActive, setDragActive] = useState(false);
@@ -502,16 +518,27 @@ export function FileManager({
 
     setUploadingPercent(100);
     setUploading(false);
-    setTimeout(() => {
-      setUploadingFiles([]);
-      setUploadingIndex(0);
-      setUploadingPercent(0);
-      setUploadError(null);
-      // 清理进度通知
-      if (uploadToastId) {
-        notification.removeToast(uploadToastId);
+
+    // 使用ref来跟踪定时器，确保组件卸载时能够清理
+    const cleanupTimer = setTimeout(() => {
+      // 检查组件是否仍然挂载（通过检查ref是否存在）
+      if (uploadInputRef.current) {
+        setUploadingFiles([]);
+        setUploadingIndex(0);
+        setUploadingPercent(0);
+        setUploadError(null);
+        // 清理进度通知
+        if (uploadToastId) {
+          notification.removeToast(uploadToastId);
+        }
       }
     }, 1200);
+
+    // 将定时器ID存储到ref中，以便在组件卸载时清理
+    if (!cleanupTimersRef.current) {
+      cleanupTimersRef.current = [];
+    }
+    cleanupTimersRef.current.push(cleanupTimer);
 
     if (uploadInputRef.current) {
       uploadInputRef.current.value = '';
@@ -1339,8 +1366,15 @@ export function FileManager({
                 setIsPageChanging(true);
                 setCurrentPage(page);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                // 页面切换动画延迟
-                setTimeout(() => setIsPageChanging(false), 300);
+                // 页面切换动画延迟，使用ref跟踪定时器
+                const pageChangeTimer = setTimeout(() => {
+                  // 检查组件是否仍然挂载
+                  if (uploadInputRef.current) {
+                    setIsPageChanging(false);
+                  }
+                }, 300);
+                // 将定时器添加到清理列表
+                cleanupTimersRef.current.push(pageChangeTimer);
               }}
               className="items-center"
             />

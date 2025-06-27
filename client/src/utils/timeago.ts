@@ -13,5 +13,7 @@ export function timeago(time: string | number | Date) {
         lastLanguage = currentLanguage;
     }
 
-    return format(time, "DEFAULT", cachedLocale!);
+    // 类型安全修复：确保cachedLocale有安全的默认值，避免非空断言风险
+    const safeLocale = cachedLocale || 'en';
+    return format(time, "DEFAULT", safeLocale);
 }
