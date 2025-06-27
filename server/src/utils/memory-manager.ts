@@ -125,11 +125,18 @@ export const weakRefManager = new WeakReferenceManager();
 
 /**
  * 内存使用监控
+ * 兼容Cloudflare Workers环境，提供降级方案
  */
 export class MemoryMonitor {
   private static instance: MemoryMonitor;
   private largeObjectThreshold = 1024 * 1024; // 1MB
-  private largeObjects = new Set<WeakRef<object>>();
+  private largeObjects = new Set<WeakRef<object> | object>();
+  private isWeakRefSupported: boolean;
+
+  constructor() {
+    // 检测WeakRef是否可用
+    this.isWeakRefSupported = typeof WeakRef !== 'undefined';
+  }
 
   static getInstance(): MemoryMonitor {
     if (!MemoryMonitor.instance) {
@@ -146,9 +153,14 @@ export class MemoryMonitor {
       return;
     }
 
-    const weakRef = new WeakRef(obj);
-    this.largeObjects.add(weakRef);
-    
+    if (this.isWeakRefSupported) {
+      const weakRef = new WeakRef(obj);
+      this.largeObjects.add(weakRef);
+    } else {
+      // 降级方案：直接存储对象引用（可能导致内存泄漏，但保证功能可用）
+      this.largeObjects.add(obj);
+    }
+
     // 定期清理已被垃圾回收的弱引用
     if (this.largeObjects.size > 100) {
       this.cleanupWeakRefs();
@@ -159,14 +171,22 @@ export class MemoryMonitor {
    * 清理已被垃圾回收的弱引用
    */
   private cleanupWeakRefs(): void {
+    if (!this.isWeakRefSupported) {
+      // 降级方案：定期清理，保持集合大小在合理范围内
+      if (this.largeObjects.size > 200) {
+        this.largeObjects.clear();
+      }
+      return;
+    }
+
     const toDelete: WeakRef<object>[] = [];
-    
+
     for (const ref of this.largeObjects) {
-      if (ref.deref() === undefined) {
+      if (ref instanceof WeakRef && ref.deref() === undefined) {
         toDelete.push(ref);
       }
     }
-    
+
     toDelete.forEach(ref => this.largeObjects.delete(ref));
   }
 
@@ -215,7 +235,8 @@ export const MemoryUtils = {
   },
 
   /**
-   * 深度克隆对象，使用对象池优化
+   * 深度克隆对象，避免使用对象池以防止内存泄漏
+   * 注意：为了避免内存管理复杂性，这里使用标准的深度克隆
    */
   deepClone<T>(obj: T): T {
     if (obj === null || typeof obj !== 'object') {
@@ -227,30 +248,20 @@ export const MemoryUtils = {
     }
 
     if (obj instanceof Array) {
-      const arr = ObjectPools.arrays.acquire();
-      try {
-        for (let i = 0; i < obj.length; i++) {
-          arr[i] = this.deepClone(obj[i]);
-        }
-        return arr as unknown as T;
-      } finally {
-        // 注意：这里不能释放arr，因为它被返回了
-        // 实际使用中需要调用者负责释放
+      const arr: any[] = [];
+      for (let i = 0; i < obj.length; i++) {
+        arr[i] = this.deepClone(obj[i]);
       }
+      return arr as unknown as T;
     }
 
-    const cloned = ObjectPools.objects.acquire();
-    try {
-      for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          cloned[key] = this.deepClone(obj[key]);
-        }
+    const cloned: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        cloned[key] = this.deepClone(obj[key]);
       }
-      return cloned as T;
-    } finally {
-      // 注意：这里不能释放cloned，因为它被返回了
-      // 实际使用中需要调用者负责释放
     }
+    return cloned as T;
   },
 
   /**

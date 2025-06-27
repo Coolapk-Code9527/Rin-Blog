@@ -214,8 +214,6 @@ export class CacheImpl {
                     // 内存优化：释放对象池中的对象
                     MemoryUtils.releasePooledObject(mergedData);
                 }
-
-                serializedData = JSON.stringify(mergedData);
             } else {
                 // 小缓存直接序列化
                 serializedData = JSON.stringify(Object.fromEntries(this.cache));

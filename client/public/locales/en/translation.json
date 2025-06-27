@@ -212,7 +212,23 @@
     "copy_original_link": "Original Link",
     "copy_link": "Copy Link",
     "open_new_window": "Open in New Window",
-    "partial_display": "... (partial display)"
+    "partial_display": "... (partial display)",
+    "cannot_delete_system_dir": "Cannot delete system directory",
+    "create_folder_confirm": "Create folder?",
+    "delete_file_confirm": "Delete file?",
+    "delete_folder_confirm": "Delete folder?",
+    "no_original_name": "No original name",
+    "ref_count": "Reference count",
+    "ref_load_error": "Failed to load references",
+    "ref_none": "No references",
+    "references": "References",
+    "rename_prompt": "Enter new name",
+    "sync": "Sync",
+    "sync_confirm": "Sync files?",
+    "sync_failed": "Sync failed",
+    "sync_result": "Sync result",
+    "sync_success": "Sync successful",
+    "syncing": "Syncing..."
   },
   "footer": {
     "rss": "RSS Subscription Link",
@@ -499,7 +515,10 @@
     "success": "Upload successful",
     "image_only": "Only images can be uploaded",
     "title": "Upload",
-    "uploading": "Uploading..."
+    "uploading": "Uploading...",
+    "all_file_types_supported": "[TODO: 支持所有文件类型]",
+    "drop_files_here": "[TODO: 拖放文件到这里]",
+    "max_size": "[TODO: 最大 {{size}}MB]"
   },
   "uploading": "Uploading...",
   "url": "Site URL",
@@ -560,6 +579,10 @@
       "listed": "Show in Article List",
       "listed_short": "Listed",
       "publish_button": "Publish Article"
+    },
+    "unauthorized": {
+      "description": "[TODO: 写作功能仅限管理员使用。请使用管理员账户登录后再试。]",
+      "title": "[TODO: 写作权限受限]"
     }
   },
   "year$year": "{{year}}",
@@ -729,7 +752,8 @@
     "lists": "Lists",
     "insert": "Insert",
     "advanced": "Advanced",
-    "tools": "Tools"
+    "tools": "Tools",
+    "insert_file": "[TODO: 插入文件]"
   },
   "input_required": "All fields are required",
   "input_too_long": "Field length exceeds limit",
@@ -1092,5 +1116,45 @@
   "loading_more": "Loading more...",
   "feed": "Feed",
   "editing": "Editing...",
-  "logged_in": "Logged in"
+  "logged_in": "Logged in",
+  "back_to_home": "Back to Home",
+  "friend": {
+    "add": "Add Friend",
+    "apply": {
+      "desc": "Application Description",
+      "disable": "Application Disabled",
+      "email": "[TODO: 邮箱地址（非必填）]",
+      "name": "[TODO: 网站名称]",
+      "place": "[TODO: 站点分组（非必填）]",
+      "success": "[TODO: 申请成功，请等待站长审核]",
+      "title": "[TODO: 申请友链]",
+      "url": "[TODO: 网站地址]"
+    },
+    "edit": "[TODO: 编辑友链]",
+    "empty": "[TODO: 还没有添加任何友链]",
+    "icon": "[TODO: 头像]",
+    "import": "[TODO: 批量导入]",
+    "link_count": "[TODO: 链接数量]",
+    "linked": "[TODO: 已添加]",
+    "name": "[TODO: 名称]",
+    "order": "[TODO: 排序]",
+    "place": "[TODO: 分组]",
+    "search": "[TODO: 搜索]",
+    "success": "[TODO: 添加成功]",
+    "title": "[TODO: 友链]",
+    "url": "[TODO: 网址]"
+  },
+  "input": {
+    "required": "[TODO: 此项必填]"
+  },
+  "last_updated": "[TODO: 最近更新]",
+  "loading": "[TODO: 加载中]",
+  "more_options": "[TODO: 更多选项]",
+  "publishing": "[TODO: 发布中...]",
+  "scroll_sync": "[TODO: 滚动同步]",
+  "unauthorized": {
+    "description": "[TODO: 此页面仅限管理员访问。如果您是管理员，请先登录。]",
+    "help": "[TODO: 如需获得管理员权限，请联系网站管理员。]",
+    "title": "[TODO: 访问受限]"
+  }
 }

@@ -34,7 +34,7 @@ export function TimelinePage() {
 
     // 从缓存数据中提取feeds和length
     const feeds = timelineData?.data || [];
-    const length = timelineData?.size || feeds.length;
+    const length = timelineData?.size || (Array.isArray(feeds) ? feeds.length : 0);
     const error = cacheError;
 
     // 当路由变化时刷新数据
@@ -42,7 +42,7 @@ export function TimelinePage() {
         if (refetch) {
             refetch();
         }
-    }, [location, refetch]);
+    }, [location]); // 移除refetch依赖，避免无限循环
 
     return (
         <>

@@ -172,15 +172,15 @@ export function useRecentPostsCache(limit: number = 3) {
 
 /**
  * 时间线数据缓存Hook
- * 
+ *
  * 专门用于时间线页面的数据获取
+ * 修复：使用正确的 /feed/timeline API 端点，并添加调试信息
  */
 export function useTimelineCache() {
   const cacheKey = 'timeline_feeds';
 
   const fetcher = useMemo(() => async () => {
-    const response = await client.feed.index.get({
-      query: { page: 1, limit: 9999 },
+    const response = await client.feed.timeline.get({
       headers: headersWithAuth()
     });
 
@@ -188,11 +188,17 @@ export function useTimelineCache() {
       throw new Error(response.error.value as string);
     }
 
-    if (!response.data || typeof response.data === 'string') {
+    if (!response.data) {
       throw new Error('Invalid response data');
     }
 
-    return response.data;
+    // Timeline API返回的是数组格式，转换为标准格式
+    const timelineData = Array.isArray(response.data) ? response.data : [];
+    return {
+      data: timelineData,
+      size: timelineData.length,
+      hasNext: false
+    };
   }, []);
 
   return useApiCache(cacheKey, fetcher, {

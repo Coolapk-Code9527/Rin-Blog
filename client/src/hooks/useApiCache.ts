@@ -82,6 +82,7 @@ export function useApiCache<T>(
 
   // 组件卸载时清理
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
@@ -162,8 +163,8 @@ export function useApiCache<T>(
         }
       }
 
-      // 设置加载状态
-      if (!data && mountedRef.current) {
+      // 设置加载状态（避免依赖data，使用loading状态判断）
+      if (mountedRef.current) {
         setLoading(true);
       }
 
@@ -209,7 +210,7 @@ export function useApiCache<T>(
       }
       fetchingRef.current = false;
     }
-  }, [enabled, key, fetcher, getCachedData, setCachedData, isDataStale, data, retryCount, retryDelay]);
+  }, [enabled, key, fetcher, getCachedData, setCachedData, isDataStale, retryCount, retryDelay]);
 
   /**
    * 强制刷新数据

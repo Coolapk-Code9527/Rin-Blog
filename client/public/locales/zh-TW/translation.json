@@ -34,7 +34,8 @@
       "success": "取消置頂成功",
       "title": "取消置頂"
     },
-    "navigation": "相關文章"
+    "navigation": "相關文章",
+    "public_description": "公開發布的文章，所有人可見"
   },
   "avatar": {
     "url": "頭像 URL"
@@ -200,7 +201,34 @@
     "copy_original_link": "原始連結",
     "copy_link": "複製連結",
     "open_new_window": "新視窗開啟",
-    "partial_display": "...（僅顯示部分）"
+    "partial_display": "...（僅顯示部分）",
+    "cannot_delete_system_dir": "不能刪除系統目录",
+    "create_folder_confirm": "確定要新建檔案夹\"{{name}}\"吗？",
+    "delete_failed": "刪除失敗: {{error}}",
+    "delete_file_confirm": "確定要刪除檔案\"{{name}}\"吗？",
+    "delete_folder_confirm": "確定要刪除檔案夹\"{{name}}\"及其所有内容吗？",
+    "delete_success": "刪除成功",
+    "load_failed": "載入失敗",
+    "loading_original": "載入原图...",
+    "next": "下一项",
+    "no_original_name": "无原始名",
+    "previous": "上一项",
+    "ref_count": "被引用",
+    "ref_load_error": "引用详情載入失敗",
+    "ref_none": "该檔案未被任何文章引用",
+    "references": "引用详情",
+    "rename_failed": "重命名失敗: {{error}}",
+    "rename_prompt": "请输入新檔案名",
+    "rename_success": "重命名成功",
+    "sync": "資料同步",
+    "sync_confirm": "確定要全量同步 R2 儲存桶所有檔案到資料库吗？",
+    "sync_failed": "同步失敗：{{error}}",
+    "sync_result": "同步结果",
+    "sync_success": "同步完成：共{{total}}项，成功{{success}}，失敗{{failed}}。",
+    "syncing": "正在同步...",
+    "thumbnail": "缩略图",
+    "upload_failed": "上傳失敗: {{error}}",
+    "upload_success": "上傳成功"
   },
   "footer": {
     "rss": "RSS 訂閱連結",
@@ -471,7 +499,10 @@
     "success": "上傳成功",
     "image_only": "只能上傳圖片",
     "title": "上傳",
-    "uploading": "上傳中..."
+    "uploading": "上傳中...",
+    "all_file_types_supported": "支持所有檔案类型",
+    "drop_files_here": "拖放檔案到这里",
+    "max_size": "最大 {{size}}MB"
   },
   "uploading": "上傳中...",
   "url": "網站 URL",
@@ -519,7 +550,24 @@
       "listed": "顯示在文章列表",
       "listed_short": "列表顯示",
       "publish_button": "發布文章"
-    }
+    },
+    "article_info": "文章資訊",
+    "article_info_desc": "設定文章的基本資訊",
+    "characters": "字符数",
+    "collapse_metadata": "折叠元資料",
+    "enter_focus_mode": "进入专注模式",
+    "exit_focus_mode": "登出专注模式",
+    "expand_metadata": "展开元資料",
+    "lines": "行数",
+    "quick_actions": "快速操作",
+    "save_draft": "儲存草稿",
+    "scroll_sync": "滚动同步",
+    "statistics": "统计資訊",
+    "unauthorized": {
+      "description": "寫作功能仅限管理員使用。请使用管理員帳戶登入后再试。",
+      "title": "寫作權限受限"
+    },
+    "words": "单词数"
   },
   "year$year": "{{year}} 年",
   "editing": "編輯中...",
@@ -930,6 +978,108 @@
     "multiline": {
       "warning": "選擇行數過多（{{count}}行），僅處理前{{limit}}行",
       "processing": "正在處理多行格式化..."
+    },
+    "bold": {
+      "defaultText": "粗体文本",
+      "title": "粗体 (Ctrl+B) - 支持多行"
+    },
+    "clearFormat": {
+      "description": "清除選中文本的所有Markdown格式",
+      "title": "清除格式"
+    },
+    "code": {
+      "block": {
+        "defaultText": "代码块",
+        "title": "代码块"
+      },
+      "inline": {
+        "defaultText": "行内代码",
+        "title": "行内代码 - 支持多行"
+      }
+    },
+    "comment": {
+      "defaultText": "注释内容",
+      "title": "HTML注释 - 支持多行"
+    },
+    "heading": {
+      "h1": {
+        "defaultText": "一级标题",
+        "title": "一级标题 - 支持多行"
+      },
+      "h2": {
+        "defaultText": "二级标题",
+        "title": "二级标题 - 支持多行"
+      },
+      "h3": {
+        "defaultText": "三级标题",
+        "title": "三级标题 - 支持多行"
+      }
+    },
+    "highlight": {
+      "defaultText": "高亮文本",
+      "title": "高亮标记 - 支持多行"
+    },
+    "italic": {
+      "defaultText": "斜体文本",
+      "title": "斜体 (Ctrl+I) - 支持多行"
+    },
+    "keyboard": {
+      "defaultText": "按键",
+      "title": "键盘按键 - 支持多行"
+    },
+    "list": {
+      "completed": {
+        "defaultText": "已完成任务",
+        "title": "已完成任务 - 支持多行"
+      },
+      "task": {
+        "defaultText": "待办任务",
+        "title": "任务列表 - 支持多行"
+      }
+    },
+    "mark": {
+      "bookmark": {
+        "defaultText": "重点",
+        "title": "重点标记 - 支持多行"
+      },
+      "hot": {
+        "defaultText": "热门",
+        "title": "热门标记 - 支持多行"
+      },
+      "star": {
+        "defaultText": "重要标记",
+        "title": "重要标记 - 支持多行"
+      },
+      "tip": {
+        "defaultText": "提示",
+        "title": "提示标记 - 支持多行"
+      }
+    },
+    "redo": {
+      "description": "重做上一步操作",
+      "title": "重做 (Ctrl+Y)"
+    },
+    "strikethrough": {
+      "defaultText": "刪除线文本",
+      "title": "刪除线 - 支持多行"
+    },
+    "style": {
+      "center": {
+        "defaultText": "居中文本",
+        "title": "居中对齐 - 支持多行"
+      },
+      "color": {
+        "defaultText": "彩色文本",
+        "title": "彩色文本 - 支持多行"
+      }
+    },
+    "underline": {
+      "defaultText": "下划线文本",
+      "title": "下划线 - 支持多行"
+    },
+    "undo": {
+      "description": "復原上一步操作",
+      "title": "復原 (Ctrl+Z)"
     }
   },
   "user": "使用者",
@@ -942,5 +1092,69 @@
     "title": "訪問受限",
     "description": "此頁面僅限管理員訪問。如果您是管理員，請先登入。",
     "help": "如需獲得管理員權限，請聯絡網站管理員。"
-  }
+  },
+  "back_to_home": "返回首页",
+  "draft_description": "文章草稿区，仅自己可見",
+  "friend": {
+    "add": "添加友链",
+    "apply": {
+      "desc": "填写下面的表单申请成为本站的友链",
+      "disable": "站长已關閉申请入口",
+      "email": "信箱地址（非必填）",
+      "name": "網站名称",
+      "place": "站点分组（非必填）",
+      "success": "申请成功，请等待站长审核",
+      "title": "申请友链",
+      "url": "網站地址"
+    },
+    "edit": "編輯友链",
+    "empty": "还没有添加任何友链",
+    "icon": "头像",
+    "import": "批量导入",
+    "link_count": "連結数量",
+    "linked": "已添加",
+    "name": "名称",
+    "order": "排序",
+    "place": "分组",
+    "search": "搜尋",
+    "success": "添加成功",
+    "title": "友链",
+    "url": "网址"
+  },
+  "image_load_error": "图片載入失敗",
+  "input": {
+    "required": "此项必填"
+  },
+  "last_updated": "最近更新",
+  "markdown": {
+    "advanced": "高级",
+    "bold": "粗体",
+    "code": "代码",
+    "date": "插入日期",
+    "divider": "分割线",
+    "format": "格式",
+    "heading": "标题",
+    "highlight": "文本高亮",
+    "image": "图片",
+    "insert": "插入",
+    "insert_file": "插入檔案",
+    "italic": "斜体",
+    "link": "連結",
+    "lists": "列表",
+    "ordered_list": "有序列表",
+    "quote": "引用",
+    "strikethrough": "刪除线",
+    "subscript": "下标",
+    "superscript": "上标",
+    "table": "表格",
+    "task_list": "待办列表",
+    "tools": "工具",
+    "unordered_list": "无序列表"
+  },
+  "more_options": "更多選項",
+  "no_articles": "暂无文章",
+  "no_articles_description": "这里还没有任何文章，之后会添加的~",
+  "publishing": "發布中...",
+  "scroll_sync": "滚动同步",
+  "unlisted_description": "未列出的文章，有連結才能存取"
 }

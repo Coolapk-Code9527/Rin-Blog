@@ -189,11 +189,11 @@ function App() {
       <div className="min-h-screen">
       <GlobalDialogProvider>
         <ToastProvider>
-          {/* @ts-ignore - 忽略Provider的类型检查 */}
+          {/* @ts-ignore - React Context Provider类型兼容性问题 */}
           <ClientConfigContext.Provider value={config}>
             <ExtendedConfigProvider value={{ config, configLoaded }}>
               <MusicProvider>
-              {/* @ts-ignore - 忽略Provider的类型检查 */}
+              {/* @ts-ignore - React Context Provider类型兼容性问题 */}
               <ProfileContext.Provider value={profile}>
               <Helmet>
                 {favicon &&
@@ -330,7 +330,7 @@ function RouteMe({ path, children, headerComponent, paddingClassName }:
 
   return (
     <Route path={path} >
-      {(params: any): JSX.Element => {
+      {(params: DefaultParams): JSX.Element => {
         return (
           <div className="min-h-screen flex flex-col relative">
             <GlassOverlay />

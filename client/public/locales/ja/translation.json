@@ -34,7 +34,8 @@
       "success": "トップ解除に成功しました",
       "title": "トップ解除"
     },
-    "navigation": "関連記事"
+    "navigation": "関連記事",
+    "public_description": "公開記事、すべての人が閲覧可能"
   },
   "avatar": {
     "url": "アバターURL"
@@ -200,7 +201,34 @@
     "copy_original_link": "元のリンク",
     "copy_link": "リンクをコピー",
     "open_new_window": "新しいウィンドウで開く",
-    "partial_display": "...（一部のみ表示）"
+    "partial_display": "...（一部のみ表示）",
+    "cannot_delete_system_dir": "システムディレクトリは削除できません",
+    "create_folder_confirm": "[TODO: 确定要新建文件夹\"{{name}}\"吗？]",
+    "delete_failed": "[TODO: 删除失败: {{error}}]",
+    "delete_file_confirm": "[TODO: 确定要删除文件\"{{name}}\"吗？]",
+    "delete_folder_confirm": "[TODO: 确定要删除文件夹\"{{name}}\"及其所有内容吗？]",
+    "delete_success": "削除しました",
+    "load_failed": "読み込みに失敗しました",
+    "loading_original": "[TODO: 加载原图...]",
+    "next": "次へ",
+    "no_original_name": "元の名前なし",
+    "previous": "前へ",
+    "ref_count": "参照数",
+    "ref_load_error": "参照詳細の読み込みに失敗しました",
+    "ref_none": "このファイルはどの記事からも参照されていません",
+    "references": "参照詳細",
+    "rename_failed": "[TODO: 重命名失败: {{error}}]",
+    "rename_prompt": "新しいファイル名を入力してください",
+    "rename_success": "名前を変更しました",
+    "sync": "データ同期",
+    "sync_confirm": "[TODO: 确定要全量同步 R2 存储桶所有文件到数据库吗？]",
+    "sync_failed": "[TODO: 同步失败：{{error}}]",
+    "sync_result": "同期結果",
+    "sync_success": "[TODO: 同步完成：共{{total}}项，成功{{success}}，失败{{failed}}。]",
+    "syncing": "[TODO: 正在同步...]",
+    "thumbnail": "サムネイル",
+    "upload_failed": "[TODO: 上传失败: {{error}}]",
+    "upload_success": "アップロードしました"
   },
   "footer": {
     "rss": "RSS 購読リンク",
@@ -470,7 +498,10 @@
     "success": "アップロード成功",
     "image_only": "画像のみアップロード可能です",
     "title": "アップロード",
-    "uploading": "アップロード中..."
+    "uploading": "アップロード中...",
+    "all_file_types_supported": "すべてのファイル形式をサポート",
+    "drop_files_here": "ファイルをここにドラッグ&ドロップ",
+    "max_size": "[TODO: 最大 {{size}}MB]"
   },
   "uploading": "アップロード中...",
   "url": "サイトURL",
@@ -518,7 +549,24 @@
       "listed": "記事一覧に表示",
       "listed_short": "一覧表示",
       "publish_button": "記事を公開"
-    }
+    },
+    "article_info": "[TODO: 文章信息]",
+    "article_info_desc": "[TODO: 设置文章的基本信息]",
+    "characters": "[TODO: 字符数]",
+    "collapse_metadata": "[TODO: 折叠元数据]",
+    "enter_focus_mode": "[TODO: 进入专注模式]",
+    "exit_focus_mode": "[TODO: 退出专注模式]",
+    "expand_metadata": "[TODO: 展开元数据]",
+    "lines": "[TODO: 行数]",
+    "quick_actions": "[TODO: 快速操作]",
+    "save_draft": "[TODO: 保存草稿]",
+    "scroll_sync": "スクロール同期",
+    "statistics": "[TODO: 统计信息]",
+    "unauthorized": {
+      "description": "[TODO: 写作功能仅限管理员使用。请使用管理员账户登录后再试。]",
+      "title": "執筆権限が制限されています"
+    },
+    "words": "[TODO: 单词数]"
   },
   "year$year": "{{year}} 年",
   "editing": "編集中...",
@@ -929,6 +977,108 @@
     "multiline": {
       "warning": "選択行数が多すぎます（{{count}}行）、最初の{{limit}}行のみ処理します",
       "processing": "複数行フォーマット処理中..."
+    },
+    "bold": {
+      "defaultText": "[TODO: 粗体文本]",
+      "title": "[TODO: 粗体 (Ctrl+B) - 支持多行]"
+    },
+    "clearFormat": {
+      "description": "[TODO: 清除选中文本的所有Markdown格式]",
+      "title": "[TODO: 清除格式]"
+    },
+    "code": {
+      "block": {
+        "defaultText": "[TODO: 代码块]",
+        "title": "[TODO: 代码块]"
+      },
+      "inline": {
+        "defaultText": "[TODO: 行内代码]",
+        "title": "[TODO: 行内代码 - 支持多行]"
+      }
+    },
+    "comment": {
+      "defaultText": "[TODO: 注释内容]",
+      "title": "[TODO: HTML注释 - 支持多行]"
+    },
+    "heading": {
+      "h1": {
+        "defaultText": "[TODO: 一级标题]",
+        "title": "[TODO: 一级标题 - 支持多行]"
+      },
+      "h2": {
+        "defaultText": "[TODO: 二级标题]",
+        "title": "[TODO: 二级标题 - 支持多行]"
+      },
+      "h3": {
+        "defaultText": "[TODO: 三级标题]",
+        "title": "[TODO: 三级标题 - 支持多行]"
+      }
+    },
+    "highlight": {
+      "defaultText": "[TODO: 高亮文本]",
+      "title": "[TODO: 高亮标记 - 支持多行]"
+    },
+    "italic": {
+      "defaultText": "[TODO: 斜体文本]",
+      "title": "[TODO: 斜体 (Ctrl+I) - 支持多行]"
+    },
+    "keyboard": {
+      "defaultText": "[TODO: 按键]",
+      "title": "[TODO: 键盘按键 - 支持多行]"
+    },
+    "list": {
+      "completed": {
+        "defaultText": "[TODO: 已完成任务]",
+        "title": "[TODO: 已完成任务 - 支持多行]"
+      },
+      "task": {
+        "defaultText": "[TODO: 待办任务]",
+        "title": "[TODO: 任务列表 - 支持多行]"
+      }
+    },
+    "mark": {
+      "bookmark": {
+        "defaultText": "[TODO: 重点]",
+        "title": "[TODO: 重点标记 - 支持多行]"
+      },
+      "hot": {
+        "defaultText": "[TODO: 热门]",
+        "title": "[TODO: 热门标记 - 支持多行]"
+      },
+      "star": {
+        "defaultText": "[TODO: 重要标记]",
+        "title": "[TODO: 重要标记 - 支持多行]"
+      },
+      "tip": {
+        "defaultText": "[TODO: 提示]",
+        "title": "[TODO: 提示标记 - 支持多行]"
+      }
+    },
+    "redo": {
+      "description": "[TODO: 重做上一步操作]",
+      "title": "[TODO: 重做 (Ctrl+Y)]"
+    },
+    "strikethrough": {
+      "defaultText": "[TODO: 删除线文本]",
+      "title": "[TODO: 删除线 - 支持多行]"
+    },
+    "style": {
+      "center": {
+        "defaultText": "[TODO: 居中文本]",
+        "title": "[TODO: 居中对齐 - 支持多行]"
+      },
+      "color": {
+        "defaultText": "[TODO: 彩色文本]",
+        "title": "[TODO: 彩色文本 - 支持多行]"
+      }
+    },
+    "underline": {
+      "defaultText": "[TODO: 下划线文本]",
+      "title": "[TODO: 下划线 - 支持多行]"
+    },
+    "undo": {
+      "description": "[TODO: 撤销上一步操作]",
+      "title": "[TODO: 撤销 (Ctrl+Z)]"
     }
   },
   "user": "ユーザー",
@@ -941,5 +1091,70 @@
     "title": "アクセス制限",
     "description": "このページは管理者のみアクセス可能です。管理者の場合は、まずログインしてください。",
     "help": "管理者権限を取得するには、ウェブサイト管理者にお問い合わせください。"
-  }
+  },
+  "back_to_home": "ホームに戻る",
+  "draft_description": "記事の下書き、自分のみ閲覧可能",
+  "friend": {
+    "add": "リンクを追加",
+    "apply": {
+      "desc": "以下のフォームに記入してリンクを申請してください",
+      "disable": "管理者が申請を停止しています",
+      "email": "メールアドレス（任意）",
+      "name": "サイト名",
+      "place": "サイトグループ（任意）",
+      "success": "申請しました。管理者の承認をお待ちください",
+      "title": "リンク申請",
+      "url": "サイトURL"
+    },
+    "edit": "リンクを編集",
+    "empty": "まだリンクが追加されていません",
+    "icon": "アバター",
+    "import": "一括インポート",
+    "link_count": "リンク数",
+    "linked": "追加済み",
+    "name": "名前",
+    "order": "並び順",
+    "place": "グループ",
+    "search": "検索",
+    "success": "追加しました",
+    "title": "リンク",
+    "url": "URL"
+  },
+  "image_load_error": "画像の読み込みに失敗しました",
+  "input": {
+    "required": "この項目は必須です"
+  },
+  "last_updated": "最近更新",
+  "loading": "読み込み中",
+  "markdown": {
+    "advanced": "高度",
+    "bold": "太字",
+    "code": "コード",
+    "date": "日付を挿入",
+    "divider": "区切り線",
+    "format": "フォーマット",
+    "heading": "タイトル",
+    "highlight": "テキストハイライト",
+    "image": "画像",
+    "insert": "挿入",
+    "insert_file": "ファイルを挿入",
+    "italic": "斜体",
+    "link": "リンク",
+    "lists": "リスト",
+    "ordered_list": "番号付きリスト",
+    "quote": "引用",
+    "strikethrough": "取り消し線",
+    "subscript": "下付き文字",
+    "superscript": "上付き文字",
+    "table": "テーブル",
+    "task_list": "タスクリスト",
+    "tools": "ツール",
+    "unordered_list": "箇条書きリスト"
+  },
+  "more_options": "その他のオプション",
+  "no_articles": "記事がありません",
+  "no_articles_description": "まだ記事がありません。今後追加予定です〜",
+  "publishing": "[TODO: 发布中...]",
+  "scroll_sync": "スクロール同期",
+  "unlisted_description": "非公開記事、リンクがあればアクセス可能"
 }

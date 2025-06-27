@@ -62,7 +62,7 @@ const helmetContext = {};
 
 // 重新启用React.StrictMode进行深入分析
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  // @ts-ignore - 忽略React.StrictMode的类型检查
+  // @ts-ignore - React.StrictMode类型兼容性问题
   <React.StrictMode>
     <HelmetProvider context={helmetContext}>
       <App />
