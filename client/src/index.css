@@ -4350,4 +4350,46 @@ main h1, [role="complementary"] h3, aside h3 {
   }
 }
 
+/* React Select 深色模式支持 */
+[data-color-mode="dark"] .react-select-dark .react-select__control {
+  background-color: rgb(31 41 55) !important;
+  border-color: rgb(75 85 99) !important;
+  color: rgb(243 244 246) !important;
+}
+
+[data-color-mode="dark"] .react-select-dark .react-select__control:hover {
+  border-color: rgb(107 114 128) !important;
+}
+
+[data-color-mode="dark"] .react-select-dark .react-select__control--is-focused {
+  border-color: rgb(59 130 246) !important;
+  box-shadow: 0 0 0 1px rgb(59 130 246) !important;
+}
+
+[data-color-mode="dark"] .react-select-dark .react-select__menu {
+  background-color: rgb(31 41 55) !important;
+  border-color: rgb(75 85 99) !important;
+}
+
+[data-color-mode="dark"] .react-select-dark .react-select__option {
+  color: rgb(243 244 246) !important;
+}
+
+[data-color-mode="dark"] .react-select-dark .react-select__option--is-focused {
+  background-color: rgb(55 65 81) !important;
+}
+
+[data-color-mode="dark"] .react-select-dark .react-select__option--is-selected {
+  background-color: rgb(59 130 246) !important;
+  color: rgb(255 255 255) !important;
+}
+
+[data-color-mode="dark"] .react-select-dark .react-select__single-value {
+  color: rgb(243 244 246) !important;
+}
+
+[data-color-mode="dark"] .react-select-dark .react-select__placeholder {
+  color: rgb(107 114 128) !important;
+}
+
 

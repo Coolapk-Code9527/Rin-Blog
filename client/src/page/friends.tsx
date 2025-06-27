@@ -391,23 +391,50 @@ function Friend(props: any) {
                                             setStatus(value);
                                         }
                                     }}
-                                    className="react-select-container"
+                                    className="react-select-dark"
                                     classNamePrefix="react-select"
                                     placeholder={t('status')}
+                                    theme={(theme) => ({
+                                        ...theme,
+                                        colors: {
+                                            ...theme.colors,
+                                            primary: '#3b82f6', // blue-500
+                                            primary75: '#60a5fa', // blue-400
+                                            primary50: '#93c5fd', // blue-300
+                                            primary25: '#dbeafe', // blue-100
+                                            neutral0: 'white', // 背景色
+                                            neutral5: '#f9fafb', // gray-50
+                                            neutral10: '#f3f4f6', // gray-100
+                                            neutral20: '#e5e7eb', // gray-200
+                                            neutral30: '#d1d5db', // gray-300
+                                            neutral40: '#9ca3af', // gray-400
+                                            neutral50: '#6b7280', // gray-500
+                                            neutral60: '#4b5563', // gray-600
+                                            neutral70: '#374151', // gray-700
+                                            neutral80: '#1f2937', // gray-800
+                                            neutral90: '#111827', // gray-900
+                                        }
+                                    })}
                                     styles={{
-                                        control: (provided: any) => ({
+                                        control: (provided: any, state: any) => ({
                                             ...provided,
                                             borderRadius: '12px',
                                             minHeight: '48px',
-                                            border: '1px solid rgb(229 231 235)',
+                                            border: state.isFocused
+                                                ? '1px solid #3b82f6'
+                                                : '1px solid #e5e7eb',
+                                            boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
                                             '&:hover': {
-                                                border: '1px solid rgb(209 213 219)'
+                                                border: state.isFocused
+                                                    ? '1px solid #3b82f6'
+                                                    : '1px solid #d1d5db'
                                             }
                                         }),
                                         menu: (provided: any) => ({
                                             ...provided,
                                             borderRadius: '12px',
-                                            overflow: 'hidden'
+                                            overflow: 'hidden',
+                                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
                                         }),
                                         option: (provided: any) => ({
                                             ...provided,

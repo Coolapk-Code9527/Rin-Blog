@@ -72,11 +72,11 @@ export function HashtagsPage() {
             <PageContainer maxWidth="max-w-6xl" className="w-full">
                 <Waiting for={hashtags}>
                     <main className="w-full flex flex-col ani-show">
-                        {/* 页面标题区域 - 与文章列表页面保持一致 */}
-                        <div className="flex flex-col space-y-3 mb-3">
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 sm:py-3 gap-3 sm:gap-3">
+                        {/* 页面标题区域 - 优化间距 */}
+                        <div className="flex flex-col space-y-2.5 mb-4">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-1.5 sm:py-2 gap-2.5 sm:gap-3">
                             {/* 左侧：标题和标签数量 - 优化移动端布局 */}
-                            <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+                            <div className="flex flex-row items-center gap-2 sm:gap-2.5 w-full sm:w-auto flex-wrap">
                               <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0">
                                 {t('hashtags')}
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
@@ -89,7 +89,7 @@ export function HashtagsPage() {
                           </div>
 
                           {/* 上方渐变分割线 */}
-                          <div className="w-full mb-2">
+                          <div className="w-full">
                             <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                           </div>
                         </div>
@@ -102,21 +102,24 @@ export function HashtagsPage() {
                           disablePadding={true}
                           className="hover:shadow-enhanced-lg transition-all duration-300"
                           title={
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                              <h3 className="text-lg font-semibold flex items-center gap-3 text-gray-900 dark:text-gray-100">
-                                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                  <i className="ri-hashtag text-blue-600 dark:text-blue-400"></i>
+                            <div className="flex flex-row justify-between items-center gap-2 md:gap-4">
+                              {/* 左侧：标题区域 */}
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <div className="px-2.5 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                                  <i className="ri-hashtag text-blue-600 dark:text-blue-400 text-sm"></i>
                                 </div>
-                                {t('hashtags')}
-                              </h3>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                  {t('hashtags')}
+                                </h3>
+                              </div>
 
-                              {/* 排序切换 */}
-                              <div className="flex gap-2 items-center">
-                                <span className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">{t('sort.label')}:</span>
+                              {/* 右侧：排序切换区域 */}
+                              <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap flex-shrink-0">
+                                <span className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium flex-shrink-0">{t('sort.label')}:</span>
                                 {SORT_OPTIONS.map(opt => (
                                   <button
                                     key={opt.value}
-                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] ${sort === opt.value ? 'bg-theme/10 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced backdrop-blur-sm' : `${tagGlassClass} text-neutral-600 dark:text-neutral-300 border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme shadow-enhanced`}`}
+                                    className={`px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ease-out transform hover:scale-[0.98] active:scale-[0.96] flex-shrink-0 ${sort === opt.value ? 'bg-theme/10 text-theme border-theme/30 dark:bg-theme/20 dark:border-theme/25 shadow-enhanced backdrop-blur-sm' : `${tagGlassClass} text-neutral-600 dark:text-neutral-300 border-neutral-200/60 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-750 hover:text-theme dark:hover:text-theme shadow-enhanced`}`}
                                     onClick={() => setSort(opt.value as any)}
                                   >
                                     {opt.label}
@@ -127,25 +130,25 @@ export function HashtagsPage() {
                           }
                           enableScroll={true}
                         >
-                          <div className="px-6 pt-6">
+                          <div className="px-2 sm:px-3 md:px-4 pt-3 sm:pt-4">
                             {sortedTags.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-500">
                               <i className="ri-emotion-unhappy-line text-5xl mb-3 text-neutral-300 dark:text-neutral-600"></i>
                               <div className="text-lg font-medium">{t('hashtagsPage.noTags')}</div>
                             </div>
                           ) : (
-                            <div className="w-full flex flex-row flex-wrap gap-4 items-start justify-start sm:gap-4 md:gap-5 lg:gap-6">
+                            <div className="w-full flex flex-row flex-wrap gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 items-start justify-start">
                               {sortedTags.map((hashtag, index) => (
-                                <div key={index} className="relative group flex flex-col items-center min-w-[90px] max-w-full">
+                                <div key={index} className="relative group flex flex-col items-center min-w-[75px] sm:min-w-[80px] md:min-w-[85px] max-w-full">
                                   <Link href={`/hashtag/${hashtag.name}`} className="inline-block w-full">
                                     <span className={`transition-all duration-200 ${getFontSize(hashtag.feeds)} break-all w-full text-center`} title={hashtag.description || ''} style={{display: 'inline-block', minWidth: 0, maxWidth: '100%'}}>
                                       <HashTag name={hashtag.name} />
                                     </span>
                                   </Link>
-                                  <span className="text-xs text-neutral-400 dark:text-neutral-500 mt-2 select-none w-full text-center font-medium">{t("article.total_short$count", { count: hashtag.feeds })}</span>
-                                  {/* 简介tooltip */}
+                                  <span className="text-xs text-neutral-400 dark:text-neutral-500 mt-1.5 select-none w-full text-center font-medium">{t("article.total_short$count", { count: hashtag.feeds })}</span>
+                                  {/* 简介tooltip - 优化显示位置和样式 */}
                                   {hashtag.description && (
-                                    <span className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-20 hidden group-hover:block bg-neutral-900/95 dark:bg-neutral-100/95 text-white dark:text-neutral-900 text-xs rounded-lg px-3 py-2 shadow-enhanced-lg whitespace-pre-line max-w-xs backdrop-blur-md">
+                                    <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-20 hidden group-hover:block bg-neutral-900/95 dark:bg-neutral-100/95 text-white dark:text-neutral-900 text-xs rounded-lg px-2.5 py-1.5 shadow-enhanced-lg whitespace-pre-line max-w-xs backdrop-blur-md">
                                       {hashtag.description}
                                     </span>
                                   )}
