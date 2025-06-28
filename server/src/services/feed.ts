@@ -153,8 +153,7 @@ export function FeedService() {
                         set.status = 400;
                         return `Invalid limit parameter: ${limitParseResult.error}`;
                     }
-                    // 修复：允许更大的限制用于全局排序，但仍有合理上限防止滥用
-                    const limit_num = Math.min(limitParseResult.value!, 1000); // 提高限制到1000，支持大型博客
+                    const limit_num = Math.min(limitParseResult.value!, 50); // 限制最大值为50
                     
                     let cacheKey = '';
                     let hasNext = false;

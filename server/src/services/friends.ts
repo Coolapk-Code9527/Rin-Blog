@@ -184,9 +184,17 @@ export function FriendService() {
 }
 
 export async function friendCrontab(env: Env, ctx: ExecutionContext) {
-    // 优化：移除重复的配置检查，现在在调度器层面已经检查
     const config = ServerConfig()
+    const enable = await config.getOrDefault('friend_crontab', true)
     const ua = await config.get('friend_ua') || 'Rin-Check/0.1.0'
+
+    // 调试：记录配置状态
+    console.log(`🔍 友链健康检查配置: friend_crontab=${enable}`);
+
+    if (!enable) {
+        console.log('⏹️ 友链健康检查已禁用，跳过执行');
+        return
+    }
     const db = drizzle(env.DB, { schema: schema })
     const friend_list = await db.query.friends.findMany()
     // 优化：移除调试日志，减少CPU消耗

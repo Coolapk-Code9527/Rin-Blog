@@ -47,17 +47,7 @@ export default {
             Container.set("client.config", new CacheImpl("client.config"));
         }
 
-        // 优化：在调度器层面检查配置，避免不必要的函数调用和CPU消耗
-        const serverConfig = Container.get("server.config");
-        const friendCrontabEnabled = await serverConfig.getOrDefault('friend_crontab', true);
-
-        if (friendCrontabEnabled) {
-            console.log('🔄 执行友链健康检查');
-            await friendCrontab(env, ctx);
-        } else {
-            console.log('⏹️ 友链健康检查已禁用，跳过调度');
-        }
-
+        await friendCrontab(env, ctx)
         await rssCrontab(env)
     },
 }
