@@ -13,11 +13,11 @@ import { unified } from "unified";
 import type { Env } from "../db/db";
 import * as schema from "../db/schema";
 import { feeds, users } from "../db/schema";
-import { ClientConfig } from "../utils/cache";
 import { getEnv } from "../utils/di";
 import { extractImage } from "../utils/image";
-import { markdownToPlainText } from "../utils/markdown";
 import { createS3Client } from "../utils/s3";
+import { ClientConfig } from "../utils/cache";
+import { markdownToPlainText } from "../utils/markdown";
 
 export function RSSService() {
     const env: Env = getEnv();
@@ -68,15 +68,6 @@ export function RSSService() {
 }
 
 export async function rssCrontab(env: Env) {
-    // 修复：检查RSS配置，保持与RSS服务端点的设计一致性
-    const rssEnabled = await ClientConfig().getOrDefault('rss', true);
-    console.log(`🔍 RSS生成配置: rss=${rssEnabled}`);
-
-    if (!rssEnabled) {
-        console.log('⏹️ RSS功能已禁用，跳过生成');
-        return;
-    }
-
     const frontendUrl = `${env.FRONTEND_URL.startsWith("http://") || env.FRONTEND_URL.startsWith("https://") ? "" : "https://"}${env.FRONTEND_URL}`;
     const db = drizzle(env.DB, { schema: schema });
     const accessHost = env.S3_ACCESS_HOST || env.S3_ENDPOINT;
