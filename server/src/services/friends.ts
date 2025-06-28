@@ -187,7 +187,12 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
     const config = ServerConfig()
     const enable = await config.getOrDefault('friend_crontab', true)
     const ua = await config.get('friend_ua') || 'Rin-Check/0.1.0'
+
+    // 调试：记录配置状态
+    console.log(`🔍 友链健康检查配置: friend_crontab=${enable}`);
+
     if (!enable) {
+        console.log('⏹️ 友链健康检查已禁用，跳过执行');
         return
     }
     const db = drizzle(env.DB, { schema: schema })

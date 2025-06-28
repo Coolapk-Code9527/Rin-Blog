@@ -112,7 +112,9 @@ export class CacheImpl {
     }
 
     async getOrDefault<T>(key: string, defaultValue: T) {
-        return this.getOrSet(key, async () => defaultValue);
+        // 修复：真正的getOrDefault，不应该自动保存默认值
+        const cached = await this.get(key);
+        return cached !== undefined ? cached as T : defaultValue;
     }
     
 

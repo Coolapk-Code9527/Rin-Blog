@@ -25,13 +25,34 @@ export function FaviconService() {
     const faviconKey = getFaviconKey();
     return new Elysia({ aot: false })
         .use(setup())
+        .get("/favicon.ico", async ({ set }) => {
+            // 重定向到标准favicon端点，处理浏览器自动请求
+            set.status = 301;
+            set.headers["Location"] = "/favicon";
+            set.headers["Cache-Control"] = "public, max-age=31536000"; // 1年缓存重定向
+            return;
+        })
         .get("/favicon", async ({ set }) => {
             try {
+                // 性能优化：添加缓存头，减少重复请求
+                set.headers["Cache-Control"] = "public, max-age=3600"; // 1小时缓存
+
                 const response = await fetch(
                     new Request(`${accessHost}/${faviconKey}`),
                 );
 
                 if (!response.ok) {
+                    // Fallback：如果S3中没有favicon文件，使用AVATAR环境变量
+                    if (response.status === 404 && env.AVATAR) {
+                        console.log('📷 S3中没有favicon文件，重定向到AVATAR:', env.AVATAR);
+                        set.status = 302;
+                        set.headers["Location"] = env.AVATAR;
+                        set.headers["Cache-Control"] = "public, max-age=3600"; // 1小时缓存重定向
+                        return;
+                    }
+
+                    // 其他错误：快速失败
+                    set.headers["Cache-Control"] = "public, max-age=300"; // 5分钟缓存
                     set.status = response.status;
                     return await response.text();
                 }
