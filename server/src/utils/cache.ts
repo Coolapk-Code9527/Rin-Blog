@@ -116,7 +116,15 @@ export class CacheImpl {
         const cached = await this.get(key);
         return cached !== undefined ? cached as T : defaultValue;
     }
-    
+
+    /**
+     * 强制重新加载缓存
+     * 用于确保获取最新的配置数据，特别是在Cron任务中
+     */
+    async reload() {
+        this.loaded = false;
+        await this.load();
+    }
 
     async set(key: string, value: any, save: boolean = true) {
         if (!this.loaded)

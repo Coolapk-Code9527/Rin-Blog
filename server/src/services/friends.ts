@@ -185,6 +185,10 @@ export function FriendService() {
 
 export async function friendCrontab(env: Env, ctx: ExecutionContext) {
     const config = ServerConfig()
+
+    // 修复：强制重新加载配置，确保获取最新的设置
+    await config.reload()
+
     const enable = await config.getOrDefault('friend_crontab', true)
     const ua = await config.get('friend_ua') || 'Rin-Check/0.1.0'
 
