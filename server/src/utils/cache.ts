@@ -116,7 +116,7 @@ export class CacheImpl {
         const cached = await this.get(key);
         return cached !== undefined ? cached as T : defaultValue;
     }
-    
+
 
     async set(key: string, value: any, save: boolean = true) {
         if (!this.loaded)
