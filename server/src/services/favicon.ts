@@ -44,7 +44,6 @@ export function FaviconService() {
                 if (!response.ok) {
                     // Fallback：如果S3中没有favicon文件，使用AVATAR环境变量
                     if (response.status === 404 && env.AVATAR) {
-                        console.log('📷 S3中没有favicon文件，重定向到AVATAR:', env.AVATAR);
                         set.status = 302;
                         set.headers["Location"] = env.AVATAR;
                         set.headers["Cache-Control"] = "public, max-age=3600"; // 1小时缓存重定向
