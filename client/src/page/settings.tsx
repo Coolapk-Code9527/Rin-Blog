@@ -16,9 +16,12 @@ import {
     ServerConfigContext
 } from "../state/config.tsx";
 import {headersWithAuth} from "../utils/auth.ts";
+import { useConfigCache } from "../hooks/useFeedsCache";
+import { ApiCacheManager } from "../hooks/useApiCache";
 import '../utils/thumb.css';
 import { useToast } from '../hooks/useToast';
 import { PageContainer } from "../components/container";
+import { Waiting } from "../components/loading";
 import { macOSModalStyles, MODAL_CONTAINER_CLASSES, useModalKeyboard, useModalBodyLock } from "../utils/modal-config";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { ProfileContext } from "../state/profile";
@@ -51,11 +54,12 @@ export function Settings() {
     const [isOpen, setIsOpen] = useState(false);
     const [msg, setMsg] = useState('');
     const [msgList, setMsgList] = useState<{ title: string, reason: string }[]>([]);
-    const [clientLoading, setClientLoading] = useState(true);
-    const [serverLoading, setServerLoading] = useState(true);
+    // 使用缓存Hook替代直接API调用
+    const { data: clientConfigData, loading: clientLoading, invalidate: invalidateClientCache } = useConfigCache('client');
+    const { data: serverConfigData, loading: serverLoading, invalidate: invalidateServerCache } = useConfigCache('server');
+
     const [clientConfig, setClientConfig] = useState<ConfigWrapper>(defaultClientConfigWrapper);
     const [serverConfig, setServerConfig] = useState<ConfigWrapper>(defaultServerConfigWrapper);
-    const ref = useRef(false);
     const { showAlert, showConfirm } = useGlobalDialog();
     const { showToast } = useToast();
 
@@ -219,14 +223,19 @@ export function Settings() {
                     />
                     <ItemInput title={t('settings.footer.title')} description={t('settings.footer.desc')} type="client" configKey="footer" configKeyTitle="Footer HTML" />
                     <ItemButton title={t('settings.cache.clear.title')} description={t('settings.cache.clear.desc')} buttonTitle={t('clear')} showConfirm={showConfirm} onConfirm={async () => {
-                        await client.config.cache.delete(undefined, {
-                            headers: headersWithAuth()
-                        })
-                            .then((response) => {
-                                if (response.error) {
-                                    showToast(t('settings.cache.clear_failed$message', { message: String(response.error.value) }))
-                                }
-                            })
+                        try {
+                            // 清除服务端缓存
+                            await client.config.cache.delete(undefined, {
+                                headers: headersWithAuth()
+                            });
+
+                            // 清除前端缓存
+                            ApiCacheManager.clearAll();
+
+                            showToast(t('settings.cache.clear.success', { defaultValue: '缓存清理成功' }));
+                        } catch (error) {
+                            showToast(t('settings.cache.clear_failed$message', { message: String(error) }));
+                        }
                     }} alertTitle={t('settings.cache.clear.confirm.title')} alertDescription={t('settings.cache.clear.confirm.desc')} />
                     <ItemWithUpload title={t('settings.wordpress.title')} description={t('settings.wordpress.desc')}
                         accept="application/xml"
@@ -236,38 +245,42 @@ export function Settings() {
         </>
     );
 
+    // 使用缓存Hook数据更新配置状态
     useEffect(() => {
-        if (ref.current) return;
-        client.config({
-            type: 'client'
-        }).get({
-            headers: headersWithAuth()
-        }).then(({ data }) => {
-            if (data && typeof data !== 'string') {
-                const config = new ConfigWrapper(data, defaultClientConfig)
-                setClientConfig(config)
+        if (clientConfigData) {
+            const config = new ConfigWrapper(clientConfigData, defaultClientConfig);
+            setClientConfig(config);
+        }
+    }, [clientConfigData]);
+
+    useEffect(() => {
+        if (serverConfigData) {
+            const config = new ConfigWrapper(serverConfigData, defaultServerConfig);
+            setServerConfig(config);
+        }
+    }, [serverConfigData]);
+
+    // 使用ref来稳定invalidate函数的引用
+    const invalidateClientCacheRef = useRef(invalidateClientCache);
+    const invalidateServerCacheRef = useRef(invalidateServerCache);
+    invalidateClientCacheRef.current = invalidateClientCache;
+    invalidateServerCacheRef.current = invalidateServerCache;
+
+    // 设置全局缓存失效回调
+    useEffect(() => {
+        configUpdateManager.addCallbacks(
+            undefined, // 不添加成功回调
+            undefined, // 不添加错误回调
+            (type: 'client' | 'server') => {
+                // 缓存失效回调
+                if (type === 'client') {
+                    invalidateClientCacheRef.current();
+                } else if (type === 'server') {
+                    invalidateServerCacheRef.current();
+                }
             }
-        }).catch((err: any) => {
-            showToast(t('settings.get_config_failed$message', { message: err.message }))
-        }).finally(() => {
-            setClientLoading(false);
-        })
-        client.config({
-            type: 'server'
-        }).get({
-            headers: headersWithAuth()
-        }).then(({ data }) => {
-            if (data && typeof data !== 'string') {
-                const config = new ConfigWrapper(data, defaultServerConfig)
-                setServerConfig(config)
-            }
-        }).catch((err) => {
-            showToast(t('settings.get_config_failed$message', { message: err.message }))
-        }).finally(() => {
-            setServerLoading(false);
-        })
-        ref.current = true;
-    }, []);
+        );
+    }, []); // 移除依赖，使用ref来访问最新的函数
 
     async function handleFaviconChange(e: ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -358,7 +371,8 @@ export function Settings() {
             <ServerConfigContext.Provider value={serverConfig}>
                 {/* @ts-ignore - 忽略Provider的类型检查 */}
                 <ClientConfigContext.Provider value={clientConfig}>
-                    <PageContainer>
+                    <Waiting for={!clientLoading && !serverLoading}>
+                        <PageContainer>
                         <div className="flex flex-row items-center gap-3 mb-6">
                             <h1 className="text-2xl font-bold t-primary relative group">
                                 {t('settings.title')}
@@ -397,6 +411,7 @@ export function Settings() {
                             {renderTabContent()}
                         </div>
                     </PageContainer>
+                    </Waiting>
                 </ClientConfigContext.Provider>
             </ServerConfigContext.Provider>
             <Modal isOpen={isOpen}

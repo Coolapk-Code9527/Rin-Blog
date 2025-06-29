@@ -27,9 +27,10 @@ export class ConfigUpdateManager {
   private readonly DEBOUNCE_DELAY = 800; // 800ms防抖延迟，优化性能减少配置保存频率
   private readonly MAX_QUEUE_SIZE = 50; // 最大队列大小
   
-  // 回调函数
-  private onSuccess?: (type: 'client' | 'server', updates: Record<string, any>) => void;
-  private onError?: (type: 'client' | 'server', error: string, updates: Record<string, any>) => void;
+  // 回调函数数组，支持多个回调
+  private successCallbacks: ((type: 'client' | 'server', updates: Record<string, any>) => void)[] = [];
+  private errorCallbacks: ((type: 'client' | 'server', error: string, updates: Record<string, any>) => void)[] = [];
+  private cacheInvalidateCallbacks: ((type: 'client' | 'server') => void)[] = [];
   
   private constructor() {}
   
@@ -44,14 +45,39 @@ export class ConfigUpdateManager {
   }
   
   /**
-   * 设置回调函数
+   * 添加回调函数
+   */
+  addCallbacks(
+    onSuccess?: (type: 'client' | 'server', updates: Record<string, any>) => void,
+    onError?: (type: 'client' | 'server', error: string, updates: Record<string, any>) => void,
+    onCacheInvalidate?: (type: 'client' | 'server') => void
+  ) {
+    if (onSuccess) {
+      this.successCallbacks.push(onSuccess);
+    }
+    if (onError) {
+      this.errorCallbacks.push(onError);
+    }
+    if (onCacheInvalidate) {
+      this.cacheInvalidateCallbacks.push(onCacheInvalidate);
+    }
+  }
+
+  /**
+   * 设置回调函数（兼容旧API）
    */
   setCallbacks(
     onSuccess?: (type: 'client' | 'server', updates: Record<string, any>) => void,
-    onError?: (type: 'client' | 'server', error: string, updates: Record<string, any>) => void
+    onError?: (type: 'client' | 'server', error: string, updates: Record<string, any>) => void,
+    onCacheInvalidate?: (type: 'client' | 'server') => void
   ) {
-    this.onSuccess = onSuccess;
-    this.onError = onError;
+    // 清空现有回调
+    this.successCallbacks = [];
+    this.errorCallbacks = [];
+    this.cacheInvalidateCallbacks = [];
+
+    // 添加新回调
+    this.addCallbacks(onSuccess, onError, onCacheInvalidate);
   }
   
   /**
@@ -146,16 +172,19 @@ export class ConfigUpdateManager {
       if (type === 'client') {
         this.updateClientStorage(updates);
       }
-      
+
+      // 失效相关缓存
+      this.cacheInvalidateCallbacks.forEach(callback => callback(type));
+
       // 成功回调
-      this.onSuccess?.(type, updates);
+      this.successCallbacks.forEach(callback => callback(type, updates));
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`Failed to update ${type} config:`, errorMessage);
       
       // 错误回调
-      this.onError?.(type, errorMessage, updates);
+      this.errorCallbacks.forEach(callback => callback(type, errorMessage, updates));
       
       // 重新入队（可选，避免数据丢失）
       // for (const [key, value] of Object.entries(updates)) {

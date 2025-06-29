@@ -335,6 +335,186 @@ export function useTagsCache(enabled: boolean = true) {
 }
 
 /**
+ * 配置缓存Hook
+ *
+ * 用于设置页面的配置获取（仅读操作）
+ */
+export function useConfigCache(type: 'client' | 'server', enabled: boolean = true) {
+  const cacheKey = `config_type:${type}`;
+
+  const fetcher = useMemo(() => async () => {
+    const response = await client.config({ type }).get({
+      headers: headersWithAuth()
+    });
+
+    if (response.error) {
+      throw new Error(response.error.value as string);
+    }
+
+    if (!response.data || typeof response.data === 'string') {
+      throw new Error('Failed to fetch config');
+    }
+
+    return response.data;
+  }, [type]);
+
+  return useApiCache(cacheKey, fetcher, {
+    staleTime: 10 * 60 * 1000, // 优化：10分钟缓存（配置更新频率中等）
+    enabled,
+    refetchOnWindowFocus: true
+  });
+}
+
+/**
+ * 友情链接缓存Hook
+ *
+ * 用于友情链接页面的数据获取和处理
+ */
+export function useFriendsCache(enabled: boolean = true) {
+  const cacheKey = 'friends_list';
+
+  const fetcher = useMemo(() => async () => {
+    const response = await client.friend.index.get({
+      headers: headersWithAuth()
+    });
+
+    if (response.error) {
+      throw new Error(response.error.value as string);
+    }
+
+    if (!response.data) {
+      throw new Error('Failed to fetch friends');
+    }
+
+    return response.data;
+  }, []);
+
+  const result = useApiCache(cacheKey, fetcher, {
+    staleTime: 5 * 60 * 1000, // 优化：5分钟缓存（友情链接更新频率中等）
+    enabled,
+    refetchOnWindowFocus: true
+  });
+
+  // 处理数据过滤和分类
+  const processedData = useMemo(() => {
+    if (!result.data) return null;
+
+    const friendList = result.data.friend_list || [];
+
+    // 分类处理友情链接
+    const friendsAvailable = friendList.filter(({ health, accepted }: any) =>
+      health.length === 0 && accepted === 1
+    );
+
+    const friendsUnavailable = friendList.filter(({ health, accepted }: any) =>
+      health.length > 0 && accepted === 1
+    );
+
+    const waitList = friendList.filter(({ accepted }: any) => accepted === 0);
+    const refusedList = friendList.filter(({ accepted }: any) => accepted === -1);
+
+    return {
+      friendsAvailable,
+      friendsUnavailable,
+      waitList,
+      refusedList,
+      applyList: result.data.apply_list || []
+    };
+  }, [result.data]);
+
+  return {
+    ...result,
+    processedData
+  };
+}
+
+/**
+ * 文件列表缓存Hook
+ *
+ * 用于FileManager组件的文件列表获取，支持复杂查询参数
+ */
+export function useFilesCache(
+  currentPath: string = '/',
+  search: string = '',
+  sortBy: string = 'name',
+  sortOrder: string = 'asc',
+  currentPage: number = 1,
+  itemsPerPage: number = 20,
+  enabled: boolean = true
+) {
+  // 构建缓存键，包含所有查询参数
+  const cacheKey = `files_path:${encodeURIComponent(currentPath)}_search:${encodeURIComponent(search)}_sort:${sortBy}_order:${sortOrder}_page:${currentPage}_limit:${itemsPerPage}`;
+
+  const fetcher = useMemo(() => async () => {
+    const { endpoint } = await import('../main');
+
+    if (!endpoint) {
+      throw new Error('API endpoint not configured');
+    }
+
+    const params = new URLSearchParams();
+    params.append('path', currentPath);
+    if (search) params.append('search', search);
+    params.append('sort', sortBy);
+    params.append('order', sortOrder);
+    params.append('page', String(currentPage));
+    params.append('limit', String(itemsPerPage));
+    params.append('all', '1');
+
+    const response = await fetch(`${endpoint}/files?${params.toString()}`, {
+      headers: headersWithAuth()
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // 处理数据过滤（移除缩略图文件）
+    let filesData = data.files || [];
+    let total = data.total || 0;
+
+    // 过滤缩略图文件（不在文件管理界面显示）
+    filesData = filesData.filter((f: any) => {
+      // 过滤以 thumb_ 开头的文件
+      if (!f.isFolder && f.name && f.name.startsWith('thumb_')) {
+        return false;
+      }
+      // 过滤视频缩略图文件（以 _thumbnail 结尾的文件）
+      if (!f.isFolder && f.name && f.name.includes('_thumbnail.')) {
+        return false;
+      }
+      return true;
+    });
+
+    // 处理根目录的虚拟文件夹逻辑
+    if (currentPath === '/' && filesData.length > 0) {
+      const virtualFolders = filesData.filter((f: any) => f.isFolder && f.id < 0);
+      const dbItems = filesData.filter((f: any) => !(f.isFolder && f.id < 0));
+
+      if (currentPage === 1) {
+        filesData = [...virtualFolders, ...dbItems];
+      } else {
+        filesData = dbItems;
+      }
+      total = total - virtualFolders.length;
+    }
+
+    return {
+      files: filesData,
+      total
+    };
+  }, [currentPath, search, sortBy, sortOrder, currentPage, itemsPerPage]);
+
+  return useApiCache(cacheKey, fetcher, {
+    staleTime: 2 * 60 * 1000, // 优化：2分钟缓存（文件列表更新频率较高）
+    enabled,
+    refetchOnWindowFocus: true
+  });
+}
+
+/**
  * 缓存管理工具
  */
 export const FeedsCacheManager = {

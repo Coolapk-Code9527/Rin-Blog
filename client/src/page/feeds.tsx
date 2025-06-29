@@ -179,7 +179,8 @@ export function FeedsPage() {
     // 使用缓存Hook替代直接API调用和本地状态管理
     const {
         data: feedsData,
-        loading
+        loading,
+        invalidate: invalidateFeedsCache
     } = useFeedsCache({
         type: listState as CacheFeedType,
         enabled: true
@@ -188,9 +189,33 @@ export function FeedsPage() {
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = React.useRef("")
 
+    // 使用ref来稳定invalidate函数的引用
+    const invalidateFeedsCacheRef = React.useRef(invalidateFeedsCache);
+    invalidateFeedsCacheRef.current = invalidateFeedsCache;
+
+    // 监听文章发布/更新事件，失效缓存
+    React.useEffect(() => {
+        const handleFeedPublished = () => {
+            invalidateFeedsCacheRef.current();
+        };
+
+        const handleFeedUpdated = () => {
+            invalidateFeedsCacheRef.current();
+        };
+
+        window.addEventListener('feed-published', handleFeedPublished);
+        window.addEventListener('feed-updated', handleFeedUpdated);
+
+        return () => {
+            window.removeEventListener('feed-published', handleFeedPublished);
+            window.removeEventListener('feed-updated', handleFeedUpdated);
+        };
+    }, []); // 移除依赖，使用ref来访问最新的函数
+
     // 获取配置加载状态
     const extendedConfig = useContext(ExtendedConfigContext);
     const initialLoading = extendedConfig?.initialLoading ?? false;
+    const configLoaded = extendedConfig?.configLoaded ?? false;
 
     // 视图模式状态管理
     const { viewMode, setViewMode } = useViewMode();
@@ -429,8 +454,8 @@ export function FeedsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
 
-            {/* 等待数据加载完成，不等待配置 */}
-            <Waiting for={!loading && !initialLoading}>
+            {/* 等待数据和配置加载完成，避免视图模式跳动 */}
+            <Waiting for={!loading && !initialLoading && configLoaded}>
                 {/* 页面标题和工具栏区域 */}
                 <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 mb-0 transition-all duration-300`}>
                     <div className="flex flex-col space-y-4 mb-0">

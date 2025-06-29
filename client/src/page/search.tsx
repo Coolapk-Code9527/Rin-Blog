@@ -24,10 +24,33 @@ export function SearchPage({ keyword }: { keyword: string }) {
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
 
     // 使用缓存Hook替代直接API调用
-    const { data: feeds, loading } = useSearchCache(keyword, page, limit, !!keyword);
+    const { data: feeds, loading, invalidate: invalidateSearchCache } = useSearchCache(keyword, page, limit, !!keyword);
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
+
+    // 使用ref来稳定invalidate函数的引用
+    const invalidateSearchCacheRef = React.useRef(invalidateSearchCache);
+    invalidateSearchCacheRef.current = invalidateSearchCache;
+
+    // 监听文章发布/更新事件，失效缓存
+    React.useEffect(() => {
+        const handleFeedPublished = () => {
+            invalidateSearchCacheRef.current();
+        };
+
+        const handleFeedUpdated = () => {
+            invalidateSearchCacheRef.current();
+        };
+
+        window.addEventListener('feed-published', handleFeedPublished);
+        window.addEventListener('feed-updated', handleFeedUpdated);
+
+        return () => {
+            window.removeEventListener('feed-published', handleFeedPublished);
+            window.removeEventListener('feed-updated', handleFeedUpdated);
+        };
+    }, []); // 移除依赖，使用ref来访问最新的函数
     const title = t('article.search.title$keyword', { keyword })
     return (
         <>

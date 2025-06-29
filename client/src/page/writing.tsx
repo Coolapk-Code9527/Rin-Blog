@@ -17,6 +17,7 @@ import {Markdown} from "../components/markdown";
 import { MacOSLoadingSpinner } from '../components/loading';
 import {client} from "../main";
 import {headersWithAuth} from "../utils/auth";
+import { useFeedCache } from "../hooks/useFeedsCache";
 import {Cache, useCache} from '../utils/cache';
 import {siteName} from "../utils/constants";
 import {useColorMode} from "../utils/darkModeUtils";
@@ -1547,26 +1548,29 @@ async function publish({
       headers: headersWithAuth(),
     }
   );
-  if (onCompleted) {
-    if (window.dispatchEvent) {
-      window.dispatchEvent(new CustomEvent('file-upload-success'));
-    }
-    onCompleted();
-  }
   if (error) {
     showAlert(error.value as string);
     return; // 发生错误时提前返回
   }
   if (data && typeof data !== "string") {
+    // 触发文章发布事件，用于缓存失效
+    if (window.dispatchEvent) {
+      window.dispatchEvent(new CustomEvent('feed-published', {
+        detail: { feedId: (data as any).insertedId, title, tags }
+      }));
+      // 保持原有的file-upload-success事件以兼容现有功能
+      window.dispatchEvent(new CustomEvent('file-upload-success'));
+    }
+
     // 直接跳转到文章页面，不显示提示弹窗
     Cache.with().set("content", content); // 将当前内容写入缓存，避免beforeunload触发
     Cache.with().clear();
     // 使用replace方法替换当前页面，避免返回按钮返回到编辑页
     // @ts-ignore - 忽略insertedId类型错误
-    window.location.replace("/feed/" + data.insertedId);
-    if (window.dispatchEvent) {
-      window.dispatchEvent(new CustomEvent('file-upload-success'));
-    }
+    window.location.replace("/feed/" + (data as any).insertedId);
+  }
+  if (onCompleted) {
+    onCompleted();
   }
 }
 
@@ -1610,26 +1614,30 @@ async function update({
       headers: headersWithAuth(),
     }
   );
-  if (onCompleted) {
-    if (window.dispatchEvent) {
-      window.dispatchEvent(new CustomEvent('file-upload-success'));
-    }
-    onCompleted();
-  }
   if (error) {
     showAlert(error.value as string);
     return; // 发生错误时提前返回
   }
-  
+
+  // 触发文章更新事件，用于缓存失效
+  if (window.dispatchEvent) {
+    window.dispatchEvent(new CustomEvent('feed-updated', {
+      detail: { feedId: id, title, tags }
+    }));
+    // 保持原有的file-upload-success事件以兼容现有功能
+    window.dispatchEvent(new CustomEvent('file-upload-success'));
+  }
+
   // 直接跳转到文章页面，不显示提示弹窗
   if (content) {
     Cache.with(id).set("content", content); // 将当前内容写入缓存，避免beforeunload触发
   }
-      Cache.with(id).clear();
+  Cache.with(id).clear();
   // 使用replace方法替换当前页面，避免返回按钮返回到编辑页
   window.location.replace("/feed/" + id);
-  if (window.dispatchEvent) {
-    window.dispatchEvent(new CustomEvent('file-upload-success'));
+
+  if (onCompleted) {
+    onCompleted();
   }
   }
 
@@ -2338,44 +2346,34 @@ export function WritingPage({ id }: { id?: number }) {
     handlePaste(event, editorRef, () => {}, showAlert);
   }, [showAlert]);
 
+  // 使用缓存Hook获取文章数据（仅编辑模式，id > 0时才启用）
+  const { data: feedData } = useFeedCache(String(id || 0), !!(id && id > 0));
+
   useEffect(() => {
-    // 只有当id存在且大于0时才从服务器加载文章内容
+    // 只有当id存在且大于0时才从缓存或服务器加载文章内容
     // 这确保新文章页面不会被覆盖
-    if (id && id > 0) {
-      // 添加延迟，确保缓存状态已经初始化
-      setTimeout(() => {
-        client
-          .feed({ id })
-          .get({
-            headers: headersWithAuth(),
-          })
-          .then((response) => {
-            const { data } = response;
-            if (data && typeof data !== "string") {
-              // 使用ExtendedFeed类型
-              const feedData = data as unknown as ExtendedFeed;
+    if (id && id > 0 && feedData) {
+      // 将feedData转换为ExtendedFeed类型
+      const extendedFeedData = feedData as unknown as ExtendedFeed;
 
-              // 检查localStorage中的缓存内容，而不是React状态
-              const cachedTitle = cache.get("title") || "";
-              const cachedTags = cache.get("tags") || "";
-              const cachedAlias = cache.get("alias") || "";
-              const cachedContent = cache.get("content") || "";
-              const cachedSummary = cache.get("summary") || "";
+      // 检查localStorage中的缓存内容，而不是React状态
+      const cachedTitle = cache.get("title") || "";
+      const cachedTags = cache.get("tags") || "";
+      const cachedAlias = cache.get("alias") || "";
+      const cachedContent = cache.get("content") || "";
+      const cachedSummary = cache.get("summary") || "";
 
-              if (cachedTitle == "" && feedData.title) setTitle(feedData.title);
-              if (cachedTags == "" && feedData.hashtags)
-                setTags(feedData.hashtags.map(({ name }) => `#${name}`).join(" "));
-              if (cachedAlias == "" && feedData.alias) setAlias(feedData.alias);
-              if (cachedContent == "") setContent(feedData.content);
-              if (cachedSummary == "") setSummary(feedData.summary || "");
-              setListed(feedData.listed === 1);
-              setDraft(feedData.draft === 1);
-              setCreatedAt(new Date(feedData.createdAt));
-            }
-          });
-      }, 100); // 100ms延迟，确保缓存状态已初始化
+      if (cachedTitle == "" && extendedFeedData.title) setTitle(extendedFeedData.title);
+      if (cachedTags == "" && extendedFeedData.hashtags)
+        setTags(extendedFeedData.hashtags.map(({ name }) => `#${name}`).join(" "));
+      if (cachedAlias == "" && extendedFeedData.alias) setAlias(extendedFeedData.alias);
+      if (cachedContent == "") setContent(extendedFeedData.content);
+      if (cachedSummary == "") setSummary(extendedFeedData.summary || "");
+      setListed(extendedFeedData.listed === 1);
+      setDraft(extendedFeedData.draft === 1);
+      setCreatedAt(new Date(extendedFeedData.createdAt));
     }
-  }, [id]); // 添加id作为依赖，确保id变化时重新执行
+  }, [id, feedData]); // 添加feedData作为依赖
 
   // 加载自定义模板
   useEffect(() => {

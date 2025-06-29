@@ -58,9 +58,29 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
   const profile = React.useContext(ProfileContext);
 
   // 使用缓存Hook替代直接API调用
-  const { data: feed, loading, error } = useFeedCache(id, !!id);
+  const { data: feed, loading, error, invalidate: invalidateFeedCache } = useFeedCache(id, !!id);
 
   const [headImage, setHeadImage] = React.useState<string>();
+
+  // 使用ref来稳定invalidate函数的引用
+  const invalidateFeedCacheRef = React.useRef(invalidateFeedCache);
+  invalidateFeedCacheRef.current = invalidateFeedCache;
+
+  // 监听文章更新事件，失效当前文章缓存
+  React.useEffect(() => {
+    const handleFeedUpdated = (event: any) => {
+      // 只有当更新的文章是当前文章时才失效缓存
+      if (event.detail?.feedId === id) {
+        invalidateFeedCacheRef.current();
+      }
+    };
+
+    window.addEventListener('feed-updated', handleFeedUpdated);
+
+    return () => {
+      window.removeEventListener('feed-updated', handleFeedUpdated);
+    };
+  }, [id]); // 只依赖id，使用ref来访问最新的函数
 
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);

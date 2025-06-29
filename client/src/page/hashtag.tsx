@@ -44,10 +44,33 @@ export function HashtagPage({ name }: { name: string }) {
     const query = new URLSearchParams(useSearch());
 
     // 使用缓存Hook替代直接API调用
-    const { data: hashtag, loading } = useHashtagFeedsCache(name, !!name);
+    const { data: hashtag, loading, invalidate: invalidateHashtagCache } = useHashtagFeedsCache(name, !!name);
 
     const [sort, setSort] = useState<'new' | 'old'>('new');
     const page = tryInt(1, query.get("page"))
+
+    // 使用ref来稳定invalidate函数的引用
+    const invalidateHashtagCacheRef = React.useRef(invalidateHashtagCache);
+    invalidateHashtagCacheRef.current = invalidateHashtagCache;
+
+    // 监听文章发布/更新事件，失效缓存
+    React.useEffect(() => {
+        const handleFeedPublished = () => {
+            invalidateHashtagCacheRef.current();
+        };
+
+        const handleFeedUpdated = () => {
+            invalidateHashtagCacheRef.current();
+        };
+
+        window.addEventListener('feed-published', handleFeedPublished);
+        window.addEventListener('feed-updated', handleFeedUpdated);
+
+        return () => {
+            window.removeEventListener('feed-published', handleFeedPublished);
+            window.removeEventListener('feed-updated', handleFeedUpdated);
+        };
+    }, []); // 移除依赖，使用ref来访问最新的函数
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
 
     // 页面变化时滚动到顶部

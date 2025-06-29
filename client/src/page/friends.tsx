@@ -13,6 +13,7 @@ import { ClientConfigContext } from "../state/config";
 import { ProfileContext } from "../state/profile";
 import { shuffleArray } from "../utils/array";
 import { headersWithAuth } from "../utils/auth";
+import { useFriendsCache } from "../hooks/useFeedsCache";
 import { siteName } from "../utils/constants";
 import { PageContainer } from "../components/container";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
@@ -32,7 +33,7 @@ type FriendItem = {
     health: string;
 };
 
-async function publish({ name, avatar, desc, url, showAlert }: { name: string, avatar: string, desc: string, url: string, showAlert: (msg: string) => void }) {
+async function publish({ name, avatar, desc, url, showAlert, invalidateCache }: { name: string, avatar: string, desc: string, url: string, showAlert: (msg: string) => void, invalidateCache?: () => void }) {
     const t = i18next.t
     name = name.trim();
     desc = desc.trim();
@@ -58,54 +59,54 @@ async function publish({ name, avatar, desc, url, showAlert }: { name: string, a
         showAlert(error.value as string)
     } else {
         showAlert(t('create.success'))
-        setTimeout(() => window.location.reload(), 800)
+        // 使缓存失效，触发重新获取数据
+        if (invalidateCache) {
+            invalidateCache()
+        }
     }
 }
 
 export function FriendsPage() {
     const { t } = useTranslation()
     const config = useContext(ClientConfigContext)
-    const [apply, setApply] = useState<FriendItem>()
+    const [apply, setApply] = useState<FriendItem[]>([])
     const [name, setName] = useState("")
     const [desc, setDesc] = useState("")
     const [avatar, setAvatar] = useState("")
     const [url, setUrl] = useState("")
     const profile = useContext(ProfileContext);
+    // 使用缓存Hook替代直接API调用
+    const { processedData, loading, invalidate: invalidateFriendsCache } = useFriendsCache();
+
     const [friendsAvailable, setFriendsAvailable] = useState<FriendItem[]>([])
     const [waitList, setWaitList] = useState<FriendItem[]>([])
     const [refusedList, setRefusedList] = useState<FriendItem[]>([])
     const [friendsUnavailable, setFriendsUnavailable] = useState<FriendItem[]>([])
     const [status, setStatus] = useState<'idle' | 'loading'>('loading')
-    const ref = useRef(false)
     const { showAlert, showConfirm } = useGlobalDialog()
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
+    // 使用缓存Hook数据更新状态
     useEffect(() => {
-        if (ref.current) return
-        client.friend.index.get({
-            headers: headersWithAuth()
-        }).then(({ data }) => {
-            if (data) {
-                const friends_available = data.friend_list?.filter(({ health, accepted }) => health.length === 0 && accepted === 1) || []
-                shuffleArray(friends_available)
-                setFriendsAvailable(friends_available)
-                const friends_unavailable = data.friend_list?.filter(({ health, accepted }) => health.length > 0 && accepted === 1) || []
-                shuffleArray(friends_unavailable)
-                setFriendsUnavailable(friends_unavailable)
-                const waitList = data.friend_list?.filter(({ accepted }) => accepted === 0) || []
-                setWaitList(waitList)
-                const refuesdList = data.friend_list?.filter(({ accepted }) => accepted === -1) || []
-                setRefusedList(refuesdList)
-                if (data.apply_list)
-                    setApply(data.apply_list)
-            }
-            setStatus('idle')
-        })
-        ref.current = true
-    }, [])
+        if (processedData) {
+            // 应用随机排序（保持原有逻辑）
+            const shuffledAvailable = [...processedData.friendsAvailable];
+            shuffleArray(shuffledAvailable);
+            setFriendsAvailable(shuffledAvailable);
+
+            const shuffledUnavailable = [...processedData.friendsUnavailable];
+            shuffleArray(shuffledUnavailable);
+            setFriendsUnavailable(shuffledUnavailable);
+
+            setWaitList(processedData.waitList);
+            setRefusedList(processedData.refusedList);
+            setApply(Array.isArray(processedData.applyList) ? processedData.applyList : []);
+            setStatus('idle');
+        }
+    }, [processedData]);
     function publishButton() {
-        publish({ name, desc, avatar, url, showAlert })
+        publish({ name, desc, avatar, url, showAlert, invalidateCache: invalidateFriendsCache })
     }
     return (<>
         <Helmet>
@@ -141,12 +142,12 @@ export function FriendsPage() {
                     </div>
                 </div>
                 <div className="mt-4">
-                    <FriendList show={friendsAvailable.length > 0} friends={friendsAvailable} />
+                    <FriendList show={friendsAvailable.length > 0} friends={friendsAvailable} invalidateCache={invalidateFriendsCache} />
                 </div>
-                <FriendList title={t('friends.left')} show={friendsUnavailable.length > 0} friends={friendsUnavailable} />
-                <FriendList title={t('friends.review.waiting')} show={waitList.length > 0} friends={waitList} />
-                <FriendList title={t('friends.review.rejected')} show={refusedList.length > 0} friends={refusedList} />
-                <FriendList title={t('friends.my_apply')} show={profile?.permission !== true && apply !== undefined} friends={apply ? [apply] : []} />
+                <FriendList title={t('friends.left')} show={friendsUnavailable.length > 0} friends={friendsUnavailable} invalidateCache={invalidateFriendsCache} />
+                <FriendList title={t('friends.review.waiting')} show={waitList.length > 0} friends={waitList} invalidateCache={invalidateFriendsCache} />
+                <FriendList title={t('friends.review.rejected')} show={refusedList.length > 0} friends={refusedList} invalidateCache={invalidateFriendsCache} />
+                <FriendList title={t('friends.my_apply')} show={profile?.permission !== true && apply.length > 0} friends={apply} invalidateCache={invalidateFriendsCache} />
                 {profile && (profile.permission || config.get("friend_apply_enable")) &&
                     <div className="w-full t-primary flex text-start text-2xl font-bold mt-6">
                         <div className={`w-full md:basis-1/2 ${glassClass} rounded-xl p-4 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}>
@@ -172,7 +173,7 @@ export function FriendsPage() {
     </>)
 }
 
-function FriendList({ title, show, friends }: { title?: string, show: boolean, friends: FriendItem[] }) {
+function FriendList({ title, show, friends, invalidateCache }: { title?: string, show: boolean, friends: FriendItem[], invalidateCache?: () => void }) {
     return (<>
         {
             show && <>
@@ -185,7 +186,7 @@ function FriendList({ title, show, friends }: { title?: string, show: boolean, f
                 )}
                 <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {friends.map(friend => (
-                        <Friend key={friend.id} {...friend} />
+                        <Friend key={friend.id} {...friend} invalidateCache={invalidateCache} />
                     ))}
                 </div>
             </>
@@ -193,7 +194,7 @@ function FriendList({ title, show, friends }: { title?: string, show: boolean, f
     </>)
 }
 
-function Friend(props: any) {
+function Friend(props: any & { invalidateCache?: () => void }) {
     const { t } = useTranslation()
     const profile = useContext(ProfileContext)
     const [avatar, setAvatar] = useState(props.avatar)
@@ -245,9 +246,11 @@ function Friend(props: any) {
                         showAlert(error.value as string)
                     } else {
                         setIsOpen(false); // 先关闭模态框
-                        showAlert(t('delete.success'), () => {
-                            window.location.reload()
-                        })
+                        showAlert(t('delete.success'))
+                        // 使缓存失效，触发重新获取数据
+                        if (props.invalidateCache) {
+                            props.invalidateCache()
+                        }
                     }
                 }).catch(() => {
                     setIsDeleting(false);
@@ -275,9 +278,11 @@ function Friend(props: any) {
             } else {
                 // 先关闭模态框，再显示成功提示
                 setIsOpen(false);
-                showAlert(t('update.success'), () => {
-                    window.location.reload()
-                })
+                showAlert(t('update.success'))
+                // 使缓存失效，触发重新获取数据
+                if (props.invalidateCache) {
+                    props.invalidateCache()
+                }
             }
         }).catch(() => {
             setIsLoading(false);
