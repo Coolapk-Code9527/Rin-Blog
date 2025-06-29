@@ -240,7 +240,7 @@ export function useFeedCache(id: string, enabled: boolean = true) {
 
 /**
  * 标签页面文章缓存Hook
- * 
+ *
  * 用于标签页面的文章列表
  */
 export function useHashtagFeedsCache(tagName: string, enabled: boolean = true) {
@@ -266,6 +266,70 @@ export function useHashtagFeedsCache(tagName: string, enabled: boolean = true) {
   return useApiCache(cacheKey, fetcher, {
     staleTime: 12 * 60 * 1000, // 优化：12分钟缓存（标签页面更新频率较低）
     enabled: enabled && !!tagName,
+    refetchOnWindowFocus: true
+  });
+}
+
+/**
+ * 搜索结果缓存Hook
+ *
+ * 用于搜索页面的结果缓存
+ */
+export function useSearchCache(keyword: string, page: number = 1, limit: number = 10, enabled: boolean = true) {
+  const cacheKey = `search_keyword:${encodeURIComponent(keyword)}_page:${page}_limit:${limit}`;
+
+  const fetcher = useMemo(() => async () => {
+    const response = await client.search({ keyword }).get({
+      query: {
+        page,
+        limit
+      },
+      headers: headersWithAuth()
+    });
+
+    if (response.error) {
+      throw new Error(response.error.value as string);
+    }
+
+    if (!response.data || typeof response.data === 'string') {
+      throw new Error('Search failed');
+    }
+
+    return response.data;
+  }, [keyword, page, limit]);
+
+  return useApiCache(cacheKey, fetcher, {
+    staleTime: 5 * 60 * 1000, // 优化：5分钟缓存（搜索结果相对短期有效）
+    enabled: enabled && !!keyword,
+    refetchOnWindowFocus: false // 搜索结果不需要频繁刷新
+  });
+}
+
+/**
+ * 标签列表缓存Hook
+ *
+ * 用于标签页面的标签列表
+ */
+export function useTagsCache(enabled: boolean = true) {
+  const cacheKey = 'tags_list';
+
+  const fetcher = useMemo(() => async () => {
+    const response = await client.tag.index.get();
+
+    if (response.error) {
+      throw new Error(response.error.value as string);
+    }
+
+    if (!response.data || typeof response.data === 'string') {
+      throw new Error('Failed to fetch tags');
+    }
+
+    return response.data;
+  }, []);
+
+  return useApiCache(cacheKey, fetcher, {
+    staleTime: 15 * 60 * 1000, // 优化：15分钟缓存（标签列表更新频率很低）
+    enabled,
     refetchOnWindowFocus: true
   });
 }

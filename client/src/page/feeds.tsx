@@ -1,12 +1,10 @@
-import React, { useMemo, useCallback } from "react"
+import React, { useMemo } from "react"
 import { Helmet } from 'react-helmet-async'
 import { Link, useSearch, useLocation } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
-import { client } from "../main"
 import { ProfileContext } from "../state/profile"
-import { headersWithAuth } from "../utils/auth"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { useTranslation } from "react-i18next";
@@ -21,17 +19,11 @@ import { getSidebarConfig } from "../utils/sidebarConfig"
 import { useSmartGrid } from "../hooks/useSmartGrid"
 import { useFeedsCache, FeedType as CacheFeedType } from "../hooks/useFeedsCache"
 
-type FeedsData = {
-    size: number,
-    data: any[],
-    hasNext: boolean
-}
+// FeedsData类型由useFeedsCache Hook提供
 
 type FeedType = 'draft' | 'unlisted' | 'normal'
 
-type FeedsMap = {
-    [key in FeedType]: FeedsData
-}
+// FeedsMap类型不再需要，因为使用缓存Hook
 
 
 
@@ -183,11 +175,14 @@ export function FeedsPage() {
 
     const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
     const [sortType, setSortType] = React.useState<SortType>(query.get("sort") as SortType || 'latest')
-    const [status, setStatus] = React.useState<'loading' | 'idle'>('idle')
-    const [feeds, setFeeds] = React.useState<FeedsMap>({
-        draft: { size: 0, data: [], hasNext: false },
-        unlisted: { size: 0, data: [], hasNext: false },
-        normal: { size: 0, data: [], hasNext: false }
+
+    // 使用缓存Hook替代直接API调用和本地状态管理
+    const {
+        data: feedsData,
+        loading
+    } = useFeedsCache({
+        type: listState as CacheFeedType,
+        enabled: true
     })
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
@@ -200,13 +195,9 @@ export function FeedsPage() {
     // 视图模式状态管理
     const { viewMode, setViewMode } = useViewMode();
 
-    // 优化加载状态：只在初始加载时显示loading，不等待配置
-    const shouldShowLoading = initialLoading;
-
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
     const tagGlassClass = useGlassEffect('tag-enhanced');
-    const buttonGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
 
     // 排序处理函数
     const handleSortChange = React.useCallback((newSort: SortType) => {
@@ -238,13 +229,13 @@ export function FeedsPage() {
 
     // 智能热度排序算法 - 深度修复版本
     const sortedFeeds = React.useMemo(() => {
-        if (!feeds[listState]?.data) return [];
-        const feedsData = [...feeds[listState].data];
+        if (!feedsData?.data) return [];
+        const currentFeeds = [...feedsData.data];
 
 
 
         try {
-            const sorted = feedsData.sort((a, b) => {
+            const sorted = currentFeeds.sort((a, b) => {
                 // 第一优先级：置顶文章始终在前（这是最重要的）
                 const aTop = a.top || 0;
                 const bTop = b.top || 0;
@@ -381,41 +372,11 @@ export function FeedsPage() {
             return sorted;
 
         } catch (error) {
-            return feedsData; // 发生错误时返回原始数据
+            return currentFeeds; // 发生错误时返回原始数据
         }
-    }, [feeds, listState, sortType]);
+    }, [feedsData, listState, sortType]);
 
-    // 获取所有数据进行全局排序
-    const fetchFeeds = React.useCallback((type: FeedType) => {
-        setStatus('loading');
-
-        // 获取所有数据，不分页，以实现真正的全局排序
-        client.feed.index.get({
-            query: {
-                page: 1,
-                limit: 9999, // 获取所有数据，参考Timeline页面的做法
-                type: type
-            },
-            headers: headersWithAuth()
-        }).then(({ data, error }) => {
-            if (error) {
-                setStatus('idle');
-                return;
-            }
-
-            if (data && typeof data !== 'string') {
-                setFeeds({
-                    ...feeds,
-                    [type]: data
-                });
-                setStatus('idle');
-            } else {
-                setStatus('idle');
-            }
-        }).catch(() => {
-            setStatus('idle');
-        });
-    }, [feeds]);
+    // 缓存Hook自动处理数据获取，无需手动fetchFeeds函数
 
     // 前端分页逻辑 - 对排序后的数据进行分页
     const paginatedFeeds = React.useMemo(() => {
@@ -445,10 +406,9 @@ export function FeedsPage() {
         if (sort !== sortType) {
             setSortType(sort)
         }
-        setStatus('loading')
-        fetchFeeds(type)
+        // 缓存Hook会自动处理数据获取，无需手动调用fetchFeeds
         ref.current = key
-    }, [query.get("type"), query.get("sort"), fetchFeeds, listState, sortType]) // 移除page依赖
+    }, [query.get("type"), query.get("sort"), listState, sortType]) // 移除fetchFeeds依赖
 
     // 单独处理页面变化，不重新获取数据
     React.useEffect(() => {
@@ -470,7 +430,7 @@ export function FeedsPage() {
             </Helmet>
 
             {/* 等待数据加载完成，不等待配置 */}
-            <Waiting for={status === 'idle' && !initialLoading}>
+            <Waiting for={!loading && !initialLoading}>
                 {/* 页面标题和工具栏区域 */}
                 <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 mb-0 transition-all duration-300`}>
                     <div className="flex flex-col space-y-4 mb-0">
@@ -483,7 +443,7 @@ export function FeedsPage() {
                             <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
                                 <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
                                 <span className="ml-1 sm:ml-1.5">
-                                    {t('article.total$count', { count: feeds[listState]?.size })}
+                                    {t('article.total$count', { count: feedsData?.size || 0 })}
                                     {listState === 'draft' && '(仅自己可见)'}
                                     {listState === 'unlisted' && '(有链接才能访问)'}
                                 </span>
@@ -531,7 +491,7 @@ export function FeedsPage() {
                                 ))}
                             </div>
                         </>
-                    ) : status === 'loading' ? (
+                    ) : loading ? (
                         // 加载状态显示骨架屏
                         <div className={viewMode === 'list'
                             ? "flex flex-col gap-3 sm:gap-4 w-full"

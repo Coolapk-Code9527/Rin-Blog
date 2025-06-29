@@ -1,25 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { HashTag } from "../components/hashtag";
 import { Waiting } from "../components/loading";
-import { client } from "../main";
+import { useTagsCache } from "../hooks/useFeedsCache";
 import { siteName } from "../utils/constants";
 import React from "react";
 import { PageContainer } from "../components/container";
 import { useGlassEffect } from "../hooks/useGlassEffect";
 import { UnifiedContainer } from "../components/UnifiedContainer";
 
-import type { Hashtag } from "../types/api";
+// Hashtag类型由useTagsCache Hook提供
 
 // 将排序选项移到组件内部，以便使用翻译函数
 
 export function HashtagsPage() {
     const { t } = useTranslation();
-    const [hashtags, setHashtags] = useState<Hashtag[]>([]);
+
+    // 使用缓存Hook替代直接API调用
+    const { data: hashtags, loading } = useTagsCache();
+
     const [sort, setSort] = useState<'count' | 'alpha'>('count');
-    const ref = useRef(false);
 
     // 使用智能毛玻璃效果
     const tagGlassClass = useGlassEffect('tag-enhanced');
@@ -29,15 +31,6 @@ export function HashtagsPage() {
       { value: 'count', label: t('sort.by_count') },
       { value: 'alpha', label: t('sort.by_alpha') },
     ];
-    useEffect(() => {
-        if (ref.current) return;
-        client.tag.index.get().then(({ data }) => {
-            if (data && typeof data !== 'string') {
-                setHashtags(data);
-            }
-        });
-        ref.current = true;
-    }, [])
 
     // 排序逻辑
     const sortedTags = React.useMemo(() => {
@@ -67,10 +60,10 @@ export function HashtagsPage() {
                 <meta property="og:image" content={process.env.AVATAR} />
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
-                <meta name="description" content={`${t('hashtags')}：${t('hashtagsPage.description', { count: hashtags.length, topTags: hashtags.slice(0, 5).map(tag => tag.name).join('、') })}`} />
+                <meta name="description" content={`${t('hashtags')}：${t('hashtagsPage.description', { count: hashtags?.length || 0, topTags: hashtags?.slice(0, 5).map(tag => tag.name).join('、') || '' })}`} />
             </Helmet>
             <PageContainer maxWidth="max-w-6xl" className="w-full">
-                <Waiting for={hashtags}>
+                <Waiting for={hashtags || !loading}>
                     <main className="w-full flex flex-col ani-show">
                         {/* 页面标题区域 - 优化间距 */}
                         <div className="flex flex-col space-y-2.5 mb-4">
@@ -83,7 +76,7 @@ export function HashtagsPage() {
                               </h1>
                               <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
                                 <i className="ri-hashtag text-theme text-xs sm:text-sm"></i>
-                                <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: hashtags.length })}</span>
+                                <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: hashtags?.length || 0 })}</span>
                               </div>
                             </div>
                           </div>

@@ -28,6 +28,7 @@ import { RecentPosts } from "../components/recent_posts";
 import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
+import { useFeedCache } from "../hooks/useFeedsCache";
 import { NotFoundPage } from './not-found';
 
 type Feed = {
@@ -55,8 +56,10 @@ type Feed = {
 export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => JSX.Element, setContentReady?: (ready: boolean) => void }) {
   const { t } = useTranslation();
   const profile = React.useContext(ProfileContext);
-  const [feed, setFeed] = React.useState<Feed>();
-  const [error, setError] = React.useState<string>();
+
+  // 使用缓存Hook替代直接API调用
+  const { data: feed, loading, error } = useFeedCache(id, !!id);
+
   const [headImage, setHeadImage] = React.useState<string>();
 
   // 使用智能毛玻璃效果
@@ -116,45 +119,33 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
           });
       })
   }
+  // 处理头图提取和内容就绪状态
   React.useEffect(() => {
-    if (ref.current == id) return;
+    if (feed) {
+      // Extract head image
+      const img_reg = /!\[.*?\]\((.*?)\)/;
+      const img_match = img_reg.exec(feed.content);
+      if (img_match) {
+        setHeadImage(img_match[1]);
+      }
 
-    // 路由跳转时重置所有状态
-    setFeed(undefined);
-    setError(undefined);
-    setHeadImage(undefined);
-    setContentReadyState(false); // 重置内容就绪状态
+      // 设置置顶状态
+      setTop(feed.top);
 
-    // 通知父组件内容未就绪
-    if (setContentReady) {
-      setContentReady(false);
+      // 标记内容已加载完成
+      setContentReadyState(true);
+      if (setContentReady) {
+        setContentReady(true);
+      }
+    } else {
+      // 重置状态
+      setHeadImage(undefined);
+      setContentReadyState(false);
+      if (setContentReady) {
+        setContentReady(false);
+      }
     }
-
-    client
-      .feed({ id })
-      .get({
-        headers: headersWithAuth(),
-      })
-      .then(({ data, error }) => {
-        if (error) {
-          setError(error.value as string);
-        } else if (data && typeof data !== "string") {
-          setTimeout(() => {
-            setFeed(data);
-            setTop(data.top);
-            // Extract head image
-            const img_reg = /!\[.*?\]\((.*?)\)/;
-            const img_match = img_reg.exec(data.content);
-            if (img_match) {
-              setHeadImage(img_match[1]);
-            }
-            // 标记内容已加载完成
-            setContentReadyState(true);
-          }, 0);
-        }
-      });
-    ref.current = id;
-  }, [id, setContentReady]);
+  }, [feed, setContentReady]);
 
   return (
     <Waiting for={feed || error}>
@@ -482,7 +473,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                 </div>
               </div>
             </article>
-            <AdjacentSection id={id} setError={setError}/>
+            <AdjacentSection id={id} setError={() => {}} />
             {feed && <Comments id={`${feed.id}`} />}
           </main>
         )}

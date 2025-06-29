@@ -1,13 +1,11 @@
 import React from "react"
-import { useEffect, useRef, useState } from "react"
 import { Helmet } from 'react-helmet-async'
 import { useTranslation } from "react-i18next"
 import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
-import { client } from "../main"
-import { headersWithAuth } from "../utils/auth"
+import { useSearchCache } from "../hooks/useFeedsCache"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { PageContainer } from "../components/container"
@@ -22,36 +20,14 @@ type FeedsData = {
 export function SearchPage({ keyword }: { keyword: string }) {
     const { t } = useTranslation()
     const query = new URLSearchParams(useSearch());
-    const [status, setStatus] = useState<'loading' | 'idle'>('idle')
-    const [feeds, setFeeds] = useState<FeedsData>()
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
-    const ref = useRef("")
+
+    // 使用缓存Hook替代直接API调用
+    const { data: feeds, loading } = useSearchCache(keyword, page, limit, !!keyword);
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
-    function fetchFeeds() {
-        if (!keyword) return
-        client.search({ keyword }).get({
-            query: {
-                page: page,
-                limit: limit
-            },
-            headers: headersWithAuth()
-        }).then(({ data }) => {
-            if (data && typeof data !== 'string') {
-                setFeeds(data)
-                setStatus('idle')
-            }
-        })
-    }
-    useEffect(() => {
-        const key = `${page} ${limit} ${keyword}`
-        if (ref.current == key) return
-        setStatus('loading')
-        fetchFeeds()
-        ref.current = key
-    }, [page, limit, keyword])
     const title = t('article.search.title$keyword', { keyword })
     return (
         <>
@@ -64,7 +40,7 @@ export function SearchPage({ keyword }: { keyword: string }) {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
             <PageContainer maxWidth="max-w-6xl" className="w-full">
-                <Waiting for={status === 'idle'}>
+                <Waiting for={!loading}>
                     <main className="w-full flex flex-col ani-show">
                         {/* 页面标题区域 - 与文章列表页面保持一致 */}
                         <div className="flex flex-col space-y-3 mb-3">
@@ -88,7 +64,7 @@ export function SearchPage({ keyword }: { keyword: string }) {
                             </div>
                         </div>
                         {/* 搜索结果列表区域 */}
-                        <Waiting for={status === 'idle'}>
+                        <Waiting for={!loading}>
                             {feeds?.data.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
                                     <i className="ri-search-line text-5xl mb-3 text-gray-300 dark:text-gray-600"></i>

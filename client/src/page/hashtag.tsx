@@ -1,5 +1,5 @@
 import React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { Helmet } from 'react-helmet-async'
 import { useTranslation } from "react-i18next"
 import { FeedCard } from "../components/feed_card"
@@ -12,6 +12,7 @@ import { Link, useSearch } from "wouter"
 import { HashTag } from "../components/hashtag"
 import { Pagination } from "../components/pagination"
 import { tryInt } from "../utils/int"
+import { useHashtagFeedsCache, useTagsCache } from "../hooks/useFeedsCache"
 
 type FeedsData = {
     name: string;
@@ -41,29 +42,13 @@ type FeedsData = {
 export function HashtagPage({ name }: { name: string }) {
     const { t } = useTranslation()
     const query = new URLSearchParams(useSearch());
-    const [status, setStatus] = useState<'loading' | 'idle'>('idle')
-    const [hashtag, setHashtag] = useState<FeedsData>()
+
+    // 使用缓存Hook替代直接API调用
+    const { data: hashtag, loading } = useHashtagFeedsCache(name, !!name);
+
     const [sort, setSort] = useState<'new' | 'old'>('new');
     const page = tryInt(1, query.get("page"))
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
-    const ref = useRef("")
-    function fetchFeeds() {
-        const nameDecoded = decodeURI(name)
-        client.tag({ name: nameDecoded }).get({
-            headers: headersWithAuth()
-        }).then(({ data }) => {
-            if (data && typeof data !== 'string') {
-                setHashtag(data)
-                setStatus('idle')
-            }
-        })
-    }
-    useEffect(() => {
-        if (ref.current === name) return
-        setStatus('loading')
-        fetchFeeds()
-        ref.current = name
-    }, [name])
 
     // 页面变化时滚动到顶部
     React.useEffect(() => {
@@ -129,7 +114,7 @@ export function HashtagPage({ name }: { name: string }) {
                 })} />
             </Helmet>
             <PageContainer maxWidth="max-w-6xl" className="w-full">
-                <Waiting for={hashtag || status === 'idle'}>
+                <Waiting for={hashtag || !loading}>
                     <main className="w-full flex flex-col mb-3 ani-show">
                         {/* 页面标题区域 - 与其他标准页面保持一致 */}
                         <div className="flex flex-col space-y-3 mb-3">
@@ -191,7 +176,7 @@ export function HashtagPage({ name }: { name: string }) {
                             </div>
                         </div>
                         {/* 文章列表区域 */}
-                        <Waiting for={status === 'idle'}>
+                        <Waiting for={!loading}>
                             {sortedFeeds.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12">
                                     <i className="ri-emotion-unhappy-line text-5xl text-gray-300 dark:text-gray-600 mb-4"></i>
@@ -232,14 +217,14 @@ export function HashtagPage({ name }: { name: string }) {
 // 热门标签推荐组件
 function HotTagsRecommend() {
   const { t } = useTranslation();
-  const [tags, setTags] = React.useState<import('../types/api').Hashtag[]>([]);
-  React.useEffect(() => {
-    client.tag.index.get().then(({ data }) => {
-      if (data && typeof data !== 'string') {
-        setTags(data.sort((a, b) => b.feeds - a.feeds).slice(0, 8));
-      }
-    });
-  }, []);
+
+  // 使用缓存Hook替代直接API调用
+  const { data: allTags } = useTagsCache();
+  const tags = React.useMemo(() => {
+    if (!allTags) return [];
+    return allTags.sort((a, b) => b.feeds - a.feeds).slice(0, 8);
+  }, [allTags]);
+
   if (!tags.length) return null;
   return (
     <div className="mt-4 flex flex-row flex-wrap gap-2 items-center justify-center">
