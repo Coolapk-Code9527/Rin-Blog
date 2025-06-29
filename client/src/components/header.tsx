@@ -192,35 +192,12 @@ function MobileMenu() {
     const searchInputRef = React.useRef<HTMLInputElement>(null);
     const searchContainerRef = React.useRef<HTMLDivElement>(null);
 
-    // 深色模式状态
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    // 使用统一的深色模式状态管理（如果需要可以通过useColorMode获取）
 
     // 使用智能毛玻璃效果 - 应用glassmorphism-system.md优化
     const glassClass = useGlassEffect(GLASS_LAYERS.STRONG);
     // 遵循glassmorphism-system.md：使用轻量级背景遮罩，避免双重毛玻璃效果
     const searchGlassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
-    
-    // 检测深色模式
-    useEffect(() => {
-        const checkDarkMode = () => {
-            if (typeof document !== 'undefined') {
-                setIsDarkMode(document.documentElement.classList.contains('dark'));
-            }
-        };
-        
-        checkDarkMode();
-        
-        // 监听暗色模式变化
-        const observer = new MutationObserver(checkDarkMode);
-        if (typeof document !== 'undefined') {
-            observer.observe(document.documentElement, { 
-                attributes: true, 
-                attributeFilter: ['class'] 
-            });
-        }
-        
-        return () => observer.disconnect();
-    }, []);
 
     const languages = [
         { code: 'en', name: t('languageNames.en'), flag: '🇺🇸' },
@@ -789,30 +766,7 @@ function SearchButton({ className, onClose }: { className?: string, onClose?: ()
         return () => window.removeEventListener('resize', handleResize);
     }, []);
     
-    // 深色模式状态
-    const [isDarkMode, setIsDarkMode] = useState(false);
-    
-    // 检测深色模式
-    useEffect(() => {
-        const checkDarkMode = () => {
-            if (typeof document !== 'undefined') {
-                setIsDarkMode(document.documentElement.classList.contains('dark'));
-            }
-        };
-        
-        checkDarkMode();
-        
-        // 监听暗色模式变化
-        const observer = new MutationObserver(checkDarkMode);
-        if (typeof document !== 'undefined') {
-            observer.observe(document.documentElement, { 
-                attributes: true, 
-                attributeFilter: ['class'] 
-            });
-        }
-        
-        return () => observer.disconnect();
-    }, []);
+    // 使用统一的深色模式状态管理（如果需要可以通过useColorMode获取）
     
     // 搜索历史状态
     const [searchHistory, setSearchHistory] = useState<string[]>(() => {

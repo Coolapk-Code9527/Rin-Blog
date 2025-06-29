@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {client} from "../main.tsx";
 import {timeago} from "../utils/timeago.ts";
 import {Link} from "wouter";
@@ -189,6 +189,9 @@ export function AdjacentCard({
     const direction = type === "previous" ? "text-start" : "text-end";
     const {t} = useTranslation();
 
+    // 添加图片错误状态管理
+    const [imageError, setImageError] = useState(false);
+
     // 注意：父容器已经有毛玻璃效果，子组件不需要重复添加
     // 避免双重毛玻璃效果冲突
 
@@ -211,25 +214,16 @@ export function AdjacentCard({
                         <div className="w-full h-full flex items-center justify-center animate-pulse">
                             <i className="ri-article-line text-white/90 text-2xl sm:text-3xl"></i>
                         </div>
-                    ) : thumbnail ? (
-                        <img 
-                            src={thumbnail} 
-                            alt={data.title || ""} 
+                    ) : thumbnail && !imageError ? (
+                        <img
+                            src={thumbnail}
+                            alt={data.title || ""}
                             className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}
                             loading="lazy"
                             style={{height:'100%'}}
-                            onError={(e) => {
-                                const target = e.currentTarget as HTMLImageElement;
-                                target.style.display = 'none';
-                                const container = target.parentElement;
-                                if (container) {
-                                    const placeholderProps = generatePlaceholderProps(data.id, data.title || '', PLACEHOLDER_PRESETS.NAVIGATION_CARD);
-                                    container.innerHTML = `
-                                        <div class='w-full h-full flex items-center justify-center' style='background: ${placeholderProps.gradientCSS}'>
-                                            <i class='ri-article-line text-white/90 text-2xl sm:text-3xl'></i>
-                                        </div>
-                                    `;
-                                }
+                            onError={() => {
+                                // 使用React状态管理而不是直接DOM操作
+                                setImageError(true);
                             }}
                         />
                     ) : (
