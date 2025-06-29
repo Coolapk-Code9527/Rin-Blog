@@ -153,7 +153,7 @@ export function FeedService() {
                         set.status = 400;
                         return `Invalid limit parameter: ${limitParseResult.error}`;
                     }
-                    const limit_num = Math.min(limitParseResult.value!, 50); // 限制最大值为50
+                    const limit_num = Math.min(limitParseResult.value!, 10); // 测试：限制最大值为10
                     
                     let cacheKey = '';
                     let hasNext = false;
@@ -201,7 +201,7 @@ export function FeedService() {
                         );
 
                         // 优化：添加更严格的限制和超时保护
-                        const maxLimit = Math.min(limit_num + 1, 30); // 优化：进一步限制最大查询数量从50到30
+                        const maxLimit = Math.min(limit_num + 1, 10); // 测试：进一步限制最大查询数量为10
 
                         const feedsData = await db.query.feeds.findMany({
                             where: and(where, cursorCondition),
