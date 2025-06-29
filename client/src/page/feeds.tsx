@@ -172,8 +172,9 @@ export function FeedsPage() {
         type: listState as CacheFeedType,
         enabled: true
     })
+    // 统一的分页配置管理
     const page = tryInt(1, query.get("page"))
-    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
+    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE) // 前端分页每页显示数量
     const ref = React.useRef("")
 
     // 使用安全的缓存失效机制

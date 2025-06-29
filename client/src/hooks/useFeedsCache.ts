@@ -1,13 +1,13 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { useApiCache } from './useApiCache';
 import { client } from '../main';
 import { headersWithAuth } from '../utils/auth';
-import { useFeedCacheInvalidation } from './useCacheEvents';
 
 /**
  * 文章类型枚举
+ * 与后端API和feeds.tsx保持一致
  */
-export type FeedType = 'all' | 'public' | 'private';
+export type FeedType = 'draft' | 'unlisted' | 'normal' | 'all';
 
 /**
  * 文章数据结构
@@ -179,25 +179,41 @@ function useEnhancedFeedsCache({
   staleTime: number;
   enabled: boolean;
 }) {
-  // 使用现有的缓存键格式，确保与原有系统兼容
+  // 组件卸载保护机制
+  const mountedRef = useRef(true);
+  // 并发保护机制
+  const fetchingRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // 使用与后端一致的缓存键格式，避免冲突
   const cacheKey = useMemo(() => {
-    const keyParts = [
-      `type:${type}`,
-      `page:1`,
-      `limit:9999`,
-      `sort:${sortByTime ? 'time' : 'default'}`
-    ];
-    return `feeds_enhanced_${keyParts.join('_')}`;
+    // 格式：feeds_${type}_${page_num}_${limit_num}_${sortByTime ? 'time' : 'default'}
+    // page_num = 0 (0基索引), limit_num = 9999
+    const typeParam = type === 'all' ? 'normal' : type; // 处理'all'类型
+    return `feeds_${typeParam}_0_9999_${sortByTime ? 'time' : 'default'}`;
   }, [type, sortByTime]);
 
   // 分批获取的fetcher函数
   const fetcher = useMemo(() => async (): Promise<FeedsData> => {
-    const batchSize = 10; // 当前后端限制为10条（测试环境）
-    let allData: any[] = [];
-    let totalSize = 0;
-    let hasMore = true;
+    // 并发保护：如果已经在获取中，直接返回空数据
+    if (fetchingRef.current) {
+      return { data: [], size: 0, page: 1, limit: 9999, hasNext: false };
+    }
 
-    console.log(`[Enhanced Cache] Starting batch fetch for type: ${type}, sortByTime: ${sortByTime}`);
+    fetchingRef.current = true;
+
+    try {
+      const batchSize = 10; // 当前后端限制为10条（测试环境）
+      let allData: any[] = [];
+      let totalSize = 0;
+      let hasMore = true;
+      let failedBatches = 0; // 记录失败的批次数量
+      const maxFailures = 3; // 最大允许失败次数
 
     // 第一批数据 - 立即返回，提供快速首屏体验
     try {
@@ -221,11 +237,8 @@ function useEnhancedFeedsCache({
         totalSize = typeof firstBatch.size === 'number' ? firstBatch.size : allData.length;
         hasMore = firstBatch.hasNext && allData.length === batchSize;
 
-        console.log(`[Enhanced Cache] First batch loaded: ${allData.length} items, hasMore: ${hasMore}, totalSize: ${totalSize}`);
-
         // 如果第一批就是全部数据，直接返回
         if (!hasMore || allData.length < batchSize) {
-          console.log(`[Enhanced Cache] All data loaded in first batch`);
           return {
             data: allData,
             size: totalSize,
@@ -237,9 +250,12 @@ function useEnhancedFeedsCache({
 
         // 后台继续获取剩余数据
         let currentPage = 2;
-        while (hasMore && enabled) {
+        while (hasMore && enabled && mountedRef.current) {
           // 添加小延迟避免过度请求，兼容Cloudflare Workers
           await new Promise(resolve => setTimeout(resolve, 100));
+
+          // 检查组件是否仍然挂载
+          if (!mountedRef.current) break;
 
           try {
             const response = await client.feed.index.get({
@@ -253,8 +269,21 @@ function useEnhancedFeedsCache({
             });
 
             if (response.error) {
-              console.warn(`[Enhanced Cache] Batch ${currentPage} failed:`, response.error);
-              break;
+              // 生产环境：记录错误但继续尝试
+              failedBatches++;
+              if (process.env.NODE_ENV === 'development') {
+                console.warn(`Batch ${currentPage} failed:`, response.error);
+              }
+
+              // 如果失败次数过多，停止获取但返回已有数据
+              if (failedBatches >= maxFailures) {
+                hasMore = false;
+                break;
+              }
+
+              // 否则跳过这个批次，继续下一个
+              currentPage++;
+              continue;
             }
 
             if (response.data && typeof response.data !== 'string') {
@@ -262,11 +291,10 @@ function useEnhancedFeedsCache({
               const newItems = Array.isArray(batchData.data) ? batchData.data : [];
 
               if (newItems.length > 0) {
-                allData = [...allData, ...newItems];
+                // 优化：使用push代替数组展开，从O(n²)优化到O(n)
+                allData.push(...newItems);
                 hasMore = batchData.hasNext && newItems.length === batchSize;
                 currentPage++;
-
-                console.log(`[Enhanced Cache] Batch ${currentPage - 1} loaded: ${newItems.length} items, total: ${allData.length}, hasMore: ${hasMore}`);
               } else {
                 hasMore = false;
               }
@@ -274,25 +302,42 @@ function useEnhancedFeedsCache({
               hasMore = false;
             }
           } catch (error) {
-            console.warn(`[Enhanced Cache] Batch ${currentPage} error:`, error);
-            break;
+            // 生产环境：记录错误但不中断整个过程
+            failedBatches++;
+            if (process.env.NODE_ENV === 'development') {
+              console.warn(`Batch ${currentPage} error:`, error);
+            }
+
+            // 如果失败次数过多，停止获取但返回已有数据
+            if (failedBatches >= maxFailures) {
+              hasMore = false;
+              break;
+            }
+
+            // 否则跳过这个批次，继续下一个
+            currentPage++;
+            continue;
           }
         }
       }
     } catch (error) {
-      console.error('[Enhanced Cache] Failed to fetch data:', error);
+      // 生产环境：记录错误用于监控
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Enhanced cache failed to fetch data:', error);
+      }
       throw error;
     }
 
-    console.log(`[Enhanced Cache] Final result: ${allData.length} items loaded`);
-
-    return {
-      data: allData,
-      size: Math.max(totalSize, allData.length),
-      page: 1,
-      limit: 9999,
-      hasNext: false
-    };
+      return {
+        data: allData,
+        size: Math.max(totalSize, allData.length),
+        page: 1,
+        limit: 9999,
+        hasNext: false
+      };
+    } finally {
+      fetchingRef.current = false;
+    }
   }, [type, sortByTime, enabled]);
 
   // 使用现有的useApiCache进行缓存管理
@@ -303,8 +348,8 @@ function useEnhancedFeedsCache({
     retryCount: 3
   });
 
-  // 集成现有的缓存失效机制
-  useFeedCacheInvalidation(result.invalidate);
+  // 注意：不在这里添加缓存失效机制，依赖feeds.tsx中现有的事件监听
+  // 避免重复处理缓存失效事件
 
   return {
     ...result,
