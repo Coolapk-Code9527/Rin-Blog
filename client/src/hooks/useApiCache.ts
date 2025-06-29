@@ -230,10 +230,25 @@ export function useApiCache<T>(
    * 使缓存失效
    */
   const invalidate = useCallback(() => {
-    sessionStorage.removeItem(`api_cache_${key}`);
-    setData(undefined);
-    setIsStale(false);
-    setError(null);
+    try {
+      // 安全地移除sessionStorage中的缓存
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        sessionStorage.removeItem(`api_cache_${key}`);
+      }
+
+      // 安全地更新状态
+      if (setData) {
+        setData(undefined);
+      }
+      if (setIsStale) {
+        setIsStale(false);
+      }
+      if (setError) {
+        setError(null);
+      }
+    } catch (error) {
+      console.warn('Error during cache invalidation:', error);
+    }
   }, [key]);
 
   // 初始化数据加载

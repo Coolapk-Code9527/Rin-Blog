@@ -46,21 +46,54 @@ export class ConfigUpdateManager {
   
   /**
    * 添加回调函数
+   *
+   * @returns 清理函数，用于移除添加的回调
    */
   addCallbacks(
     onSuccess?: (type: 'client' | 'server', updates: Record<string, any>) => void,
     onError?: (type: 'client' | 'server', error: string, updates: Record<string, any>) => void,
     onCacheInvalidate?: (type: 'client' | 'server') => void
-  ) {
+  ): () => void {
+    const addedCallbacks: {
+      success?: typeof onSuccess;
+      error?: typeof onError;
+      cacheInvalidate?: typeof onCacheInvalidate;
+    } = {};
+
     if (onSuccess) {
       this.successCallbacks.push(onSuccess);
+      addedCallbacks.success = onSuccess;
     }
     if (onError) {
       this.errorCallbacks.push(onError);
+      addedCallbacks.error = onError;
     }
     if (onCacheInvalidate) {
       this.cacheInvalidateCallbacks.push(onCacheInvalidate);
+      addedCallbacks.cacheInvalidate = onCacheInvalidate;
     }
+
+    // 返回清理函数
+    return () => {
+      if (addedCallbacks.success) {
+        const index = this.successCallbacks.indexOf(addedCallbacks.success);
+        if (index > -1) {
+          this.successCallbacks.splice(index, 1);
+        }
+      }
+      if (addedCallbacks.error) {
+        const index = this.errorCallbacks.indexOf(addedCallbacks.error);
+        if (index > -1) {
+          this.errorCallbacks.splice(index, 1);
+        }
+      }
+      if (addedCallbacks.cacheInvalidate) {
+        const index = this.cacheInvalidateCallbacks.indexOf(addedCallbacks.cacheInvalidate);
+        if (index > -1) {
+          this.cacheInvalidateCallbacks.splice(index, 1);
+        }
+      }
+    };
   }
 
   /**

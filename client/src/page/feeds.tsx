@@ -18,6 +18,7 @@ import { ClientConfigContext } from "../state/config"
 import { getSidebarConfig } from "../utils/sidebarConfig"
 import { useSmartGrid } from "../hooks/useSmartGrid"
 import { useFeedsCache, FeedType as CacheFeedType } from "../hooks/useFeedsCache"
+import { useSafeCacheInvalidation } from "../hooks/useComponentSafety"
 
 // FeedsData类型由useFeedsCache Hook提供
 
@@ -189,18 +190,17 @@ export function FeedsPage() {
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = React.useRef("")
 
-    // 使用ref来稳定invalidate函数的引用
-    const invalidateFeedsCacheRef = React.useRef(invalidateFeedsCache);
-    invalidateFeedsCacheRef.current = invalidateFeedsCache;
+    // 使用安全的缓存失效机制
+    const safeInvalidateFeedsCache = useSafeCacheInvalidation(invalidateFeedsCache);
 
     // 监听文章发布/更新事件，失效缓存
     React.useEffect(() => {
         const handleFeedPublished = () => {
-            invalidateFeedsCacheRef.current();
+            safeInvalidateFeedsCache();
         };
 
         const handleFeedUpdated = () => {
-            invalidateFeedsCacheRef.current();
+            safeInvalidateFeedsCache();
         };
 
         window.addEventListener('feed-published', handleFeedPublished);
@@ -210,7 +210,7 @@ export function FeedsPage() {
             window.removeEventListener('feed-published', handleFeedPublished);
             window.removeEventListener('feed-updated', handleFeedUpdated);
         };
-    }, []); // 移除依赖，使用ref来访问最新的函数
+    }, [safeInvalidateFeedsCache]); // 使用安全的缓存失效函数
 
     // 获取配置加载状态
     const extendedConfig = useContext(ExtendedConfigContext);

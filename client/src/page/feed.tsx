@@ -29,6 +29,7 @@ import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { useFeedCache } from "../hooks/useFeedsCache";
+import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 import { NotFoundPage } from './not-found';
 
 type Feed = {
@@ -62,16 +63,15 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
 
   const [headImage, setHeadImage] = React.useState<string>();
 
-  // 使用ref来稳定invalidate函数的引用
-  const invalidateFeedCacheRef = React.useRef(invalidateFeedCache);
-  invalidateFeedCacheRef.current = invalidateFeedCache;
+  // 使用安全的缓存失效机制
+  const safeInvalidateFeedCache = useSafeCacheInvalidation(invalidateFeedCache);
 
   // 监听文章更新事件，失效当前文章缓存
   React.useEffect(() => {
     const handleFeedUpdated = (event: any) => {
       // 只有当更新的文章是当前文章时才失效缓存
       if (event.detail?.feedId === id) {
-        invalidateFeedCacheRef.current();
+        safeInvalidateFeedCache();
       }
     };
 
@@ -80,7 +80,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
     return () => {
       window.removeEventListener('feed-updated', handleFeedUpdated);
     };
-  }, [id]); // 只依赖id，使用ref来访问最新的函数
+  }, [id, safeInvalidateFeedCache]); // 使用安全的缓存失效函数
 
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);

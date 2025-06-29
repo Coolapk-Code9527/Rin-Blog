@@ -268,7 +268,7 @@ export function Settings() {
 
     // 设置全局缓存失效回调
     useEffect(() => {
-        configUpdateManager.addCallbacks(
+        const cleanup = configUpdateManager.addCallbacks(
             undefined, // 不添加成功回调
             undefined, // 不添加错误回调
             (type: 'client' | 'server') => {
@@ -280,6 +280,9 @@ export function Settings() {
                 }
             }
         );
+
+        // 组件卸载时清理回调
+        return cleanup;
     }, []); // 移除依赖，使用ref来访问最新的函数
 
     async function handleFaviconChange(e: ChangeEvent<HTMLInputElement>) {

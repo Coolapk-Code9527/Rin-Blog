@@ -10,6 +10,7 @@ import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { PageContainer } from "../components/container"
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect"
+import { useSafeCacheInvalidation } from "../hooks/useComponentSafety"
 
 type FeedsData = {
     size: number,
@@ -29,18 +30,17 @@ export function SearchPage({ keyword }: { keyword: string }) {
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
 
-    // 使用ref来稳定invalidate函数的引用
-    const invalidateSearchCacheRef = React.useRef(invalidateSearchCache);
-    invalidateSearchCacheRef.current = invalidateSearchCache;
+    // 使用安全的缓存失效机制
+    const safeInvalidateSearchCache = useSafeCacheInvalidation(invalidateSearchCache);
 
     // 监听文章发布/更新事件，失效缓存
     React.useEffect(() => {
         const handleFeedPublished = () => {
-            invalidateSearchCacheRef.current();
+            safeInvalidateSearchCache();
         };
 
         const handleFeedUpdated = () => {
-            invalidateSearchCacheRef.current();
+            safeInvalidateSearchCache();
         };
 
         window.addEventListener('feed-published', handleFeedPublished);
@@ -50,7 +50,7 @@ export function SearchPage({ keyword }: { keyword: string }) {
             window.removeEventListener('feed-published', handleFeedPublished);
             window.removeEventListener('feed-updated', handleFeedUpdated);
         };
-    }, []); // 移除依赖，使用ref来访问最新的函数
+    }, [safeInvalidateSearchCache]); // 使用安全的缓存失效函数
     const title = t('article.search.title$keyword', { keyword })
     return (
         <>

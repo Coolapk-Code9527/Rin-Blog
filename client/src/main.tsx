@@ -13,6 +13,7 @@ import { listenSystemMode, initializeTheme } from './utils/darkModeUtils'
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { ApiClient } from './types/api';
 import { StagewiseToolbar } from '@stagewise/toolbar-react';
+import { setupGlobalErrorHandlers } from './components/ErrorBoundary';
 
 // 模拟API服务器类型，临时替代 'rin-server/src/server' 模块
 // 在实际使用中，应该导入正确的服务器类型
@@ -77,6 +78,9 @@ Modal.setAppElement('#root');
 
 // 初始化系统主题监听
 listenSystemMode();
+
+// 设置全局错误处理器
+setupGlobalErrorHandlers();
 
 
 
