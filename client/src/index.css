@@ -175,17 +175,29 @@ body {
 
 /* 统一的毛玻璃卡片效果 - 基础层级 */
 .glass-card {
-  background: rgba(255, 255, 255, 0.60);
+  /* 默认使用深色背景，避免浅色闪现 */
+  background: rgba(13, 17, 23, 0.60);
   backdrop-filter: blur(16px) saturate(180%) brightness(1.08);
   -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: none;
 }
 
-html[data-color-mode="dark"] .glass-card {
+/* 浅色模式覆盖 */
+html[data-color-mode="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.60) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 深色模式强制确保深色背景 */
+html[data-color-mode="dark"] .glass-card,
+.dark .glass-card,
+html.dark .glass-card {
   background: rgba(13, 17, 23, 0.60) !important;
   backdrop-filter: blur(16px) saturate(180%) brightness(1.08) !important;
   -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  transition: none !important;
 }
 
 /* 增强的按钮效果 */
@@ -3864,7 +3876,11 @@ main h1, [role="complementary"] h3, aside h3 {
 
 /* 视图切换动画效果 */
 .view-transition-container {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* 排除背景色过渡，避免深色模式下的浅色闪现 */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .view-transition-fade-in {

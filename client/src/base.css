@@ -1,6 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 修复Tailwind的transition-all在深色模式下的背景色闪现问题 */
+@layer utilities {
+  .transition-all {
+    transition-property: transform, opacity, box-shadow, border-color, color, fill, stroke !important;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition-duration: 150ms !important;
+  }
+}
 @layer base {
     .bg-w {
       background-color: var(--bg-primary);
