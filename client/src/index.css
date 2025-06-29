@@ -189,16 +189,7 @@ html[data-color-mode="light"] .glass-card {
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
-/* 深色模式强制确保深色背景 */
-html[data-color-mode="dark"] .glass-card,
-.dark .glass-card,
-html.dark .glass-card {
-  background: rgba(13, 17, 23, 0.60) !important;
-  backdrop-filter: blur(16px) saturate(180%) brightness(1.08) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  transition: none !important;
-}
+/* 深色模式保持默认样式，无需重复定义 */
 
 /* 增强的按钮效果 */
 .btn-enhanced {

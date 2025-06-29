@@ -78,7 +78,11 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
             {isVisible ? (
                 <FeedCard id={id} viewMode={viewMode} {...props} />
             ) : (
-                <div className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced transition-opacity duration-300 ${isIntersecting ? 'opacity-100' : 'opacity-40'} ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}>
+                <div
+                    className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced transition-opacity duration-300 ${isIntersecting ? 'opacity-100' : 'opacity-40'} ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}
+                    aria-hidden="true"
+                    aria-label="文章内容加载中"
+                >
                     {/* 骨架屏图片区域 - 使用彩色背景 */}
                     <div
                         className={viewMode === 'list'
@@ -90,7 +94,7 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
                         }}>
                     </div>
                     
-                    {/* 骨架屏内容区域 */}
+                    {/* 骨架屏内容区域 - 与普通骨架屏保持一致 */}
                     <div className={viewMode === 'list'
                         ? "p-3 sm:p-4 flex-1 flex flex-col justify-between min-h-0 overflow-hidden"
                         : "p-3 sm:p-4 flex-1 flex flex-col justify-between min-h-0 overflow-hidden"
@@ -100,22 +104,37 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
                             ? "h-4 sm:h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4 mb-1 animate-pulse"
                             : "h-6 sm:h-7 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4 mb-1 sm:mb-1.5 animate-pulse"
                         }></div>
+                        {/* 第二行标题占位 - 与普通骨架屏保持一致 */}
+                        <div className={viewMode === 'list'
+                            ? "h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/2 mb-2 animate-pulse hidden sm:block"
+                            : "h-4 sm:h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-1/2 mb-2 sm:mb-3 animate-pulse"
+                        }></div>
+                        {/* 第三行标题占位 - 仅网格视图桌面端显示 */}
+                        {viewMode === 'grid' && (
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/3 mb-2 animate-pulse hidden sm:block"></div>
+                        )}
 
-                        {/* 摘要占位 - 匹配智能截断逻辑 */}
-                        <div className="space-y-1 sm:space-y-1.5 flex-1 mb-2 sm:mb-3">
-                            <div className="h-3 sm:h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
-                            <div className="h-3 sm:h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-4/5 animate-pulse"></div>
-                            {viewMode === 'grid' && (
-                                <div className="h-3 sm:h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-3/5 animate-pulse"></div>
-                            )}
+                        {/* 日期和状态占位 */}
+                        <div className="flex justify-between mb-2">
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/4 animate-pulse"></div>
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/5 animate-pulse"></div>
                         </div>
 
-                        {/* 底部信息占位 - 匹配FeedCard底部布局 */}
-                        <div className="flex items-center justify-between">
-                            <div className="h-3 sm:h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
-                            <div className="flex items-center space-x-2 sm:space-x-3">
-                                <div className="h-3 sm:h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-8 animate-pulse"></div>
-                                <div className="h-3 sm:h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-8 animate-pulse"></div>
+                        {/* 摘要占位 */}
+                        <div className={viewMode === 'list' ? "space-y-1.5 mb-2" : "space-y-1.5 mb-3"}>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/5 animate-pulse"></div>
+                        </div>
+
+                        {/* 标签占位 */}
+                        <div className={viewMode === 'list'
+                            ? "mt-auto pt-1 border-t border-gray-100 dark:border-gray-700/30 flex-shrink-0"
+                            : "mt-auto pt-2 border-t border-gray-100 dark:border-gray-700/30"
+                        }>
+                            <div className="flex gap-2">
+                                <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                                <div className="h-6 w-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
                             </div>
                         </div>
                     </div>
@@ -478,8 +497,8 @@ export function FeedsPage() {
                                 ? "flex flex-col gap-3 sm:gap-4 w-full view-transition-container"
                                 : `grid ${gridCols} gap-4 sm:gap-5 md:gap-6 w-full view-transition-container`
                             }>
-                                {paginatedFeeds.map((feed, i) => (
-                                    <LazyFeedCard key={`feed-card-${feed.id}-${i}-${sortType}-${viewMode}`} viewMode={viewMode} {...feed} />
+                                {paginatedFeeds.map((feed) => (
+                                    <LazyFeedCard key={feed.id} viewMode={viewMode} {...feed} />
                                 ))}
                             </div>
                         </>
@@ -490,7 +509,12 @@ export function FeedsPage() {
                             : `grid ${gridCols} gap-4 sm:gap-5 w-full`
                         }>
                             {Array(6).fill(0).map((_, i) => (
-                                <div key={`skeleton-${i}`} className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}>
+                                <div
+                                    key={`skeleton-${i}`}
+                                    className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}
+                                    aria-hidden="true"
+                                    aria-label="文章列表加载中"
+                                >
                                     {/* 骨架屏图片区域 - 使用彩色背景 */}
                                     <div
                                         className={viewMode === 'list'
@@ -498,7 +522,7 @@ export function FeedsPage() {
                                             : `w-full h-44 xs:h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-xl relative animate-pulse`
                                         }
                                         style={{
-                                            background: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`
+                                            background: `linear-gradient(${135 + (i * 30) % 360}deg, #667eea 0%, #764ba2 100%)`
                                         }}>
                                     </div>
 
