@@ -317,7 +317,7 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
 
   const Content = useMemo(() => (
     <ReactMarkdown
-      className="toc-content markdown-body dark:text-neutral-300"
+      className="toc-content markdown-body dark:text-gray-200"
       remarkPlugins={[gfm, remarkBreaks, remarkMermaid, remarkMath, remarkAlert]}
       children={content}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
