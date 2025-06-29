@@ -160,8 +160,8 @@ export function FaviconService() {
                         return `S3 configuration error: ${configErrors.join(', ')}`;
                     }
 
-                    // 3. 文件大小验证
-                    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+                    // 3. 文件大小验证 (favicon专用限制)
+                    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB - 适合favicon的合理大小
                     if (file.size > MAX_FILE_SIZE) {
                         set.status = 400;
                         return `File size exceeds limit (${MAX_FILE_SIZE / 1024 / 1024}MB)`;

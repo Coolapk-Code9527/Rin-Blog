@@ -18,6 +18,7 @@ import { ClientConfigContext } from "../state/config"
 import { getSidebarConfig } from "../utils/sidebarConfig"
 import { useSmartGrid } from "../hooks/useSmartGrid"
 import { useFeedsCache, FeedType as CacheFeedType } from "../hooks/useFeedsCache"
+import { generateGradient } from '../utils/placeholderUtils';
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety"
 
 // FeedsData类型由useFeedsCache Hook提供
@@ -35,33 +36,10 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
     const cardRef = React.useRef<HTMLDivElement>(null);
 
 
-    // 使用智能毛玻璃效果
-    const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
+    // LazyFeedCard占位符不需要毛玻璃效果，使用简单背景
     
-    // 为占位符生成渐变背景 - 使用useMemo缓存计算结果
-    const placeholderGradient = useMemo(() => {
-        // 使用ID保持一致的随机颜色
-        const getHashCode = (str: string) => {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = ((hash << 5) - hash) + str.charCodeAt(i);
-                hash = hash & hash; // 转换为32位整数
-            }
-            return Math.abs(hash);
-        };
-
-        const gradients = [
-            'from-blue-100 to-purple-200 dark:from-blue-900/40 dark:to-purple-900/40',
-            'from-green-100 to-blue-200 dark:from-green-900/40 dark:to-blue-900/40',
-            'from-purple-100 to-pink-200 dark:from-purple-900/40 dark:to-pink-900/40',
-            'from-yellow-100 to-red-200 dark:from-yellow-900/40 dark:to-red-900/40',
-            'from-pink-100 to-rose-200 dark:from-pink-900/40 dark:to-rose-900/40',
-            'from-indigo-100 to-blue-200 dark:from-indigo-900/40 dark:to-blue-900/40'
-        ];
-
-        const hash = getHashCode(id);
-        return gradients[hash % gradients.length];
-    }, [id]);
+    // 使用统一的动态彩色占位符系统
+    const gradientConfig = useMemo(() => generateGradient(id, props.title || ''), [id, props.title]);
 
     React.useEffect(() => {
         let timer: NodeJS.Timeout | null = null;
@@ -98,12 +76,16 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
             {isVisible ? (
                 <FeedCard id={id} viewMode={viewMode} {...props} />
             ) : (
-                <div className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced transition-opacity duration-300 ${isIntersecting ? 'opacity-100' : 'opacity-40'} ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}>
+                <div className={`block w-full rounded-2xl bg-neutral-50/80 dark:bg-neutral-900/80 h-full overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced transition-opacity duration-300 ${isIntersecting ? 'opacity-100' : 'opacity-40'} ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}>
                     {/* 占位符图片区域 - 匹配FeedCard的图片高度 */}
-                    <div className={viewMode === 'list'
-                        ? `w-[140px] sm:w-[160px] md:w-[200px] h-full overflow-hidden rounded-l-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse flex-shrink-0`
-                        : `w-full h-44 xs:h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-xl relative bg-gradient-to-r ${placeholderGradient} animate-pulse`  // 匹配FeedCard的图片高度
-                    }>
+                    <div
+                        className={viewMode === 'list'
+                            ? `w-[140px] sm:w-[160px] md:w-[200px] h-full overflow-hidden rounded-l-xl relative animate-pulse flex-shrink-0`
+                            : `w-full h-44 xs:h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-xl relative animate-pulse`  // 匹配FeedCard的图片高度
+                        }
+                        style={{
+                            background: `linear-gradient(${gradientConfig.angle}deg, ${gradientConfig.colors.join(', ')})`
+                        }}>
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-10 h-10 rounded-full bg-white/20 dark:bg-gray-700/30 flex items-center justify-center">
                                 <i className="ri-image-line text-white/50 dark:text-gray-500/70 text-xl"></i>
@@ -454,10 +436,8 @@ export function FeedsPage() {
                 <meta property="og:url" content={document.URL} />
             </Helmet>
 
-            {/* 等待数据和配置加载完成，避免视图模式跳动 */}
-            <Waiting for={!loading && !initialLoading && configLoaded}>
-                {/* 页面标题和工具栏区域 */}
-                <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 mb-0 transition-all duration-300`}>
+            {/* 页面标题和工具栏区域 - 移到Waiting外面避免布局跳动 */}
+            <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 mb-0 transition-all duration-300`}>
                     <div className="flex flex-col space-y-4 mb-0">
                         {/* 标题行 */}
                         <div className="flex flex-row items-center gap-2 sm:gap-3 py-2">
@@ -502,10 +482,12 @@ export function FeedsPage() {
                     </div>
                 </div>
 
+            {/* 等待数据和配置加载完成，避免视图模式跳动 */}
+            <Waiting for={!loading && !initialLoading && configLoaded}>
                 {/* 主内容布局 - 文章列表与侧边栏 */}
                 <ArticleListLayout>
                     {/* 文章列表内容 */}
-                    {paginatedFeeds.length > 0 ? (
+                    {paginatedFeeds.length > 0 && feedsData ? (
                         <>
                             <div className={viewMode === 'list'
                                 ? "flex flex-col gap-3 sm:gap-4 w-full view-transition-container"
@@ -516,25 +498,25 @@ export function FeedsPage() {
                                 ))}
                             </div>
                         </>
-                    ) : loading ? (
+                    ) : (loading || initialLoading || !configLoaded || !feedsData) ? (
                         // 加载状态显示骨架屏
                         <div className={viewMode === 'list'
                             ? "flex flex-col gap-3 sm:gap-4 w-full"
                             : `grid ${gridCols} gap-4 sm:gap-5 w-full`
                         }>
                             {Array(6).fill(0).map((_, i) => (
-                                <div key={`skeleton-${i}`} className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}>
+                                <div key={`skeleton-${i}`} className={`block w-full rounded-2xl bg-neutral-50/80 dark:bg-neutral-900/80 h-full overflow-hidden border border-neutral-200/60 dark:border-neutral-700/60 shadow-enhanced ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}>
                                     {/* 骨架屏图片区域 - 匹配FeedCard的图片高度 */}
                                     <div className={viewMode === 'list'
                                         ? "w-[140px] sm:w-[160px] md:w-[200px] h-full overflow-hidden rounded-l-xl relative bg-gray-200 dark:bg-gray-700 animate-pulse flex-shrink-0"
-                                        : "w-full h-44 xs:h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-xl relative bg-gray-200 dark:bg-gray-700 animate-pulse"  // 匹配FeedCard的图片高度
+                                        : "w-full h-44 xs:h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-xl relative bg-gray-200 dark:bg-gray-700 animate-pulse"  // 完全匹配FeedCard的图片高度
                                     }>
                                     </div>
 
                                     {/* 骨架屏内容区域 */}
                                     <div className={viewMode === 'list'
                                         ? "p-3 sm:p-4 flex-1 flex flex-col justify-between min-h-0 overflow-hidden"
-                                        : "p-3 sm:p-4 flex-1 flex flex-col"
+                                        : "p-3 sm:p-4 flex-1 flex flex-col justify-between min-h-0 overflow-hidden"
                                     }>
                                         {/* 标题占位 - 匹配智能截断逻辑 */}
                                         <div className={viewMode === 'list'

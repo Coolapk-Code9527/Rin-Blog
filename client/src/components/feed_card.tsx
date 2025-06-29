@@ -123,7 +123,7 @@ function FeedCardComponent({ id, title, avatar, draft, listed, top, summary, has
                     className="absolute inset-0 w-full h-full z-0"
                     style={{
                         background: `linear-gradient(${gradientConfig.angle}deg, ${gradientConfig.colors.join(', ')})`,
-                        opacity: (!avatar || imageError) ? 0.8 : 0,
+                        opacity: (!avatar || imageError || !imageLoaded) ? 0.8 : 0,
                         transition: 'opacity 0.3s'
                     }}
                 />

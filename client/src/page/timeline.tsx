@@ -1,6 +1,6 @@
 import React, { useEffect } from "react"
 import {Helmet} from 'react-helmet-async'
-import {Link, useLocation} from "wouter"
+import {useLocation} from "wouter"
 import {Waiting} from "../components/loading"
 import {siteName} from "../utils/constants"
 import {useTranslation} from "react-i18next";
@@ -112,21 +112,3 @@ export function TimelinePage() {
     );
 }
 
-export function FeedItem({ id, title, createdAt, ...rest }: { id: string, title: string, createdAt: number } & Record<string, any>) {
-    const formatter = new Intl.DateTimeFormat(undefined, { day: '2-digit', month: '2-digit', year: undefined });
-    return (
-        <div className="flex flex-row pl-8" {...rest}>
-            <div className="flex flex-row items-center">
-                <div className="w-2 h-2 bg-theme rounded-full"></div>
-            </div>
-            <div className="flex-1 rounded-2xl m-2 duration-300 flex flex-row items-center space-x-4   ">
-                <span className="t-secondary text-sm" title={new Date(createdAt).toLocaleString()}>
-                    {formatter.format(new Date(createdAt))}
-                </span>
-                <Link href={`/feed/${id}`} target="_blank" className="text-base t-primary hover:text-theme text-pretty overflow-hidden">
-                    {title}
-                </Link>
-            </div>
-        </div>
-    )
-}

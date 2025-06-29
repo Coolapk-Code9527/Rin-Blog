@@ -288,7 +288,7 @@ export function Settings() {
     async function handleFaviconChange(e: ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (file) {
-            const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+            const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB - 适合favicon的合理大小
             if (file.size > MAX_FILE_SIZE) {
                 showToast(
                     t("upload.failed$size", {

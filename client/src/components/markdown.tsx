@@ -24,6 +24,7 @@ import { MacOSSpinner } from './loading';
 import { ClientConfigContext } from "../state/config";
 import '../styles/lightbox-fix.css';
 import mermaid from 'mermaid';
+import { generateGradient } from '../utils/placeholderUtils';
 
 // 图片加载状态接口
 interface ImageState {
@@ -32,24 +33,30 @@ interface ImageState {
 }
 
 // 优化的图片组件
-const OptimizedImage = React.memo(({ 
-  src, 
-  alt, 
-  onClick, 
-  className, 
-  style 
-}: { 
-  src?: string; 
-  alt?: string; 
-  onClick?: () => void; 
-  className?: string; 
-  style?: React.CSSProperties; 
+const OptimizedImage = React.memo(({
+  src,
+  alt,
+  onClick,
+  className,
+  style
+}: {
+  src?: string;
+  alt?: string;
+  onClick?: () => void;
+  className?: string;
+  style?: React.CSSProperties;
 }) => {
   const [imageState, setImageState] = useState<ImageState>({
     loaded: false,
     error: false
   });
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // 使用图片URL生成动态彩色背景
+  const gradientConfig = useMemo(() => {
+    const seed = src || alt || 'default';
+    return generateGradient(seed, alt);
+  }, [src, alt]);
   
   // 图片懒加载
   useEffect(() => {
@@ -100,15 +107,25 @@ const OptimizedImage = React.memo(({
   return (
     <div className="relative flex justify-center items-center">
       {!imageState.loaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
+        <div
+          className="absolute inset-0 flex items-center justify-center rounded"
+          style={{
+            background: `linear-gradient(${gradientConfig.angle}deg, ${gradientConfig.colors.join(', ')})`
+          }}
+        >
           <MacOSSpinner size="small" />
         </div>
       )}
-      
+
       {imageState.error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 rounded p-4">
-          <i className="ri-image-line text-2xl text-red-500 mb-2"></i>
-          <p className="text-sm text-gray-500 text-center">{alt || '图片加载失败'}</p>
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center rounded p-4"
+          style={{
+            background: `linear-gradient(${gradientConfig.angle}deg, ${gradientConfig.colors.join(', ')})`
+          }}
+        >
+          <i className="ri-image-line text-2xl text-white/90 mb-2"></i>
+          <p className="text-sm text-white/80 text-center">{alt || '图片加载失败'}</p>
         </div>
       )}
       
