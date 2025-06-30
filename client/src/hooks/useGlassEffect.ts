@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useBackground } from '../context/BackgroundContext';
+import { getCurrentColorMode } from '../utils/darkModeUtils';
 
 /**
  * 智能毛玻璃效果Hook
@@ -7,7 +8,13 @@ import { useBackground } from '../context/BackgroundContext';
  */
 export const useGlassEffect = (baseClass: string) => {
   const { state } = useBackground();
-  const [glassClass, setGlassClass] = useState(baseClass);
+  // 根据当前主题模式设置正确的初始状态，避免深色模式下的浅色闪现
+  const [glassClass, setGlassClass] = useState(() => {
+    // 在组件挂载时立即获取正确的主题状态
+    const currentMode = getCurrentColorMode();
+    // 确保初始状态就是正确的，避免useEffect的异步更新导致闪现
+    return baseClass;
+  });
 
   useEffect(() => {
     if (state.enabled && state.isImageLoaded) {

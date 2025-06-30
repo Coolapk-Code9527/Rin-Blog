@@ -189,7 +189,16 @@ html[data-color-mode="light"] .glass-card {
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
-/* 深色模式保持默认样式，无需重复定义 */
+/* 深色模式强制确保深色背景 */
+html[data-color-mode="dark"] .glass-card,
+.dark .glass-card,
+html.dark .glass-card {
+  background: rgba(13, 17, 23, 0.60) !important;
+  backdrop-filter: blur(16px) saturate(180%) brightness(1.08) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  transition: none !important;
+}
 
 /* 增强的按钮效果 */
 .btn-enhanced {
@@ -3228,8 +3237,17 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 .toc-content code:hover, .markdown-body code:hover, .wmde-markdown code:hover {
   box-shadow: 0 2px 8px 0 rgba(59,130,246,0.12);
 }
-
-
+.toc-content strong, .markdown-body strong, .wmde-markdown strong {
+  color: #1a1a1a;
+  font-weight: 700;
+}
+.toc-content mark, .markdown-body mark, .wmde-markdown mark {
+  background: linear-gradient(90deg, #FFF3CD 80%, #FFE066 100%);
+  color: #92400e;
+  border-radius: 2px;
+  padding: 0.1em 0.4em;
+  box-shadow: 0 1px 4px 0 rgba(251,191,36,0.08);
+}
 
 /* 链接优化 */
 .toc-content a, .markdown-body a, .wmde-markdown a {
@@ -3333,7 +3351,14 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   }
 }
 
-
+/* mark 高亮荧光笔风格 */
+.toc-content mark, .markdown-body mark, .wmde-markdown mark {
+  background: linear-gradient(90deg, #FFF3CD 80%, #FFE066 100%);
+  color: #92400e;
+  border-radius: 2px;
+  padding: 0.1em 0.4em;
+  box-shadow: 0 1px 4px 0 rgba(251,191,36,0.08);
+}
 
 /* kbd 键盘按键风格 */
 .toc-content kbd, .markdown-body kbd, .wmde-markdown kbd {
@@ -3462,23 +3487,11 @@ div[aria-modal="true"] a[aria-current="page"]::before {
   opacity: 0.85;
 }
 
-/* del 删除线深色模式 */
-[data-color-mode="dark"] .toc-content del, [data-color-mode="dark"] .markdown-body del, [data-color-mode="dark"] .wmde-markdown del {
-  color: #f87171;
-  text-decoration: line-through wavy #f87171;
-}
-
 /* u 下划线优化 */
 .toc-content u, .markdown-body u, .wmde-markdown u {
   text-decoration: underline 1.5px solid #007AFF;
   text-underline-offset: 2px;
   color: #007AFF;
-}
-
-/* u 下划线深色模式 */
-[data-color-mode="dark"] .toc-content u, [data-color-mode="dark"] .markdown-body u, [data-color-mode="dark"] .wmde-markdown u {
-  text-decoration: underline 1.5px solid #60a5fa;
-  color: #60a5fa;
 }
 
 /* 兼容深色模式下的高亮、插入、删除等 */
@@ -3649,7 +3662,10 @@ div[aria-modal="true"] a[aria-current="page"]::before {
 [data-color-mode="dark"] .toc-content code:hover, [data-color-mode="dark"] .markdown-body code:hover, [data-color-mode="dark"] .wmde-markdown code:hover {
   background: #334155;
 }
-
+[data-color-mode="dark"] .toc-content mark, [data-color-mode="dark"] .markdown-body mark, [data-color-mode="dark"] .wmde-markdown mark {
+  background: linear-gradient(90deg, #facc15 80%, #fde68a 100%);
+  color: #78350f;
+}
 
 /* 响应式优化 */
 @media (max-width: 640px) {

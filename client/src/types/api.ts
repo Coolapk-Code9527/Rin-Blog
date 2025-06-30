@@ -8,6 +8,69 @@ export type TreatyResponse<T> = {
   };
 };
 
+/**
+ * 运行时类型检查工具
+ */
+export class ApiTypeChecker {
+  /**
+   * 检查是否为有效的Treaty响应
+   */
+  static isValidTreatyResponse<T>(response: any): response is TreatyResponse<T> {
+    if (!response || typeof response !== 'object') {
+      return false;
+    }
+
+    // 必须有data或error字段之一
+    if (!('data' in response) && !('error' in response)) {
+      return false;
+    }
+
+    // 如果有error字段，检查其结构
+    if ('error' in response && response.error) {
+      if (typeof response.error !== 'object' || !response.error.value) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * 安全地提取API响应数据
+   */
+  static extractResponseData<T>(response: any, validator?: (data: any) => data is T): T | null {
+    if (!this.isValidTreatyResponse(response)) {
+      console.warn('Invalid Treaty response structure:', response);
+      return null;
+    }
+
+    if (response.error) {
+      console.warn('API response contains error:', response.error);
+      return null;
+    }
+
+    if (!response.data) {
+      return null;
+    }
+
+    if (validator && !validator(response.data)) {
+      console.warn('API response data failed validation:', response.data);
+      return null;
+    }
+
+    return response.data as T;
+  }
+
+  /**
+   * 检查响应数据类型是否为字符串（通常表示错误）
+   */
+  static isStringResponse(response: any): boolean {
+    return this.isValidTreatyResponse(response) &&
+           response.data &&
+           typeof response.data === 'string';
+  }
+}
+
 // 用户配置文件
 export type Profile = {
   id: number;
