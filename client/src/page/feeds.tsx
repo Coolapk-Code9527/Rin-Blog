@@ -190,10 +190,9 @@ export function FeedsPage() {
 
     // 统一的分页配置管理
     const page = tryInt(1, query.get("page"))
-    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE) // 前端分页每页显示数量
+    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE) // 每页显示数量
 
     // 使用缓存Hook替代直接API调用和本地状态管理
-    // 关键修复：传递limit参数，避免触发useEnhancedFeedsCache的批量获取（CPU超时根源）
     const {
         data: feedsData,
         loading,
@@ -201,7 +200,7 @@ export function FeedsPage() {
     } = useFeedsCache({
         type: listState as FeedType,
         page: page,
-        limit: limit, // 传递正确的limit，避免默认的9999触发批量获取
+        limit: limit, // 使用PAGE_SIZE环境变量，避免全量数据获取
         enabled: true
     })
     const ref = React.useRef("")
@@ -403,22 +402,16 @@ export function FeedsPage() {
 
     // 缓存Hook自动处理数据获取，无需手动fetchFeeds函数
 
-    // 前端分页逻辑 - 对排序后的数据进行分页
-    const paginatedFeeds = React.useMemo(() => {
-        if (!sortedFeeds.length) return [];
+    // 使用服务端分页数据，不再进行前端分页处理
+    const paginatedFeeds = sortedFeeds; // 直接使用排序后的数据，服务端已经分页
 
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedData = sortedFeeds.slice(startIndex, endIndex);
-
-        return paginatedData;
-    }, [sortedFeeds, page, limit]);
-
-    // 计算总页数
+    // 使用服务端返回的分页信息
     const totalPages = React.useMemo(() => {
-        if (!sortedFeeds.length) return 1;
-        return Math.ceil(sortedFeeds.length / limit);
-    }, [sortedFeeds.length, limit]);
+        if (!feedsData?.size) return 1;
+        return Math.ceil(feedsData.size / limit);
+    }, [feedsData?.size, limit]);
+
+    const hasNextPage = feedsData?.hasNext ?? false;
     
     React.useEffect(() => {
         const key = `${query.get("type")} ${query.get("sort")}`
@@ -634,13 +627,13 @@ export function FeedsPage() {
                 </ArticleListLayout>
             </Waiting>
 
-            {/* 分页控制 - 移到ArticleListLayout外部，与侧边栏分离 */}
+            {/* 分页控制 - 使用服务端分页信息 */}
             {paginatedFeeds.length > 0 && totalPages > 1 && (
                 <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 transition-all duration-300`}>
                     <div className="flex justify-center w-full">
                         <Pagination
                             currentPage={page}
-                            totalPages={totalPages}
+                            totalPages={totalPages} // 使用服务端计算的总页数
                             basePath={`/?type=${listState}${sortType !== 'latest' ? `&sort=${sortType}` : ''}`}
                             className="gap-2"
                         />
