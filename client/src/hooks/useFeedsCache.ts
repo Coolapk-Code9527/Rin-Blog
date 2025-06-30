@@ -56,7 +56,7 @@ export function useFeedsCache(config: UseFeedsCacheConfig = {}) {
   const {
     type = 'all',
     page = 1,
-    limit = 9999, // 获取所有数据，参考现有实现
+    limit = 10, // 修复：改为合理的默认值，避免意外触发批量获取
     sortByTime = false,
     staleTime = 8 * 60 * 1000, // 优化：8分钟缓存（文章列表更新频率较低）
     enabled = true

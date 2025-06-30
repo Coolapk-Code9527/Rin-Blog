@@ -76,7 +76,7 @@ const OptimizedImage = React.memo(({
         }
       });
     }, {
-      rootMargin: '200px 0px', // 图片进入视口前200px开始加载
+      rootMargin: '50px 0px', // 优化：减少预加载范围，避免过度加载
       threshold: 0.01
     });
     
