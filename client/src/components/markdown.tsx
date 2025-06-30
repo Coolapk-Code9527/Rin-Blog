@@ -274,22 +274,69 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
     }
   }, [content, isReady, onReady]);
 
-  // 自动渲染 mermaid 图表
+  // 自动渲染 mermaid 图表 - 增强错误处理和数据验证
   useEffect(() => {
     if (!isReady) return;
-    // 明亮主题
-    mermaid.initialize({ startOnLoad: false, theme: 'default' });
-    mermaid.run({
-      suppressErrors: true,
-      nodes: document.querySelectorAll('pre.mermaid_default')
-    }).then(() => {
-      // 暗色主题
-      mermaid.initialize({ startOnLoad: false, theme: 'dark' });
-      mermaid.run({
-        suppressErrors: true,
-        nodes: document.querySelectorAll('pre.mermaid_dark')
+
+    // 验证Mermaid节点内容，防止undefined/NaN导致SVG错误
+    const validateAndFilterMermaidNodes = (selector: string) => {
+      const allNodes = document.querySelectorAll(selector);
+
+      // 过滤掉无效节点，直接修改DOM
+      allNodes.forEach(node => {
+        const content = node.textContent?.trim();
+        if (!content || content.length === 0 ||
+            content.includes('undefined') || content.includes('NaN')) {
+          console.warn('Mermaid: Removing node with invalid content:', content);
+          node.remove(); // 直接移除无效节点
+        }
       });
-    });
+
+      // 重新查询有效节点
+      return document.querySelectorAll(selector);
+    };
+
+    try {
+      // 明亮主题 - 增强配置和错误处理
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        securityLevel: 'loose', // 允许更灵活的渲染
+        errorLevel: 'warn', // 设置错误级别
+        logLevel: 'warn' // 减少控制台输出
+      });
+
+      const defaultNodes = validateAndFilterMermaidNodes('pre.mermaid_default');
+      if (defaultNodes.length > 0) {
+        mermaid.run({
+          suppressErrors: true,
+          nodes: defaultNodes
+        }).then(() => {
+          // 暗色主题 - 同样的验证和配置
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: 'dark',
+            securityLevel: 'loose',
+            errorLevel: 'warn',
+            logLevel: 'warn'
+          });
+
+          const darkNodes = validateAndFilterMermaidNodes('pre.mermaid_dark');
+          if (darkNodes.length > 0) {
+            mermaid.run({
+              suppressErrors: true,
+              nodes: darkNodes
+            }).catch(error => {
+              console.warn('Mermaid dark theme render error:', error);
+            });
+          }
+        }).catch(error => {
+          console.warn('Mermaid default theme render error:', error);
+        });
+      }
+    } catch (error) {
+      console.warn('Mermaid initialization error:', error);
+    }
   }, [content, isReady]);
 
   // 生成图片查看器的幻灯片
