@@ -72,7 +72,27 @@ const extractImageUrl = (content: string): string | null => {
     return null;
 };
 
-// 移除fetchFullArticle函数以优化性能，减少不必要的API调用
+// 智能fallback：有条件地获取完整文章信息
+const fetchFullArticle = async (id: number): Promise<string | null> => {
+    try {
+        const response = await client.feed({ id: id.toString() }).get();
+        if (!response.error && response.data && typeof response.data !== "string") {
+            // 检查数据是否包含avatar字段
+            if ('avatar' in response.data && response.data.avatar) {
+                return response.data.avatar as string;
+            }
+
+            // 如果没有avatar字段，从content中提取第一张图片
+            if ('content' in response.data) {
+                return extractImageUrl(response.data.content as string);
+            }
+        }
+    } catch (error) {
+        // 静默处理错误，避免影响用户体验
+        return null;
+    }
+    return null;
+};
 
 // 默认图片常量
 const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
@@ -101,15 +121,27 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                     // 为每个相邻文章获取缩略图
                     const extractedThumbnails: Record<string, string> = {};
                     
-                    // 处理上一篇文章（性能优化：移除fetchFullArticle调用）
+                    // 处理上一篇文章（智能fallback恢复）
                     if (data.previousFeed) {
-                        const thumbnail = getThumbnailUrl(data.previousFeed);
+                        let thumbnail = getThumbnailUrl(data.previousFeed);
+
+                        // 只在avatar和summary都没有图片时才调用fetchFullArticle
+                        if (!thumbnail) {
+                            thumbnail = await fetchFullArticle(data.previousFeed.id);
+                        }
+
                         extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || null;
                     }
-
-                    // 处理下一篇文章（性能优化：移除fetchFullArticle调用）
+                    
+                    // 处理下一篇文章（智能fallback恢复）
                     if (data.nextFeed) {
-                        const thumbnail = getThumbnailUrl(data.nextFeed);
+                        let thumbnail = getThumbnailUrl(data.nextFeed);
+
+                        // 只在avatar和summary都没有图片时才调用fetchFullArticle
+                        if (!thumbnail) {
+                            thumbnail = await fetchFullArticle(data.nextFeed.id);
+                        }
+
                         extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || null;
                     }
                     

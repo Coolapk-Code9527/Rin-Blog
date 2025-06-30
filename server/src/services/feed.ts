@@ -139,7 +139,7 @@ export function FeedService() {
         .use(setup())
         .group('/feed', (group) =>
             group
-                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime, lightweight } }) => {
+                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime } }) => {
                     const db: DB = getDB();
                     if ((type === 'draft' || type === 'unlisted') && !admin) {
                         set.status = 403;
@@ -243,15 +243,9 @@ export function FeedService() {
                                     avatar = cached.avatar;
                                     processedSummary = cached.summary;
                                 } else {
-                                    // 轻量级模式：跳过CPU密集的处理
-                                    if (lightweight === 'true') {
-                                        avatar = undefined; // 跳过图片提取
-                                        processedSummary = summary || ''; // 只使用现有summary，不处理content
-                                    } else {
-                                        // 只在缓存未命中时才进行计算
-                                        avatar = extractImage(content);
-                                        processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
-                                    }
+                                    // 只在缓存未命中时才进行计算
+                                    avatar = extractImage(content);
+                                    processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
 
                                     // 缓存预计算结果
                                     await cache.set(cacheKey, { avatar, summary: processedSummary });
@@ -329,15 +323,9 @@ export function FeedService() {
                                 avatar = cached.avatar;
                                 processedSummary = cached.summary;
                             } else {
-                                // 轻量级模式：跳过CPU密集的处理
-                                if (lightweight === 'true') {
-                                    avatar = undefined; // 跳过图片提取
-                                    processedSummary = summary || ''; // 只使用现有summary，不处理content
-                                } else {
-                                    // 只在缓存未命中时才进行计算
-                                    avatar = extractImage(content);
-                                    processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
-                                }
+                                // 只在缓存未命中时才进行计算
+                                avatar = extractImage(content);
+                                processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
 
                                 // 缓存预计算结果
                                 await cache.set(cacheKey, { avatar, summary: processedSummary });
@@ -604,8 +592,10 @@ export function FeedService() {
                     ) {
                         if (feed) {
                             const hashtags_flatten = feed.hashtags.map((f: any) => f.hashtag);
-                            // 优化：相邻文章只使用现有summary，不进行CPU密集的content处理
-                            const summary = feed.summary || '';
+                            const summary =
+                                feed.summary.length > 0
+                                    ? feed.summary
+                                    : markdownToPlainText(feed.content, 300);
                             const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                             const cacheData = {
                             id: feed.id,

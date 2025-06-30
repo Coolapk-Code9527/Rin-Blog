@@ -188,6 +188,10 @@ export function FeedsPage() {
     const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
     const [sortType, setSortType] = React.useState<SortType>(query.get("sort") as SortType || 'latest')
 
+    // 统一的分页配置管理
+    const page = tryInt(1, query.get("page"))
+    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE) // 服务端分页每页显示数量
+
     // 使用缓存Hook替代直接API调用和本地状态管理
     const {
         data: feedsData,
@@ -195,11 +199,11 @@ export function FeedsPage() {
         invalidate: invalidateFeedsCache
     } = useFeedsCache({
         type: listState as FeedType,
+        page: page,
+        limit: limit,
+        sortByTime: sortType === 'latest' || sortType === 'oldest',
         enabled: true
     })
-    // 统一的分页配置管理
-    const page = tryInt(1, query.get("page"))
-    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE) // 前端分页每页显示数量
     const ref = React.useRef("")
 
     // 使用安全的缓存失效机制
@@ -248,173 +252,23 @@ export function FeedsPage() {
         setLocation(`/?${newQuery.toString()}`);
     }, [query, setLocation]);
 
-    // 智能热度排序算法 - 深度修复版本
+    // 直接使用服务端返回的排序数据，无需前端排序
     const sortedFeeds = React.useMemo(() => {
-        if (!feedsData?.data) return [];
-        const currentFeeds = [...feedsData.data];
+        return feedsData?.data || [];
+    }, [feedsData]);
 
 
-
-        try {
-            const sorted = currentFeeds.sort((a, b) => {
-                // 第一优先级：置顶文章始终在前（这是最重要的）
-                const aTop = a.top || 0;
-                const bTop = b.top || 0;
-                if (aTop !== bTop) {
-                    return bTop - aTop; // 置顶值大的在前
-                }
-
-                // 为置顶文章也计算热度分数（用于调试显示）
-                if (aTop > 0 || bTop > 0) {
-                    const aPv = a.pv || 0;
-                    const bPv = b.pv || 0;
-                    const aUv = a.uv || 0;
-                    const bUv = b.uv || 0;
-
-                    if (aPv > 0 || bPv > 0 || aUv > 0 || bUv > 0) {
-                        const aViews = aPv + aUv * 0.5;
-                        const bViews = bPv + bUv * 0.5;
-                        (a as any)._hotScore = aViews.toFixed(1);
-                        (b as any)._hotScore = bViews.toFixed(1);
-
-                        // 置顶文章内部按热度排序
-                        if (aTop === bTop && Math.abs(aViews - bViews) > 0.1) {
-                            return bViews - aViews;
-                        }
-                    }
-                }
-
-                // 第二优先级：根据排序类型进行排序
-                switch (sortType) {
-                    case 'latest':
-                        // 最新排序：创建时间降序
-                        const aTime = new Date(a.createdAt).getTime();
-                        const bTime = new Date(b.createdAt).getTime();
-                        if (aTime !== bTime) {
-                            return bTime - aTime;
-                        }
-                        // 时间相同时按ID降序
-                        return b.id - a.id;
-
-                    case 'popular':
-                        // 智能热度排序算法 - 优先使用真实浏览量数据
-                        // 1. 检查是否有真实的浏览量数据
-                        const aPv = a.pv || 0;
-                        const bPv = b.pv || 0;
-                        const aUv = a.uv || 0;
-                        const bUv = b.uv || 0;
-
-                        // 检查是否有任何真实的浏览量数据
-                        const hasRealViewData = aPv > 0 || bPv > 0 || aUv > 0 || bUv > 0;
-
-                        if (hasRealViewData) {
-                            // 使用真实浏览量数据进行排序
-                            const aViews = aPv + aUv * 0.5; // pv权重更高
-                            const bViews = bPv + bUv * 0.5;
-
-                            if (Math.abs(aViews - bViews) > 0.1) {
-                                return bViews - aViews;
-                            }
-                            // 浏览量相同时按创建时间排序
-                            const aTimeForViews = new Date(a.createdAt).getTime();
-                            const bTimeForViews = new Date(b.createdAt).getTime();
-                            return bTimeForViews - aTimeForViews;
-                        }
-
-                        // 2. 智能热度算法：综合多个指标
-                        const aCreated = new Date(a.createdAt).getTime();
-                        const bCreated = new Date(b.createdAt).getTime();
-                        const aUpdated = new Date(a.updatedAt).getTime();
-                        const bUpdated = new Date(b.updatedAt).getTime();
-
-                        // 计算文章活跃度（更新频率）
-                        const aActivity = aUpdated - aCreated;
-                        const bActivity = bUpdated - bCreated;
-
-                        // 修复热度算法：更合理的计算方式
-                        const now = Date.now();
-
-                        // 1. 时间衰减因子（30天内线性衰减）
-                        const daysSinceCreated_a = (now - aCreated) / (24 * 60 * 60 * 1000);
-                        const daysSinceCreated_b = (now - bCreated) / (24 * 60 * 60 * 1000);
-                        const aTimeFactor = Math.max(0, Math.min(1, (30 - daysSinceCreated_a) / 30));
-                        const bTimeFactor = Math.max(0, Math.min(1, (30 - daysSinceCreated_b) / 30));
-
-                        // 2. ID权重（归一化到0-1范围）
-                        const maxId = Math.max(a.id, b.id, 25); // 假设最大ID约为25
-                        const aIdFactor = a.id / maxId;
-                        const bIdFactor = b.id / maxId;
-
-                        // 3. 活跃度因子（更新频率，归一化）
-                        const maxActivity = 7 * 24 * 60 * 60 * 1000; // 7天
-                        const aActivityFactor = Math.min(1, aActivity / maxActivity);
-                        const bActivityFactor = Math.min(1, bActivity / maxActivity);
-
-                        // 综合热度分数计算（确保在0-1范围内）
-                        const aHotScore = (
-                            aTimeFactor * 0.5 +      // 时间新旧程度 50%
-                            aIdFactor * 0.3 +        // ID权重 30%
-                            aActivityFactor * 0.2    // 活跃度 20%
-                        );
-
-                        const bHotScore = (
-                            bTimeFactor * 0.5 +
-                            bIdFactor * 0.3 +
-                            bActivityFactor * 0.2
-                        );
-
-                        // 保存热度分数用于调试
-                        (a as any)._hotScore = aHotScore.toFixed(3);
-                        (b as any)._hotScore = bHotScore.toFixed(3);
-
-                        if (Math.abs(aHotScore - bHotScore) > 0.001) {
-                            return bHotScore - aHotScore;
-                        }
-
-                        // 分数相同时按ID降序
-                        return b.id - a.id;
-
-                    case 'oldest':
-                        // 倒序排序：创建时间升序
-                        const aTimeOld = new Date(a.createdAt).getTime();
-                        const bTimeOld = new Date(b.createdAt).getTime();
-                        if (aTimeOld !== bTimeOld) {
-                            return aTimeOld - bTimeOld;
-                        }
-                        // 时间相同时按ID升序
-                        return a.id - b.id;
-
-                    default:
-                        return 0;
-                }
-            });
-
-
-            return sorted;
-
-        } catch (error) {
-            return currentFeeds; // 发生错误时返回原始数据
-        }
-    }, [feedsData, listState, sortType]);
 
     // 缓存Hook自动处理数据获取，无需手动fetchFeeds函数
 
-    // 前端分页逻辑 - 对排序后的数据进行分页
-    const paginatedFeeds = React.useMemo(() => {
-        if (!sortedFeeds.length) return [];
+    // 直接使用服务端返回的数据，无需前端分页
+    const paginatedFeeds = sortedFeeds;
 
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedData = sortedFeeds.slice(startIndex, endIndex);
-
-        return paginatedData;
-    }, [sortedFeeds, page, limit]);
-
-    // 计算总页数
+    // 使用服务端返回的分页信息
     const totalPages = React.useMemo(() => {
-        if (!sortedFeeds.length) return 1;
-        return Math.ceil(sortedFeeds.length / limit);
-    }, [sortedFeeds.length, limit]);
+        if (!feedsData?.size) return 1;
+        return Math.ceil(feedsData.size / limit);
+    }, [feedsData?.size, limit]);
     
     React.useEffect(() => {
         const key = `${query.get("type")} ${query.get("sort")}`

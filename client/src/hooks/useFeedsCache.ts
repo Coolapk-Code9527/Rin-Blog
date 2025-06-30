@@ -216,7 +216,6 @@ function useEnhancedFeedsCache({
           page: 1,
           limit: batchSize,
           type,
-          lightweight: 'true', // 使用轻量级模式，减少CPU消耗
           ...(sortByTime && { sortByTime: true })
         },
         headers: headersWithAuth()
@@ -263,7 +262,6 @@ function useEnhancedFeedsCache({
                 page: currentPage,
                 limit: batchSize,
                 type,
-                lightweight: 'true', // 使用轻量级模式，减少CPU消耗
                 ...(sortByTime && { sortByTime: true })
               },
               headers: headersWithAuth()
@@ -368,11 +366,10 @@ export function useRecentPostsCache(limit: number = 3) {
 
   const fetcher = useMemo(() => async () => {
     const response = await client.feed.index.get({
-      query: {
-        page: 1,
-        limit,
-        sortByTime: true,
-        lightweight: 'true' // 使用轻量级模式，减少CPU消耗
+      query: { 
+        page: 1, 
+        limit, 
+        sortByTime: true 
       },
       headers: {}
     });
