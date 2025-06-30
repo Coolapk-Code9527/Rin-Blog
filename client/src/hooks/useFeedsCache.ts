@@ -463,9 +463,9 @@ export function useFeedCache(id: string, enabled: boolean = true) {
   }, [id]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 20 * 60 * 1000, // 优化：20分钟缓存（单篇文章内容相对稳定）
+    staleTime: 2 * 60 * 1000, // 缩短为2分钟缓存，让用户能看到更多网络请求
     enabled: enabled && !!id,
-    refetchOnWindowFocus: false // 文章内容不需要频繁刷新
+    refetchOnWindowFocus: true // 启用窗口聚焦刷新，增加网络请求可见性
   });
 }
 
