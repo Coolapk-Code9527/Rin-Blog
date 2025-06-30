@@ -205,11 +205,7 @@ export function FeedService() {
 
                         const feedsData = await db.query.feeds.findMany({
                             where: and(where, cursorCondition),
-                            columns: admin ? undefined : lightweight ? {
-                                content: false,  // lightweight模式下排除content字段，减少数据库IO
-                                draft: false,
-                                listed: false
-                            } : {
+                            columns: admin ? undefined : {
                                 draft: false,
                                 listed: false
                             },
@@ -247,12 +243,13 @@ export function FeedService() {
                                     avatar = cached.avatar;
                                     processedSummary = cached.summary;
                                 } else {
-                                    // 检查lightweight参数，跳过CPU密集操作
+                                    // 检查lightweight参数，优化CPU密集操作
                                     if (lightweight) {
-                                        avatar = undefined;
-                                        processedSummary = summary.length > 0 ? summary : '';
+                                        // lightweight模式：提取avatar，如果summary为空则生成简短摘要（限制长度减少CPU使用）
+                                        avatar = content ? extractImage(content) : undefined;
+                                        processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 150) : '');
                                     } else {
-                                        // 只在缓存未命中时才进行计算，确保content存在
+                                        // 完整模式：进行所有计算，确保content存在
                                         avatar = content ? extractImage(content) : undefined;
                                         processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 300) : '');
                                     }
@@ -294,11 +291,7 @@ export function FeedService() {
                         
                         const feedsData2 = await db.query.feeds.findMany({
                         where: where,
-                        columns: admin ? undefined : lightweight ? {
-                            content: false,  // lightweight模式下排除content字段，减少数据库IO
-                            draft: false,
-                            listed: false
-                        } : {
+                        columns: admin ? undefined : {
                             draft: false,
                             listed: false
                         },
@@ -337,12 +330,13 @@ export function FeedService() {
                                 avatar = cached.avatar;
                                 processedSummary = cached.summary;
                             } else {
-                                // 检查lightweight参数，跳过CPU密集操作
+                                // 检查lightweight参数，优化CPU密集操作
                                 if (lightweight) {
-                                    avatar = undefined;
-                                    processedSummary = summary.length > 0 ? summary : '';
+                                    // lightweight模式：提取avatar，如果summary为空则生成简短摘要（限制长度减少CPU使用）
+                                    avatar = content ? extractImage(content) : undefined;
+                                    processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 150) : '');
                                 } else {
-                                    // 只在缓存未命中时才进行计算，确保content存在
+                                    // 完整模式：进行所有计算，确保content存在
                                     avatar = content ? extractImage(content) : undefined;
                                     processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 300) : '');
                                 }

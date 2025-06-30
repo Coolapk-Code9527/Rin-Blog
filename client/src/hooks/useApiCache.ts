@@ -462,9 +462,9 @@ export function useApiCache<T>(
   }, [fetchData]);
 
   /**
-   * 使缓存失效
+   * 使缓存失效并重新获取数据
    */
-  const invalidate = useCallback(() => {
+  const invalidate = useCallback(async () => {
     try {
       // 安全地移除sessionStorage中的缓存
       if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -481,10 +481,15 @@ export function useApiCache<T>(
       if (setError) {
         setError(null);
       }
+
+      // 立即重新获取数据
+      if (enabled && mountedRef.current) {
+        await fetchData(false);
+      }
     } catch (error) {
       console.warn('Error during cache invalidation:', error);
     }
-  }, [key]);
+  }, [key, enabled, fetchData]);
 
   // 初始化数据加载
   useEffect(() => {
