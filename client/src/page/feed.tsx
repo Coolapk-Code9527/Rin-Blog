@@ -28,7 +28,7 @@ import { RecentPosts } from "../components/recent_posts";
 import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
-import { useFeedCache } from "../hooks/useFeedsCache";
+import { useFeedCache, useCommentsCache } from "../hooks/useFeedsCache";
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 import { NotFoundPage } from './not-found';
 
@@ -60,6 +60,10 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
 
   // 使用缓存Hook替代直接API调用
   const { data: feed, loading, error, invalidate: invalidateFeedCache } = useFeedCache(id, !!id);
+
+  // 延迟加载状态，用于优化API调用时序
+  const [showAdjacentSection, setShowAdjacentSection] = React.useState(false);
+  const [showComments, setShowComments] = React.useState(false);
 
   const [headImage, setHeadImage] = React.useState<string>();
 
@@ -157,10 +161,27 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
       if (setContentReady) {
         setContentReady(true);
       }
+
+      // 延迟加载相邻文章和评论，减少并发API调用压力
+      const adjacentTimer = setTimeout(() => {
+        setShowAdjacentSection(true);
+      }, 100); // 延迟100ms加载相邻文章
+
+      const commentsTimer = setTimeout(() => {
+        setShowComments(true);
+      }, 200); // 延迟200ms加载评论
+
+      // 清理函数，防止内存泄漏
+      return () => {
+        clearTimeout(adjacentTimer);
+        clearTimeout(commentsTimer);
+      };
     } else {
       // 重置状态
       setHeadImage(undefined);
       setContentReadyState(false);
+      setShowAdjacentSection(false);
+      setShowComments(false);
       if (setContentReady) {
         setContentReady(false);
       }
@@ -493,8 +514,10 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                 </div>
               </div>
             </article>
-            <AdjacentSection id={id} setError={() => {}} />
-            {feed && <Comments id={`${feed.id}`} />}
+            {/* 延迟加载相邻文章，减少并发API调用压力 */}
+            {showAdjacentSection && <AdjacentSection id={id} setError={() => {}} />}
+            {/* 延迟加载评论，减少并发API调用压力 */}
+            {showComments && feed && <Comments id={`${feed.id}`} />}
           </main>
         )}
         {/* 侧边栏，仅大屏显示，且不是404页面时才显示 */}
@@ -877,51 +900,27 @@ type Comment = {
 
 function Comments({ id }: { id: string }) {
   const config = React.useContext(ClientConfigContext);
-  const [comments, setComments] = React.useState<Comment[]>([]);
-  const [error, setError] = React.useState<string>();
-  const [loading, setLoading] = React.useState(false);
-  const ref = React.useRef("");
   const { t } = useTranslation();
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [totalComments, setTotalComments] = React.useState(0);
   const commentsPerPage = 5; // 每页显示5条评论
+
+  // 使用缓存Hook替代直接API调用
+  const { data: comments = [], loading, error, refetch } = useCommentsCache(id, !!id);
+
+  const totalComments = comments.length;
 
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
-  function loadComments() {
-    setLoading(true);
-    setError(undefined);
-    client.feed
-      .comment({ feed: id })
-      .get({
-        headers: headersWithAuth(),
-      })
-      .then(({ data, error }) => {
-        setLoading(false);
-        if (error) {
-          setError(error.value as string);
-        } else if (data && Array.isArray(data)) {
-          setComments(data);
-          setTotalComments(data.length);
-          // 如果当前页已经超出总页数，设置为第1页
-          const totalPages = Math.ceil(data.length / commentsPerPage);
-          if (currentPage > totalPages && totalPages > 0) {
-            setCurrentPage(1);
-          }
-        }
-      })
-      .catch((err) => {
-        setLoading(false);
-        setError(String(err));
-      });
-  }
-  
+  // 当评论数据变化时，检查当前页是否超出范围
   React.useEffect(() => {
-    if (ref.current == id) return;
-    loadComments();
-    ref.current = id;
-  }, [id]);
+    if (comments.length > 0) {
+      const totalPages = Math.ceil(comments.length / commentsPerPage);
+      if (currentPage > totalPages && totalPages > 0) {
+        setCurrentPage(1);
+      }
+    }
+  }, [comments.length, commentsPerPage]); // 移除currentPage依赖，避免无限循环
 
   // 获取当前页的评论
   const currentComments = comments.slice(
@@ -946,7 +945,7 @@ function Comments({ id }: { id: string }) {
       {config.get<boolean>('comment.enabled') && (
         <div id="comments-section" className="w-full flex flex-col justify-center items-center space-y-5">
           
-          <CommentInput id={id} onRefresh={loadComments} />
+          <CommentInput id={id} onRefresh={refetch} />
           
           {loading ? (
             <div className={`w-full ${glassClass} rounded-2xl p-8 flex justify-center shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}>
@@ -964,7 +963,7 @@ function Comments({ id }: { id: string }) {
                 <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{error}</h3>
                 <button
                   className="mt-2 bg-theme text-white px-4 py-2 rounded-2xl hover:bg-theme-hover transition-colors flex items-center text-sm"
-                  onClick={loadComments}
+                  onClick={refetch}
                 >
                   <i className="ri-refresh-line mr-1"></i>
                   {t("reload")}
@@ -984,7 +983,7 @@ function Comments({ id }: { id: string }) {
                         </h3>
                         <button
                           className="inline-flex items-center px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200"
-                          onClick={loadComments}
+                          onClick={refetch}
                         >
                           <i className="ri-refresh-line mr-2"></i>
                           {t("reload")}
@@ -997,7 +996,7 @@ function Comments({ id }: { id: string }) {
                         <div key={comment.id != null ? comment.id : idx}>
                           <CommentItem
                             comment={comment}
-                            onRefresh={loadComments}
+                            onRefresh={refetch}
                             feedId={id}
                           />
                         </div>

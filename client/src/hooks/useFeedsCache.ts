@@ -536,6 +536,65 @@ export function useSearchCache(keyword: string, page: number = 1, limit: number 
 }
 
 /**
+ * 相邻文章缓存Hook
+ *
+ * 用于文章详情页的相邻文章数据获取
+ */
+export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
+  const cacheKey = `adjacent_feeds_id:${id}`;
+
+  const fetcher = useMemo(() => async () => {
+    const response = await client.feed.adjacent({ id }).get();
+
+    if (response.error) {
+      throw new Error(response.error.value as string);
+    }
+
+    if (!response.data || typeof response.data === 'string') {
+      throw new Error('Failed to fetch adjacent feeds');
+    }
+
+    return response.data;
+  }, [id]);
+
+  return useApiCache(cacheKey, fetcher, {
+    staleTime: 15 * 60 * 1000, // 15分钟缓存（相邻文章关系相对稳定）
+    enabled: enabled && !!id,
+    refetchOnWindowFocus: false // 相邻文章不需要频繁刷新
+  });
+}
+
+/**
+ * 评论缓存Hook
+ *
+ * 用于文章详情页的评论数据获取
+ */
+export function useCommentsCache(feedId: string, enabled: boolean = true) {
+  const cacheKey = `comments_feed_id:${feedId}`;
+
+  const fetcher = useMemo(() => async () => {
+    // 评论获取不需要认证头，未登录用户也应该能看到评论
+    const response = await client.feed.comment({ feed: feedId }).get();
+
+    if (response.error) {
+      throw new Error(response.error.value as string);
+    }
+
+    if (!response.data || !Array.isArray(response.data)) {
+      throw new Error('Failed to fetch comments');
+    }
+
+    return response.data;
+  }, [feedId]);
+
+  return useApiCache(cacheKey, fetcher, {
+    staleTime: 5 * 60 * 1000, // 5分钟缓存（评论更新频率较高）
+    enabled: enabled && !!feedId,
+    refetchOnWindowFocus: false // 评论不需要频繁刷新
+  });
+}
+
+/**
  * 标签列表缓存Hook
  *
  * 用于标签页面的标签列表

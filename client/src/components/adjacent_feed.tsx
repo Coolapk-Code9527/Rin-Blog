@@ -1,27 +1,13 @@
 import React, { useState } from "react";
-import {client} from "../main.tsx";
 import {timeago} from "../utils/timeago.ts";
 import {Link} from "wouter";
 import {useTranslation} from "react-i18next";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
+import { useAdjacentFeedsCache } from "../hooks/useFeedsCache";
+import { AdjacentFeed, AdjacentFeeds } from "../types/api";
 
-export type AdjacentFeed = {
-    id: number;
-    title: string | null;
-    summary: string;
-    hashtags: {
-        id: number;
-        name: string;
-    }[];
-    createdAt: Date;
-    updatedAt: Date;
-    avatar?: string;
-};
-export type AdjacentFeeds = {
-    nextFeed: AdjacentFeed | null;
-    previousFeed: AdjacentFeed | null;
-};
+// 类型定义已从types/api.ts导入，移除重复定义
 
 // 获取文章缩略图的优先级逻辑（功能恢复版本）
 const getThumbnailUrl = (article: any): string | null => {
@@ -79,54 +65,41 @@ const extractImageUrl = (content: string): string | null => {
 // 默认图片常量已移除，现在使用占位符系统
 
 export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
-    const [adjacentFeeds, setAdjacentFeeds] = React.useState<AdjacentFeeds>();
-    const [thumbnails, setThumbnails] = React.useState<Record<string, string>>({});
-    const [loading, setLoading] = React.useState<boolean>(true);
     const {t} = useTranslation();
+
+    // 使用缓存Hook替代直接API调用
+    const { data: adjacentFeeds, loading, error } = useAdjacentFeedsCache(id, !!id);
+
+    // 处理错误
+    React.useEffect(() => {
+        if (error) {
+            setError(error);
+        }
+    }, [error, setError]);
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
-    React.useEffect(() => {
-        setLoading(true);
-        client.feed
-            .adjacent({id})
-            .get()
-            .then(async ({data, error}) => {
-                if (error) {
-                    setError(error.value as string);
-                    setLoading(false);
-                } else if (data && typeof data !== "string") {
-                    setAdjacentFeeds(data);
-                    
-                    // 为每个相邻文章获取缩略图
-                    const extractedThumbnails: Record<string, string> = {};
-                    
-                    // 处理上一篇文章（性能优化：移除fetchFullArticle调用）
-                    if (data.previousFeed) {
-                        let thumbnail = getThumbnailUrl(data.previousFeed);
-                        // 移除fetchFullArticle调用以避免CPU超时
-                        // 如果没有缩略图，将使用占位符显示
-                        extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || null;
-                    }
-                    
-                    // 处理下一篇文章（性能优化：移除fetchFullArticle调用）
-                    if (data.nextFeed) {
-                        let thumbnail = getThumbnailUrl(data.nextFeed);
-                        // 移除fetchFullArticle调用以避免CPU超时
-                        // 如果没有缩略图，将使用占位符显示
-                        extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || null;
-                    }
-                    
-                    setThumbnails(extractedThumbnails);
-                }
-                setLoading(false);
-            })
-            .catch((err) => {
-                setError("获取相邻文章信息失败");
-                setLoading(false);
-            });
-    }, [id, setError]);
+    // 为每个相邻文章获取缩略图
+    const thumbnails = React.useMemo(() => {
+        if (!adjacentFeeds) return {};
+
+        const extractedThumbnails: Record<string, string | null> = {};
+
+        // 处理上一篇文章
+        if (adjacentFeeds.previousFeed) {
+            let thumbnail = getThumbnailUrl(adjacentFeeds.previousFeed);
+            extractedThumbnails[`prev-${adjacentFeeds.previousFeed.id}`] = thumbnail || null;
+        }
+
+        // 处理下一篇文章
+        if (adjacentFeeds.nextFeed) {
+            let thumbnail = getThumbnailUrl(adjacentFeeds.nextFeed);
+            extractedThumbnails[`next-${adjacentFeeds.nextFeed.id}`] = thumbnail || null;
+        }
+
+        return extractedThumbnails;
+    }, [adjacentFeeds]);
     
     return (
         <div className="w-full mt-6 mb-6">
@@ -156,7 +129,7 @@ export function AdjacentCard({
 }: {
     data: AdjacentFeed | null | undefined,
     type: "previous" | "next",
-    thumbnail: string | undefined,
+    thumbnail: string | null | undefined,
     loading: boolean
 }) {
     const direction = type === "previous" ? "text-start" : "text-end";
