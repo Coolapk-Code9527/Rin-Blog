@@ -216,6 +216,7 @@ function useEnhancedFeedsCache({
           page: 1,
           limit: batchSize,
           type,
+          lightweight: true,  // 添加lightweight参数，避免获取content字段
           ...(sortByTime && { sortByTime: true })
         },
         headers: headersWithAuth()
@@ -262,6 +263,7 @@ function useEnhancedFeedsCache({
                 page: currentPage,
                 limit: batchSize,
                 type,
+                lightweight: true,  // 添加lightweight参数，避免获取content字段
                 ...(sortByTime && { sortByTime: true })
               },
               headers: headersWithAuth()

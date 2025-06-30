@@ -205,7 +205,11 @@ export function FeedService() {
 
                         const feedsData = await db.query.feeds.findMany({
                             where: and(where, cursorCondition),
-                            columns: admin ? undefined : {
+                            columns: admin ? undefined : lightweight ? {
+                                content: false,  // lightweight模式下排除content字段，减少数据库IO
+                                draft: false,
+                                listed: false
+                            } : {
                                 draft: false,
                                 listed: false
                             },
@@ -248,9 +252,9 @@ export function FeedService() {
                                         avatar = undefined;
                                         processedSummary = summary.length > 0 ? summary : '';
                                     } else {
-                                        // 只在缓存未命中时才进行计算
-                                        avatar = extractImage(content);
-                                        processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+                                        // 只在缓存未命中时才进行计算，确保content存在
+                                        avatar = content ? extractImage(content) : undefined;
+                                        processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 300) : '');
                                     }
 
                                     // 缓存预计算结果
@@ -290,7 +294,11 @@ export function FeedService() {
                         
                         const feedsData2 = await db.query.feeds.findMany({
                         where: where,
-                        columns: admin ? undefined : {
+                        columns: admin ? undefined : lightweight ? {
+                            content: false,  // lightweight模式下排除content字段，减少数据库IO
+                            draft: false,
+                            listed: false
+                        } : {
                             draft: false,
                             listed: false
                         },
@@ -334,9 +342,9 @@ export function FeedService() {
                                     avatar = undefined;
                                     processedSummary = summary.length > 0 ? summary : '';
                                 } else {
-                                    // 只在缓存未命中时才进行计算
-                                    avatar = extractImage(content);
-                                    processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+                                    // 只在缓存未命中时才进行计算，确保content存在
+                                    avatar = content ? extractImage(content) : undefined;
+                                    processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 300) : '');
                                 }
 
                                 // 缓存预计算结果
