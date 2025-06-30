@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { useApiCache } from './useApiCache';
 import { client } from '../main';
 import { headersWithAuth } from '../utils/auth';
+import { ApiTypeChecker } from '../types/api';
 
 /**
  * 文章类型枚举
@@ -181,8 +182,6 @@ function useEnhancedFeedsCache({
 }) {
   // 组件卸载保护机制
   const mountedRef = useRef(true);
-  // 并发保护机制
-  const fetchingRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -200,20 +199,15 @@ function useEnhancedFeedsCache({
 
   // 分批获取的fetcher函数
   const fetcher = useMemo(() => async (): Promise<FeedsData> => {
-    // 并发保护：如果已经在获取中，直接返回空数据
-    if (fetchingRef.current) {
-      return { data: [], size: 0, page: 1, limit: 9999, hasNext: false };
-    }
+    // 注意：不在这里做并发保护，交给useApiCache处理
+    // 避免双重保护导致的冲突
 
-    fetchingRef.current = true;
-
-    try {
       const batchSize = 10; // 当前后端限制为10条（测试环境）
-      let allData: any[] = [];
-      let totalSize = 0;
-      let hasMore = true;
-      let failedBatches = 0; // 记录失败的批次数量
-      const maxFailures = 3; // 最大允许失败次数
+    let allData: any[] = [];
+    let totalSize = 0;
+    let hasMore = true;
+    let failedBatches = 0; // 记录失败的批次数量
+    const maxFailures = 3; // 最大允许失败次数
 
     // 第一批数据 - 立即返回，提供快速首屏体验
     try {
@@ -227,11 +221,16 @@ function useEnhancedFeedsCache({
         headers: headersWithAuth()
       });
 
+      // 使用类型检查器验证响应
+      if (!ApiTypeChecker.isValidTreatyResponse(firstResponse)) {
+        throw new Error('Invalid API response structure');
+      }
+
       if (firstResponse.error) {
         throw new Error(firstResponse.error.value as string);
       }
 
-      if (firstResponse.data && typeof firstResponse.data !== 'string') {
+      if (firstResponse.data && !ApiTypeChecker.isStringResponse(firstResponse)) {
         const firstBatch = firstResponse.data as any;
         allData = Array.isArray(firstBatch.data) ? [...firstBatch.data] : [];
         totalSize = typeof firstBatch.size === 'number' ? firstBatch.size : allData.length;
@@ -320,14 +319,6 @@ function useEnhancedFeedsCache({
           }
         }
       }
-    } catch (error) {
-      // 生产环境：记录错误用于监控
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Enhanced cache failed to fetch data:', error);
-      }
-      throw error;
-    }
-
       return {
         data: allData,
         size: Math.max(totalSize, allData.length),
@@ -335,13 +326,17 @@ function useEnhancedFeedsCache({
         limit: 9999,
         hasNext: false
       };
-    } finally {
-      fetchingRef.current = false;
+    } catch (error) {
+      // 生产环境：记录错误用于监控
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Enhanced cache failed to fetch data:', error);
+      }
+      throw error;
     }
   }, [type, sortByTime, enabled]);
 
   // 使用现有的useApiCache进行缓存管理
-  const result = useApiCache(cacheKey, fetcher, {
+  const result = useApiCache<FeedsData>(cacheKey, fetcher, {
     staleTime,
     enabled,
     refetchOnWindowFocus: true,
