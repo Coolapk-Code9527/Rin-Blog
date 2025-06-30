@@ -28,7 +28,7 @@ import { RecentPosts } from "../components/recent_posts";
 import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
-import { useFeedCache } from "../hooks/useFeedsCache";
+import { useFeedCache, useCommentsCache } from "../hooks/useFeedsCache";
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 import { NotFoundPage } from './not-found';
 
@@ -877,51 +877,33 @@ type Comment = {
 
 function Comments({ id }: { id: string }) {
   const config = React.useContext(ClientConfigContext);
-  const [comments, setComments] = React.useState<Comment[]>([]);
-  const [error, setError] = React.useState<string>();
-  const [loading, setLoading] = React.useState(false);
-  const ref = React.useRef("");
   const { t } = useTranslation();
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [totalComments, setTotalComments] = React.useState(0);
   const commentsPerPage = 5; // 每页显示5条评论
+
+  // 使用缓存Hook替代直接API调用，避免重复请求
+  const { data: comments = [], loading, error, invalidate: invalidateComments } = useCommentsCache(id, !!id);
 
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
-  function loadComments() {
-    setLoading(true);
-    setError(undefined);
-    client.feed
-      .comment({ feed: id })
-      .get({
-        headers: headersWithAuth(),
-      })
-      .then(({ data, error }) => {
-        setLoading(false);
-        if (error) {
-          setError(error.value as string);
-        } else if (data && Array.isArray(data)) {
-          setComments(data);
-          setTotalComments(data.length);
-          // 如果当前页已经超出总页数，设置为第1页
-          const totalPages = Math.ceil(data.length / commentsPerPage);
-          if (currentPage > totalPages && totalPages > 0) {
-            setCurrentPage(1);
-          }
-        }
-      })
-      .catch((err) => {
-        setLoading(false);
-        setError(String(err));
-      });
-  }
-  
+  // 计算总评论数
+  const totalComments = comments.length;
+
+  // 当评论数据变化时，检查当前页是否超出范围
   React.useEffect(() => {
-    if (ref.current == id) return;
-    loadComments();
-    ref.current = id;
-  }, [id]);
+    if (totalComments > 0) {
+      const totalPages = Math.ceil(totalComments / commentsPerPage);
+      if (currentPage > totalPages) {
+        setCurrentPage(1);
+      }
+    }
+  }, [totalComments, currentPage, commentsPerPage]);
+
+  // 提供给CommentInput的刷新函数
+  const loadComments = React.useCallback(() => {
+    invalidateComments();
+  }, [invalidateComments]);
 
   // 获取当前页的评论
   const currentComments = comments.slice(

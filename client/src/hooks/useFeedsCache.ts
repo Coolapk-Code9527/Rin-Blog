@@ -499,6 +499,37 @@ export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
 }
 
 /**
+ * 评论缓存Hook
+ *
+ * 用于获取文章评论，避免重复请求
+ */
+export function useCommentsCache(feedId: string, enabled: boolean = true) {
+  const cacheKey = `comments_feed:${feedId}`;
+
+  const fetcher = useMemo(() => async () => {
+    const response = await client.feed.comment({ feed: feedId }).get({
+      headers: headersWithAuth()
+    });
+
+    if (response.error) {
+      throw new Error(response.error.value as string);
+    }
+
+    if (!response.data || !Array.isArray(response.data)) {
+      return []; // 返回空数组而不是抛出错误
+    }
+
+    return response.data;
+  }, [feedId]);
+
+  return useApiCache(cacheKey, fetcher, {
+    staleTime: 5 * 60 * 1000, // 5分钟缓存（评论更新频率较高）
+    enabled: enabled && !!feedId,
+    refetchOnWindowFocus: false // 评论不需要频繁刷新
+  });
+}
+
+/**
  * 标签页面文章缓存Hook
  *
  * 用于标签页面的文章列表
