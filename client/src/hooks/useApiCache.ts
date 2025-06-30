@@ -13,6 +13,107 @@ function generateUniqueTimestamp(): number {
 }
 
 /**
+ * 自定义序列化工具
+ * 正确处理Date对象、函数等特殊类型
+ */
+class CacheSerializer {
+  /**
+   * 序列化数据
+   */
+  static serialize(data: any): string {
+    return JSON.stringify(data, (key, value) => {
+      // 处理Date对象
+      if (value instanceof Date) {
+        return {
+          __type: 'Date',
+          __value: value.toISOString()
+        };
+      }
+
+      // 处理RegExp对象
+      if (value instanceof RegExp) {
+        return {
+          __type: 'RegExp',
+          __value: value.toString()
+        };
+      }
+
+      // 处理函数（通常不应该缓存，但提供降级处理）
+      if (typeof value === 'function') {
+        return {
+          __type: 'Function',
+          __value: '[Function]'
+        };
+      }
+
+      // 处理undefined（JSON.stringify会忽略undefined）
+      if (value === undefined) {
+        return {
+          __type: 'undefined',
+          __value: null
+        };
+      }
+
+      return value;
+    });
+  }
+
+  /**
+   * 反序列化数据
+   */
+  static deserialize(jsonString: string): any {
+    try {
+      return JSON.parse(jsonString, (key, value) => {
+        // 检查是否是特殊类型标记
+        if (value && typeof value === 'object' && value.__type) {
+          switch (value.__type) {
+            case 'Date':
+              return new Date(value.__value);
+
+            case 'RegExp':
+              // 解析RegExp字符串
+              const match = value.__value.match(/^\/(.*)\/([gimuy]*)$/);
+              if (match) {
+                return new RegExp(match[1], match[2]);
+              }
+              return new RegExp(value.__value);
+
+            case 'Function':
+              // 函数无法恢复，返回空函数
+              return () => {};
+
+            case 'undefined':
+              return undefined;
+
+            default:
+              return value;
+          }
+        }
+
+        return value;
+      });
+    } catch (error) {
+      console.warn('Failed to deserialize cache data:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 验证序列化数据的完整性
+   */
+  static validateSerialization(original: any, serialized: string): boolean {
+    try {
+      const deserialized = this.deserialize(serialized);
+
+      // 简单的深度比较（不完美，但足够用于缓存验证）
+      return JSON.stringify(original) === JSON.stringify(deserialized);
+    } catch {
+      return false;
+    }
+  }
+}
+
+/**
  * API缓存配置接口
  */
 interface ApiCacheConfig {
@@ -112,7 +213,14 @@ export function useApiCache<T>(
       const cached = sessionStorage.getItem(`api_cache_${key}`);
       if (!cached) return null;
 
-      const cacheData: CacheData<T> = JSON.parse(cached);
+      const cacheData: CacheData<T> = CacheSerializer.deserialize(cached);
+
+      // 检查反序列化是否成功
+      if (!cacheData) {
+        sessionStorage.removeItem(`api_cache_${key}`);
+        return null;
+      }
+
       const now = Date.now();
 
       // 检查缓存是否过期
@@ -141,8 +249,8 @@ export function useApiCache<T>(
         const storageKey = sessionStorage.key(i);
         if (storageKey?.startsWith('api_cache_')) {
           try {
-            const cached = JSON.parse(sessionStorage.getItem(storageKey) || '');
-            if (now - cached.timestamp > cached.cacheTime) {
+            const cached = CacheSerializer.deserialize(sessionStorage.getItem(storageKey) || '');
+            if (!cached || now - cached.timestamp > cached.cacheTime) {
               keysToRemove.push(storageKey);
             }
           } catch {
@@ -196,8 +304,12 @@ export function useApiCache<T>(
             const storageKey = sessionStorage.key(i);
             if (storageKey?.startsWith('api_cache_')) {
               try {
-                const cached = JSON.parse(sessionStorage.getItem(storageKey) || '');
-                cacheEntries.push({ key: storageKey, timestamp: cached.timestamp });
+                const cached = CacheSerializer.deserialize(sessionStorage.getItem(storageKey) || '');
+                if (cached && cached.timestamp) {
+                  cacheEntries.push({ key: storageKey, timestamp: cached.timestamp });
+                } else {
+                  sessionStorage.removeItem(storageKey);
+                }
               } catch {
                 sessionStorage.removeItem(storageKey);
               }
@@ -237,7 +349,14 @@ export function useApiCache<T>(
         cacheTime
       };
 
-      const serializedData = JSON.stringify(cacheData);
+      const serializedData = CacheSerializer.serialize(cacheData);
+
+      // 验证序列化完整性（开发环境）
+      if (process.env.NODE_ENV === 'development') {
+        if (!CacheSerializer.validateSerialization(cacheData, serializedData)) {
+          console.warn('Cache serialization validation failed for key:', key);
+        }
+      }
 
       // 确保有足够的存储空间
       if (ensureStorageCapacity(serializedData.length)) {
