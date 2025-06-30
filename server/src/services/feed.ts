@@ -594,10 +594,8 @@ export function FeedService() {
                     ) {
                         if (feed) {
                             const hashtags_flatten = feed.hashtags.map((f: any) => f.hashtag);
-                            const summary =
-                                feed.summary.length > 0
-                                    ? feed.summary
-                                    : markdownToPlainText(feed.content, 300);
+                            // 🔥 优化：避免CPU密集操作，直接使用summary
+                            const summary = feed.summary.length > 0 ? feed.summary : "暂无摘要";
                             const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                             const cacheData = {
                             id: feed.id,
@@ -624,6 +622,10 @@ export function FeedService() {
                                     and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
                                     lt(feeds.createdAt, created_at),
                                 ),
+                                // 🔥 关键修改：排除content字段，避免CPU密集处理
+                                columns: {
+                                    content: false
+                                },
                                 orderBy: [desc(feeds.createdAt)],
                                 with: {
                                     hashtags: {
@@ -654,6 +656,10 @@ export function FeedService() {
                                     and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
                                     gt(feeds.createdAt, created_at),
                                 ),
+                                // 🔥 关键修改：排除content字段，避免CPU密集处理
+                                columns: {
+                                    content: false
+                                },
                                 orderBy: [asc(feeds.createdAt)],
                                 with: {
                                     hashtags: {
