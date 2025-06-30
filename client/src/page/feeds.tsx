@@ -69,7 +69,7 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
                         }, 150);
                     }
                 },
-                { threshold: 0.1, rootMargin: '200px 0px' }
+                { threshold: 0.1, rootMargin: '50px 0px' } // 减少预加载范围，避免过度渲染
             );
 
             if (cardRef.current && observer) {

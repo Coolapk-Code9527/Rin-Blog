@@ -382,12 +382,12 @@ export function useRecentPostsCache(limit: number = 3) {
       throw new Error('Invalid response data');
     }
 
-    // 转换数据格式，匹配现有组件期望的格式
+    // 转换数据格式，只获取必要字段，避免CPU密集的content处理
     return response.data.data.map((item: any) => ({
       id: item.id,
       title: item.title,
       createdAt: new Date(item.createdAt),
-      content: item.content || "",
+      // 移除content字段，避免触发服务端CPU密集操作
       summary: item.summary || "",
       avatar: item.avatar || "",
       thumbUrl: item.thumbUrl || ""

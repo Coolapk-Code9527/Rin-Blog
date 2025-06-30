@@ -11,7 +11,7 @@ interface Post {
   id: number;
   title: string | null;
   createdAt: Date;
-  content?: string;
+  // 移除content字段，避免CPU密集操作
   avatar?: string;
   summary?: string;
   thumbUrl?: string; // 缩略图URL
@@ -47,10 +47,8 @@ export function RecentPosts() {
       }
     }
 
-    // 4. 从完整内容中提取图片（恢复重要的fallback）
-    if (post.content) {
-      return extractImageFromContent(post.content);
-    }
+    // 4. 移除content字段的使用，避免CPU密集操作
+    // 如果没有找到图片，返回null使用占位符
 
     return null;
   };
