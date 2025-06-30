@@ -111,26 +111,16 @@ export const useThemeOptimization = () => {
 
     window.addEventListener('colorSchemeChange', handleThemeChange);
 
-    // 监听DOM属性变化（备用方案）- 添加节流优化
-    let mutationThrottleTimer: NodeJS.Timeout | null = null;
+    // 监听DOM属性变化（备用方案）
     const observer = new MutationObserver((mutations) => {
-      // 检查是否有相关的属性变化
-      const hasRelevantChanges = mutations.some((mutation) =>
-        mutation.type === 'attributes' &&
-        (mutation.attributeName === 'data-color-mode' || mutation.attributeName === 'class')
-      );
-
-      if (hasRelevantChanges) {
-        // 节流处理：100ms内只执行一次
-        if (mutationThrottleTimer) {
-          clearTimeout(mutationThrottleTimer);
-        }
-
-        mutationThrottleTimer = setTimeout(() => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.type === 'attributes' &&
+          (mutation.attributeName === 'data-color-mode' || mutation.attributeName === 'class')
+        ) {
           updateThemeInfo();
-          mutationThrottleTimer = null;
-        }, 100);
-      }
+        }
+      });
     });
 
     observer.observe(document.documentElement, {
@@ -141,12 +131,6 @@ export const useThemeOptimization = () => {
     return () => {
       window.removeEventListener('colorSchemeChange', handleThemeChange);
       observer.disconnect();
-
-      // 清理节流定时器
-      if (mutationThrottleTimer) {
-        clearTimeout(mutationThrottleTimer);
-        mutationThrottleTimer = null;
-      }
     };
   }, []);
 
