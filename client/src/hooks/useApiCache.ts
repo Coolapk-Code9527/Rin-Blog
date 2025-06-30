@@ -1,5 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+// 全局时间戳计数器，确保唯一性
+let timestampCounter = 0;
+
+/**
+ * 生成唯一的高精度时间戳
+ */
+function generateUniqueTimestamp(): number {
+  const now = performance.now() + performance.timeOrigin;
+  const uniqueTimestamp = now + (timestampCounter++ / 1000000); // 添加微秒级别的递增
+  return uniqueTimestamp;
+}
+
 /**
  * API缓存配置接口
  */
@@ -118,21 +130,125 @@ export function useApiCache<T>(
   }, [key]);
 
   /**
+   * 检查并清理过期缓存
+   */
+  const cleanExpiredCache = useCallback(() => {
+    try {
+      const now = Date.now();
+      const keysToRemove: string[] = [];
+
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const storageKey = sessionStorage.key(i);
+        if (storageKey?.startsWith('api_cache_')) {
+          try {
+            const cached = JSON.parse(sessionStorage.getItem(storageKey) || '');
+            if (now - cached.timestamp > cached.cacheTime) {
+              keysToRemove.push(storageKey);
+            }
+          } catch {
+            keysToRemove.push(storageKey);
+          }
+        }
+      }
+
+      keysToRemove.forEach(key => sessionStorage.removeItem(key));
+      return keysToRemove.length;
+    } catch (error) {
+      console.warn('Failed to clean expired cache:', error);
+      return 0;
+    }
+  }, []);
+
+  /**
+   * 检查存储容量并清理
+   */
+  const ensureStorageCapacity = useCallback((dataSize: number) => {
+    const maxSize = 4 * 1024 * 1024; // 4MB限制，留出安全边际
+
+    try {
+      // 估算当前使用量
+      let currentSize = 0;
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key) {
+          currentSize += (sessionStorage.getItem(key) || '').length;
+        }
+      }
+
+      // 如果加上新数据会超出限制，先清理过期缓存
+      if (currentSize + dataSize > maxSize) {
+        cleanExpiredCache();
+
+        // 重新计算大小
+        currentSize = 0;
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key) {
+            currentSize += (sessionStorage.getItem(key) || '').length;
+          }
+        }
+
+        // 如果还是超出，实施LRU清理
+        if (currentSize + dataSize > maxSize) {
+          const cacheEntries: Array<{key: string, timestamp: number}> = [];
+
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const storageKey = sessionStorage.key(i);
+            if (storageKey?.startsWith('api_cache_')) {
+              try {
+                const cached = JSON.parse(sessionStorage.getItem(storageKey) || '');
+                cacheEntries.push({ key: storageKey, timestamp: cached.timestamp });
+              } catch {
+                sessionStorage.removeItem(storageKey);
+              }
+            }
+          }
+
+          // 按时间戳排序，移除最旧的缓存
+          cacheEntries.sort((a, b) => a.timestamp - b.timestamp);
+
+          for (const entry of cacheEntries) {
+            sessionStorage.removeItem(entry.key);
+            currentSize -= (sessionStorage.getItem(entry.key) || '').length;
+
+            if (currentSize + dataSize <= maxSize) {
+              break;
+            }
+          }
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.warn('Failed to ensure storage capacity:', error);
+      return false;
+    }
+  }, [cleanExpiredCache]);
+
+  /**
    * 设置缓存数据
    */
   const setCachedData = useCallback((newData: T) => {
     try {
       const cacheData: CacheData<T> = {
         data: newData,
-        timestamp: Date.now(),
+        timestamp: generateUniqueTimestamp(),
         staleTime,
         cacheTime
       };
-      sessionStorage.setItem(`api_cache_${key}`, JSON.stringify(cacheData));
+
+      const serializedData = JSON.stringify(cacheData);
+
+      // 确保有足够的存储空间
+      if (ensureStorageCapacity(serializedData.length)) {
+        sessionStorage.setItem(`api_cache_${key}`, serializedData);
+      } else {
+        console.warn('Unable to cache data: insufficient storage capacity');
+      }
     } catch (error) {
       console.warn('Failed to cache data:', error);
     }
-  }, [key, staleTime, cacheTime]);
+  }, [key, staleTime, cacheTime, ensureStorageCapacity]);
 
   /**
    * 检查数据是否过期

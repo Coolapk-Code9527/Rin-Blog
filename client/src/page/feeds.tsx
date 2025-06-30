@@ -17,14 +17,15 @@ import { ArticleManagementTabs, type ListState, type SortType } from '../compone
 import { ClientConfigContext } from "../state/config"
 import { getSidebarConfig } from "../utils/sidebarConfig"
 import { useSmartGrid } from "../hooks/useSmartGrid"
-import { useFeedsCache, FeedType as CacheFeedType } from "../hooks/useFeedsCache"
+import { useFeedsCache, FeedType } from "../hooks/useFeedsCache"
 
 import { generateGradient } from '../utils/placeholderUtils';
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety"
+import { ErrorBoundary } from "../components/ErrorBoundary"
+import { useFeedCacheInvalidation } from "../hooks/useCacheEvents"
 
 // FeedsData类型由useFeedsCache Hook提供
-
-type FeedType = 'draft' | 'unlisted' | 'normal'
+// FeedType统一使用useFeedsCache中的定义
 
 // FeedsMap类型不再需要，因为使用缓存Hook
 
@@ -45,31 +46,55 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
 
     React.useEffect(() => {
         let timer: NodeJS.Timeout | null = null;
+        let observer: IntersectionObserver | null = null;
+        let isMounted = true;
 
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                setIsIntersecting(entry.isIntersecting); // 更新元素是否在视口内的状态
-                if (entry.isIntersecting) {
-                    // 当元素进入视口时，设置一个短暂延迟后显示实际内容，以便平滑过渡
-                    timer = setTimeout(() => {
-                        setIsVisible(true);
-                        observer.disconnect();
-                    }, 150); // 添加一个短暂延迟以实现错落有致的加载效果
-                }
-            },
-            { threshold: 0.1, rootMargin: '200px 0px' }
-        );
+        try {
+            observer = new IntersectionObserver(
+                ([entry]) => {
+                    // 检查组件是否仍然挂载
+                    if (!isMounted) return;
 
-        if (cardRef.current) {
-            observer.observe(cardRef.current);
+                    setIsIntersecting(entry.isIntersecting);
+                    if (entry.isIntersecting) {
+                        timer = setTimeout(() => {
+                            if (isMounted) {
+                                setIsVisible(true);
+                                // 一旦显示就断开观察器，避免不必要的监听
+                                if (observer) {
+                                    observer.disconnect();
+                                    observer = null;
+                                }
+                            }
+                        }, 150);
+                    }
+                },
+                { threshold: 0.1, rootMargin: '200px 0px' }
+            );
+
+            if (cardRef.current && observer) {
+                observer.observe(cardRef.current);
+            }
+        } catch (error) {
+            console.warn('Failed to create IntersectionObserver:', error);
+            // 降级：直接显示内容
+            setIsVisible(true);
         }
 
         return () => {
-            // 清理定时器和观察器
+            isMounted = false;
+
+            // 清理定时器
             if (timer) {
                 clearTimeout(timer);
+                timer = null;
             }
-            observer.disconnect();
+
+            // 清理观察器
+            if (observer) {
+                observer.disconnect();
+                observer = null;
+            }
         };
     }, []);
 
@@ -169,7 +194,7 @@ export function FeedsPage() {
         loading,
         invalidate: invalidateFeedsCache
     } = useFeedsCache({
-        type: listState as CacheFeedType,
+        type: listState as FeedType,
         enabled: true
     })
     // 统一的分页配置管理
@@ -180,24 +205,8 @@ export function FeedsPage() {
     // 使用安全的缓存失效机制
     const safeInvalidateFeedsCache = useSafeCacheInvalidation(invalidateFeedsCache);
 
-    // 监听文章发布/更新事件，失效缓存
-    React.useEffect(() => {
-        const handleFeedPublished = () => {
-            safeInvalidateFeedsCache();
-        };
-
-        const handleFeedUpdated = () => {
-            safeInvalidateFeedsCache();
-        };
-
-        window.addEventListener('feed-published', handleFeedPublished);
-        window.addEventListener('feed-updated', handleFeedUpdated);
-
-        return () => {
-            window.removeEventListener('feed-published', handleFeedPublished);
-            window.removeEventListener('feed-updated', handleFeedUpdated);
-        };
-    }, [safeInvalidateFeedsCache]); // 使用安全的缓存失效函数
+    // 使用统一的缓存事件管理器监听文章发布/更新/删除事件
+    useFeedCacheInvalidation(safeInvalidateFeedsCache);
 
     // 获取配置加载状态
     const extendedConfig = useContext(ExtendedConfigContext);
@@ -431,7 +440,26 @@ export function FeedsPage() {
     }, [page])
     
     return (
-        <>
+        <ErrorBoundary
+            fallback={
+                <div className="flex flex-col items-center justify-center p-8 text-center">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+                        <h2 className="text-lg font-semibold text-red-800 mb-2">
+                            文章列表加载出错
+                        </h2>
+                        <p className="text-red-600 mb-4">
+                            页面遇到了一个问题，请刷新页面重试。
+                        </p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+                        >
+                            刷新页面
+                        </button>
+                    </div>
+                </div>
+            }
+        >
             <Helmet>
                 <title>{`${t('article.title')} - ${process.env.NAME}`}</title>
                 <meta property="og:site_name" content={siteName} />
@@ -615,6 +643,6 @@ export function FeedsPage() {
                     </div>
                 </div>
             )}
-        </>
+        </ErrorBoundary>
     )
 }
