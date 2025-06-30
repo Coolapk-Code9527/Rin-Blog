@@ -2,7 +2,7 @@ import {Link} from "wouter";
 import {useTranslation} from "react-i18next";
 import {HashTag} from "./hashtag";
 import {SimplifiedMarkdown} from "./markdown";
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { ViewMode } from "./view_toggle";
 import { generateGradient, generateGradientCSS } from '../utils/placeholderUtils';
@@ -51,8 +51,13 @@ function FeedCardComponent({ id, title, avatar, draft, listed, top, summary, has
         return `${d.getMonth()+1}-${d.getDate()}`;
     };
 
-    // 🔥 移除预加载机制：解决"像静态页面一样跳转"的问题
-    // 让用户点击时有正常的加载体验，避免CPU超时
+    // 预加载文章详情页（当用户悬停卡片时）- 使用useCallback缓存
+    const prefetchArticle = useCallback(() => {
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = `/feed/${id}`;
+        document.head.appendChild(link);
+    }, [id]);
 
     // 使用统一的渐变生成工具 - 已经使用useMemo优化
     const gradientConfig = useMemo(() => generateGradient(id, title), [id, title]);
@@ -85,6 +90,7 @@ function FeedCardComponent({ id, title, avatar, draft, listed, top, summary, has
             <Link href={`/feed/${id}`}
             className={layoutClasses}
             aria-labelledby={`article-title-${id}`}
+            onMouseEnter={prefetchArticle}
             style={{
                 ...cardStyle,
                 boxShadow: top === 1

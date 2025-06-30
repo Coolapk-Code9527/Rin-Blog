@@ -72,8 +72,7 @@ const extractImageUrl = (content: string): string | null => {
     return null;
 };
 
-// 🔥 移除fetchFullArticle函数：避免额外的完整文章API调用
-// 使用占位符或现有的缩略图机制，不再获取完整文章数据
+// 移除fetchFullArticle函数以优化性能，减少不必要的API调用
 
 // 默认图片常量
 const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
@@ -102,17 +101,15 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                     // 为每个相邻文章获取缩略图
                     const extractedThumbnails: Record<string, string> = {};
                     
-                    // 🔥 处理上一篇文章（使用占位符，不再调用完整文章API）
+                    // 处理上一篇文章（性能优化：移除fetchFullArticle调用）
                     if (data.previousFeed) {
-                        let thumbnail = getThumbnailUrl(data.previousFeed);
-                        // 如果没有缩略图，使用null，让组件显示占位符
+                        const thumbnail = getThumbnailUrl(data.previousFeed);
                         extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || null;
                     }
-                    
-                    // 🔥 处理下一篇文章（使用占位符，不再调用完整文章API）
+
+                    // 处理下一篇文章（性能优化：移除fetchFullArticle调用）
                     if (data.nextFeed) {
-                        let thumbnail = getThumbnailUrl(data.nextFeed);
-                        // 如果没有缩略图，使用null，让组件显示占位符
+                        const thumbnail = getThumbnailUrl(data.nextFeed);
                         extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || null;
                     }
                     

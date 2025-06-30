@@ -139,7 +139,7 @@ export function FeedService() {
         .use(setup())
         .group('/feed', (group) =>
             group
-                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime } }) => {
+                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime, lightweight } }) => {
                     const db: DB = getDB();
                     if ((type === 'draft' || type === 'unlisted') && !admin) {
                         set.status = 403;
@@ -207,8 +207,7 @@ export function FeedService() {
                             where: and(where, cursorCondition),
                             columns: admin ? undefined : {
                                 draft: false,
-                                listed: false,
-                                content: false  // 🔥 关键修改：排除content字段，避免CPU密集处理
+                                listed: false
                             },
                             with: {
                                 hashtags: {
@@ -230,9 +229,9 @@ export function FeedService() {
                         const feedIds = feedsData.map(f => f.id);
                         const visitStatsMap = await getBatchVisitStats(db, feedIds);
 
-                        // 🔥 优化：轻量级处理，避免CPU密集操作
+                        // 性能优化：批量预计算avatar和summary，减少重复计算
                         const processedFeeds = await Promise.all(
-                            feedsData.map(async ({ hashtags, summary, ...other }) => {
+                            feedsData.map(async ({ content, hashtags, summary, ...other }) => {
                                 // 检查缓存中是否已有预计算的结果
                                 const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
                                 const cached = await cache.get(cacheKey);
@@ -244,9 +243,15 @@ export function FeedService() {
                                     avatar = cached.avatar;
                                     processedSummary = cached.summary;
                                 } else {
-                                    // 🔥 轻量级处理：基于summary而不是content
-                                    avatar = summary ? extractImage(summary) : undefined;
-                                    processedSummary = summary.length > 0 ? summary : "暂无摘要";
+                                    // 轻量级模式：跳过CPU密集的处理
+                                    if (lightweight === 'true') {
+                                        avatar = undefined; // 跳过图片提取
+                                        processedSummary = summary || ''; // 只使用现有summary，不处理content
+                                    } else {
+                                        // 只在缓存未命中时才进行计算
+                                        avatar = extractImage(content);
+                                        processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+                                    }
 
                                     // 缓存预计算结果
                                     await cache.set(cacheKey, { avatar, summary: processedSummary });
@@ -287,8 +292,7 @@ export function FeedService() {
                         where: where,
                         columns: admin ? undefined : {
                             draft: false,
-                            listed: false,
-                            content: false  // 🔥 关键修改：排除content字段，避免CPU密集处理
+                            listed: false
                         },
                         with: {
                             hashtags: {
@@ -311,9 +315,9 @@ export function FeedService() {
                     const feedIds2 = feedsData2.map(f => f.id);
                     const visitStatsMap2 = await getBatchVisitStats(db, feedIds2);
 
-                    // 🔥 优化：轻量级处理，避免CPU密集操作
+                    // 性能优化：批量预计算avatar和summary，减少重复计算
                     const processedFeeds2 = await Promise.all(
-                        feedsData2.map(async ({ hashtags, summary, ...other }) => {
+                        feedsData2.map(async ({ content, hashtags, summary, ...other }) => {
                             // 检查缓存中是否已有预计算的结果
                             const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
                             const cached = await cache.get(cacheKey);
@@ -325,9 +329,15 @@ export function FeedService() {
                                 avatar = cached.avatar;
                                 processedSummary = cached.summary;
                             } else {
-                                // 🔥 轻量级处理：基于summary而不是content
-                                avatar = summary ? extractImage(summary) : undefined;
-                                processedSummary = summary.length > 0 ? summary : "暂无摘要";
+                                // 轻量级模式：跳过CPU密集的处理
+                                if (lightweight === 'true') {
+                                    avatar = undefined; // 跳过图片提取
+                                    processedSummary = summary || ''; // 只使用现有summary，不处理content
+                                } else {
+                                    // 只在缓存未命中时才进行计算
+                                    avatar = extractImage(content);
+                                    processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+                                }
 
                                 // 缓存预计算结果
                                 await cache.set(cacheKey, { avatar, summary: processedSummary });
@@ -594,8 +604,8 @@ export function FeedService() {
                     ) {
                         if (feed) {
                             const hashtags_flatten = feed.hashtags.map((f: any) => f.hashtag);
-                            // 🔥 优化：避免CPU密集操作，直接使用summary
-                            const summary = feed.summary.length > 0 ? feed.summary : "暂无摘要";
+                            // 优化：相邻文章只使用现有summary，不进行CPU密集的content处理
+                            const summary = feed.summary || '';
                             const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                             const cacheData = {
                             id: feed.id,
@@ -622,10 +632,6 @@ export function FeedService() {
                                     and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
                                     lt(feeds.createdAt, created_at),
                                 ),
-                                // 🔥 关键修改：排除content字段，避免CPU密集处理
-                                columns: {
-                                    content: false
-                                },
                                 orderBy: [desc(feeds.createdAt)],
                                 with: {
                                     hashtags: {
@@ -656,10 +662,6 @@ export function FeedService() {
                                     and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
                                     gt(feeds.createdAt, created_at),
                                 ),
-                                // 🔥 关键修改：排除content字段，避免CPU密集处理
-                                columns: {
-                                    content: false
-                                },
                                 orderBy: [asc(feeds.createdAt)],
                                 with: {
                                     hashtags: {

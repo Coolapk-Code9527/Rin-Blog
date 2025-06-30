@@ -216,6 +216,7 @@ function useEnhancedFeedsCache({
           page: 1,
           limit: batchSize,
           type,
+          lightweight: 'true', // 使用轻量级模式，减少CPU消耗
           ...(sortByTime && { sortByTime: true })
         },
         headers: headersWithAuth()
@@ -262,6 +263,7 @@ function useEnhancedFeedsCache({
                 page: currentPage,
                 limit: batchSize,
                 type,
+                lightweight: 'true', // 使用轻量级模式，减少CPU消耗
                 ...(sortByTime && { sortByTime: true })
               },
               headers: headersWithAuth()
@@ -366,10 +368,11 @@ export function useRecentPostsCache(limit: number = 3) {
 
   const fetcher = useMemo(() => async () => {
     const response = await client.feed.index.get({
-      query: { 
-        page: 1, 
-        limit, 
-        sortByTime: true 
+      query: {
+        page: 1,
+        limit,
+        sortByTime: true,
+        lightweight: 'true' // 使用轻量级模式，减少CPU消耗
       },
       headers: {}
     });
@@ -382,15 +385,15 @@ export function useRecentPostsCache(limit: number = 3) {
       throw new Error('Invalid response data');
     }
 
-    // 🔥 优化：只返回必要字段，不包含content
+    // 转换数据格式，匹配现有组件期望的格式
     return response.data.data.map((item: any) => ({
       id: item.id,
       title: item.title,
       createdAt: new Date(item.createdAt),
+      content: item.content || "",
       summary: item.summary || "",
       avatar: item.avatar || "",
       thumbUrl: item.thumbUrl || ""
-      // 移除 content 字段，减少数据传输和内存占用
     }));
   }, [limit]);
 
