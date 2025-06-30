@@ -207,7 +207,8 @@ export function FeedService() {
                             where: and(where, cursorCondition),
                             columns: admin ? undefined : {
                                 draft: false,
-                                listed: false
+                                listed: false,
+                                content: false  // 🔥 关键修改：排除content字段，避免CPU密集处理
                             },
                             with: {
                                 hashtags: {
@@ -229,9 +230,9 @@ export function FeedService() {
                         const feedIds = feedsData.map(f => f.id);
                         const visitStatsMap = await getBatchVisitStats(db, feedIds);
 
-                        // 性能优化：批量预计算avatar和summary，减少重复计算
+                        // 🔥 优化：轻量级处理，避免CPU密集操作
                         const processedFeeds = await Promise.all(
-                            feedsData.map(async ({ content, hashtags, summary, ...other }) => {
+                            feedsData.map(async ({ hashtags, summary, ...other }) => {
                                 // 检查缓存中是否已有预计算的结果
                                 const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
                                 const cached = await cache.get(cacheKey);
@@ -243,9 +244,9 @@ export function FeedService() {
                                     avatar = cached.avatar;
                                     processedSummary = cached.summary;
                                 } else {
-                                    // 只在缓存未命中时才进行计算
-                                    avatar = extractImage(content);
-                                    processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+                                    // 🔥 轻量级处理：基于summary而不是content
+                                    avatar = summary ? extractImage(summary) : undefined;
+                                    processedSummary = summary.length > 0 ? summary : "暂无摘要";
 
                                     // 缓存预计算结果
                                     await cache.set(cacheKey, { avatar, summary: processedSummary });
@@ -286,7 +287,8 @@ export function FeedService() {
                         where: where,
                         columns: admin ? undefined : {
                             draft: false,
-                            listed: false
+                            listed: false,
+                            content: false  // 🔥 关键修改：排除content字段，避免CPU密集处理
                         },
                         with: {
                             hashtags: {
@@ -309,9 +311,9 @@ export function FeedService() {
                     const feedIds2 = feedsData2.map(f => f.id);
                     const visitStatsMap2 = await getBatchVisitStats(db, feedIds2);
 
-                    // 性能优化：批量预计算avatar和summary，减少重复计算
+                    // 🔥 优化：轻量级处理，避免CPU密集操作
                     const processedFeeds2 = await Promise.all(
-                        feedsData2.map(async ({ content, hashtags, summary, ...other }) => {
+                        feedsData2.map(async ({ hashtags, summary, ...other }) => {
                             // 检查缓存中是否已有预计算的结果
                             const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
                             const cached = await cache.get(cacheKey);
@@ -323,9 +325,9 @@ export function FeedService() {
                                 avatar = cached.avatar;
                                 processedSummary = cached.summary;
                             } else {
-                                // 只在缓存未命中时才进行计算
-                                avatar = extractImage(content);
-                                processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+                                // 🔥 轻量级处理：基于summary而不是content
+                                avatar = summary ? extractImage(summary) : undefined;
+                                processedSummary = summary.length > 0 ? summary : "暂无摘要";
 
                                 // 缓存预计算结果
                                 await cache.set(cacheKey, { avatar, summary: processedSummary });
