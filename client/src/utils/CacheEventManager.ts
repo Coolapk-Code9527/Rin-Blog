@@ -72,7 +72,6 @@ export class CacheEventManager {
   
   /**
    * 立即触发事件
-   * 只通过window事件系统触发，避免重复处理
    */
   private emitImmediate(eventType: CacheEventType, detail?: CacheEventDetail): void {
     const event = new CustomEvent(eventType, { detail });
@@ -102,22 +101,19 @@ export class CacheEventManager {
   
   /**
    * 监听缓存事件
-   *
+   * 
    * @param eventType 事件类型
    * @param listener 监听器函数
    * @returns 取消监听的函数
    */
   on(eventType: CacheEventType, listener: CacheEventListener): () => void {
-    // 只维护内部listeners用于管理，不重复绑定window事件
     if (!this.listeners.has(eventType)) {
       this.listeners.set(eventType, new Set());
     }
-
+    
     this.listeners.get(eventType)!.add(listener);
-
-    // 直接使用window事件系统，避免双重绑定
     window.addEventListener(eventType, listener as EventListener);
-
+    
     // 返回取消监听的函数
     return () => {
       this.off(eventType, listener);

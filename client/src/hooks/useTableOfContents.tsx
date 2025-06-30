@@ -155,9 +155,9 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?
         setTableOfContents([]); // 重置目录
         setActiveId(null); // 重置高亮状态
 
-        // 优化：减少最大重试次数，防止CPU消耗
+        // 增加最大重试次数，防止死循环
         let retryCount = 0;
-        const MAX_RETRY = 3; // 从10减少到3，减少70%的重试次数
+        const MAX_RETRY = 10;
 
         // 检查是否已经有内容加载
         const checkContentExistence = () => {
@@ -166,14 +166,14 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?
 
             const contentElement = document.querySelector(selector);
             if (contentElement) {
-                // 优化：减少延迟时间，提高响应速度
+                // 如果内容元素存在，但没有标题，设置一个更长的延迟
                 const headers = contentElement.querySelectorAll('h1, h2, h3, h4, h5, h6');
                 if (headers.length === 0) {
                     if (retryCount < MAX_RETRY && mountedRef.current) {
                         retryCount++;
                         const timer = setTimeout(() => {
                             checkContentExistence();
-                        }, 200); // 从500ms减少到200ms，减少60%等待时间
+                        }, 500);
                         timersRef.current.push(timer);
                     } else if (mountedRef.current) {
                         setTableOfContents([]); // 明确无目录
@@ -184,20 +184,20 @@ const useTableOfContents = (selector: string, contentReadySignal?: any, routeId?
                         if (mountedRef.current) {
                             processHeaders(headers);
                         }
-                    }, 50); // 从100ms减少到50ms，提高响应速度
+                    }, 100);
                     timersRef.current.push(timer);
                 }
             } else if (mountedRef.current) {
-                // 内容元素不存在，延迟尝试（优化：减少延迟时间）
+                // 内容元素不存在，延迟尝试
                 const timer = setTimeout(() => {
                     checkContentExistence();
-                }, 150); // 从300ms减少到150ms，减少50%等待时间
+                }, 300);
                 timersRef.current.push(timer);
             }
         };
 
-        // 优化：减少初始延迟，提高响应速度
-        setTimeout(checkContentExistence, 100); // 从200ms减少到100ms
+        // 延迟一点启动，确保页面有时间加载内容
+        setTimeout(checkContentExistence, 200);
 
         // 在processHeaders前优先尝试remark-toc目录
         if (tryGetTocFromRemark()) return;

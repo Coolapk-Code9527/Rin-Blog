@@ -17,15 +17,14 @@ import { ArticleManagementTabs, type ListState, type SortType } from '../compone
 import { ClientConfigContext } from "../state/config"
 import { getSidebarConfig } from "../utils/sidebarConfig"
 import { useSmartGrid } from "../hooks/useSmartGrid"
-import { useFeedsCache, FeedType } from "../hooks/useFeedsCache"
+import { useFeedsCache, FeedType as CacheFeedType } from "../hooks/useFeedsCache"
 
 import { generateGradient } from '../utils/placeholderUtils';
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety"
-import { ErrorBoundary } from "../components/ErrorBoundary"
-import { useFeedCacheInvalidation } from "../hooks/useCacheEvents"
 
 // FeedsData类型由useFeedsCache Hook提供
-// FeedType统一使用useFeedsCache中的定义
+
+type FeedType = 'draft' | 'unlisted' | 'normal'
 
 // FeedsMap类型不再需要，因为使用缓存Hook
 
@@ -46,55 +45,31 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
 
     React.useEffect(() => {
         let timer: NodeJS.Timeout | null = null;
-        let observer: IntersectionObserver | null = null;
-        let isMounted = true;
 
-        try {
-            observer = new IntersectionObserver(
-                ([entry]) => {
-                    // 检查组件是否仍然挂载
-                    if (!isMounted) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsIntersecting(entry.isIntersecting); // 更新元素是否在视口内的状态
+                if (entry.isIntersecting) {
+                    // 当元素进入视口时，设置一个短暂延迟后显示实际内容，以便平滑过渡
+                    timer = setTimeout(() => {
+                        setIsVisible(true);
+                        observer.disconnect();
+                    }, 150); // 添加一个短暂延迟以实现错落有致的加载效果
+                }
+            },
+            { threshold: 0.1, rootMargin: '200px 0px' }
+        );
 
-                    setIsIntersecting(entry.isIntersecting);
-                    if (entry.isIntersecting) {
-                        timer = setTimeout(() => {
-                            if (isMounted) {
-                                setIsVisible(true);
-                                // 一旦显示就断开观察器，避免不必要的监听
-                                if (observer) {
-                                    observer.disconnect();
-                                    observer = null;
-                                }
-                            }
-                        }, 150);
-                    }
-                },
-                { threshold: 0.1, rootMargin: '200px 0px' }
-            );
-
-            if (cardRef.current && observer) {
-                observer.observe(cardRef.current);
-            }
-        } catch (error) {
-            console.warn('Failed to create IntersectionObserver:', error);
-            // 降级：直接显示内容
-            setIsVisible(true);
+        if (cardRef.current) {
+            observer.observe(cardRef.current);
         }
 
         return () => {
-            isMounted = false;
-
-            // 清理定时器
+            // 清理定时器和观察器
             if (timer) {
                 clearTimeout(timer);
-                timer = null;
             }
-
-            // 清理观察器
-            if (observer) {
-                observer.disconnect();
-                observer = null;
-            }
+            observer.disconnect();
         };
     }, []);
 
@@ -188,28 +163,40 @@ export function FeedsPage() {
     const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
     const [sortType, setSortType] = React.useState<SortType>(query.get("sort") as SortType || 'latest')
 
-    // 统一的分页配置管理
-    const page = tryInt(1, query.get("page"))
-    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE) // 每页显示数量
-
     // 使用缓存Hook替代直接API调用和本地状态管理
     const {
         data: feedsData,
         loading,
         invalidate: invalidateFeedsCache
     } = useFeedsCache({
-        type: listState as FeedType,
-        page: page,
-        limit: limit, // 使用PAGE_SIZE环境变量，避免全量数据获取
+        type: listState as CacheFeedType,
         enabled: true
     })
+    const page = tryInt(1, query.get("page"))
+    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
     const ref = React.useRef("")
 
     // 使用安全的缓存失效机制
     const safeInvalidateFeedsCache = useSafeCacheInvalidation(invalidateFeedsCache);
 
-    // 使用统一的缓存事件管理器监听文章发布/更新/删除事件
-    useFeedCacheInvalidation(safeInvalidateFeedsCache);
+    // 监听文章发布/更新事件，失效缓存
+    React.useEffect(() => {
+        const handleFeedPublished = () => {
+            safeInvalidateFeedsCache();
+        };
+
+        const handleFeedUpdated = () => {
+            safeInvalidateFeedsCache();
+        };
+
+        window.addEventListener('feed-published', handleFeedPublished);
+        window.addEventListener('feed-updated', handleFeedUpdated);
+
+        return () => {
+            window.removeEventListener('feed-published', handleFeedPublished);
+            window.removeEventListener('feed-updated', handleFeedUpdated);
+        };
+    }, [safeInvalidateFeedsCache]); // 使用安全的缓存失效函数
 
     // 获取配置加载状态
     const extendedConfig = useContext(ExtendedConfigContext);
@@ -402,16 +389,22 @@ export function FeedsPage() {
 
     // 缓存Hook自动处理数据获取，无需手动fetchFeeds函数
 
-    // 使用服务端分页数据，不再进行前端分页处理
-    const paginatedFeeds = sortedFeeds; // 直接使用排序后的数据，服务端已经分页
+    // 前端分页逻辑 - 对排序后的数据进行分页
+    const paginatedFeeds = React.useMemo(() => {
+        if (!sortedFeeds.length) return [];
 
-    // 使用服务端返回的分页信息
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedData = sortedFeeds.slice(startIndex, endIndex);
+
+        return paginatedData;
+    }, [sortedFeeds, page, limit]);
+
+    // 计算总页数
     const totalPages = React.useMemo(() => {
-        if (!feedsData?.size) return 1;
-        return Math.ceil(feedsData.size / limit);
-    }, [feedsData?.size, limit]);
-
-    const hasNextPage = feedsData?.hasNext ?? false;
+        if (!sortedFeeds.length) return 1;
+        return Math.ceil(sortedFeeds.length / limit);
+    }, [sortedFeeds.length, limit]);
     
     React.useEffect(() => {
         const key = `${query.get("type")} ${query.get("sort")}`
@@ -437,26 +430,7 @@ export function FeedsPage() {
     }, [page])
     
     return (
-        <ErrorBoundary
-            fallback={
-                <div className="flex flex-col items-center justify-center p-8 text-center">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-                        <h2 className="text-lg font-semibold text-red-800 mb-2">
-                            文章列表加载出错
-                        </h2>
-                        <p className="text-red-600 mb-4">
-                            页面遇到了一个问题，请刷新页面重试。
-                        </p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
-                        >
-                            刷新页面
-                        </button>
-                    </div>
-                </div>
-            }
-        >
+        <>
             <Helmet>
                 <title>{`${t('article.title')} - ${process.env.NAME}`}</title>
                 <meta property="og:site_name" content={siteName} />
@@ -627,19 +601,19 @@ export function FeedsPage() {
                 </ArticleListLayout>
             </Waiting>
 
-            {/* 分页控制 - 使用服务端分页信息 */}
+            {/* 分页控制 - 移到ArticleListLayout外部，与侧边栏分离 */}
             {paginatedFeeds.length > 0 && totalPages > 1 && (
                 <div className={`${sidebarConfig.enabled ? 'max-w-7xl' : 'max-w-6xl'} mx-auto w-full px-4 sm:px-6 md:px-8 transition-all duration-300`}>
                     <div className="flex justify-center w-full">
                         <Pagination
                             currentPage={page}
-                            totalPages={totalPages} // 使用服务端计算的总页数
+                            totalPages={totalPages}
                             basePath={`/?type=${listState}${sortType !== 'latest' ? `&sort=${sortType}` : ''}`}
                             className="gap-2"
                         />
                     </div>
                 </div>
             )}
-        </ErrorBoundary>
+        </>
     )
 }

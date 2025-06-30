@@ -1,13 +1,27 @@
 import React, { useState } from "react";
+import {client} from "../main.tsx";
 import {timeago} from "../utils/timeago.ts";
 import {Link} from "wouter";
 import {useTranslation} from "react-i18next";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
-import { useAdjacentFeedsCache } from "../hooks/useFeedsCache";
-import { AdjacentFeed, AdjacentFeeds } from "../types/api";
 
-// 类型定义已从types/api.ts导入，移除重复定义
+export type AdjacentFeed = {
+    id: number;
+    title: string | null;
+    summary: string;
+    hashtags: {
+        id: number;
+        name: string;
+    }[];
+    createdAt: Date;
+    updatedAt: Date;
+    avatar?: string;
+};
+export type AdjacentFeeds = {
+    nextFeed: AdjacentFeed | null;
+    previousFeed: AdjacentFeed | null;
+};
 
 // 获取文章缩略图的优先级逻辑（功能恢复版本）
 const getThumbnailUrl = (article: any): string | null => {
@@ -58,48 +72,88 @@ const extractImageUrl = (content: string): string | null => {
     return null;
 };
 
-// fetchFullArticle函数已移除以优化CPU性能
-// 相邻文章现在只使用avatar和summary字段获取缩略图
-// 如果没有缩略图，将显示占位符
+// 智能fallback：有条件地获取完整文章信息
+const fetchFullArticle = async (id: number): Promise<string | null> => {
+    try {
+        const response = await client.feed({ id: id.toString() }).get();
+        if (!response.error && response.data && typeof response.data !== "string") {
+            // 检查数据是否包含avatar字段
+            if ('avatar' in response.data && response.data.avatar) {
+                return response.data.avatar as string;
+            }
 
-// 默认图片常量已移除，现在使用占位符系统
+            // 如果没有avatar字段，从content中提取第一张图片
+            if ('content' in response.data) {
+                return extractImageUrl(response.data.content as string);
+            }
+        }
+    } catch (error) {
+        // 静默处理错误，避免影响用户体验
+        return null;
+    }
+    return null;
+};
+
+// 默认图片常量
+const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
 
 export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
+    const [adjacentFeeds, setAdjacentFeeds] = React.useState<AdjacentFeeds>();
+    const [thumbnails, setThumbnails] = React.useState<Record<string, string>>({});
+    const [loading, setLoading] = React.useState<boolean>(true);
     const {t} = useTranslation();
-
-    // 使用缓存Hook替代直接API调用
-    const { data: adjacentFeeds, loading, error } = useAdjacentFeedsCache(id, !!id);
-
-    // 处理错误
-    React.useEffect(() => {
-        if (error) {
-            setError(error);
-        }
-    }, [error, setError]);
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
-    // 为每个相邻文章获取缩略图
-    const thumbnails = React.useMemo(() => {
-        if (!adjacentFeeds) return {};
+    React.useEffect(() => {
+        setLoading(true);
+        client.feed
+            .adjacent({id})
+            .get()
+            .then(async ({data, error}) => {
+                if (error) {
+                    setError(error.value as string);
+                    setLoading(false);
+                } else if (data && typeof data !== "string") {
+                    setAdjacentFeeds(data);
+                    
+                    // 为每个相邻文章获取缩略图
+                    const extractedThumbnails: Record<string, string> = {};
+                    
+                    // 处理上一篇文章（智能fallback恢复）
+                    if (data.previousFeed) {
+                        let thumbnail = getThumbnailUrl(data.previousFeed);
 
-        const extractedThumbnails: Record<string, string | null> = {};
+                        // 只在avatar和summary都没有图片时才调用fetchFullArticle
+                        if (!thumbnail) {
+                            thumbnail = await fetchFullArticle(data.previousFeed.id);
+                        }
 
-        // 处理上一篇文章
-        if (adjacentFeeds.previousFeed) {
-            let thumbnail = getThumbnailUrl(adjacentFeeds.previousFeed);
-            extractedThumbnails[`prev-${adjacentFeeds.previousFeed.id}`] = thumbnail || null;
-        }
+                        extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || null;
+                    }
+                    
+                    // 处理下一篇文章（智能fallback恢复）
+                    if (data.nextFeed) {
+                        let thumbnail = getThumbnailUrl(data.nextFeed);
 
-        // 处理下一篇文章
-        if (adjacentFeeds.nextFeed) {
-            let thumbnail = getThumbnailUrl(adjacentFeeds.nextFeed);
-            extractedThumbnails[`next-${adjacentFeeds.nextFeed.id}`] = thumbnail || null;
-        }
+                        // 只在avatar和summary都没有图片时才调用fetchFullArticle
+                        if (!thumbnail) {
+                            thumbnail = await fetchFullArticle(data.nextFeed.id);
+                        }
 
-        return extractedThumbnails;
-    }, [adjacentFeeds]);
+                        extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || null;
+                    }
+                    
+                    setThumbnails(extractedThumbnails);
+                }
+                setLoading(false);
+            })
+            .catch((err) => {
+                setError("获取相邻文章信息失败");
+                setLoading(false);
+            });
+    }, [id, setError]);
     
     return (
         <div className="w-full mt-6 mb-6">
@@ -129,7 +183,7 @@ export function AdjacentCard({
 }: {
     data: AdjacentFeed | null | undefined,
     type: "previous" | "next",
-    thumbnail: string | null | undefined,
+    thumbnail: string | undefined,
     loading: boolean
 }) {
     const direction = type === "previous" ? "text-start" : "text-end";
