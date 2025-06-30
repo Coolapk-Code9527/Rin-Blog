@@ -51,13 +51,62 @@ function FeedCardComponent({ id, title, avatar, draft, listed, top, summary, has
         return `${d.getMonth()+1}-${d.getDate()}`;
     };
 
-    // 预加载文章详情页（当用户悬停卡片时）- 使用useCallback缓存
+    // 智能预加载文章详情页 - 性能优化版本
+    const [hoverTimer, setHoverTimer] = React.useState<NodeJS.Timeout | null>(null);
+    const [prefetched, setPrefetched] = React.useState(false);
+
+    // 检测移动设备
+    const isMobile = React.useMemo(() => {
+        return typeof window !== 'undefined' &&
+               (window.innerWidth <= 768 || 'ontouchstart' in window);
+    }, []);
+
+    // 全局预加载计数器（限制同时预加载数量）
+    const maxConcurrentPrefetch = 3;
+
     const prefetchArticle = useCallback(() => {
+        // 移动设备禁用预加载
+        if (isMobile) return;
+
+        // 已经预加载过的不重复预加载
+        if (prefetched) return;
+
+        // 检查当前预加载数量
+        const existingPrefetchLinks = document.querySelectorAll('link[rel="prefetch"]');
+        if (existingPrefetchLinks.length >= maxConcurrentPrefetch) return;
+
         const link = document.createElement('link');
         link.rel = 'prefetch';
         link.href = `/feed/${id}`;
+        link.dataset.feedId = id.toString(); // 添加标识便于清理
         document.head.appendChild(link);
-    }, [id]);
+        setPrefetched(true);
+    }, [id, isMobile, prefetched]);
+
+    const handleMouseEnter = useCallback(() => {
+        // 延迟1秒后才预加载，避免快速划过时的不必要预加载
+        const timer = setTimeout(() => {
+            prefetchArticle();
+        }, 1000);
+        setHoverTimer(timer);
+    }, [prefetchArticle]);
+
+    const handleMouseLeave = useCallback(() => {
+        // 清理定时器
+        if (hoverTimer) {
+            clearTimeout(hoverTimer);
+            setHoverTimer(null);
+        }
+    }, [hoverTimer]);
+
+    // 组件卸载时清理
+    React.useEffect(() => {
+        return () => {
+            if (hoverTimer) {
+                clearTimeout(hoverTimer);
+            }
+        };
+    }, [hoverTimer]);
 
     // 使用统一的渐变生成工具 - 已经使用useMemo优化
     const gradientConfig = useMemo(() => generateGradient(id, title), [id, title]);
@@ -87,18 +136,22 @@ function FeedCardComponent({ id, title, avatar, draft, listed, top, summary, has
     }, [viewMode, top, glassClass]);
 
     return (
-            <Link href={`/feed/${id}`}
-            className={layoutClasses}
-            aria-labelledby={`article-title-${id}`}
-            onMouseEnter={prefetchArticle}
-            style={{
-                ...cardStyle,
-                boxShadow: top === 1
-                    ? '0 4px 20px rgba(0, 122, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1)'
-                    : '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
-            } as React.CSSProperties}
-            replace={false}
+        <div
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className="inline-block w-full"
         >
+            <Link href={`/feed/${id}`}
+                className={layoutClasses}
+                aria-labelledby={`article-title-${id}`}
+                style={{
+                    ...cardStyle,
+                    boxShadow: top === 1
+                        ? '0 4px 20px rgba(0, 122, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1)'
+                        : '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
+                } as React.CSSProperties}
+                replace={false}
+            >
             {/* 置顶标识 - 优化为紧凑角标设计 */}
             {top === 1 && (
                 <div className="absolute top-2 right-2 z-40 flex items-center justify-center">
@@ -283,6 +336,7 @@ function FeedCardComponent({ id, title, avatar, draft, listed, top, summary, has
                 </div>
             </div>
         </Link>
+        </div>
     )
 }
 

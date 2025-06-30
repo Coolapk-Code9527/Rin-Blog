@@ -358,39 +358,35 @@ function useEnhancedFeedsCache({
 
 /**
  * 最近文章缓存Hook
- * 
+ *
  * 专门用于获取最近发布的文章，用于侧边栏等组件
+ * 优化：使用轻量级timeline API，避免CPU密集的内容处理
  */
 export function useRecentPostsCache(limit: number = 3) {
   const cacheKey = `recent_posts_limit:${limit}`;
 
   const fetcher = useMemo(() => async () => {
-    const response = await client.feed.index.get({
-      query: { 
-        page: 1, 
-        limit, 
-        sortByTime: true 
-      },
-      headers: {}
-    });
+    // 使用轻量级timeline API，只获取必要字段：id, title, createdAt
+    const response = await client.feed.timeline.get();
 
     if (response.error) {
       throw new Error(response.error.value as string);
     }
 
-    if (!response.data || !Array.isArray(response.data.data)) {
+    if (!response.data || !Array.isArray(response.data)) {
       throw new Error('Invalid response data');
     }
 
-    // 转换数据格式，匹配现有组件期望的格式
-    return response.data.data.map((item: any) => ({
+    // 只取前N篇文章，转换数据格式匹配现有组件期望的格式
+    return response.data.slice(0, limit).map((item: any) => ({
       id: item.id,
       title: item.title,
       createdAt: new Date(item.createdAt),
-      content: item.content || "",
-      summary: item.summary || "",
-      avatar: item.avatar || "",
-      thumbUrl: item.thumbUrl || ""
+      // 移除content字段，避免CPU密集处理
+      // content: "", // 不再获取完整内容
+      // summary: "", // 不再获取摘要
+      // avatar: "", // 暂时不获取图片，后续优化
+      // thumbUrl: "" // 暂时不获取缩略图，后续优化
     }));
   }, [limit]);
 

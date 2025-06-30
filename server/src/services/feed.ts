@@ -592,10 +592,9 @@ export function FeedService() {
                     ) {
                         if (feed) {
                             const hashtags_flatten = feed.hashtags.map((f: any) => f.hashtag);
-                            const summary =
-                                feed.summary.length > 0
-                                    ? feed.summary
-                                    : markdownToPlainText(feed.content, 300);
+                            // 性能优化：避免CPU密集的markdownToPlainText处理
+                            // 相邻文章组件只需要基本信息，不需要复杂的摘要生成
+                            const summary = feed.summary || ""; // 直接使用数据库中的摘要
                             const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                             const cacheData = {
                             id: feed.id,

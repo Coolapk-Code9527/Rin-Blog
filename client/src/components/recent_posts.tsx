@@ -27,49 +27,46 @@ export function RecentPosts() {
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
-  // 获取文章缩略图的优先级逻辑（功能恢复版本）
-  const getThumbnailUrl = (post: Post): string | null => {
-    // 1. 优先使用专门的缩略图URL（如果API提供）
-    if (post.thumbUrl) {
-      return post.thumbUrl;
-    }
-
-    // 2. 使用API提供的avatar字段（保持性能优化）
-    if (post.avatar) {
-      return post.avatar;
-    }
-
-    // 3. 从完整摘要中提取图片（恢复完整搜索范围）
-    if (post.summary) {
-      const summaryImage = extractImageFromContent(post.summary);
-      if (summaryImage) {
-        return summaryImage;
-      }
-    }
-
-    // 4. 从完整内容中提取图片（恢复重要的fallback）
-    if (post.content) {
-      return extractImageFromContent(post.content);
-    }
-
+  // 获取文章缩略图的优先级逻辑（性能优化版本）
+  const getThumbnailUrl = (_post: Post): string | null => {
+    // 性能优化：暂时不获取图片，使用占位符系统
+    // 避免CPU密集的图片提取处理，后续再进行图片优化
     return null;
+
+    // 注释掉的代码保留，后续图片优化时使用：
+    // 1. 优先使用专门的缩略图URL（如果API提供）
+    // if (post.thumbUrl) {
+    //   return post.thumbUrl;
+    // }
+    // 2. 使用API提供的avatar字段（保持性能优化）
+    // if (post.avatar) {
+    //   return post.avatar;
+    // }
+    // 3. 从完整摘要中提取图片
+    // if (post.summary) {
+    //   const summaryImage = extractImageFromContent(post.summary);
+    //   if (summaryImage) {
+    //     return summaryImage;
+    //   }
+    // }
+    // 4. 从完整内容中提取图片
+    // if (post.content) {
+    //   return extractImageFromContent(post.content);
+    // }
   };
 
-  const extractImageFromContent = (content: string): string | null => {
-    if (!content) return null;
-
-    // 恢复原始的、经过验证的Markdown正则表达式
-    const markdownRegex = /!\[.*?\]\((.*?)\)/;
-    const markdownMatch = markdownRegex.exec(content);
-    if (markdownMatch && markdownMatch[1]) {
-      return markdownMatch[1];
-    }
-
-    // 恢复HTML支持作为fallback
-    const htmlRegex = /<img.*?src=["'](.*?)["']/;
-    const htmlMatch = htmlRegex.exec(content);
-    return htmlMatch ? htmlMatch[1] : null;
-  };
+  // 暂时注释掉，后续图片优化时使用
+  // const extractImageFromContent = (content: string): string | null => {
+  //   if (!content) return null;
+  //   const markdownRegex = /!\[.*?\]\((.*?)\)/;
+  //   const markdownMatch = markdownRegex.exec(content);
+  //   if (markdownMatch && markdownMatch[1]) {
+  //     return markdownMatch[1];
+  //   }
+  //   const htmlRegex = /<img.*?src=["'](.*?)["']/;
+  //   const htmlMatch = htmlRegex.exec(content);
+  //   return htmlMatch ? htmlMatch[1] : null;
+  // };
 
   // 当posts数据更新时，重新计算缩略图
   React.useEffect(() => {
@@ -109,7 +106,7 @@ export function RecentPosts() {
                           alt={post.title || t("unnamed")} 
                           className="w-16 h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700 transition-transform group-hover:scale-[1.02]"
                           loading="lazy"
-                          onError={(e) => {
+                          onError={(e: any) => {
                             console.log(`图片加载失败: ${post.id}, 路径: ${thumbnails[post.id]}`);
                             const target = e.currentTarget as HTMLImageElement;
                             target.style.display = "none";
