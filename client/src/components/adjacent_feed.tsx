@@ -6,14 +6,11 @@ import {useTranslation} from "react-i18next";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
 
+// 性能优化：简化类型定义，移除不必要的hashtags字段
 export type AdjacentFeed = {
     id: number;
     title: string | null;
     summary: string;
-    hashtags: {
-        id: number;
-        name: string;
-    }[];
     createdAt: Date;
     updatedAt: Date;
     avatar?: string;
@@ -72,15 +69,17 @@ const extractImageUrl = (content: string): string | null => {
     return null;
 };
 
-// 移除fetchFullArticle函数，因为服务端API已经提供avatar字段
-// 这避免了额外的重量级API请求，解决CPU性能问题
+// 移除fetchFullArticle函数以避免额外的API调用和CPU消耗
+// 现在完全依赖adjacent API返回的数据，使用占位符替代缺失的图片
 
-// 移除未使用的DEFAULT_THUMBNAIL常量
+// 默认图片常量
+const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
 
 export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
     const [adjacentFeeds, setAdjacentFeeds] = React.useState<AdjacentFeeds>();
     const [thumbnails, setThumbnails] = React.useState<Record<string, string>>({});
     const [loading, setLoading] = React.useState<boolean>(true);
+    const {t} = useTranslation();
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -97,16 +96,16 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                 } else if (data && typeof data !== "string") {
                     setAdjacentFeeds(data);
                     
-                    // 为每个相邻文章获取缩略图（优化：移除额外API请求）
+                    // 为每个相邻文章获取缩略图
                     const extractedThumbnails: Record<string, string> = {};
-
-                    // 处理上一篇文章
+                    
+                    // 处理上一篇文章（性能优化：移除额外API调用）
                     if (data.previousFeed) {
                         const thumbnail = getThumbnailUrl(data.previousFeed);
                         extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || null;
                     }
 
-                    // 处理下一篇文章
+                    // 处理下一篇文章（性能优化：移除额外API调用）
                     if (data.nextFeed) {
                         const thumbnail = getThumbnailUrl(data.nextFeed);
                         extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || null;
@@ -116,7 +115,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                 }
                 setLoading(false);
             })
-            .catch(() => {
+            .catch((err) => {
                 setError("获取相邻文章信息失败");
                 setLoading(false);
             });
@@ -153,6 +152,7 @@ export function AdjacentCard({
     thumbnail: string | undefined,
     loading: boolean
 }) {
+    const direction = type === "previous" ? "text-start" : "text-end";
     const {t} = useTranslation();
 
     // 添加图片错误状态管理
@@ -186,6 +186,7 @@ export function AdjacentCard({
                             alt={data.title || ""}
                             className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}
                             loading="lazy"
+                            style={{height:'100%'}}
                             onError={() => {
                                 // 使用React状态管理而不是直接DOM操作
                                 setImageError(true);
