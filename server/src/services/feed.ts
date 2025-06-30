@@ -139,7 +139,7 @@ export function FeedService() {
         .use(setup())
         .group('/feed', (group) =>
             group
-                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime } }) => {
+                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime, lightweight } }) => {
                     const db: DB = getDB();
                     if ((type === 'draft' || type === 'unlisted') && !admin) {
                         set.status = 403;
@@ -243,9 +243,15 @@ export function FeedService() {
                                     avatar = cached.avatar;
                                     processedSummary = cached.summary;
                                 } else {
-                                    // 只在缓存未命中时才进行计算
-                                    avatar = extractImage(content);
-                                    processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+                                    // 检查lightweight参数，跳过CPU密集操作
+                                    if (lightweight) {
+                                        avatar = undefined;
+                                        processedSummary = summary.length > 0 ? summary : '';
+                                    } else {
+                                        // 只在缓存未命中时才进行计算
+                                        avatar = extractImage(content);
+                                        processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+                                    }
 
                                     // 缓存预计算结果
                                     await cache.set(cacheKey, { avatar, summary: processedSummary });
@@ -323,9 +329,15 @@ export function FeedService() {
                                 avatar = cached.avatar;
                                 processedSummary = cached.summary;
                             } else {
-                                // 只在缓存未命中时才进行计算
-                                avatar = extractImage(content);
-                                processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+                                // 检查lightweight参数，跳过CPU密集操作
+                                if (lightweight) {
+                                    avatar = undefined;
+                                    processedSummary = summary.length > 0 ? summary : '';
+                                } else {
+                                    // 只在缓存未命中时才进行计算
+                                    avatar = extractImage(content);
+                                    processedSummary = summary.length > 0 ? summary : markdownToPlainText(content, 300);
+                                }
 
                                 // 缓存预计算结果
                                 await cache.set(cacheKey, { avatar, summary: processedSummary });
@@ -377,7 +389,8 @@ export function FeedService() {
                         limit: t.Optional(t.Numeric()),
                         type: t.Optional(t.String()),
                         cursor: t.Optional(t.String()),
-                        sortByTime: t.Optional(t.Boolean())
+                        sortByTime: t.Optional(t.Boolean()),
+                        lightweight: t.Optional(t.Boolean())
                     })
                 })
                 .get('/timeline', async () => {

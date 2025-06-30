@@ -366,10 +366,11 @@ export function useRecentPostsCache(limit: number = 3) {
 
   const fetcher = useMemo(() => async () => {
     const response = await client.feed.index.get({
-      query: { 
-        page: 1, 
-        limit, 
-        sortByTime: true 
+      query: {
+        page: 1,
+        limit,
+        sortByTime: true,
+        lightweight: true  // 添加lightweight参数，避免CPU密集操作
       },
       headers: {}
     });
