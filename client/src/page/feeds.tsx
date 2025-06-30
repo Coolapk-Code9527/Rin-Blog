@@ -188,18 +188,22 @@ export function FeedsPage() {
     const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
     const [sortType, setSortType] = React.useState<SortType>(query.get("sort") as SortType || 'latest')
 
+    // 统一的分页配置管理
+    const page = tryInt(1, query.get("page"))
+    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE) // 前端分页每页显示数量
+
     // 使用缓存Hook替代直接API调用和本地状态管理
+    // 关键修复：传递limit参数，避免触发useEnhancedFeedsCache的批量获取（CPU超时根源）
     const {
         data: feedsData,
         loading,
         invalidate: invalidateFeedsCache
     } = useFeedsCache({
         type: listState as FeedType,
+        page: page,
+        limit: limit, // 传递正确的limit，避免默认的9999触发批量获取
         enabled: true
     })
-    // 统一的分页配置管理
-    const page = tryInt(1, query.get("page"))
-    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE) // 前端分页每页显示数量
     const ref = React.useRef("")
 
     // 使用安全的缓存失效机制
