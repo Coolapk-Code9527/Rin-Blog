@@ -5,6 +5,7 @@ import {Link} from "wouter";
 import {useTranslation} from "react-i18next";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
+import { useAdjacentFeedsCache } from "../hooks/useFeedsCache";
 
 export type AdjacentFeed = {
     id: number;
@@ -78,58 +79,41 @@ const extractImageUrl = (content: string): string | null => {
 const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
 
 export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
-    const [adjacentFeeds, setAdjacentFeeds] = React.useState<AdjacentFeeds>();
     const [thumbnails, setThumbnails] = React.useState<Record<string, string>>({});
-    const [loading, setLoading] = React.useState<boolean>(true);
-    const {t} = useTranslation();
+
+    // 使用缓存Hook替代直接API调用，避免重复请求
+    const { data: adjacentFeeds, loading, error } = useAdjacentFeedsCache(id, !!id);
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
+    // 处理错误
     React.useEffect(() => {
-        setLoading(true);
-        client.feed
-            .adjacent({id})
-            .get()
-            .then(async ({data, error}) => {
-                if (error) {
-                    setError(error.value as string);
-                    setLoading(false);
-                } else if (data && typeof data !== "string") {
-                    setAdjacentFeeds(data);
-                    
-                    // 为每个相邻文章获取缩略图
-                    const extractedThumbnails: Record<string, string> = {};
-                    
-                    // 处理上一篇文章（移除CPU密集的fetchFullArticle调用）
-                    if (data.previousFeed) {
-                        let thumbnail = getThumbnailUrl(data.previousFeed);
+        if (error) {
+            setError(error);
+        }
+    }, [error, setError]);
 
-                        // 移除fetchFullArticle调用，避免CPU密集操作
-                        // 如果没有缩略图，使用null让组件显示占位符
+    // 处理缩略图提取
+    React.useEffect(() => {
+        if (adjacentFeeds && !loading) {
+            const extractedThumbnails: Record<string, string> = {};
 
-                        extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || null;
-                    }
-                    
-                    // 处理下一篇文章（移除CPU密集的fetchFullArticle调用）
-                    if (data.nextFeed) {
-                        let thumbnail = getThumbnailUrl(data.nextFeed);
+            // 处理上一篇文章
+            if (adjacentFeeds.previousFeed) {
+                let thumbnail = getThumbnailUrl(adjacentFeeds.previousFeed);
+                extractedThumbnails[`prev-${adjacentFeeds.previousFeed.id}`] = thumbnail || null;
+            }
 
-                        // 移除fetchFullArticle调用，避免CPU密集操作
-                        // 如果没有缩略图，使用null让组件显示占位符
+            // 处理下一篇文章
+            if (adjacentFeeds.nextFeed) {
+                let thumbnail = getThumbnailUrl(adjacentFeeds.nextFeed);
+                extractedThumbnails[`next-${adjacentFeeds.nextFeed.id}`] = thumbnail || null;
+            }
 
-                        extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || null;
-                    }
-                    
-                    setThumbnails(extractedThumbnails);
-                }
-                setLoading(false);
-            })
-            .catch((err) => {
-                setError("获取相邻文章信息失败");
-                setLoading(false);
-            });
-    }, [id, setError]);
+            setThumbnails(extractedThumbnails);
+        }
+    }, [adjacentFeeds, loading]);
     
     return (
         <div className="w-full mt-6 mb-6">

@@ -440,7 +440,7 @@ export function useTimelineCache() {
 
 /**
  * 单个文章缓存Hook
- * 
+ *
  * 用于文章详情页的数据获取
  */
 export function useFeedCache(id: string, enabled: boolean = true) {
@@ -466,6 +466,35 @@ export function useFeedCache(id: string, enabled: boolean = true) {
     staleTime: 20 * 60 * 1000, // 优化：20分钟缓存（单篇文章内容相对稳定）
     enabled: enabled && !!id,
     refetchOnWindowFocus: false // 文章内容不需要频繁刷新
+  });
+}
+
+/**
+ * 相邻文章缓存Hook
+ *
+ * 用于获取上一篇和下一篇文章，避免重复请求
+ */
+export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
+  const cacheKey = `adjacent_feeds_id:${id}`;
+
+  const fetcher = useMemo(() => async () => {
+    const response = await client.feed.adjacent({ id }).get();
+
+    if (response.error) {
+      throw new Error(response.error.value as string);
+    }
+
+    if (!response.data || typeof response.data === 'string') {
+      throw new Error('Adjacent feeds not found');
+    }
+
+    return response.data;
+  }, [id]);
+
+  return useApiCache(cacheKey, fetcher, {
+    staleTime: 30 * 60 * 1000, // 30分钟缓存（相邻文章变化频率更低）
+    enabled: enabled && !!id,
+    refetchOnWindowFocus: false // 相邻文章不需要频繁刷新
   });
 }
 

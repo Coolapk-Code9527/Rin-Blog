@@ -193,13 +193,14 @@ export function FeedsPage() {
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE) // 服务端分页每页显示数量
 
     // 使用缓存Hook替代直接API调用和本地状态管理
-    // 恢复为获取所有数据，在前端进行排序和分页
+    // 恢复批量获取模式，分批获取所有数据避免CPU超时
     const {
         data: feedsData,
         loading,
         invalidate: invalidateFeedsCache
     } = useFeedsCache({
         type: listState as FeedType,
+        limit: 9999, // 触发useEnhancedFeedsCache批量获取模式
         enabled: true
     })
     const ref = React.useRef("")
