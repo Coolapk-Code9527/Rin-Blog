@@ -604,6 +604,7 @@ export function FeedService() {
                             hashtags: hashtags_flatten,
                             createdAt: feed.createdAt,
                             updatedAt: feed.updatedAt,
+                            avatar: feed.avatar, // 修复：添加缺失的avatar字段
                             };
                             cache.set(cacheKey, cacheData);
                             return cacheData;

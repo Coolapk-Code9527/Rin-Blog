@@ -72,36 +72,15 @@ const extractImageUrl = (content: string): string | null => {
     return null;
 };
 
-// 智能fallback：有条件地获取完整文章信息
-const fetchFullArticle = async (id: number): Promise<string | null> => {
-    try {
-        const response = await client.feed({ id: id.toString() }).get();
-        if (!response.error && response.data && typeof response.data !== "string") {
-            // 检查数据是否包含avatar字段
-            if ('avatar' in response.data && response.data.avatar) {
-                return response.data.avatar as string;
-            }
+// 移除fetchFullArticle函数，因为服务端API已经提供avatar字段
+// 这避免了额外的重量级API请求，解决CPU性能问题
 
-            // 如果没有avatar字段，从content中提取第一张图片
-            if ('content' in response.data) {
-                return extractImageUrl(response.data.content as string);
-            }
-        }
-    } catch (error) {
-        // 静默处理错误，避免影响用户体验
-        return null;
-    }
-    return null;
-};
-
-// 默认图片常量
-const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
+// 移除未使用的DEFAULT_THUMBNAIL常量
 
 export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
     const [adjacentFeeds, setAdjacentFeeds] = React.useState<AdjacentFeeds>();
     const [thumbnails, setThumbnails] = React.useState<Record<string, string>>({});
     const [loading, setLoading] = React.useState<boolean>(true);
-    const {t} = useTranslation();
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -118,30 +97,18 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                 } else if (data && typeof data !== "string") {
                     setAdjacentFeeds(data);
                     
-                    // 为每个相邻文章获取缩略图
+                    // 为每个相邻文章获取缩略图（优化：移除额外API请求）
                     const extractedThumbnails: Record<string, string> = {};
-                    
-                    // 处理上一篇文章（智能fallback恢复）
+
+                    // 处理上一篇文章
                     if (data.previousFeed) {
-                        let thumbnail = getThumbnailUrl(data.previousFeed);
-
-                        // 只在avatar和summary都没有图片时才调用fetchFullArticle
-                        if (!thumbnail) {
-                            thumbnail = await fetchFullArticle(data.previousFeed.id);
-                        }
-
+                        const thumbnail = getThumbnailUrl(data.previousFeed);
                         extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || null;
                     }
-                    
-                    // 处理下一篇文章（智能fallback恢复）
+
+                    // 处理下一篇文章
                     if (data.nextFeed) {
-                        let thumbnail = getThumbnailUrl(data.nextFeed);
-
-                        // 只在avatar和summary都没有图片时才调用fetchFullArticle
-                        if (!thumbnail) {
-                            thumbnail = await fetchFullArticle(data.nextFeed.id);
-                        }
-
+                        const thumbnail = getThumbnailUrl(data.nextFeed);
                         extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || null;
                     }
                     
@@ -149,7 +116,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                 }
                 setLoading(false);
             })
-            .catch((err) => {
+            .catch(() => {
                 setError("获取相邻文章信息失败");
                 setLoading(false);
             });
@@ -186,7 +153,6 @@ export function AdjacentCard({
     thumbnail: string | undefined,
     loading: boolean
 }) {
-    const direction = type === "previous" ? "text-start" : "text-end";
     const {t} = useTranslation();
 
     // 添加图片错误状态管理
@@ -197,7 +163,7 @@ export function AdjacentCard({
 
     if (!data) {
         return (
-            <div className="h-full w-full block p-4 sm:p-6 duration-300 flex items-center justify-center min-h-[5.5rem] sm:min-h-[8rem] bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20 transition-colors">
+            <div className="h-full w-full block p-4 sm:p-6 duration-300 flex items-center justify-center h-20 sm:h-32 bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20 transition-colors">
                 <span className="text-xs sm:text-sm text-neutral-400 dark:text-neutral-500 font-medium">{t('no_more')}</span>
             </div>
         );
@@ -220,7 +186,6 @@ export function AdjacentCard({
                             alt={data.title || ""}
                             className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${type === "previous" ? "rounded-l-2xl" : "rounded-r-2xl"}`}
                             loading="lazy"
-                            style={{height:'100%'}}
                             onError={() => {
                                 // 使用React状态管理而不是直接DOM操作
                                 setImageError(true);
