@@ -586,21 +586,24 @@ export function FeedService() {
                     const created_at = feed.createdAt;
 
                     const cache = PublicCache();
-                    // 性能优化：简化数据格式化，移除不必要的hashtags处理
                     function formatAndCacheData(
                         feed: any,
                         feedDirection: "previous_feed" | "next_feed",
                     ) {
                         if (feed) {
-                            // 使用现有的summary，如果为空则使用空字符串（避免content处理的CPU消耗）
-                            const summary = feed.summary || "";
+                            const hashtags_flatten = feed.hashtags.map((f: any) => f.hashtag);
+                            const summary =
+                                feed.summary.length > 0
+                                    ? feed.summary
+                                    : markdownToPlainText(feed.content, 300);
                             const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                             const cacheData = {
-                                id: feed.id,
-                                title: feed.title,
-                                summary: summary,
-                                createdAt: feed.createdAt,
-                                updatedAt: feed.updatedAt,
+                            id: feed.id,
+                            title: feed.title,
+                            summary: summary,
+                            hashtags: hashtags_flatten,
+                            createdAt: feed.createdAt,
+                            updatedAt: feed.updatedAt,
                             };
                             cache.set(cacheKey, cacheData);
                             return cacheData;
@@ -614,20 +617,25 @@ export function FeedService() {
                         if (previousFeedCached && previousFeedCached.length > 0) {
                             return previousFeedCached[0];
                         } else {
-                            // 性能优化：移除不必要的关联查询，只获取相邻文章组件需要的字段
                             const tempPreviousFeed = await db.query.feeds.findFirst({
                                 where: and(
                                     and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
                                     lt(feeds.createdAt, created_at),
                                 ),
                                 orderBy: [desc(feeds.createdAt)],
-                                columns: {
-                                    id: true,
-                                    title: true,
-                                    summary: true,
-                                    createdAt: true,
-                                    updatedAt: true
-                                }
+                                with: {
+                                    hashtags: {
+                                        columns: {},
+                                        with: {
+                                            hashtag: {
+                                                columns: { id: true, name: true },
+                                            },
+                                        },
+                                    },
+                                    user: {
+                                        columns: { id: true, username: true, avatar: true },
+                                    },
+                                },
                             });
                             return formatAndCacheData(tempPreviousFeed, "previous_feed");
                         }
@@ -639,20 +647,25 @@ export function FeedService() {
                         if (nextFeedCached && nextFeedCached.length > 0) {
                             return nextFeedCached[0];
                         } else {
-                            // 性能优化：移除不必要的关联查询，只获取相邻文章组件需要的字段
                             const tempNextFeed = await db.query.feeds.findFirst({
                                 where: and(
                                     and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
                                     gt(feeds.createdAt, created_at),
                                 ),
                                 orderBy: [asc(feeds.createdAt)],
-                                columns: {
-                                    id: true,
-                                    title: true,
-                                    summary: true,
-                                    createdAt: true,
-                                    updatedAt: true
-                                }
+                                with: {
+                                    hashtags: {
+                                        columns: {},
+                                        with: {
+                                            hashtag: {
+                                                columns: { id: true, name: true },
+                                            },
+                                        },
+                                    },
+                                    user: {
+                                        columns: { id: true, username: true, avatar: true },
+                                    },
+                                },
                             });
                             return formatAndCacheData(tempNextFeed, "next_feed");
                         }

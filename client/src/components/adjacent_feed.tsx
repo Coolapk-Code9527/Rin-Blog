@@ -6,11 +6,14 @@ import {useTranslation} from "react-i18next";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
 
-// 性能优化：简化类型定义，移除不必要的hashtags字段
 export type AdjacentFeed = {
     id: number;
     title: string | null;
     summary: string;
+    hashtags: {
+        id: number;
+        name: string;
+    }[];
     createdAt: Date;
     updatedAt: Date;
     avatar?: string;
@@ -69,11 +72,11 @@ const extractImageUrl = (content: string): string | null => {
     return null;
 };
 
-// 移除fetchFullArticle函数以避免额外的API调用和CPU消耗
-// 现在完全依赖adjacent API返回的数据，使用占位符替代缺失的图片
+// fetchFullArticle函数已移除以优化CPU性能
+// 相邻文章现在只使用avatar和summary字段获取缩略图
+// 如果没有缩略图，将显示占位符
 
-// 默认图片常量
-const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
+// 默认图片常量已移除，现在使用占位符系统
 
 export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
     const [adjacentFeeds, setAdjacentFeeds] = React.useState<AdjacentFeeds>();
@@ -99,15 +102,19 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
                     // 为每个相邻文章获取缩略图
                     const extractedThumbnails: Record<string, string> = {};
                     
-                    // 处理上一篇文章（性能优化：移除额外API调用）
+                    // 处理上一篇文章（性能优化：移除fetchFullArticle调用）
                     if (data.previousFeed) {
-                        const thumbnail = getThumbnailUrl(data.previousFeed);
+                        let thumbnail = getThumbnailUrl(data.previousFeed);
+                        // 移除fetchFullArticle调用以避免CPU超时
+                        // 如果没有缩略图，将使用占位符显示
                         extractedThumbnails[`prev-${data.previousFeed.id}`] = thumbnail || null;
                     }
-
-                    // 处理下一篇文章（性能优化：移除额外API调用）
+                    
+                    // 处理下一篇文章（性能优化：移除fetchFullArticle调用）
                     if (data.nextFeed) {
-                        const thumbnail = getThumbnailUrl(data.nextFeed);
+                        let thumbnail = getThumbnailUrl(data.nextFeed);
+                        // 移除fetchFullArticle调用以避免CPU超时
+                        // 如果没有缩略图，将使用占位符显示
                         extractedThumbnails[`next-${data.nextFeed.id}`] = thumbnail || null;
                     }
                     
@@ -163,7 +170,7 @@ export function AdjacentCard({
 
     if (!data) {
         return (
-            <div className="h-full w-full block p-4 sm:p-6 duration-300 flex items-center justify-center h-20 sm:h-32 bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20 transition-colors">
+            <div className="w-full block duration-300 flex items-center justify-center h-20 sm:h-32 bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20 transition-colors">
                 <span className="text-xs sm:text-sm text-neutral-400 dark:text-neutral-500 font-medium">{t('no_more')}</span>
             </div>
         );
