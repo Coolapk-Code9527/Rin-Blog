@@ -274,22 +274,82 @@ export function Markdown({ content, onReady }: { content: string; onReady?: () =
     }
   }, [content, isReady, onReady]);
 
-  // 自动渲染 mermaid 图表
+  // 自动渲染 mermaid 图表 - 优化版本，解决DOM时机和坐标计算问题
   useEffect(() => {
     if (!isReady) return;
-    // 明亮主题
-    mermaid.initialize({ startOnLoad: false, theme: 'default' });
-    mermaid.run({
-      suppressErrors: true,
-      nodes: document.querySelectorAll('pre.mermaid_default')
-    }).then(() => {
-      // 暗色主题
-      mermaid.initialize({ startOnLoad: false, theme: 'dark' });
-      mermaid.run({
-        suppressErrors: true,
-        nodes: document.querySelectorAll('pre.mermaid_dark')
-      });
-    });
+
+    // 防抖延迟，确保DOM完全准备好
+    const renderTimeout = setTimeout(async () => {
+      try {
+        // 检查并渲染明亮主题图表
+        const lightNodes = document.querySelectorAll('pre.mermaid_default');
+        if (lightNodes.length > 0) {
+          // 确保所有节点都有有效的尺寸
+          const validLightNodes = Array.from(lightNodes).filter(node => {
+            const rect = node.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+          });
+
+          if (validLightNodes.length > 0) {
+            mermaid.initialize({
+              startOnLoad: false,
+              theme: 'default',
+              // 添加错误处理配置
+              errorLevel: 'warn',
+              // 确保有合理的默认尺寸
+              flowchart: { useMaxWidth: true, htmlLabels: true }
+            });
+
+            await mermaid.run({
+              suppressErrors: true,
+              nodes: validLightNodes as any // 类型转换，mermaid接受Element数组
+            });
+          }
+        }
+
+        // 检查并渲染暗色主题图表
+        const darkNodes = document.querySelectorAll('pre.mermaid_dark');
+        if (darkNodes.length > 0) {
+          // 确保所有节点都有有效的尺寸
+          const validDarkNodes = Array.from(darkNodes).filter(node => {
+            const rect = node.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+          });
+
+          if (validDarkNodes.length > 0) {
+            mermaid.initialize({
+              startOnLoad: false,
+              theme: 'dark',
+              // 添加错误处理配置
+              errorLevel: 'warn',
+              // 确保有合理的默认尺寸
+              flowchart: { useMaxWidth: true, htmlLabels: true }
+            });
+
+            await mermaid.run({
+              suppressErrors: true,
+              nodes: validDarkNodes as any // 类型转换，mermaid接受Element数组
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('Mermaid rendering failed:', error);
+
+        // 尝试清理可能损坏的mermaid元素并重试一次
+        try {
+          // 清理所有已渲染的mermaid元素
+          document.querySelectorAll('.mermaid').forEach(el => {
+            if (el.innerHTML.includes('translate(undefined, NaN)')) {
+              el.innerHTML = '<div class="text-center text-gray-500 p-4">图表渲染失败，请刷新页面重试</div>';
+            }
+          });
+        } catch (cleanupError) {
+          console.warn('Mermaid cleanup failed:', cleanupError);
+        }
+      }
+    }, 100); // 100ms延迟确保DOM准备就绪
+
+    return () => clearTimeout(renderTimeout);
   }, [content, isReady]);
 
   // 生成图片查看器的幻灯片
