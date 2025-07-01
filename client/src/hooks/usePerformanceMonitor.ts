@@ -226,14 +226,14 @@ export const usePerformanceMonitor = (config: PerformanceMonitorConfig = {}) => 
     const advice: string[] = [];
 
     if (performanceLevel === 'low') {
-      advice.push('建议禁用复杂动画以提升性能');
-      if (fps < 20) advice.push('帧率过低，建议使用静态界面');
-      if (memory.percentage > 90) advice.push('内存使用过高，建议刷新页面');
+      advice.push('Recommend disabling complex animations to improve performance');
+      if (fps < 20) advice.push('Frame rate too low, recommend using static interface');
+      if (memory.percentage > 90) advice.push('Memory usage too high, recommend refreshing page');
     } else if (performanceLevel === 'medium') {
-      advice.push('建议使用简化动画');
-      if (fps < 40) advice.push('可以降低动画复杂度');
+      advice.push('Recommend using simplified animations');
+      if (fps < 40) advice.push('Can reduce animation complexity');
     } else {
-      advice.push('性能良好，可以使用完整动画效果');
+      advice.push('Good performance, can use full animation effects');
     }
 
     return advice;

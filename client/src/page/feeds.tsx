@@ -31,8 +31,25 @@ import { useFeedCacheInvalidation } from "../hooks/useCacheEvents"
 
 
 
+// 懒加载Feed卡片组件的props类型 - 继承FeedCard的props并添加viewMode
+interface LazyFeedCardProps {
+    id: string;
+    title: string;
+    summary: string;
+    hashtags: { id: number; name: string }[];
+    createdAt: Date;
+    updatedAt: Date;
+    viewMode?: 'grid' | 'list';
+    avatar?: string;
+    draft?: number;
+    listed?: number;
+    top?: number;
+    pv?: number;
+    uv?: number;
+}
+
 // 懒加载Feed卡片组件
-function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
+function LazyFeedCardComponent({ id, viewMode, ...props }: LazyFeedCardProps) {
     const { t } = useTranslation(); // 添加翻译函数
     const [isVisible, setIsVisible] = React.useState(false);
     const [isIntersecting, setIsIntersecting] = React.useState(false); // 新增状态跟踪元素是否在视口内
@@ -171,7 +188,7 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
 }
 
 // 使用React.memo优化LazyFeedCard组件，避免不必要的重新渲染
-const LazyFeedCard: React.ComponentType<any> = React.memo(LazyFeedCardComponent);
+const LazyFeedCard: React.ComponentType<LazyFeedCardProps> = React.memo(LazyFeedCardComponent);
 
 export function FeedsPage() {
     const { t } = useTranslation()
@@ -184,26 +201,34 @@ export function FeedsPage() {
     // 智能响应式网格配置
     const { gridCols, showButtonText } = useSmartGrid(sidebarConfig.enabled);
 
-    // 从localStorage读取用户偏好，提供默认值
-    const [listState, _setListState] = React.useState<FeedType>(() => {
+    // 安全的localStorage读取函数
+    const getStoredListState = (): FeedType => {
         try {
-            const saved = localStorage.getItem('feeds-list-state') as FeedType;
-            return (saved && (saved === 'normal' || saved === 'draft' || saved === 'unlisted')) ? saved : 'normal';
+            const saved = localStorage.getItem('feeds-list-state');
+            if (saved && (saved === 'normal' || saved === 'draft' || saved === 'unlisted')) {
+                return saved as FeedType;
+            }
         } catch (error) {
-            console.warn(t('error.localStorage.get_list_state_failed'), error);
-            return 'normal';
+            console.warn('Failed to get list state from localStorage:', error);
         }
-    })
+        return 'normal';
+    };
 
-    const [sortType, setSortType] = React.useState<SortType>(() => {
+    const getStoredSortType = (): SortType => {
         try {
-            const saved = localStorage.getItem('feeds-sort-type') as SortType;
-            return (saved && (saved === 'latest' || saved === 'oldest' || saved === 'popular')) ? saved : 'latest';
+            const saved = localStorage.getItem('feeds-sort-type');
+            if (saved && (saved === 'latest' || saved === 'oldest' || saved === 'popular')) {
+                return saved as SortType;
+            }
         } catch (error) {
-            console.warn(t('error.localStorage.get_sort_type_failed'), error);
-            return 'latest';
+            console.warn('Failed to get sort type from localStorage:', error);
         }
-    })
+        return 'latest';
+    };
+
+    // 从localStorage读取用户偏好，提供默认值
+    const [listState, _setListState] = React.useState<FeedType>(getStoredListState)
+    const [sortType, setSortType] = React.useState<SortType>(getStoredSortType)
 
     // 统一的分页配置管理 - 不持久化页码，每次访问都从第一页开始
     const [page, setPage] = React.useState(1)
@@ -229,17 +254,17 @@ export function FeedsPage() {
         try {
             localStorage.setItem('feeds-list-state', listState);
         } catch (error) {
-            console.warn(t('error.localStorage.save_list_state_failed'), error);
+            console.warn('Failed to save list state to localStorage:', error);
         }
-    }, [listState, t]);
+    }, [listState]);
 
     React.useEffect(() => {
         try {
             localStorage.setItem('feeds-sort-type', sortType);
         } catch (error) {
-            console.warn(t('error.localStorage.save_sort_type_failed'), error);
+            console.warn('Failed to save sort type to localStorage:', error);
         }
-    }, [sortType, t]);
+    }, [sortType]);
 
     // 使用统一的缓存事件管理器监听文章发布/更新/删除事件
     useFeedCacheInvalidation(safeInvalidateFeedsCache);
@@ -265,9 +290,14 @@ export function FeedsPage() {
 
     // 列表状态切换处理函数
     const handleListStateChange = React.useCallback((newState: ListState) => {
-        _setListState(newState as FeedType);
-        // 切换状态时重置到第一页
-        setPage(1);
+        // 验证状态值的有效性
+        if (newState === 'normal' || newState === 'draft' || newState === 'unlisted') {
+            _setListState(newState as FeedType);
+            // 切换状态时重置到第一页
+            setPage(1);
+        } else {
+            console.warn('Invalid list state:', newState);
+        }
     }, [setPage]);
 
     // 恢复前端排序逻辑 - 服务端没有实现复杂排序（特别是热度排序）
@@ -429,16 +459,16 @@ export function FeedsPage() {
                 <div className="flex flex-col items-center justify-center p-8 text-center">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
                         <h2 className="text-lg font-semibold text-red-800 mb-2">
-                            {t('error.feeds_load_error')}
+                            Article List Loading Error
                         </h2>
                         <p className="text-red-600 mb-4">
-                            {t('error.feeds_load_error_desc')}
+                            The page encountered a problem, please refresh the page and try again.
                         </p>
                         <button
                             onClick={() => window.location.reload()}
                             className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
                         >
-                            {t('error.refresh_page')}
+                            Refresh Page
                         </button>
                     </div>
                 </div>

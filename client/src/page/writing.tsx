@@ -2060,7 +2060,12 @@ export function WritingPage({ id }: { id?: number }) {
   const [createdAt, setCreatedAt] = useState<Date | undefined>(new Date());
   const [preview, setPreview] = useCache<'edit' | 'preview' | 'comparison'>("preview", 'edit');
   const [publishing, setPublishing] = useState(false)
-  const [saveStatus, setSaveStatus] = useState(t('save'));
+  const [saveStatus, setSaveStatus] = useState('Save');
+
+  // 初始化保存状态的翻译
+  React.useEffect(() => {
+    setSaveStatus(t('save'));
+  }, [t]);
   const [editorScrolling, setEditorScrolling] = useState(false);
   const [previewScrolling, setPreviewScrolling] = useState(false);
   const { showAlert } = useGlobalDialog();

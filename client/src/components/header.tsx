@@ -329,7 +329,7 @@ function MobileMenu() {
             setSearchHistory(history);
             localStorage.setItem('search_history', JSON.stringify(history));
         } catch (e) {
-            console.error('保存搜索历史失败', e);
+            console.error('Failed to save search history', e);
         }
     };
     

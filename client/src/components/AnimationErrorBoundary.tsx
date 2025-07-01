@@ -186,7 +186,7 @@ export const NotFoundErrorBoundary = ({ children }: { children: React.ReactNode 
             404
           </div>
           <div className="text-gray-500 dark:text-gray-400 text-sm">
-            动画加载失败，已切换到静态模式
+            Animation failed to load, switched to static mode
           </div>
         </div>
       }
