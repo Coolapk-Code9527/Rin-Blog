@@ -110,6 +110,7 @@ function useOriginalFeedsCache(config: UseFeedsCacheConfig) {
         page,
         limit,
         type,
+        lightweight: true,  // 修复：添加lightweight参数，优化性能并避免"暂无摘要"问题
         ...(sortByTime && { sortByTime: true })
       },
       headers: headersWithAuth()
@@ -202,7 +203,7 @@ function useEnhancedFeedsCache({
     // 注意：不在这里做并发保护，交给useApiCache处理
     // 避免双重保护导致的冲突
 
-      const batchSize = 10; // 当前后端限制为10条（测试环境）
+      const batchSize = 20; // 优化：调整为20条，平衡性能和稳定性（500篇文章=25次请求）
     let allData: any[] = [];
     let totalSize = 0;
     let hasMore = true;

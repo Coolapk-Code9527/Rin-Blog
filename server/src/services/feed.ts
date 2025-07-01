@@ -153,7 +153,7 @@ export function FeedService() {
                         set.status = 400;
                         return `Invalid limit parameter: ${limitParseResult.error}`;
                     }
-                    const limit_num = Math.min(limitParseResult.value!, 10); // 测试：限制最大值为10
+                    const limit_num = limitParseResult.value!; // 移除限制：允许客户端控制批次大小
                     
                     let cacheKey = '';
                     let hasNext = false;
@@ -201,7 +201,7 @@ export function FeedService() {
                         );
 
                         // 优化：添加更严格的限制和超时保护
-                        const maxLimit = Math.min(limit_num + 1, 10); // 测试：进一步限制最大查询数量为10
+                        const maxLimit = limit_num + 1; // 移除限制：允许获取请求数量+1用于判断hasNext
 
                         const feedsData = await db.query.feeds.findMany({
                             where: and(where, cursorCondition),
@@ -233,7 +233,9 @@ export function FeedService() {
                         const processedFeeds = await Promise.all(
                             feedsData.map(async ({ content, hashtags, summary, ...other }) => {
                                 // 检查缓存中是否已有预计算的结果
-                                const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
+                                // 优化：移除updatedAt依赖，使用内容哈希提高缓存命中率
+                                const contentHash = content ? content.slice(0, 100) : '';
+                                const cacheKey = `feed_processed_${other.id}_${contentHash.length}_${summary.length}`;
                                 const cached = await cache.get(cacheKey);
 
                                 let avatar: string | undefined;
@@ -245,9 +247,12 @@ export function FeedService() {
                                 } else {
                                     // 检查lightweight参数，优化CPU密集操作
                                     if (lightweight) {
-                                        // lightweight模式：提取avatar，如果summary为空则生成简短摘要（限制长度减少CPU使用）
+                                        // 真正轻量化模式：优先使用现有数据，最小化CPU密集操作
                                         avatar = content ? extractImage(content) : undefined;
-                                        processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 150) : '');
+                                        // 修复：lightweight模式优先使用summary，避免依赖content生成摘要
+                                        processedSummary = summary.length > 0 ? summary :
+                                            (content && content.length < 500 ? markdownToPlainText(content, 100) :
+                                                (content ? markdownToPlainText(content, 100) : '点击查看详情'));
                                     } else {
                                         // 完整模式：进行所有计算，确保content存在
                                         avatar = content ? extractImage(content) : undefined;
@@ -320,7 +325,9 @@ export function FeedService() {
                     const processedFeeds2 = await Promise.all(
                         feedsData2.map(async ({ content, hashtags, summary, ...other }) => {
                             // 检查缓存中是否已有预计算的结果
-                            const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
+                            // 优化：移除updatedAt依赖，使用内容哈希提高缓存命中率
+                            const contentHash = content ? content.slice(0, 100) : '';
+                            const cacheKey = `feed_processed_${other.id}_${contentHash.length}_${summary.length}`;
                             const cached = await cache.get(cacheKey);
 
                             let avatar: string | undefined;
@@ -332,9 +339,12 @@ export function FeedService() {
                             } else {
                                 // 检查lightweight参数，优化CPU密集操作
                                 if (lightweight) {
-                                    // lightweight模式：提取avatar，如果summary为空则生成简短摘要（限制长度减少CPU使用）
+                                    // 真正轻量化模式：优先使用现有数据，最小化CPU密集操作
                                     avatar = content ? extractImage(content) : undefined;
-                                    processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 150) : '');
+                                    // 修复：lightweight模式优先使用summary，避免依赖content生成摘要
+                                    processedSummary = summary.length > 0 ? summary :
+                                        (content && content.length < 500 ? markdownToPlainText(content, 100) :
+                                            (content ? markdownToPlainText(content, 100) : '点击查看详情'));
                                 } else {
                                     // 完整模式：进行所有计算，确保content存在
                                     avatar = content ? extractImage(content) : undefined;
@@ -844,7 +854,7 @@ export function FeedService() {
             }
 
             const page_num = pageParseResult.value! - 1; // 转换为0基索引
-            const limit_num = Math.min(limitParseResult.value!, 50); // 限制最大值为50
+            const limit_num = limitParseResult.value!; // 移除限制：允许搜索接口灵活控制数量
             if (keyword === undefined || keyword.trim().length === 0) {
                 return {
                     size: 0,

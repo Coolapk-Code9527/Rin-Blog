@@ -123,7 +123,20 @@
     "page_not_exist": "您訪問的頁面不存在或已被移除",
     "page_not_exist_desc": "頁面可能已被移動、刪除，或連結地址不正確",
     "back_home": "返回首頁",
-    "go_back": "返回上頁"
+    "go_back": "返回上頁",
+    "localStorage": {
+      "get_list_state_failed": "從本地存儲獲取列表狀態失敗",
+      "get_sort_type_failed": "從本地存儲獲取排序類型失敗",
+      "save_list_state_failed": "保存列表狀態到本地存儲失敗",
+      "save_sort_type_failed": "保存排序類型到本地存儲失敗"
+    },
+    "feeds_load_error": "文章列表載入出錯",
+    "feeds_load_error_desc": "頁面遇到了一個問題，請重新整理頁面重試。",
+    "refresh_page": "重新整理頁面",
+    "article_loading": "文章內容載入中",
+    "article_list_loading": "文章列表載入中",
+    "draft_only_visible": "(僅自己可見)",
+    "unlisted_link_access": "(有連結才能存取)"
   },
   "feed_card": {
     "published$time": "發布於 {{time}}",

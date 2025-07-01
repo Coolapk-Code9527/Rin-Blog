@@ -1,6 +1,6 @@
 import React, { useMemo } from "react"
 import { Helmet } from 'react-helmet-async'
-import { Link, useSearch, useLocation } from "wouter"
+import { Link } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
@@ -33,6 +33,7 @@ import { useFeedCacheInvalidation } from "../hooks/useCacheEvents"
 
 // 懒加载Feed卡片组件
 function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
+    const { t } = useTranslation(); // 添加翻译函数
     const [isVisible, setIsVisible] = React.useState(false);
     const [isIntersecting, setIsIntersecting] = React.useState(false); // 新增状态跟踪元素是否在视口内
     const cardRef = React.useRef<HTMLDivElement>(null);
@@ -106,7 +107,7 @@ function LazyFeedCardComponent({ id, viewMode, ...props }: any) {
                 <div
                     className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced transition-opacity duration-300 ${isIntersecting ? 'opacity-100' : 'opacity-40'} ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}
                     aria-hidden="true"
-                    aria-label="文章内容加载中"
+                    aria-label={t('error.article_loading')}
                 >
                     {/* 骨架屏图片区域 - 使用彩色背景 */}
                     <div
@@ -174,8 +175,6 @@ const LazyFeedCard: React.ComponentType<any> = React.memo(LazyFeedCardComponent)
 
 export function FeedsPage() {
     const { t } = useTranslation()
-    const query = new URLSearchParams(useSearch());
-    const [, setLocation] = useLocation();
     const profile = React.useContext(ProfileContext);
     const config = React.useContext(ClientConfigContext);
 
@@ -185,12 +184,30 @@ export function FeedsPage() {
     // 智能响应式网格配置
     const { gridCols, showButtonText } = useSmartGrid(sidebarConfig.enabled);
 
-    const [listState, _setListState] = React.useState<FeedType>(query.get("type") as FeedType || 'normal')
-    const [sortType, setSortType] = React.useState<SortType>(query.get("sort") as SortType || 'latest')
+    // 从localStorage读取用户偏好，提供默认值
+    const [listState, _setListState] = React.useState<FeedType>(() => {
+        try {
+            const saved = localStorage.getItem('feeds-list-state') as FeedType;
+            return (saved && (saved === 'normal' || saved === 'draft' || saved === 'unlisted')) ? saved : 'normal';
+        } catch (error) {
+            console.warn(t('error.localStorage.get_list_state_failed'), error);
+            return 'normal';
+        }
+    })
 
-    // 统一的分页配置管理
-    const page = tryInt(1, query.get("page"))
-    const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE) // 服务端分页每页显示数量
+    const [sortType, setSortType] = React.useState<SortType>(() => {
+        try {
+            const saved = localStorage.getItem('feeds-sort-type') as SortType;
+            return (saved && (saved === 'latest' || saved === 'oldest' || saved === 'popular')) ? saved : 'latest';
+        } catch (error) {
+            console.warn(t('error.localStorage.get_sort_type_failed'), error);
+            return 'latest';
+        }
+    })
+
+    // 统一的分页配置管理 - 不持久化页码，每次访问都从第一页开始
+    const [page, setPage] = React.useState(1)
+    const limit = tryInt(10, null, process.env.PAGE_SIZE) // 服务端分页每页显示数量
 
     // 使用缓存Hook替代直接API调用和本地状态管理
     // 恢复批量获取模式，分批获取所有数据避免CPU超时
@@ -203,10 +220,26 @@ export function FeedsPage() {
         limit: 9999, // 触发useEnhancedFeedsCache批量获取模式
         enabled: true
     })
-    const ref = React.useRef("")
 
     // 使用安全的缓存失效机制
     const safeInvalidateFeedsCache = useSafeCacheInvalidation(invalidateFeedsCache);
+
+    // 保存用户偏好到localStorage
+    React.useEffect(() => {
+        try {
+            localStorage.setItem('feeds-list-state', listState);
+        } catch (error) {
+            console.warn(t('error.localStorage.save_list_state_failed'), error);
+        }
+    }, [listState, t]);
+
+    React.useEffect(() => {
+        try {
+            localStorage.setItem('feeds-sort-type', sortType);
+        } catch (error) {
+            console.warn(t('error.localStorage.save_sort_type_failed'), error);
+        }
+    }, [sortType, t]);
 
     // 使用统一的缓存事件管理器监听文章发布/更新/删除事件
     useFeedCacheInvalidation(safeInvalidateFeedsCache);
@@ -226,30 +259,16 @@ export function FeedsPage() {
     // 排序处理函数
     const handleSortChange = React.useCallback((newSort: SortType) => {
         setSortType(newSort);
-        // 更新URL参数
-        const newQuery = new URLSearchParams(query);
-        newQuery.set('sort', newSort);
-        if (newQuery.get('page') !== '1') {
-            newQuery.set('page', '1'); // 切换排序时重置到第一页
-        }
-        setLocation(`/?${newQuery.toString()}`);
-    }, [query, setLocation]);
+        // 切换排序时重置到第一页
+        setPage(1);
+    }, [setPage]);
 
     // 列表状态切换处理函数
     const handleListStateChange = React.useCallback((newState: ListState) => {
         _setListState(newState as FeedType);
-        // 更新URL参数
-        const newQuery = new URLSearchParams(query);
-        if (newState === 'normal') {
-            newQuery.delete('type');
-        } else {
-            newQuery.set('type', newState);
-        }
-        if (newQuery.get('page') !== '1') {
-            newQuery.set('page', '1'); // 切换状态时重置到第一页
-        }
-        setLocation(`/?${newQuery.toString()}`);
-    }, [query, setLocation]);
+        // 切换状态时重置到第一页
+        setPage(1);
+    }, [setPage]);
 
     // 恢复前端排序逻辑 - 服务端没有实现复杂排序（特别是热度排序）
     const sortedFeeds = React.useMemo(() => {
@@ -394,20 +413,7 @@ export function FeedsPage() {
         return Math.ceil(sortedFeeds.length / limit);
     }, [sortedFeeds.length, limit]);
     
-    React.useEffect(() => {
-        const key = `${query.get("type")} ${query.get("sort")}`
-        if (ref.current == key) return
-        const type = query.get("type") as FeedType || 'normal'
-        const sort = query.get("sort") as SortType || 'latest'
-        if (type !== listState) {
-            _setListState(type)
-        }
-        if (sort !== sortType) {
-            setSortType(sort)
-        }
-        // 缓存Hook会自动处理数据获取，无需手动调用fetchFeeds
-        ref.current = key
-    }, [query.get("type"), query.get("sort"), listState, sortType]) // 移除fetchFeeds依赖
+    // 移除URL参数读取逻辑，改为使用本地状态管理
 
     // 单独处理页面变化，不重新获取数据
     React.useEffect(() => {
@@ -423,16 +429,16 @@ export function FeedsPage() {
                 <div className="flex flex-col items-center justify-center p-8 text-center">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
                         <h2 className="text-lg font-semibold text-red-800 mb-2">
-                            文章列表加载出错
+                            {t('error.feeds_load_error')}
                         </h2>
                         <p className="text-red-600 mb-4">
-                            页面遇到了一个问题，请刷新页面重试。
+                            {t('error.feeds_load_error_desc')}
                         </p>
                         <button
                             onClick={() => window.location.reload()}
                             className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
                         >
-                            刷新页面
+                            {t('error.refresh_page')}
                         </button>
                     </div>
                 </div>
@@ -460,8 +466,8 @@ export function FeedsPage() {
                                 <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
                                 <span className="ml-1 sm:ml-1.5">
                                     {t('article.total$count', { count: feedsData?.size || 0 })}
-                                    {listState === 'draft' && '(仅自己可见)'}
-                                    {listState === 'unlisted' && '(有链接才能访问)'}
+                                    {listState === 'draft' && t('error.draft_only_visible')}
+                                    {listState === 'unlisted' && t('error.unlisted_link_access')}
                                 </span>
                             </div>
                         </div>
@@ -520,7 +526,7 @@ export function FeedsPage() {
                                     key={`skeleton-${i}`}
                                     className={`block w-full rounded-2xl ${glassClass} h-full overflow-hidden border border-neutral-300/60 dark:border-neutral-600/60 shadow-enhanced ${viewMode === 'list' ? 'flex flex-row h-[160px] sm:h-[180px] md:h-[200px]' : 'flex flex-col h-[380px] sm:h-[400px] md:h-[420px]'}`}
                                     aria-hidden="true"
-                                    aria-label="文章列表加载中"
+                                    aria-label={t('error.article_list_loading')}
                                 >
                                     {/* 骨架屏图片区域 - 使用彩色背景 */}
                                     <div
@@ -615,7 +621,7 @@ export function FeedsPage() {
                         <Pagination
                             currentPage={page}
                             totalPages={totalPages}
-                            basePath={`/?type=${listState}${sortType !== 'latest' ? `&sort=${sortType}` : ''}`}
+                            onPageChange={setPage}
                             className="gap-2"
                         />
                     </div>

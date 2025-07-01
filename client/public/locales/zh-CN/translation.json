@@ -123,7 +123,20 @@
     "page_not_exist": "你访问的页面不存在或已被移除",
     "page_not_exist_desc": "页面可能已被移动、删除或链接地址有误",
     "back_home": "返回首页",
-    "go_back": "返回上页"
+    "go_back": "返回上页",
+    "localStorage": {
+      "get_list_state_failed": "从本地存储获取列表状态失败",
+      "get_sort_type_failed": "从本地存储获取排序类型失败",
+      "save_list_state_failed": "保存列表状态到本地存储失败",
+      "save_sort_type_failed": "保存排序类型到本地存储失败"
+    },
+    "feeds_load_error": "文章列表加载出错",
+    "feeds_load_error_desc": "页面遇到了一个问题，请刷新页面重试。",
+    "refresh_page": "刷新页面",
+    "article_loading": "文章内容加载中",
+    "article_list_loading": "文章列表加载中",
+    "draft_only_visible": "(仅自己可见)",
+    "unlisted_link_access": "(有链接才能访问)"
   },
   "feed": "动态",
   "feed_card": {
