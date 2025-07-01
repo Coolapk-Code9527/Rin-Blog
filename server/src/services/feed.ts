@@ -40,85 +40,6 @@ async function getBatchVisitStats(db: any, feedIds: number[]): Promise<Map<numbe
     return await processBatchVisitStats(db, feedIds);
 }
 
-/**
- * 批量处理文章数据 - 统一的数据处理流程
- * 包含访问统计获取和文章处理的完整流程
- */
-async function processFeedList(
-    feedsData: any[],
-    lightweight: boolean,
-    cache: any,
-    db: any
-) {
-    // 批量获取访问统计数据，避免N+1查询问题
-    const feedIds = feedsData.map(f => f.id);
-    const visitStatsMap = await getBatchVisitStats(db, feedIds);
-
-    // 使用统一的文章处理函数，消除代码重复
-    return await Promise.all(
-        feedsData.map(feedData => processFeedItem(feedData, lightweight, cache, visitStatsMap))
-    );
-}
-
-/**
- * 统一的文章处理函数 - 消除代码重复
- * 处理avatar提取、summary生成、缓存管理和访问统计获取
- */
-async function processFeedItem(
-    feedData: {
-        id: number;
-        content: string | null;
-        hashtags: any[];
-        summary: string;
-        createdAt: Date;
-        updatedAt: Date;
-        [key: string]: any
-    },
-    lightweight: boolean,
-    cache: any,
-    visitStatsMap: Map<number, { pv: number, uv: number }>
-) {
-    const { content, hashtags, summary, ...other } = feedData;
-
-    // 检查缓存中是否已有预计算的结果
-    const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
-    const cached = await cache.get(cacheKey);
-
-    let avatar: string | undefined;
-    let processedSummary: string;
-
-    if (cached) {
-        avatar = cached.avatar;
-        processedSummary = cached.summary;
-    } else {
-        // 检查lightweight参数，优化CPU密集操作
-        if (lightweight) {
-            // lightweight模式：提取avatar，如果summary为空则生成简短摘要（限制长度减少CPU使用）
-            avatar = content ? extractImage(content) : undefined;
-            processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 150) : '');
-        } else {
-            // 完整模式：进行所有计算，确保content存在
-            avatar = content ? extractImage(content) : undefined;
-            processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 300) : '');
-        }
-
-        // 缓存预计算结果
-        await cache.set(cacheKey, { avatar, summary: processedSummary });
-    }
-
-    // 从批量查询结果中获取访问统计
-    const stats = visitStatsMap.get(other.id) || { pv: 0, uv: 0 };
-
-    return {
-        ...other,
-        summary: processedSummary,
-        hashtags: hashtags.map(({ hashtag }) => hashtag),
-        avatar,
-        pv: stats.pv,
-        uv: stats.uv
-    };
-}
-
 // 处理单个批次的访问统计数据
 async function processBatchVisitStats(db: any, feedIds: number[]): Promise<Map<number, { pv: number, uv: number }>> {
 
@@ -304,8 +225,52 @@ export function FeedService() {
                             limit: maxLimit,
                         });
 
-                        // 使用统一的批量处理函数，进一步消除重复代码
-                        const processedFeeds = await processFeedList(feedsData, lightweight || false, cache, db);
+                        // 批量获取访问统计数据，避免N+1查询问题
+                        const feedIds = feedsData.map(f => f.id);
+                        const visitStatsMap = await getBatchVisitStats(db, feedIds);
+
+                        // 性能优化：批量预计算avatar和summary，减少重复计算
+                        const processedFeeds = await Promise.all(
+                            feedsData.map(async ({ content, hashtags, summary, ...other }) => {
+                                // 检查缓存中是否已有预计算的结果
+                                const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
+                                const cached = await cache.get(cacheKey);
+
+                                let avatar: string | undefined;
+                                let processedSummary: string;
+
+                                if (cached) {
+                                    avatar = cached.avatar;
+                                    processedSummary = cached.summary;
+                                } else {
+                                    // 检查lightweight参数，优化CPU密集操作
+                                    if (lightweight) {
+                                        // lightweight模式：提取avatar，如果summary为空则生成简短摘要（限制长度减少CPU使用）
+                                        avatar = content ? extractImage(content) : undefined;
+                                        processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 150) : '');
+                                    } else {
+                                        // 完整模式：进行所有计算，确保content存在
+                                        avatar = content ? extractImage(content) : undefined;
+                                        processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 300) : '');
+                                    }
+
+                                    // 缓存预计算结果
+                                    await cache.set(cacheKey, { avatar, summary: processedSummary });
+                                }
+
+                                // 从批量查询结果中获取访问统计
+                                const stats = visitStatsMap.get(other.id) || { pv: 0, uv: 0 };
+
+                                return {
+                                    summary: processedSummary,
+                                    hashtags: hashtags.map(({ hashtag }) => hashtag),
+                                    avatar,
+                                    pv: stats.pv,
+                                    uv: stats.uv,
+                                    ...other
+                                }
+                            })
+                        );
 
                         feed_list = processedFeeds;
                     } else {
@@ -347,8 +312,52 @@ export function FeedService() {
                         limit: limit_num + 1,
                     });
 
-                    // 使用统一的批量处理函数，进一步消除重复代码
-                    const processedFeeds2 = await processFeedList(feedsData2, lightweight || false, cache, db);
+                    // 批量获取访问统计数据，避免N+1查询问题
+                    const feedIds2 = feedsData2.map(f => f.id);
+                    const visitStatsMap2 = await getBatchVisitStats(db, feedIds2);
+
+                    // 性能优化：批量预计算avatar和summary，减少重复计算
+                    const processedFeeds2 = await Promise.all(
+                        feedsData2.map(async ({ content, hashtags, summary, ...other }) => {
+                            // 检查缓存中是否已有预计算的结果
+                            const cacheKey = `feed_processed_${other.id}_${other.updatedAt}`;
+                            const cached = await cache.get(cacheKey);
+
+                            let avatar: string | undefined;
+                            let processedSummary: string;
+
+                            if (cached) {
+                                avatar = cached.avatar;
+                                processedSummary = cached.summary;
+                            } else {
+                                // 检查lightweight参数，优化CPU密集操作
+                                if (lightweight) {
+                                    // lightweight模式：提取avatar，如果summary为空则生成简短摘要（限制长度减少CPU使用）
+                                    avatar = content ? extractImage(content) : undefined;
+                                    processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 150) : '');
+                                } else {
+                                    // 完整模式：进行所有计算，确保content存在
+                                    avatar = content ? extractImage(content) : undefined;
+                                    processedSummary = summary.length > 0 ? summary : (content ? markdownToPlainText(content, 300) : '');
+                                }
+
+                                // 缓存预计算结果
+                                await cache.set(cacheKey, { avatar, summary: processedSummary });
+                            }
+
+                            // 从批量查询结果中获取访问统计
+                            const stats = visitStatsMap2.get(other.id) || { pv: 0, uv: 0 };
+
+                            return {
+                                summary: processedSummary,
+                                hashtags: hashtags.map(({ hashtag }) => hashtag),
+                                avatar,
+                                pv: stats.pv,
+                                uv: stats.uv,
+                                ...other
+                            }
+                        })
+                    );
 
                     feed_list = processedFeeds2;
                     }
