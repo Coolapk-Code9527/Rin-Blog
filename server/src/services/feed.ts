@@ -611,6 +611,10 @@ export function FeedService() {
                                 feed.summary.length > 0
                                     ? feed.summary
                                     : markdownToPlainText(feed.content, 300);
+
+                            // 修复：添加avatar字段处理，从文章内容中提取图片作为缩略图
+                            const avatar = extractImage(feed.content);
+
                             const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                             const cacheData = {
                             id: feed.id,
@@ -619,6 +623,7 @@ export function FeedService() {
                             hashtags: hashtags_flatten,
                             createdAt: feed.createdAt,
                             updatedAt: feed.updatedAt,
+                            avatar: avatar, // 添加avatar字段
                             };
                             cache.set(cacheKey, cacheData);
                             return cacheData;

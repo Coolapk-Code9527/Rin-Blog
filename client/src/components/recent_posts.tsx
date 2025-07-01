@@ -6,20 +6,12 @@ import { timeago } from "../utils/timeago";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
 import { useRecentPostsCache } from '../hooks/useFeedsCache';
+import { getBatchThumbnailUrls } from '../utils/thumbnailUtils';
 
-interface Post {
-  id: number;
-  title: string | null;
-  createdAt: Date;
-  // 移除content字段，避免CPU密集操作
-  avatar?: string;
-  summary?: string;
-  thumbUrl?: string; // 缩略图URL
-}
+// 移除了Post接口，直接使用API返回的数据类型
 
 export function RecentPosts() {
   const { t } = useTranslation();
-  const [thumbnails, setThumbnails] = React.useState<Record<number, string | null>>({});
 
   // 使用新的缓存Hook获取最近文章
   const { data: posts = [], loading, error } = useRecentPostsCache(3);
@@ -27,58 +19,9 @@ export function RecentPosts() {
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
-  // 获取文章缩略图的优先级逻辑（功能恢复版本）
-  const getThumbnailUrl = (post: Post): string | null => {
-    // 1. 优先使用专门的缩略图URL（如果API提供）
-    if (post.thumbUrl) {
-      return post.thumbUrl;
-    }
-
-    // 2. 使用API提供的avatar字段（保持性能优化）
-    if (post.avatar) {
-      return post.avatar;
-    }
-
-    // 3. 从完整摘要中提取图片（恢复完整搜索范围）
-    if (post.summary) {
-      const summaryImage = extractImageFromContent(post.summary);
-      if (summaryImage) {
-        return summaryImage;
-      }
-    }
-
-    // 4. 移除content字段的使用，避免CPU密集操作
-    // 如果没有找到图片，返回null使用占位符
-
-    return null;
-  };
-
-  const extractImageFromContent = (content: string): string | null => {
-    if (!content) return null;
-
-    // 恢复原始的、经过验证的Markdown正则表达式
-    const markdownRegex = /!\[.*?\]\((.*?)\)/;
-    const markdownMatch = markdownRegex.exec(content);
-    if (markdownMatch && markdownMatch[1]) {
-      return markdownMatch[1];
-    }
-
-    // 恢复HTML支持作为fallback
-    const htmlRegex = /<img.*?src=["'](.*?)["']/;
-    const htmlMatch = htmlRegex.exec(content);
-    return htmlMatch ? htmlMatch[1] : null;
-  };
-
-  // 当posts数据更新时，重新计算缩略图
-  React.useEffect(() => {
-    if (posts.length > 0) {
-      const extractedThumbnails: Record<number, string | null> = {};
-      posts.forEach(post => {
-        const thumbnail = getThumbnailUrl(post);
-        extractedThumbnails[post.id] = thumbnail;
-      });
-      setThumbnails(extractedThumbnails);
-    }
+  // 简化：直接使用统一的缩略图工具函数，无需复杂的状态管理和图片提取
+  const thumbnails = React.useMemo(() => {
+    return getBatchThumbnailUrls(posts);
   }, [posts]);
 
   return (
@@ -108,8 +51,7 @@ export function RecentPosts() {
                           className="w-16 h-16 object-cover rounded-md border border-gray-200 dark:border-gray-700 transition-transform group-hover:scale-[1.02]"
                           loading="lazy"
                           onError={(e) => {
-                            console.log(`图片加载失败: ${post.id}, 路径: ${thumbnails[post.id]}`);
-                            const target = e.currentTarget as HTMLImageElement;
+                            const target = e.currentTarget;
                             target.style.display = "none";
                             const container = target.parentElement;
                             if (container) {

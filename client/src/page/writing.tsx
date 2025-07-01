@@ -50,6 +50,29 @@ declare const process: {
 const NAME = (process.env.NAME || '博客') as string;
 const AVATAR = (process.env.AVATAR || '') as string;
 
+// 统一的缓存清理工具函数
+function clearFeedRelatedCaches(feedId?: string | number) {
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    const storageKeys = Object.keys(sessionStorage);
+    storageKeys.forEach(key => {
+      // 清理文章列表相关缓存
+      if (key.startsWith('api_cache_feeds_') ||
+          key.startsWith('api_cache_recent_posts_') ||
+          key.startsWith('api_cache_timeline_feeds') ||
+          key.includes('hashtag_feeds_')) {
+        sessionStorage.removeItem(key);
+      }
+
+      // 如果指定了feedId，清理特定文章的缓存
+      if (feedId && (
+          key === `api_cache_feed_id:${feedId}` ||
+          key.includes(`adjacent_feeds_${feedId}`))) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  }
+}
+
 // 添加自定义滚动条样式
 const scrollbarStyles = `
   /* 自定义滚动条样式 */
@@ -1553,21 +1576,26 @@ async function publish({
     return; // 发生错误时提前返回
   }
   if (data && typeof data !== "string") {
-    // 触发文章发布事件，用于缓存失效
+    // 主动缓存失效方案：在跳转前直接清理相关缓存，避免时序竞争
+    const feedId = (data as any).insertedId;
+
+    // 1. 主动清理前端缓存
+    clearFeedRelatedCaches();
+
+    // 2. 触发文章发布事件（保持兼容性）
     if (window.dispatchEvent) {
       window.dispatchEvent(new CustomEvent('feed-published', {
-        detail: { feedId: (data as any).insertedId, title, tags }
+        detail: { feedId, title, tags }
       }));
       // 保持原有的file-upload-success事件以兼容现有功能
       window.dispatchEvent(new CustomEvent('file-upload-success'));
     }
 
-    // 直接跳转到文章页面，不显示提示弹窗
+    // 3. 直接跳转到文章页面，不显示提示弹窗
     Cache.with().set("content", content); // 将当前内容写入缓存，避免beforeunload触发
     Cache.with().clear();
     // 使用replace方法替换当前页面，避免返回按钮返回到编辑页
-    // @ts-ignore - 忽略insertedId类型错误
-    window.location.replace("/feed/" + (data as any).insertedId);
+    window.location.replace("/feed/" + feedId);
   }
   if (onCompleted) {
     onCompleted();
@@ -1619,7 +1647,12 @@ async function update({
     return; // 发生错误时提前返回
   }
 
-  // 触发文章更新事件，用于缓存失效
+  // 主动缓存失效方案：在跳转前直接清理相关缓存，避免时序竞争
+
+  // 1. 主动清理前端缓存（包括当前文章的缓存）
+  clearFeedRelatedCaches(id);
+
+  // 2. 触发文章更新事件（保持兼容性）
   if (window.dispatchEvent) {
     window.dispatchEvent(new CustomEvent('feed-updated', {
       detail: { feedId: id, title, tags }
@@ -1628,7 +1661,7 @@ async function update({
     window.dispatchEvent(new CustomEvent('file-upload-success'));
   }
 
-  // 直接跳转到文章页面，不显示提示弹窗
+  // 3. 直接跳转到文章页面，不显示提示弹窗
   if (content) {
     Cache.with(id).set("content", content); // 将当前内容写入缓存，避免beforeunload触发
   }

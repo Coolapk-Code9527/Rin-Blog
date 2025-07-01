@@ -6,6 +6,7 @@ import {useTranslation} from "react-i18next";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
 import { useAdjacentFeedsCache } from "../hooks/useFeedsCache";
+import { getAdjacentThumbnails } from '../utils/thumbnailUtils';
 
 export type AdjacentFeed = {
     id: number;
@@ -24,63 +25,9 @@ export type AdjacentFeeds = {
     previousFeed: AdjacentFeed | null;
 };
 
-// 获取文章缩略图的优先级逻辑（功能恢复版本）
-const getThumbnailUrl = (article: any): string | null => {
-    // 1. 优先使用专门的缩略图URL（如果API提供）
-    if (article.thumbUrl) {
-        return article.thumbUrl;
-    }
-
-    // 2. 使用API提供的avatar字段（保持性能优化）
-    if (article.avatar) {
-        return article.avatar;
-    }
-
-    // 3. 从完整摘要中提取图片（恢复完整搜索范围）
-    if (article.summary) {
-        const summaryImage = extractImageUrl(article.summary);
-        if (summaryImage) {
-            return summaryImage;
-        }
-    }
-
-    return null; // 暂时不恢复fetchFullArticle，先测试基本功能
-};
-
-// 提取图片URL的辅助函数（功能恢复版本）
-const extractImageUrl = (content: string): string | null => {
-    if (!content) return null;
-
-    try {
-        // 恢复原始的、经过验证的Markdown正则表达式
-        const markdownRegex = /!\[.*?\]\((.*?)\)/;
-        const markdownMatch = markdownRegex.exec(content);
-        if (markdownMatch && markdownMatch[1]) {
-            return markdownMatch[1];
-        }
-
-        // 恢复HTML支持作为fallback
-        const htmlRegex = /<img.*?src=["'](.*?)["']/;
-        const htmlMatch = htmlRegex.exec(content);
-        if (htmlMatch && htmlMatch[1]) {
-            return htmlMatch[1];
-        }
-    } catch (error) {
-        // 保留错误处理，但不输出调试信息
-        return null;
-    }
-
-    return null;
-};
-
-// 移除fetchFullArticle函数，避免CPU密集的完整文章数据获取
-
-// 默认图片常量
-const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E";
+// 移除了复杂的图片提取逻辑，使用统一的缩略图工具函数
 
 export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
-    const [thumbnails, setThumbnails] = React.useState<Record<string, string>>({});
-
     // 使用缓存Hook替代直接API调用，避免重复请求
     const { data: adjacentFeeds, loading, error } = useAdjacentFeedsCache(id, !!id);
 
@@ -94,25 +41,10 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
         }
     }, [error, setError]);
 
-    // 处理缩略图提取
-    React.useEffect(() => {
-        if (adjacentFeeds && !loading) {
-            const extractedThumbnails: Record<string, string> = {};
-
-            // 处理上一篇文章
-            if (adjacentFeeds.previousFeed) {
-                let thumbnail = getThumbnailUrl(adjacentFeeds.previousFeed);
-                extractedThumbnails[`prev-${adjacentFeeds.previousFeed.id}`] = thumbnail || null;
-            }
-
-            // 处理下一篇文章
-            if (adjacentFeeds.nextFeed) {
-                let thumbnail = getThumbnailUrl(adjacentFeeds.nextFeed);
-                extractedThumbnails[`next-${adjacentFeeds.nextFeed.id}`] = thumbnail || null;
-            }
-
-            setThumbnails(extractedThumbnails);
-        }
+    // 简化：直接使用统一的缩略图工具函数，无需复杂的状态管理
+    const thumbnails = React.useMemo(() => {
+        if (!adjacentFeeds || loading) return {};
+        return getAdjacentThumbnails(adjacentFeeds.previousFeed, adjacentFeeds.nextFeed);
     }, [adjacentFeeds, loading]);
     
     return (
@@ -146,7 +78,6 @@ export function AdjacentCard({
     thumbnail: string | undefined,
     loading: boolean
 }) {
-    const direction = type === "previous" ? "text-start" : "text-end";
     const {t} = useTranslation();
 
     // 添加图片错误状态管理
