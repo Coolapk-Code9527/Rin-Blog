@@ -320,8 +320,10 @@ export function useApiCache<T>(
           cacheEntries.sort((a, b) => a.timestamp - b.timestamp);
 
           for (const entry of cacheEntries) {
+            // 修复：先获取项目大小，再删除项目
+            const itemSize = (sessionStorage.getItem(entry.key) || '').length;
             sessionStorage.removeItem(entry.key);
-            currentSize -= (sessionStorage.getItem(entry.key) || '').length;
+            currentSize -= itemSize;
 
             if (currentSize + dataSize <= maxSize) {
               break;
