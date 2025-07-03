@@ -40,9 +40,9 @@ export const defaultClientConfig = new Map(Object.entries({
     "clickEffect.enableOnMobile": true,
     "clickEffect.mobileReduction": 0.6,
     "music.autoplay": false,
-    "music.url": "https://www.bensound.com/bensound-music/bensound-ukulele.mp3",
-    "music.title": "Ukulele",
-    "music.artist": "Bensound",
+    "music.url": "",
+    "music.title": "",
+    "music.artist": "",
     "music.volume": 0.7,
     // 公告系统配置
     "announcements.enabled": true,

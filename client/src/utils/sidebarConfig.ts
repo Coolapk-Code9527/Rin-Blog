@@ -54,7 +54,7 @@ export interface AnnouncementConfig {
 
 // 从配置包装器中获取侧边栏配置
 export function getSidebarConfig(config: ConfigWrapper): SidebarConfig {
-  const orderString = config?.get<string>('sidebar.order') || 'profile,announcements,tagCloud,music';
+  const orderString = config?.get<string>('sidebar.order') || 'profile,announcements,music,tagCloud';
 
   return {
     enabled: config?.get<boolean>('sidebar.enabled') ?? true,

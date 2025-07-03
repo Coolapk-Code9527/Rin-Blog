@@ -502,24 +502,28 @@ export function FeedsPage() {
                             </div>
                         </div>
 
-                        {/* 文章管理标签页 - 独立一行 */}
-                        <div className="w-full">
-                            <ArticleManagementTabs
-                                listState={listState as ListState}
-                                viewMode={viewMode}
-                                sortType={sortType}
-                                onListStateChange={handleListStateChange}
-                                onViewModeChange={setViewMode}
-                                onSortTypeChange={handleSortChange}
-                                hasPermission={!!profile?.permission}
-                                showButtonText={showButtonText}
-                            />
-                        </div>
+                        {/* 文章管理标签页 - 等待配置加载完成后显示，避免视图模式跳动 */}
+                        {configLoaded && (
+                            <>
+                                <div className="w-full">
+                                    <ArticleManagementTabs
+                                        listState={listState as ListState}
+                                        viewMode={viewMode}
+                                        sortType={sortType}
+                                        onListStateChange={handleListStateChange}
+                                        onViewModeChange={setViewMode}
+                                        onSortTypeChange={handleSortChange}
+                                        hasPermission={!!profile?.permission}
+                                        showButtonText={showButtonText}
+                                    />
+                                </div>
 
-                        {/* 上方渐变分割线 - 增加粗细 */}
-                        <div className="w-full mb-2">
-                            <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
-                        </div>
+                                {/* 上方渐变分割线 - 增加粗细 */}
+                                <div className="w-full mb-2">
+                                    <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
+                                </div>
+                            </>
+                        )}
 
                         <div className="flex justify-between items-center mt-0">
                             <div className="flex space-x-2">
