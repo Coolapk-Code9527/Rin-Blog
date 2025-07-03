@@ -20,7 +20,6 @@ export class CacheImpl {
     loaded: boolean = false;
     s3 = createS3Client();
     // 优化：批量保存机制，减少序列化频率
-    private pendingSave: boolean = false;
     private saveTimeout: any = null;
 
     constructor(type: string = "cache") {
@@ -186,10 +185,8 @@ export class CacheImpl {
         }
         this.saveTimeout = setTimeout(async () => {
             await this.save();
-            this.pendingSave = false;
             this.saveTimeout = null;
-        }, 1500); // 1.5秒延迟批量保存，进一步减少保存频率
-        this.pendingSave = true;
+        }, 500); // 优化：500ms延迟批量保存，平衡性能和数据安全性
     }
 
     async save() {
@@ -198,10 +195,10 @@ export class CacheImpl {
         // 深度优化：进一步优化序列化，减少CPU消耗和内存使用
         let serializedData: string;
         try {
-            if (this.cache.size > 50) { // 性能优化：提高阈值到50，减少序列化频率
+            if (this.cache.size > 50) { // 统一配置：50个条目以上使用分块序列化
                 // 内存优化：使用对象池减少内存分配
                 const mergedData = ObjectPools.objects.acquire();
-                const chunkSize = 20; // 性能优化：从15增加到20
+                const chunkSize = 20; // 统一配置：批处理大小
                 let processed = 0;
 
                 try {

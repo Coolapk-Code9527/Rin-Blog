@@ -1,117 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-
-// 全局时间戳计数器，确保唯一性
-let timestampCounter = 0;
-
-/**
- * 生成唯一的高精度时间戳
- */
-function generateUniqueTimestamp(): number {
-  const now = performance.now() + performance.timeOrigin;
-  const uniqueTimestamp = now + (timestampCounter++ / 1000000); // 添加微秒级别的递增
-  return uniqueTimestamp;
-}
-
-/**
- * 自定义序列化工具
- * 正确处理Date对象、函数等特殊类型
- */
-class CacheSerializer {
-  /**
-   * 序列化数据
-   */
-  static serialize(data: any): string {
-    return JSON.stringify(data, (key, value) => {
-      // 处理Date对象
-      if (value instanceof Date) {
-        return {
-          __type: 'Date',
-          __value: value.toISOString()
-        };
-      }
-
-      // 处理RegExp对象
-      if (value instanceof RegExp) {
-        return {
-          __type: 'RegExp',
-          __value: value.toString()
-        };
-      }
-
-      // 处理函数（通常不应该缓存，但提供降级处理）
-      if (typeof value === 'function') {
-        return {
-          __type: 'Function',
-          __value: '[Function]'
-        };
-      }
-
-      // 处理undefined（JSON.stringify会忽略undefined）
-      if (value === undefined) {
-        return {
-          __type: 'undefined',
-          __value: null
-        };
-      }
-
-      return value;
-    });
-  }
-
-  /**
-   * 反序列化数据
-   */
-  static deserialize(jsonString: string): any {
-    try {
-      return JSON.parse(jsonString, (key, value) => {
-        // 检查是否是特殊类型标记
-        if (value && typeof value === 'object' && value.__type) {
-          switch (value.__type) {
-            case 'Date':
-              return new Date(value.__value);
-
-            case 'RegExp':
-              // 解析RegExp字符串
-              const match = value.__value.match(/^\/(.*)\/([gimuy]*)$/);
-              if (match) {
-                return new RegExp(match[1], match[2]);
-              }
-              return new RegExp(value.__value);
-
-            case 'Function':
-              // 函数无法恢复，返回空函数
-              return () => {};
-
-            case 'undefined':
-              return undefined;
-
-            default:
-              return value;
-          }
-        }
-
-        return value;
-      });
-    } catch (error) {
-      console.warn('Failed to deserialize cache data:', error);
-      return null;
-    }
-  }
-
-  /**
-   * 验证序列化数据的完整性
-   */
-  static validateSerialization(original: any, serialized: string): boolean {
-    try {
-      const deserialized = this.deserialize(serialized);
-
-      // 简单的深度比较（不完美，但足够用于缓存验证）
-      return JSON.stringify(original) === JSON.stringify(deserialized);
-    } catch {
-      return false;
-    }
-  }
-}
+import { CACHE_CONFIG } from '../utils/cacheConstants';
+import { cache as cacheManager } from '../utils/SimpleCacheManager';
 
 /**
  * API缓存配置接口
@@ -175,8 +64,8 @@ export function useApiCache<T>(
   config: ApiCacheConfig = {}
 ): UseApiCacheReturn<T> {
   const {
-    staleTime = 10 * 60 * 1000, // 优化：默认10分钟（从5分钟延长）
-    cacheTime = 60 * 60 * 1000, // 优化：默认60分钟（从30分钟延长）
+    staleTime = CACHE_CONFIG.API.DEFAULT_STALE_TIME, // 使用统一配置：15分钟
+    cacheTime = CACHE_CONFIG.API.DEFAULT_CACHE_TIME, // 使用统一配置：60分钟
     refetchOnWindowFocus = true,
     enabled = true,
     retryCount = 3,
@@ -192,191 +81,82 @@ export function useApiCache<T>(
   const fetchingRef = useRef(false);
   const retryCountRef = useRef(0);
   const mountedRef = useRef(true);
-  const retryTimersRef = useRef<NodeJS.Timeout[]>([]);
 
   // 组件卸载时清理
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      // 清理所有重试定时器
-      retryTimersRef.current.forEach(timer => clearTimeout(timer));
-      retryTimersRef.current = [];
     };
   }, []);
 
   /**
-   * 获取缓存数据
+   * 获取缓存数据 - 使用SimpleCacheManager但获取完整信息
    */
   const getCachedData = useCallback((): CacheData<T> | null => {
     try {
-      const cached = sessionStorage.getItem(`api_cache_${key}`);
+      // 使用SimpleCacheManager的内部逻辑来获取完整的缓存信息
+      const storageObj = sessionStorage;
+
+      // 模拟SimpleCacheManager的getFullKey逻辑
+      let fullKey = key;
+      if (!key.startsWith('api_cache_')) {
+        fullKey = `api_cache_${key}`;
+      }
+
+      const cached = storageObj.getItem(fullKey);
       if (!cached) return null;
 
-      const cacheData: CacheData<T> = CacheSerializer.deserialize(cached);
+      // 解析SimpleCacheManager的数据格式
+      const simpleCacheData = JSON.parse(cached);
 
-      // 检查反序列化是否成功
-      if (!cacheData) {
-        sessionStorage.removeItem(`api_cache_${key}`);
+      if (!simpleCacheData || !simpleCacheData.data || !simpleCacheData.timestamp) {
         return null;
       }
 
+      // 检查是否过期（使用SimpleCacheManager的过期逻辑）
       const now = Date.now();
-
-      // 检查缓存是否过期
-      if (now - cacheData.timestamp > cacheData.cacheTime) {
-        sessionStorage.removeItem(`api_cache_${key}`);
+      const expireTime = simpleCacheData.expireTime || cacheTime;
+      if (now - simpleCacheData.timestamp > expireTime) {
+        storageObj.removeItem(fullKey);
         return null;
       }
 
-      return cacheData;
-    } catch (error) {
-      console.warn('Failed to parse cached data:', error);
-      sessionStorage.removeItem(`api_cache_${key}`);
-      return null;
-    }
-  }, [key]);
-
-  /**
-   * 检查并清理过期缓存
-   */
-  const cleanExpiredCache = useCallback(() => {
-    try {
-      const now = Date.now();
-      const keysToRemove: string[] = [];
-
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const storageKey = sessionStorage.key(i);
-        if (storageKey?.startsWith('api_cache_')) {
-          try {
-            const cached = CacheSerializer.deserialize(sessionStorage.getItem(storageKey) || '');
-            if (!cached || now - cached.timestamp > cached.cacheTime) {
-              keysToRemove.push(storageKey);
-            }
-          } catch {
-            keysToRemove.push(storageKey);
-          }
-        }
-      }
-
-      keysToRemove.forEach(key => sessionStorage.removeItem(key));
-      return keysToRemove.length;
-    } catch (error) {
-      console.warn('Failed to clean expired cache:', error);
-      return 0;
-    }
-  }, []);
-
-  /**
-   * 检查存储容量并清理
-   */
-  const ensureStorageCapacity = useCallback((dataSize: number) => {
-    const maxSize = 4 * 1024 * 1024; // 4MB限制，留出安全边际
-
-    try {
-      // 估算当前使用量
-      let currentSize = 0;
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key) {
-          currentSize += (sessionStorage.getItem(key) || '').length;
-        }
-      }
-
-      // 如果加上新数据会超出限制，先清理过期缓存
-      if (currentSize + dataSize > maxSize) {
-        cleanExpiredCache();
-
-        // 重新计算大小
-        currentSize = 0;
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const key = sessionStorage.key(i);
-          if (key) {
-            currentSize += (sessionStorage.getItem(key) || '').length;
-          }
-        }
-
-        // 如果还是超出，实施LRU清理
-        if (currentSize + dataSize > maxSize) {
-          const cacheEntries: Array<{key: string, timestamp: number}> = [];
-
-          for (let i = 0; i < sessionStorage.length; i++) {
-            const storageKey = sessionStorage.key(i);
-            if (storageKey?.startsWith('api_cache_')) {
-              try {
-                const cached = CacheSerializer.deserialize(sessionStorage.getItem(storageKey) || '');
-                if (cached && cached.timestamp) {
-                  cacheEntries.push({ key: storageKey, timestamp: cached.timestamp });
-                } else {
-                  sessionStorage.removeItem(storageKey);
-                }
-              } catch {
-                sessionStorage.removeItem(storageKey);
-              }
-            }
-          }
-
-          // 按时间戳排序，移除最旧的缓存
-          cacheEntries.sort((a, b) => a.timestamp - b.timestamp);
-
-          for (const entry of cacheEntries) {
-            // 修复：先获取项目大小，再删除项目
-            const itemSize = (sessionStorage.getItem(entry.key) || '').length;
-            sessionStorage.removeItem(entry.key);
-            currentSize -= itemSize;
-
-            if (currentSize + dataSize <= maxSize) {
-              break;
-            }
-          }
-        }
-      }
-
-      return true;
-    } catch (error) {
-      console.warn('Failed to ensure storage capacity:', error);
-      return false;
-    }
-  }, [cleanExpiredCache]);
-
-  /**
-   * 设置缓存数据
-   */
-  const setCachedData = useCallback((newData: T) => {
-    try {
-      const cacheData: CacheData<T> = {
-        data: newData,
-        timestamp: generateUniqueTimestamp(),
+      // 重新构造useApiCache期望的CacheData格式，保持原始时间戳
+      return {
+        data: simpleCacheData.data,
+        timestamp: simpleCacheData.timestamp, // 使用原始时间戳
         staleTime,
         cacheTime
       };
-
-      const serializedData = CacheSerializer.serialize(cacheData);
-
-      // 验证序列化完整性（开发环境）
-      if (process.env.NODE_ENV === 'development') {
-        if (!CacheSerializer.validateSerialization(cacheData, serializedData)) {
-          console.warn('Cache serialization validation failed for key:', key);
-        }
-      }
-
-      // 确保有足够的存储空间
-      if (ensureStorageCapacity(serializedData.length)) {
-        sessionStorage.setItem(`api_cache_${key}`, serializedData);
-      } else {
-        console.warn('Unable to cache data: insufficient storage capacity');
-      }
     } catch (error) {
-      console.warn('Failed to cache data:', error);
+      console.warn('Failed to get cached data:', error);
+      return null;
     }
-  }, [key, staleTime, cacheTime, ensureStorageCapacity]);
+  }, [key, cacheTime, staleTime]);
+
+
 
   /**
-   * 检查数据是否过期
+   * 设置缓存数据 - 修复数据格式兼容性
+   */
+  const setCachedData = useCallback((newData: T) => {
+    // 直接存储业务数据，让SimpleCacheManager处理包装
+    cacheManager.set(key, newData, {
+      storage: 'session',
+      expireTime: cacheTime,
+      validate: true
+    });
+  }, [key, cacheTime]);
+
+  /**
+   * 检查数据是否过期 - 简化逻辑
+   * 由于SimpleCacheManager已经处理了过期检查，这里主要检查stale状态
    */
   const isDataStale = useCallback((cacheData: CacheData<T>): boolean => {
-    return Date.now() - cacheData.timestamp > cacheData.staleTime;
-  }, []);
+    // 如果能获取到数据，说明还在cacheTime内，检查是否超过staleTime
+    return Date.now() - cacheData.timestamp > staleTime;
+  }, [staleTime]);
 
   /**
    * 执行数据获取
@@ -428,18 +208,15 @@ export function useApiCache<T>(
     } catch (err) {
       console.error(`API fetch failed for key: ${key}`, err);
 
-      // 重试逻辑（只有组件仍然挂载时才重试）
+      // 简化的重试逻辑
       if (retryCountRef.current < retryCount && mountedRef.current) {
         retryCountRef.current++;
-        const retryTimer = setTimeout(() => {
+        setTimeout(() => {
           if (mountedRef.current) {
             fetchingRef.current = false;
             fetchData(false);
           }
-        }, retryDelay * retryCountRef.current);
-
-        // 跟踪定时器以便清理
-        retryTimersRef.current.push(retryTimer);
+        }, retryDelay); // 使用固定延迟，移除指数退避
         return;
       }
 
@@ -464,25 +241,17 @@ export function useApiCache<T>(
   }, [fetchData]);
 
   /**
-   * 使缓存失效并重新获取数据
+   * 使缓存失效并重新获取数据 - 使用SimpleCacheManager
    */
   const invalidate = useCallback(async () => {
     try {
-      // 安全地移除sessionStorage中的缓存
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        sessionStorage.removeItem(`api_cache_${key}`);
-      }
+      // 移除缓存
+      cacheManager.remove(key, { storage: 'session' });
 
-      // 安全地更新状态
-      if (setData) {
-        setData(undefined);
-      }
-      if (setIsStale) {
-        setIsStale(false);
-      }
-      if (setError) {
-        setError(null);
-      }
+      // 重置状态
+      setData(undefined);
+      setIsStale(false);
+      setError(null);
 
       // 立即重新获取数据
       if (enabled && mountedRef.current) {
@@ -526,45 +295,37 @@ export function useApiCache<T>(
 }
 
 /**
- * 全局缓存管理工具
+ * 全局缓存管理工具 - 使用SimpleCacheManager
  */
 export const ApiCacheManager = {
   /**
    * 清除所有API缓存
    */
-  clearAll: () => {
-    const keys = Object.keys(sessionStorage);
-    keys.forEach(key => {
-      if (key.startsWith('api_cache_')) {
-        sessionStorage.removeItem(key);
-      }
-    });
-  },
+  clearAll: () => cacheManager.clearAll('session'),
 
   /**
    * 清除特定前缀的缓存
    */
-  clearByPrefix: (prefix: string) => {
-    const keys = Object.keys(sessionStorage);
-    keys.forEach(key => {
-      if (key.startsWith(`api_cache_${prefix}`)) {
-        sessionStorage.removeItem(key);
-      }
-    });
-  },
+  clearByPrefix: (prefix: string) => cacheManager.clearByPattern(prefix, 'session', true),
 
   /**
    * 获取缓存统计信息
    */
   getStats: () => {
-    const keys = Object.keys(sessionStorage);
-    const cacheKeys = keys.filter(key => key.startsWith('api_cache_'));
-    
+    const stats = cacheManager.getStats('session');
     return {
-      totalCaches: cacheKeys.length,
-      totalSize: cacheKeys.reduce((size, key) => {
-        return size + (sessionStorage.getItem(key)?.length || 0);
-      }, 0)
+      totalCaches: stats.count,
+      totalSize: stats.size
     };
-  }
+  },
+
+  /**
+   * 缓存健康检查
+   */
+  healthCheck: () => cacheManager.healthCheck('session'),
+
+  /**
+   * 清理过期缓存
+   */
+  clearExpired: () => cacheManager.clearExpired('session')
 };

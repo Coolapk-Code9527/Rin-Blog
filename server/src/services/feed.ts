@@ -47,8 +47,8 @@ async function processBatchVisitStats(db: any, feedIds: number[]): Promise<Map<n
     const statsMap = new Map<number, { pv: number, uv: number }>();
     const uncachedIds: number[] = [];
 
-    // 进一步优化：延长缓存过期时间，减少数据库查询频率
-    const CACHE_EXPIRE_TIME = 15 * 60 * 1000; // 进一步优化：从10分钟延长到15分钟过期
+    // 使用统一的缓存配置
+    const CACHE_EXPIRE_TIME = SERVER_CACHE_CONFIG.STATS.VISITS; // 统一配置：15分钟缓存（访问统计数据）
     for (const feedId of feedIds) {
         const cacheKey = `visit_stats_${feedId}`;
         const cached = await cache.get(cacheKey);
@@ -125,6 +125,7 @@ import type {DB} from "../_worker";
 import {feeds, visits, files, feedFiles} from "../db/schema";
 import {setup} from "../setup";
 import {ClientConfig, PublicCache} from "../utils/cache";
+import { SERVER_CACHE_CONFIG } from "../utils/cacheConstants";
 import {getDB} from "../utils/di";
 import {extractImage} from "../utils/image";
 import {markdownToPlainText} from "../utils/markdown";

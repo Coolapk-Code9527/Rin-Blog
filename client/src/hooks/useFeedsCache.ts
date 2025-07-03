@@ -3,6 +3,8 @@ import { useApiCache } from './useApiCache';
 import { client } from '../main';
 import { headersWithAuth } from '../utils/auth';
 import { ApiTypeChecker } from '../types/api';
+import { CACHE_CONFIG, CACHE_KEY_PATTERNS } from '../utils/cacheConstants';
+import { cache as cacheManager } from '../utils/SimpleCacheManager';
 
 /**
  * 文章类型枚举
@@ -58,7 +60,7 @@ export function useFeedsCache(config: UseFeedsCacheConfig = {}) {
     page = 1,
     limit = 10, // 修复：改为合理的默认值，避免意外触发批量获取
     sortByTime = false,
-    staleTime = 8 * 60 * 1000, // 优化：8分钟缓存（文章列表更新频率较低）
+    staleTime = CACHE_CONFIG.FEEDS.LIST, // 使用统一配置：15分钟缓存
     enabled = true
   } = config;
 
@@ -87,20 +89,14 @@ function useOriginalFeedsCache(config: UseFeedsCacheConfig) {
     page = 1,
     limit = 9999,
     sortByTime = false,
-    staleTime = 8 * 60 * 1000,
+    staleTime = CACHE_CONFIG.FEEDS.LIST, // 使用统一配置：15分钟缓存
     enabled = true
   } = config;
 
-  // 生成唯一的缓存键 - 改进版本，避免冲突
+  // 生成唯一的缓存键 - 使用统一的CACHE_KEY_PATTERNS
   const cacheKey = useMemo(() => {
-    // 使用固定顺序的键值对，确保一致性
-    const keyParts = [
-      `type:${type}`,
-      `page:${page}`,
-      `limit:${limit}`,
-      `sort:${sortByTime ? 'time' : 'default'}`
-    ];
-    return `feeds_${keyParts.join('_')}`;
+    const sortParam = sortByTime ? 'time' : 'default';
+    return CACHE_KEY_PATTERNS.FEEDS(type, page, limit, sortParam);
   }, [type, page, limit, sortByTime]);
 
   // 数据获取函数
@@ -190,12 +186,11 @@ function useEnhancedFeedsCache({
     };
   }, []);
 
-  // 使用与后端一致的缓存键格式，避免冲突
+  // 使用统一的缓存键格式
   const cacheKey = useMemo(() => {
-    // 格式：feeds_${type}_${page_num}_${limit_num}_${sortByTime ? 'time' : 'default'}
-    // page_num = 0 (0基索引), limit_num = 9999
     const typeParam = type === 'all' ? 'normal' : type; // 处理'all'类型
-    return `feeds_${typeParam}_0_9999_${sortByTime ? 'time' : 'default'}`;
+    const sortParam = sortByTime ? 'time' : 'default';
+    return CACHE_KEY_PATTERNS.FEEDS(typeParam, 0, 9999, sortParam);
   }, [type, sortByTime]);
 
   // 分批获取的fetcher函数
@@ -365,7 +360,7 @@ function useEnhancedFeedsCache({
  * 专门用于获取最近发布的文章，用于侧边栏等组件
  */
 export function useRecentPostsCache(limit: number = 3) {
-  const cacheKey = `recent_posts_limit:${limit}`;
+  const cacheKey = CACHE_KEY_PATTERNS.RECENT_POSTS(limit);
 
   const fetcher = useMemo(() => async () => {
     const response = await client.feed.index.get({
@@ -399,7 +394,7 @@ export function useRecentPostsCache(limit: number = 3) {
   }, [limit]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 15 * 60 * 1000, // 优化：15分钟缓存（最近文章更新频率更低）
+    staleTime: CACHE_CONFIG.FEEDS.LIST, // 使用统一配置：15分钟缓存（最近文章更新频率更低）
     refetchOnWindowFocus: true
   });
 }
@@ -411,7 +406,7 @@ export function useRecentPostsCache(limit: number = 3) {
  * 修复：使用正确的 /feed/timeline API 端点，并添加调试信息
  */
 export function useTimelineCache() {
-  const cacheKey = 'timeline_feeds';
+  const cacheKey = CACHE_KEY_PATTERNS.TIMELINE();
 
   const fetcher = useMemo(() => async () => {
     const response = await client.feed.timeline.get({
@@ -436,7 +431,7 @@ export function useTimelineCache() {
   }, []);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 8 * 60 * 1000, // 优化：8分钟缓存（时间线更新频率适中）
+    staleTime: CACHE_CONFIG.TIMELINE.LIST, // 使用统一配置：15分钟缓存（时间线更新频率适中）
     refetchOnWindowFocus: true
   });
 }
@@ -447,7 +442,7 @@ export function useTimelineCache() {
  * 用于文章详情页的数据获取
  */
 export function useFeedCache(id: string, enabled: boolean = true) {
-  const cacheKey = `feed_id:${id}`;
+  const cacheKey = CACHE_KEY_PATTERNS.FEED(id);
 
   const fetcher = useMemo(() => async () => {
     const response = await client.feed({ id }).get({
@@ -466,7 +461,7 @@ export function useFeedCache(id: string, enabled: boolean = true) {
   }, [id]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 20 * 60 * 1000, // 优化：20分钟缓存（单篇文章内容相对稳定）
+    staleTime: CACHE_CONFIG.FEEDS.SINGLE, // 使用统一配置：30分钟缓存（单篇文章内容相对稳定）
     enabled: enabled && !!id,
     refetchOnWindowFocus: false // 文章内容不需要频繁刷新
   });
@@ -478,7 +473,7 @@ export function useFeedCache(id: string, enabled: boolean = true) {
  * 用于获取上一篇和下一篇文章，避免重复请求
  */
 export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
-  const cacheKey = `adjacent_feeds_id:${id}`;
+  const cacheKey = CACHE_KEY_PATTERNS.ADJACENT_FEEDS(id);
 
   const fetcher = useMemo(() => async () => {
     const response = await client.feed.adjacent({ id }).get();
@@ -495,7 +490,7 @@ export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
   }, [id]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 30 * 60 * 1000, // 30分钟缓存（相邻文章变化频率更低）
+    staleTime: CACHE_CONFIG.FEEDS.SINGLE, // 使用统一配置：30分钟缓存（相邻文章变化频率更低）
     enabled: enabled && !!id,
     refetchOnWindowFocus: false // 相邻文章不需要频繁刷新
   });
@@ -507,7 +502,7 @@ export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
  * 用于获取文章评论，避免重复请求
  */
 export function useCommentsCache(feedId: string, enabled: boolean = true) {
-  const cacheKey = `comments_feed:${feedId}`;
+  const cacheKey = CACHE_KEY_PATTERNS.COMMENTS(feedId);
 
   const fetcher = useMemo(() => async () => {
     const response = await client.feed.comment({ feed: feedId }).get({
@@ -526,7 +521,7 @@ export function useCommentsCache(feedId: string, enabled: boolean = true) {
   }, [feedId]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 5 * 60 * 1000, // 5分钟缓存（评论更新频率较高）
+    staleTime: CACHE_CONFIG.COMMENTS.LIST, // 使用统一配置：15分钟缓存（评论更新频率中等）
     enabled: enabled && !!feedId,
     refetchOnWindowFocus: false // 评论不需要频繁刷新
   });
@@ -538,7 +533,7 @@ export function useCommentsCache(feedId: string, enabled: boolean = true) {
  * 用于标签页面的文章列表
  */
 export function useHashtagFeedsCache(tagName: string, enabled: boolean = true) {
-  const cacheKey = `hashtag_feeds_tag:${encodeURIComponent(tagName)}`;
+  const cacheKey = CACHE_KEY_PATTERNS.TAGS.FEEDS(tagName);
 
   const fetcher = useMemo(() => async () => {
     const nameDecoded = decodeURI(tagName);
@@ -558,7 +553,7 @@ export function useHashtagFeedsCache(tagName: string, enabled: boolean = true) {
   }, [tagName]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 12 * 60 * 1000, // 优化：12分钟缓存（标签页面更新频率较低）
+    staleTime: CACHE_CONFIG.TAGS.FEEDS, // 使用统一配置：15分钟缓存（标签页面更新频率较低）
     enabled: enabled && !!tagName,
     refetchOnWindowFocus: true
   });
@@ -570,7 +565,7 @@ export function useHashtagFeedsCache(tagName: string, enabled: boolean = true) {
  * 用于搜索页面的结果缓存
  */
 export function useSearchCache(keyword: string, page: number = 1, limit: number = 10, enabled: boolean = true) {
-  const cacheKey = `search_keyword:${encodeURIComponent(keyword)}_page:${page}_limit:${limit}`;
+  const cacheKey = CACHE_KEY_PATTERNS.SEARCH(keyword, page, limit);
 
   const fetcher = useMemo(() => async () => {
     const response = await client.search({ keyword }).get({
@@ -593,7 +588,7 @@ export function useSearchCache(keyword: string, page: number = 1, limit: number 
   }, [keyword, page, limit]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 5 * 60 * 1000, // 优化：5分钟缓存（搜索结果相对短期有效）
+    staleTime: CACHE_CONFIG.FEEDS.SEARCH, // 使用统一配置：5分钟缓存（搜索结果相对短期有效）
     enabled: enabled && !!keyword,
     refetchOnWindowFocus: false // 搜索结果不需要频繁刷新
   });
@@ -605,7 +600,7 @@ export function useSearchCache(keyword: string, page: number = 1, limit: number 
  * 用于标签页面的标签列表
  */
 export function useTagsCache(enabled: boolean = true) {
-  const cacheKey = 'tags_list';
+  const cacheKey = CACHE_KEY_PATTERNS.TAGS.LIST();
 
   const fetcher = useMemo(() => async () => {
     const response = await client.tag.index.get();
@@ -622,7 +617,7 @@ export function useTagsCache(enabled: boolean = true) {
   }, []);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 15 * 60 * 1000, // 优化：15分钟缓存（标签列表更新频率很低）
+    staleTime: CACHE_CONFIG.TAGS.LIST, // 使用统一配置：15分钟缓存（标签列表更新频率很低）
     enabled,
     refetchOnWindowFocus: true
   });
@@ -634,7 +629,7 @@ export function useTagsCache(enabled: boolean = true) {
  * 用于设置页面的配置获取（仅读操作）
  */
 export function useConfigCache(type: 'client' | 'server', enabled: boolean = true) {
-  const cacheKey = `config_type:${type}`;
+  const cacheKey = CACHE_KEY_PATTERNS.CONFIG(type);
 
   const fetcher = useMemo(() => async () => {
     const response = await client.config({ type }).get({
@@ -653,7 +648,7 @@ export function useConfigCache(type: 'client' | 'server', enabled: boolean = tru
   }, [type]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 10 * 60 * 1000, // 优化：10分钟缓存（配置更新频率中等）
+    staleTime: CACHE_CONFIG.CONFIG.CLIENT, // 使用统一配置：30分钟缓存（配置更新频率低）
     enabled,
     refetchOnWindowFocus: true
   });
@@ -665,7 +660,7 @@ export function useConfigCache(type: 'client' | 'server', enabled: boolean = tru
  * 用于友情链接页面的数据获取和处理
  */
 export function useFriendsCache(enabled: boolean = true) {
-  const cacheKey = 'friends_list';
+  const cacheKey = CACHE_KEY_PATTERNS.FRIENDS();
 
   const fetcher = useMemo(() => async () => {
     const response = await client.friend.index.get({
@@ -684,7 +679,7 @@ export function useFriendsCache(enabled: boolean = true) {
   }, []);
 
   const result = useApiCache(cacheKey, fetcher, {
-    staleTime: 5 * 60 * 1000, // 优化：5分钟缓存（友情链接更新频率中等）
+    staleTime: CACHE_CONFIG.FRIENDS.LIST, // 使用统一配置：15分钟缓存（友情链接更新频率低）
     enabled,
     refetchOnWindowFocus: true
   });
@@ -737,7 +732,7 @@ export function useFilesCache(
   enabled: boolean = true
 ) {
   // 构建缓存键，包含所有查询参数
-  const cacheKey = `files_path:${encodeURIComponent(currentPath)}_search:${encodeURIComponent(search)}_sort:${sortBy}_order:${sortOrder}_page:${currentPage}_limit:${itemsPerPage}`;
+  const cacheKey = CACHE_KEY_PATTERNS.FILES(currentPath, search, sortBy, sortOrder, currentPage, itemsPerPage);
 
   const fetcher = useMemo(() => async () => {
     const { endpoint } = await import('../main');
@@ -802,28 +797,23 @@ export function useFilesCache(
   }, [currentPath, search, sortBy, sortOrder, currentPage, itemsPerPage]);
 
   return useApiCache(cacheKey, fetcher, {
-    staleTime: 2 * 60 * 1000, // 优化：2分钟缓存（文件列表更新频率较高）
+    staleTime: CACHE_CONFIG.FILES.LIST, // 使用统一配置：5分钟缓存（文件列表更新频率较高）
     enabled,
     refetchOnWindowFocus: true
   });
 }
 
 /**
- * 缓存管理工具
+ * 缓存管理工具 - 使用SimpleCacheManager
  */
 export const FeedsCacheManager = {
   /**
    * 清除所有文章相关缓存
    */
   clearAllFeeds: () => {
-    const keys = ['feeds_', 'recent_posts_', 'timeline_feeds', 'feed_', 'hashtag_feeds_'];
-    keys.forEach(prefix => {
-      const storageKeys = Object.keys(sessionStorage);
-      storageKeys.forEach(key => {
-        if (key.startsWith(`api_cache_${prefix}`)) {
-          sessionStorage.removeItem(key);
-        }
-      });
+    const patterns = ['feeds_', 'recent_posts_', 'timeline_feeds', 'feed_', 'hashtag_feeds_'];
+    patterns.forEach(pattern => {
+      cacheManager.clearByPattern(pattern, 'session', true);
     });
   },
 
@@ -831,18 +821,14 @@ export const FeedsCacheManager = {
    * 清除特定类型的文章缓存
    */
   clearFeedsByType: (type: FeedType) => {
-    const storageKeys = Object.keys(sessionStorage);
-    storageKeys.forEach(key => {
-      if (key.includes(`"type":"${type}"`)) {
-        sessionStorage.removeItem(key);
-      }
-    });
+    // 清理包含特定类型的缓存
+    cacheManager.clearByPattern(`type:${type}`, 'session', false);
   },
 
   /**
    * 清除单个文章缓存
    */
   clearFeed: (id: string) => {
-    sessionStorage.removeItem(`api_cache_feed_${id}`);
+    cacheManager.remove(`feed_id:${id}`, { storage: 'session' });
   }
 };

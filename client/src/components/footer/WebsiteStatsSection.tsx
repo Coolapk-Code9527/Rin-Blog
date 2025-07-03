@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../main';
+import { CACHE_CONFIG } from '../../utils/cacheConstants';
+import { cache } from '../../utils/SimpleCacheManager';
 
 /**
  * 网站统计数据接口
@@ -39,13 +41,7 @@ function StatTag({ icon, label, value, bgColor, textColor = 'text-white' }: Stat
 /**
  * 客户端缓存管理
  */
-const CACHE_KEY = 'website_stats_cache';
-const CACHE_EXPIRE_TIME = 5 * 60 * 1000; // 5分钟客户端缓存
-
-interface CachedStats {
-  data: WebsiteStats;
-  timestamp: number;
-}
+const CACHE_KEY = 'website_stats_cache'; // 保持原有格式以确保向后兼容
 
 /**
  * 网站统计信息展示组件
@@ -78,33 +74,21 @@ export function WebsiteStatsSection() {
     }
   };
 
-  // 从缓存获取数据
+  // 从缓存获取数据 - 使用统一缓存管理器
   const getCachedStats = (): WebsiteStats | null => {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const parsedCache: CachedStats = JSON.parse(cached);
-        if (Date.now() - parsedCache.timestamp < CACHE_EXPIRE_TIME) {
-          return parsedCache.data;
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to parse cached stats:', error);
-    }
-    return null;
+    return cache.get<WebsiteStats>(CACHE_KEY, {
+      storage: 'local',
+      expireTime: CACHE_CONFIG.STATS.WEBSITE
+    });
   };
 
-  // 缓存数据
+  // 缓存数据 - 使用统一缓存管理器
   const setCachedStats = (data: WebsiteStats) => {
-    try {
-      const cacheData: CachedStats = {
-        data,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-    } catch (error) {
-      console.warn('Failed to cache stats:', error);
-    }
+    cache.set(CACHE_KEY, data, {
+      storage: 'local',
+      expireTime: CACHE_CONFIG.STATS.WEBSITE,
+      validate: true
+    });
   };
 
   // 获取统计数据 - 添加客户端缓存优化

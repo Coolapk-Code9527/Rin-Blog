@@ -3,6 +3,7 @@ import Elysia, { t } from "elysia";
 import { getDB } from "../utils/di";
 import { visits } from "../db/schema";
 import { PublicCache, ClientConfig } from "../utils/cache";
+import { SERVER_CACHE_CONFIG } from "../utils/cacheConstants";
 
 /**
  * 网站统计数据接口
@@ -21,7 +22,7 @@ interface WebsiteStats {
 async function getWebsiteStats(): Promise<WebsiteStats> {
   const cache = PublicCache();
   const cacheKey = 'website_stats';
-  const CACHE_EXPIRE_TIME = 15 * 60 * 1000; // 15分钟缓存，与现有系统一致
+  const CACHE_EXPIRE_TIME = SERVER_CACHE_CONFIG.STATS.WEBSITE; // 使用统一配置：15分钟缓存
 
   // 检查缓存
   const cached = await cache.get(cacheKey);

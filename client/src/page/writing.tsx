@@ -19,6 +19,7 @@ import {client} from "../main";
 import {headersWithAuth} from "../utils/auth";
 import { useFeedCache } from "../hooks/useFeedsCache";
 import {Cache, useCache} from '../utils/cache';
+import { cache as cacheManager } from "../utils/SimpleCacheManager";
 import {siteName} from "../utils/constants";
 import {useColorMode} from "../utils/darkModeUtils";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
@@ -50,26 +51,39 @@ declare const process: {
 const NAME = (process.env.NAME || '博客') as string;
 const AVATAR = (process.env.AVATAR || '') as string;
 
-// 统一的缓存清理工具函数
+// 统一的缓存清理工具函数 - 使用SimpleCacheManager
 function clearFeedRelatedCaches(feedId?: string | number) {
-  if (typeof window !== 'undefined' && window.sessionStorage) {
-    const storageKeys = Object.keys(sessionStorage);
-    storageKeys.forEach(key => {
+  if (typeof window !== 'undefined') {
+    try {
+      // 使用静态导入的缓存管理器
+
       // 清理文章列表相关缓存
-      if (key.startsWith('api_cache_feeds_') ||
-          key.startsWith('api_cache_recent_posts_') ||
-          key.startsWith('api_cache_timeline_feeds') ||
-          key.includes('hashtag_feeds_')) {
-        sessionStorage.removeItem(key);
-      }
+      cacheManager.clearByPattern('feeds_', 'session', true); // 精确匹配
+      cacheManager.clearByPattern('recent_posts_', 'session', true);
+      cacheManager.clearByPattern('timeline_feeds', 'session', true);
+      cacheManager.clearByPattern('tags_feeds_tag:', 'session', false); // 模糊匹配
 
       // 如果指定了feedId，清理特定文章的缓存
-      if (feedId && (
-          key === `api_cache_feed_id:${feedId}` ||
-          key.includes(`adjacent_feeds_${feedId}`))) {
-        sessionStorage.removeItem(key);
+      if (feedId) {
+        cacheManager.remove(`feed_id:${feedId}`);
+        cacheManager.remove(`adjacent_feeds_id:${feedId}`);
       }
-    });
+
+      // 同时清理历史遗留的错误缓存键
+      cacheManager.cleanupLegacy();
+    } catch (error) {
+      console.warn('Failed to use cache manager, falling back to basic cleanup:', error);
+      // 简化的降级逻辑：只清理最关键的缓存
+      try {
+        sessionStorage.removeItem('api_cache_timeline_feeds');
+        if (feedId) {
+          sessionStorage.removeItem(`api_cache_feed_id:${feedId}`);
+          sessionStorage.removeItem(`api_cache_adjacent_feeds_id:${feedId}`);
+        }
+      } catch (fallbackError) {
+        console.warn('Even fallback cleanup failed:', fallbackError);
+      }
+    }
   }
 }
 
