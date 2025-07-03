@@ -23,6 +23,7 @@ import { UnifiedContainer } from '../UnifiedContainer';
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
 import { uploadFiles } from '../../utils/fileUpload';
+import { cache as cacheManager } from '../../utils/SimpleCacheManager';
 
 // 文件大小格式化工具
 function formatFileSize(bytes: number): string {
@@ -109,7 +110,7 @@ export function FileManager({
   const [isPageChanging, setIsPageChanging] = useState<boolean>(false);
 
   // 使用缓存Hook替代直接API调用
-  const { data: filesData, loading: isLoading, error: cacheError } = useFilesCache(
+  const { data: filesData, loading: isLoading, error: cacheError, invalidate: invalidateFilesCache } = useFilesCache(
     currentPath,
     debouncedSearch,
     sortBy,
@@ -121,17 +122,30 @@ export function FileManager({
   const files = filesData?.files || [];
   const totalItems = filesData?.total || 0;
 
+  // 清除文件相关缓存的函数
+  const clearFilesCaches = useCallback((targetPath?: string) => {
+    // 清除指定路径的所有文件缓存
+    const pathToClean = targetPath || currentPath;
+    const encodedPath = encodeURIComponent(pathToClean);
+
+    // 清除所有包含该路径的文件缓存键
+    const pattern = `files_path:${encodedPath}`;
+    const clearedCount = cacheManager.clearByPattern(pattern, 'session', false);
+
+    console.log(`清除了 ${clearedCount} 个文件缓存键，路径: ${pathToClean}`);
+  }, [currentPath]);
+
   // 刷新文件列表的函数（替代loadFiles）
-  const refreshFiles = useCallback((reload = false) => {
-    // 简单的页面刷新来更新缓存
-    // 在实际应用中，可以使用更精细的缓存失效策略
+  const refreshFiles = useCallback((reload = false, targetPath?: string) => {
     if (reload) {
       window.location.reload();
     } else {
-      // 轻量级刷新：重新设置当前页面来触发缓存更新
-      setCurrentPage(prev => prev);
+      // 清除相关路径的所有文件缓存
+      clearFilesCaches(targetPath);
+      // 然后失效当前缓存以触发重新获取
+      invalidateFilesCache();
     }
-  }, []);
+  }, [invalidateFilesCache, clearFilesCaches]);
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
   const [breadcrumbs, setBreadcrumbs] = useState<{name: string, path: string}[]>([{ name: t('files.root'), path: '/' }]);
   
@@ -416,6 +430,11 @@ export function FileManager({
 
       notification.success(t('files.upload_success'));
       refreshFiles(); // 刷新文件列表
+
+      // 触发文件上传成功事件，通知其他组件
+      if (window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('file-upload-success'));
+      }
     } catch (error: any) {
       console.error('文件上传失败:', error);
       setUploadError(error.message);
@@ -492,7 +511,7 @@ export function FileManager({
                         showToast(t('files.delete_error', { error: forceData.error || forceRes.status }), 'error');
                 } else {
                   setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
-                  refreshFiles(true);
+                  refreshFiles();
                 }
               }
                   );
@@ -504,7 +523,7 @@ export function FileManager({
           } else {
             setSelectedFiles(prev => prev.filter(f => f.id !== file.id));
             showToast(t('files.delete_success'), 'info');
-            refreshFiles(true);
+            refreshFiles();
           }
         } catch (error: any) {
           showToast(t('files.delete_failed', { error: error.message }), 'error');
@@ -705,7 +724,7 @@ export function FileManager({
           if (!msg) msg = t('files.delete_none');
           showToast(msg, data.deleted > 0 ? 'info' : 'error');
           setSelectedFiles([]);
-          refreshFiles(true); // 批量删除后自动刷新
+          refreshFiles(); // 批量删除后自动刷新
         } catch (error: any) {
           showToast(t('files.delete_failed', { error: error.message }), 'error');
         }
@@ -752,7 +771,12 @@ export function FileManager({
     setMoving(false);
     setShowMoveDialog(false);
     setSelectedFiles([]);
+
+    // 清除源路径和目标路径的缓存
+    clearFilesCaches(currentPath); // 清除源路径缓存
+    clearFilesCaches(moveTargetPath); // 清除目标路径缓存
     refreshFiles();
+
     if (!hasError) {
       showToast(t('files.move_success', { defaultValue: '移动成功' }), 'success');
     }
@@ -1250,11 +1274,8 @@ export function FileManager({
   //   };
   // }, [showNewFolderDialog, errorMessage, refDialogOpen, showMoveDialog]);
 
-  useEffect(() => {
-    const handler = () => refreshFiles(true);
-    window.addEventListener('file-upload-success', handler);
-    return () => window.removeEventListener('file-upload-success', handler);
-  }, [currentPath, debouncedSearch, sortBy, sortOrder, itemsPerPage]);
+  // 移除file-upload-success事件监听器，因为FileManager组件自己处理文件上传后的缓存更新
+  // 其他组件（如writing.tsx）的文件上传会触发此事件，但FileManager不需要监听自己的上传事件
 
   return (
     <UnifiedContainer
