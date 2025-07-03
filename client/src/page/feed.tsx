@@ -149,8 +149,8 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
         setHeadImage(img_match[1]);
       }
 
-      // 设置置顶状态
-      setTop(feed.top);
+      // 注意：feed.top是文章置顶状态(boolean)，setTop是滚动位置(number)
+      // 这里不需要设置滚动位置，移除错误的调用
 
       // 标记内容已加载完成
       setContentReadyState(true);

@@ -3,6 +3,15 @@ import { client } from '../main';
 import { CACHE_CONFIG, CACHE_KEY_PATTERNS } from '../utils/cacheConstants';
 import { useApiCache } from './useApiCache';
 
+/**
+ * API响应错误检查工具
+ */
+const checkApiError = (response: any): void => {
+  if (response.error) {
+    throw new Error(response.error.value as string);
+  }
+};
+
 interface Tag {
   id: number;
   name: string;
@@ -28,12 +37,11 @@ export function useTagsWithCache(maxTags: number = 10) {
   const fetcher = useMemo(() => async (): Promise<Tag[]> => {
     const response = await client.tag.index.get();
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
+    checkApiError(response);
 
     // 处理和排序标签数据
-    const sortedTags = (response.data || [])
+    const tags = response.data as Tag[] || [];
+    const sortedTags = tags
       .filter((tag: Tag) => tag.feeds > 0) // 只显示有文章的标签
       .sort((a: Tag, b: Tag) => b.feeds - a.feeds) // 按文章数量排序
       .slice(0, maxTags); // 限制数量
@@ -54,14 +62,4 @@ export function useTagsWithCache(maxTags: number = 10) {
     error,
     refreshTags: refetch
   };
-}
-
-/**
- * 清理过期的标签缓存
- *
- * 现在由SimpleCacheManager自动处理，此函数保留用于向后兼容
- */
-export function clearExpiredTagsCache(): void {
-  // 现在由SimpleCacheManager的clearExpired()自动处理
-  // 保留此函数用于向后兼容，但实际清理工作已统一
 }

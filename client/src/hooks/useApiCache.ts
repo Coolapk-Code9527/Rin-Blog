@@ -91,41 +91,22 @@ export function useApiCache<T>(
   }, []);
 
   /**
-   * 获取缓存数据 - 使用SimpleCacheManager但获取完整信息
+   * 获取缓存数据 - 完全使用SimpleCacheManager统一架构
    */
   const getCachedData = useCallback((): CacheData<T> | null => {
     try {
-      // 使用SimpleCacheManager的内部逻辑来获取完整的缓存信息
-      const storageObj = sessionStorage;
+      // 使用SimpleCacheManager的getWithMetadata方法获取完整信息
+      const cacheResult = cacheManager.getWithMetadata<T>(key, {
+        storage: 'session',
+        expireTime: cacheTime
+      });
 
-      // 模拟SimpleCacheManager的getFullKey逻辑
-      let fullKey = key;
-      if (!key.startsWith('api_cache_')) {
-        fullKey = `api_cache_${key}`;
-      }
-
-      const cached = storageObj.getItem(fullKey);
-      if (!cached) return null;
-
-      // 解析SimpleCacheManager的数据格式
-      const simpleCacheData = JSON.parse(cached);
-
-      if (!simpleCacheData || !simpleCacheData.data || !simpleCacheData.timestamp) {
-        return null;
-      }
-
-      // 检查是否过期（使用SimpleCacheManager的过期逻辑）
-      const now = Date.now();
-      const expireTime = simpleCacheData.expireTime || cacheTime;
-      if (now - simpleCacheData.timestamp > expireTime) {
-        storageObj.removeItem(fullKey);
-        return null;
-      }
+      if (!cacheResult) return null;
 
       // 重新构造useApiCache期望的CacheData格式，保持原始时间戳
       return {
-        data: simpleCacheData.data,
-        timestamp: simpleCacheData.timestamp, // 使用原始时间戳
+        data: cacheResult.data,
+        timestamp: cacheResult.timestamp, // 使用原始时间戳，确保stale检查正确
         staleTime,
         cacheTime
       };
@@ -294,38 +275,6 @@ export function useApiCache<T>(
   };
 }
 
-/**
- * 全局缓存管理工具 - 使用SimpleCacheManager
- */
-export const ApiCacheManager = {
-  /**
-   * 清除所有API缓存
-   */
-  clearAll: () => cacheManager.clearAll('session'),
-
-  /**
-   * 清除特定前缀的缓存
-   */
-  clearByPrefix: (prefix: string) => cacheManager.clearByPattern(prefix, 'session', true),
-
-  /**
-   * 获取缓存统计信息
-   */
-  getStats: () => {
-    const stats = cacheManager.getStats('session');
-    return {
-      totalCaches: stats.count,
-      totalSize: stats.size
-    };
-  },
-
-  /**
-   * 缓存健康检查
-   */
-  healthCheck: () => cacheManager.healthCheck('session'),
-
-  /**
-   * 清理过期缓存
-   */
-  clearExpired: () => cacheManager.clearExpired('session')
-};
+// ApiCacheManager已合并到useFeedsCache.ts中的CacheManager
+// 为了向后兼容，重新导出CacheManager
+export { CacheManager as ApiCacheManager } from './useFeedsCache';

@@ -7,6 +7,34 @@ import { CACHE_CONFIG, CACHE_KEY_PATTERNS } from '../utils/cacheConstants';
 import { cache as cacheManager } from '../utils/SimpleCacheManager';
 
 /**
+ * 统一的API响应处理工具函数
+ * 消除重复的错误处理和数据验证逻辑
+ */
+const ApiResponseUtils = {
+  /**
+   * 处理API响应的错误检查
+   */
+  checkError(response: any): void {
+    if (response.error) {
+      throw new Error(response.error.value as string);
+    }
+  },
+
+  /**
+   * 处理API响应的错误和数据验证
+   */
+  handleResponse<T = any>(response: any, errorMessage: string = 'API request failed'): T {
+    this.checkError(response);
+
+    if (!response.data || typeof response.data === 'string') {
+      throw new Error(errorMessage);
+    }
+
+    return response.data as T;
+  }
+};
+
+/**
  * 文章类型枚举
  * 与后端API和feeds.tsx保持一致
  */
@@ -112,16 +140,10 @@ function useOriginalFeedsCache(config: UseFeedsCacheConfig) {
       headers: headersWithAuth()
     });
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
-
-    if (!response.data || typeof response.data === 'string') {
-      throw new Error('Invalid response data');
-    }
+    const data = ApiResponseUtils.handleResponse(response, 'Invalid response data');
 
     // 确保返回的数据符合FeedsData接口，添加基本验证
-    const apiData = response.data as any;
+    const apiData = data as any;
 
     // 基本数据验证
     if (!apiData || typeof apiData !== 'object') {
@@ -373,9 +395,7 @@ export function useRecentPostsCache(limit: number = 3) {
       headers: {}
     });
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
+    ApiResponseUtils.checkError(response);
 
     if (!response.data || !Array.isArray(response.data.data)) {
       throw new Error('Invalid response data');
@@ -413,9 +433,7 @@ export function useTimelineCache() {
       headers: headersWithAuth()
     });
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
+    ApiResponseUtils.checkError(response);
 
     if (!response.data) {
       throw new Error('Invalid response data');
@@ -436,6 +454,20 @@ export function useTimelineCache() {
   });
 }
 
+interface Feed {
+  id: number;
+  title: string;
+  content: string;
+  user: any;
+  hashtags: any[];
+  top: boolean;
+  createdAt: string;
+  updatedAt: string;
+  pv: number;
+  uv: number;
+  [key: string]: any;
+}
+
 /**
  * 单个文章缓存Hook
  *
@@ -444,20 +476,12 @@ export function useTimelineCache() {
 export function useFeedCache(id: string, enabled: boolean = true) {
   const cacheKey = CACHE_KEY_PATTERNS.FEED(id);
 
-  const fetcher = useMemo(() => async () => {
+  const fetcher = useMemo(() => async (): Promise<Feed> => {
     const response = await client.feed({ id }).get({
       headers: headersWithAuth()
     });
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
-
-    if (!response.data || typeof response.data === 'string') {
-      throw new Error('Feed not found');
-    }
-
-    return response.data;
+    return ApiResponseUtils.handleResponse<Feed>(response, 'Feed not found');
   }, [id]);
 
   return useApiCache(cacheKey, fetcher, {
@@ -472,21 +496,18 @@ export function useFeedCache(id: string, enabled: boolean = true) {
  *
  * 用于获取上一篇和下一篇文章，避免重复请求
  */
+interface AdjacentFeeds {
+  previousFeed?: any;
+  nextFeed?: any;
+}
+
 export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
   const cacheKey = CACHE_KEY_PATTERNS.ADJACENT_FEEDS(id);
 
-  const fetcher = useMemo(() => async () => {
+  const fetcher = useMemo(() => async (): Promise<AdjacentFeeds> => {
     const response = await client.feed.adjacent({ id }).get();
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
-
-    if (!response.data || typeof response.data === 'string') {
-      throw new Error('Adjacent feeds not found');
-    }
-
-    return response.data;
+    return ApiResponseUtils.handleResponse<AdjacentFeeds>(response, 'Adjacent feeds not found');
   }, [id]);
 
   return useApiCache(cacheKey, fetcher, {
@@ -509,9 +530,7 @@ export function useCommentsCache(feedId: string, enabled: boolean = true) {
       headers: headersWithAuth()
     });
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
+    ApiResponseUtils.checkError(response);
 
     if (!response.data || !Array.isArray(response.data)) {
       return []; // 返回空数组而不是抛出错误
@@ -527,6 +546,14 @@ export function useCommentsCache(feedId: string, enabled: boolean = true) {
   });
 }
 
+interface TagData {
+  name: string;
+  description?: string;
+  feeds: any[];
+  sort?: string;
+  [key: string]: any;
+}
+
 /**
  * 标签页面文章缓存Hook
  *
@@ -535,21 +562,13 @@ export function useCommentsCache(feedId: string, enabled: boolean = true) {
 export function useHashtagFeedsCache(tagName: string, enabled: boolean = true) {
   const cacheKey = CACHE_KEY_PATTERNS.TAGS.FEEDS(tagName);
 
-  const fetcher = useMemo(() => async () => {
+  const fetcher = useMemo(() => async (): Promise<TagData> => {
     const nameDecoded = decodeURI(tagName);
     const response = await client.tag({ name: nameDecoded }).get({
       headers: headersWithAuth()
     });
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
-
-    if (!response.data || typeof response.data === 'string') {
-      throw new Error('Tag not found');
-    }
-
-    return response.data;
+    return ApiResponseUtils.handleResponse<TagData>(response, 'Tag not found');
   }, [tagName]);
 
   return useApiCache(cacheKey, fetcher, {
@@ -557,6 +576,13 @@ export function useHashtagFeedsCache(tagName: string, enabled: boolean = true) {
     enabled: enabled && !!tagName,
     refetchOnWindowFocus: true
   });
+}
+
+interface SearchResult {
+  data: any[];
+  size: number;
+  hasNext: boolean;
+  [key: string]: any;
 }
 
 /**
@@ -567,7 +593,7 @@ export function useHashtagFeedsCache(tagName: string, enabled: boolean = true) {
 export function useSearchCache(keyword: string, page: number = 1, limit: number = 10, enabled: boolean = true) {
   const cacheKey = CACHE_KEY_PATTERNS.SEARCH(keyword, page, limit);
 
-  const fetcher = useMemo(() => async () => {
+  const fetcher = useMemo(() => async (): Promise<SearchResult> => {
     const response = await client.search({ keyword }).get({
       query: {
         page,
@@ -576,15 +602,7 @@ export function useSearchCache(keyword: string, page: number = 1, limit: number 
       headers: headersWithAuth()
     });
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
-
-    if (!response.data || typeof response.data === 'string') {
-      throw new Error('Search failed');
-    }
-
-    return response.data;
+    return ApiResponseUtils.handleResponse<SearchResult>(response, 'Search failed');
   }, [keyword, page, limit]);
 
   return useApiCache(cacheKey, fetcher, {
@@ -592,6 +610,14 @@ export function useSearchCache(keyword: string, page: number = 1, limit: number 
     enabled: enabled && !!keyword,
     refetchOnWindowFocus: false // 搜索结果不需要频繁刷新
   });
+}
+
+interface Tag {
+  id: number;
+  name: string;
+  feeds: number;
+  description?: string;
+  [key: string]: any;
 }
 
 /**
@@ -602,18 +628,10 @@ export function useSearchCache(keyword: string, page: number = 1, limit: number 
 export function useTagsCache(enabled: boolean = true) {
   const cacheKey = CACHE_KEY_PATTERNS.TAGS.LIST();
 
-  const fetcher = useMemo(() => async () => {
+  const fetcher = useMemo(() => async (): Promise<Tag[]> => {
     const response = await client.tag.index.get();
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
-
-    if (!response.data || typeof response.data === 'string') {
-      throw new Error('Failed to fetch tags');
-    }
-
-    return response.data;
+    return ApiResponseUtils.handleResponse<Tag[]>(response, 'Failed to fetch tags');
   }, []);
 
   return useApiCache(cacheKey, fetcher, {
@@ -636,15 +654,7 @@ export function useConfigCache(type: 'client' | 'server', enabled: boolean = tru
       headers: headersWithAuth()
     });
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
-
-    if (!response.data || typeof response.data === 'string') {
-      throw new Error('Failed to fetch config');
-    }
-
-    return response.data;
+    return ApiResponseUtils.handleResponse(response, 'Failed to fetch config');
   }, [type]);
 
   return useApiCache(cacheKey, fetcher, {
@@ -667,9 +677,7 @@ export function useFriendsCache(enabled: boolean = true) {
       headers: headersWithAuth()
     });
 
-    if (response.error) {
-      throw new Error(response.error.value as string);
-    }
+    ApiResponseUtils.checkError(response);
 
     if (!response.data) {
       throw new Error('Failed to fetch friends');
@@ -804,9 +812,43 @@ export function useFilesCache(
 }
 
 /**
- * 缓存管理工具 - 使用SimpleCacheManager
+ * 统一缓存管理工具 - 基于SimpleCacheManager
+ * 整合了原FeedsCacheManager和ApiCacheManager的功能
  */
-export const FeedsCacheManager = {
+export const CacheManager = {
+  // === 通用缓存管理 ===
+  /**
+   * 清除所有API缓存
+   */
+  clearAll: () => cacheManager.clearAll('session'),
+
+  /**
+   * 清除特定前缀的缓存
+   */
+  clearByPrefix: (prefix: string) => cacheManager.clearByPattern(prefix, 'session', true),
+
+  /**
+   * 清理过期缓存
+   */
+  clearExpired: () => cacheManager.clearExpired('session'),
+
+  /**
+   * 获取缓存统计信息
+   */
+  getStats: () => {
+    const stats = cacheManager.getStats('session');
+    return {
+      totalCaches: stats.count,
+      totalSize: stats.size
+    };
+  },
+
+  /**
+   * 缓存健康检查
+   */
+  healthCheck: () => cacheManager.healthCheck('session'),
+
+  // === 文章相关缓存管理 ===
   /**
    * 清除所有文章相关缓存
    */
@@ -821,7 +863,6 @@ export const FeedsCacheManager = {
    * 清除特定类型的文章缓存
    */
   clearFeedsByType: (type: FeedType) => {
-    // 清理包含特定类型的缓存
     cacheManager.clearByPattern(`type:${type}`, 'session', false);
   },
 
@@ -832,3 +873,6 @@ export const FeedsCacheManager = {
     cacheManager.remove(`feed_id:${id}`, { storage: 'session' });
   }
 };
+
+// 向后兼容的别名
+export const FeedsCacheManager = CacheManager;

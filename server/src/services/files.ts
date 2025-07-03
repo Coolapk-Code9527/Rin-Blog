@@ -10,6 +10,7 @@ import { listAllR2Files, getR2FileMeta, normalizePath, setR2FileMeta } from '../
 import { generateThumbnail } from '../utils/image';
 import { Container } from 'typedi';
 import { safeParseId, safeParsePage, safeParseLimit } from "../utils/validation";
+import { SERVER_CACHE_CONFIG } from "../utils/cacheConstants";
 
 // 优化：哈希计算缓存，避免重复计算（扩大缓存容量）
 const hashCache = new Map<string, string>();
@@ -1172,7 +1173,7 @@ export function FileService() {
                     try {
                         const useCache = query?.useCache !== 'false'; // 默认使用缓存
                         const maxRequests = Math.min(Number(query?.maxRequests) || 5, 10); // 限制最大请求数，避免CPU超时
-                        const CACHE_TTL = 30 * 60 * 1000; // 30分钟缓存
+                        const CACHE_TTL = SERVER_CACHE_CONFIG.FILES.DETAIL; // 使用统一配置：15分钟缓存
 
                         // 检查缓存
                         if (useCache) {

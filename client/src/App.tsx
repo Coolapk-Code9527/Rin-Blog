@@ -32,7 +32,7 @@ import { GlobalDialogProvider } from './components/dialog'
 import { GlobalMusicPlayer } from './components/GlobalMusicPlayer'
 import { MusicProvider } from './context/MusicContext'
 import { ExtendedConfigProvider } from './context/ConfigContext'
-import { clearExpiredTagsCache } from './hooks/useTagsWithCache'
+
 import { SimpleClickEffectCanvas } from './components/effects/ClickEffectCanvas'
 
 // 返回顶部按钮组件
@@ -173,10 +173,7 @@ function App() {
         }
       }, 100);
 
-      // 清理过期的标签缓存（低优先级）
-      setTimeout(() => {
-        clearExpiredTagsCache();
-      }, 200);
+      // 过期缓存清理现在由SimpleCacheManager自动处理
     };
 
     initializeApp();

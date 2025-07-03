@@ -17,7 +17,7 @@ import {Markdown} from "../components/markdown";
 import { MacOSLoadingSpinner } from '../components/loading';
 import {client} from "../main";
 import {headersWithAuth} from "../utils/auth";
-import { useFeedCache } from "../hooks/useFeedsCache";
+import { useFeedCache, FeedsCacheManager } from "../hooks/useFeedsCache";
 import {Cache, useCache} from '../utils/cache';
 import { cache as cacheManager } from "../utils/SimpleCacheManager";
 import {siteName} from "../utils/constants";
@@ -57,16 +57,12 @@ function clearFeedRelatedCaches(feedId?: string | number) {
     try {
       // 使用静态导入的缓存管理器
 
-      // 清理文章列表相关缓存
-      cacheManager.clearByPattern('feeds_', 'session', true); // 精确匹配
-      cacheManager.clearByPattern('recent_posts_', 'session', true);
-      cacheManager.clearByPattern('timeline_feeds', 'session', true);
-      cacheManager.clearByPattern('tags_feeds_tag:', 'session', false); // 模糊匹配
+      // 使用统一的缓存管理器清理文章相关缓存
+      FeedsCacheManager.clearAllFeeds();
 
       // 如果指定了feedId，清理特定文章的缓存
       if (feedId) {
-        cacheManager.remove(`feed_id:${feedId}`);
-        cacheManager.remove(`adjacent_feeds_id:${feedId}`);
+        FeedsCacheManager.clearFeed(String(feedId));
       }
 
       // 同时清理历史遗留的错误缓存键

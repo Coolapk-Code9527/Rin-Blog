@@ -139,12 +139,6 @@ export const CACHE_KEY_PATTERNS = {
   /** API缓存键前缀 */
   API_PREFIX: 'api_cache_',
 
-  /** 表单缓存键格式：form_id:value/field:value */
-  FORM: (id: string | number, field: string) => `form_id:${id}/field:${field}`,
-
-  /** 统计缓存键格式：stats_type:value */
-  STATS: (type: string) => `stats_type:${type}`,
-
   /** 单篇文章缓存键格式：feed_id:value */
   FEED: (id: string | number) => `feed_id:${id}`,
 
@@ -184,53 +178,6 @@ export const CACHE_KEY_PATTERNS = {
   /** 友情链接缓存键格式 */
   FRIENDS: () => 'friends_list',
 } as const;
-
-/**
- * 获取推荐的缓存配置
- *
- * @param dataType 数据类型
- * @param subType 子类型（可选）
- * @returns 缓存配置对象
- */
-export function getRecommendedCacheConfig(
-  dataType: keyof typeof CACHE_CONFIG,
-  subType?: string
-): { staleTime: number; cacheTime: number } {
-  const config = CACHE_CONFIG[dataType];
-
-  // 处理嵌套配置对象
-  if (typeof config === 'object' && config !== null) {
-    if (subType && subType in config) {
-      return {
-        staleTime: (config as any)[subType],
-        cacheTime: CACHE_CONFIG.API.DEFAULT_CACHE_TIME,
-      };
-    }
-
-    // 默认使用LIST或第一个可用值
-    if ('LIST' in config) {
-      return {
-        staleTime: (config as any).LIST,
-        cacheTime: CACHE_CONFIG.API.DEFAULT_CACHE_TIME,
-      };
-    }
-
-    // 获取第一个数值属性
-    const firstValue = Object.values(config)[0];
-    if (typeof firstValue === 'number') {
-      return {
-        staleTime: firstValue,
-        cacheTime: CACHE_CONFIG.API.DEFAULT_CACHE_TIME,
-      };
-    }
-  }
-
-  // 默认配置
-  return {
-    staleTime: CACHE_CONFIG.API.DEFAULT_STALE_TIME,
-    cacheTime: CACHE_CONFIG.API.DEFAULT_CACHE_TIME,
-  };
-}
 
 /**
  * 缓存时间工具函数

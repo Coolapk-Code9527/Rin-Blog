@@ -83,6 +83,56 @@ export class SimpleCacheManager {
   }
 
   /**
+   * 获取缓存数据及其元数据
+   */
+  getWithMetadata<T = any>(key: string, options: CacheOptions = {}): { data: T; timestamp: number; expireTime: number } | null {
+    const { storage = 'session', expireTime = CACHE_CONFIG.API.DEFAULT_STALE_TIME } = options;
+
+    try {
+      const storageObj = this.getStorage(storage);
+      const fullKey = this.getFullKey(key, storage);
+      const cached = storageObj.getItem(fullKey);
+
+      if (!cached) {
+        return null;
+      }
+
+      let cacheData: CacheData<T>;
+
+      try {
+        cacheData = JSON.parse(cached);
+      } catch (parseError) {
+        // 解析失败，清理无效缓存
+        this.remove(key, options);
+        return null;
+      }
+
+      // 检查数据结构
+      if (!cacheData || typeof cacheData !== 'object' || !('data' in cacheData) || !('timestamp' in cacheData)) {
+        this.remove(key, options);
+        return null;
+      }
+
+      // 检查是否过期
+      const now = Date.now();
+      const actualExpireTime = cacheData.expireTime || expireTime;
+      if (now - cacheData.timestamp > actualExpireTime) {
+        this.remove(key, options);
+        return null;
+      }
+
+      return {
+        data: cacheData.data,
+        timestamp: cacheData.timestamp,
+        expireTime: actualExpireTime
+      };
+    } catch (error) {
+      console.warn('Failed to get cached data with metadata:', error);
+      return null;
+    }
+  }
+
+  /**
    * 获取缓存数据
    */
   get<T = any>(key: string, options: CacheOptions = {}): T | null {
@@ -316,11 +366,23 @@ export class SimpleCacheManager {
         }
       }
 
-      // 批量删除
-      keysToRemove.forEach(key => storageObj.removeItem(key));
-      return keysToRemove.length;
+      return this.batchRemove(keysToRemove, storage);
     } catch (error) {
       console.warn(`Failed to clear cache by pattern: ${pattern}`, error);
+      return 0;
+    }
+  }
+
+  /**
+   * 批量删除缓存键
+   */
+  private batchRemove(keys: string[], storage: StorageType): number {
+    try {
+      const storageObj = this.getStorage(storage);
+      keys.forEach(key => storageObj.removeItem(key));
+      return keys.length;
+    } catch (error) {
+      console.warn('Failed to batch remove cache keys:', error);
       return 0;
     }
   }
@@ -342,9 +404,7 @@ export class SimpleCacheManager {
         }
       }
 
-      // 批量删除
-      keysToRemove.forEach(key => storageObj.removeItem(key));
-      return keysToRemove.length;
+      return this.batchRemove(keysToRemove, storage);
     } catch (error) {
       console.warn('Failed to clear all cache:', error);
       return 0;
@@ -500,6 +560,7 @@ export function cleanupLegacyCache(): { cleaned: number; errors: string[] } {
  */
 export const cache = {
   get: <T = any>(key: string, options?: CacheOptions) => cacheManager.get<T>(key, options),
+  getWithMetadata: <T = any>(key: string, options?: CacheOptions) => cacheManager.getWithMetadata<T>(key, options),
   set: <T = any>(key: string, data: T, options?: CacheOptions) => cacheManager.set(key, data, options),
   remove: (key: string, options?: CacheOptions) => cacheManager.remove(key, options),
   has: (key: string, options?: CacheOptions) => cacheManager.has(key, options),
