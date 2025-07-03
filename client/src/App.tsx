@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { getCookie } from 'typescript-cookie'
 import { DefaultParams, PathPattern, Route, Switch, useRoute } from 'wouter'
@@ -79,14 +79,19 @@ function App() {
   const { t } = useTranslation()
   const [profile, setProfile] = useState<Profile | undefined>()
 
+  // 内部辅助函数：解析配置并创建ConfigWrapper
+  const createConfigWrapper = useCallback((configData: any): ConfigWrapper => {
+    if (!('S3_ACCESS_HOST' in configData)) configData.S3_ACCESS_HOST = '';
+    return new ConfigWrapper(configData, defaultClientConfig);
+  }, []);
+
   // 立即同步读取sessionStorage配置，避免使用默认配置导致的闪现
   const [config, setConfig] = useState<ConfigWrapper>(() => {
     const savedConfig = sessionStorage.getItem('config');
     if (savedConfig) {
       try {
         const configObj = JSON.parse(savedConfig);
-        if (!('S3_ACCESS_HOST' in configObj)) configObj.S3_ACCESS_HOST = '';
-        return new ConfigWrapper(configObj, defaultClientConfig);
+        return createConfigWrapper(configObj);
       } catch (error) {
         console.warn('Failed to parse saved config, using default:', error);
         return new ConfigWrapper({}, defaultClientConfig);
@@ -107,7 +112,7 @@ function App() {
 
 
 
-  // 加载配置的函数
+  // 加载配置的函数 - 简化版本
   const loadConfig = (forceFromServer = false) => {
     // 页面初始加载时从服务器获取最新配置
     if (forceFromServer) {
@@ -115,15 +120,16 @@ function App() {
       return;
     }
 
-    const config = sessionStorage.getItem('config')
-    if (config) {
+    // 检查sessionStorage中是否有配置
+    const savedConfig = sessionStorage.getItem('config');
+    if (savedConfig) {
       try {
-        const configObj = JSON.parse(config)
-        if (!('S3_ACCESS_HOST' in configObj)) configObj.S3_ACCESS_HOST = '';
-        const configWrapper = new ConfigWrapper(configObj, defaultClientConfig)
-        setConfig(configWrapper)
-        setConfigLoaded(true) // 标记配置已加载
+        const configObj = JSON.parse(savedConfig);
+        const configWrapper = createConfigWrapper(configObj);
+        setConfig(configWrapper);
+        setConfigLoaded(true);
       } catch (error) {
+        console.warn('Failed to parse config from storage:', error);
         loadConfigFromServer();
       }
     } else {
@@ -131,15 +137,14 @@ function App() {
     }
   }
 
-  // 从服务器加载配置
+  // 从服务器加载配置 - 简化版本
   const loadConfigFromServer = () => {
     client.config({ type: "client" }).get().then(({ data }) => {
       if (data && typeof data !== 'string') {
-        if (!('S3_ACCESS_HOST' in data)) data.S3_ACCESS_HOST = '';
-        sessionStorage.setItem('config', JSON.stringify(data))
-        const config = new ConfigWrapper(data, defaultClientConfig)
-        setConfig(config)
-        setConfigLoaded(true) // 标记配置已加载
+        sessionStorage.setItem('config', JSON.stringify(data));
+        const configWrapper = createConfigWrapper(data);
+        setConfig(configWrapper);
+        setConfigLoaded(true);
       }
     })
   }
@@ -205,15 +210,15 @@ function App() {
   const favicon = `${process.env.API_URL}/favicon`;
 
   return (
-    <BackgroundProvider>
-      <BackgroundManager />
-      <div className="min-h-screen">
+    <div className="min-h-screen">
       <GlobalDialogProvider>
         <ToastProvider>
           {/* @ts-ignore - React Context Provider类型兼容性问题 */}
           <ClientConfigContext.Provider value={config}>
             <ExtendedConfigProvider value={{ config, configLoaded, initialLoading }}>
-              <MusicProvider>
+              <BackgroundProvider>
+                <BackgroundManager />
+                <MusicProvider>
               {/* @ts-ignore - React Context Provider类型兼容性问题 */}
               <ProfileContext.Provider value={profile}>
               <Helmet>
@@ -337,12 +342,12 @@ function App() {
               <SimpleClickEffectCanvas />
             </ProfileContext.Provider>
               </MusicProvider>
+              </BackgroundProvider>
             </ExtendedConfigProvider>
           </ClientConfigContext.Provider>
         </ToastProvider>
       </GlobalDialogProvider>
       </div>
-    </BackgroundProvider>
   )
 }
 

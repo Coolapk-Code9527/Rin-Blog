@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { ConfigWrapper, defaultClientConfig } from '../state/config';
-import { client } from '../main';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { ClientConfigContext } from '../state/config';
+import { getBackgroundConfig } from '../utils/sidebarConfig';
 
 interface BackgroundState {
   enabled: boolean;
@@ -39,6 +39,14 @@ export const BackgroundProvider = ({ children }: BackgroundProviderProps) => {
     error: undefined,
     retryCount: 0
   });
+
+  // 添加组件卸载检查，防止内存泄漏
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // 预加载图片 - 修复重试机制
   const preloadImage = useCallback((url: string, retryCount = 0): Promise<void> => {
@@ -121,21 +129,25 @@ export const BackgroundProvider = ({ children }: BackgroundProviderProps) => {
     if (enabled && url) {
       preloadImage(url)
         .then(() => {
-          // 图片加载成功，更新状态
-          setState(prev => ({
-            ...prev,
-            isImageLoaded: true
-          }));
+          // 图片加载成功，更新状态（检查组件是否仍然挂载）
+          if (isMountedRef.current) {
+            setState(prev => ({
+              ...prev,
+              isImageLoaded: true
+            }));
+          }
         })
         .catch((error) => {
           console.warn('Background image load failed:', error.message);
-          // 图片加载失败，记录错误但不影响用户体验
-          setState(prev => ({
-            ...prev,
-            isImageLoaded: false,
-            error: error.message,
-            retryCount: (prev.retryCount || 0) + 1
-          }));
+          // 图片加载失败，记录错误但不影响用户体验（检查组件是否仍然挂载）
+          if (isMountedRef.current) {
+            setState(prev => ({
+              ...prev,
+              isImageLoaded: false,
+              error: error.message,
+              retryCount: (prev.retryCount || 0) + 1
+            }));
+          }
 
           // 可选：尝试降级到默认背景
           // 这里可以设置一个默认的背景图片URL作为fallback
@@ -143,81 +155,22 @@ export const BackgroundProvider = ({ children }: BackgroundProviderProps) => {
     }
   }, [preloadImage]);
 
-  // 从配置加载背景状态 - 异步优化
-  const loadFromConfig = useCallback((configWrapper: ConfigWrapper) => {
-    const enabled = configWrapper.get<boolean>('background.enabled') === true;
-    const url = configWrapper.get<string>('background.url') || '';
-    updateConfig(enabled, url); // 不再等待，立即返回
-  }, [updateConfig]);
+  // 使用标准的配置获取模式，与其他Context保持一致
+  const config = useContext(ClientConfigContext);
+  const backgroundConfig = getBackgroundConfig(config);
 
-  // 初始化配置加载
+  // 从配置加载背景状态 - 使用标准模式
+  const loadFromConfig = useCallback(() => {
+    // 直接调用updateConfig，它会正确处理isLoading状态
+    updateConfig(backgroundConfig.enabled, backgroundConfig.url);
+  }, [backgroundConfig.enabled, backgroundConfig.url, updateConfig]);
+
+  // 监听配置变化，自动更新背景状态
   useEffect(() => {
-    const loadConfig = async () => {
-      const config = sessionStorage.getItem('config');
-      if (config) {
-        try {
-          const configObj = JSON.parse(config);
-          if (!('background.enabled' in configObj)) configObj['background.enabled'] = false;
-          if (!('background.url' in configObj)) configObj['background.url'] = '';
-          const configWrapper = new ConfigWrapper(configObj, defaultClientConfig);
-          loadFromConfig(configWrapper);
-        } catch (error) {
-          console.error('Failed to parse config:', error);
-          loadFromServer();
-        }
-      } else {
-        loadFromServer();
-      }
-    };
-
-    const loadFromServer = async () => {
-      try {
-        const { data } = await client.config({ type: "client" }).get();
-        if (data && typeof data !== 'string') {
-          if (!('background.enabled' in data)) data['background.enabled'] = false;
-          if (!('background.url' in data)) data['background.url'] = '';
-          sessionStorage.setItem('config', JSON.stringify(data));
-          const configWrapper = new ConfigWrapper(data, defaultClientConfig);
-          loadFromConfig(configWrapper);
-        }
-      } catch (error) {
-        console.error('Failed to load config from server:', error);
-        setState(prev => ({ ...prev, isLoading: false }));
-      }
-    };
-
-    loadConfig();
+    loadFromConfig();
   }, [loadFromConfig]);
 
-  // 监听配置更新事件
-  useEffect(() => {
-    const handleConfigUpdate = async () => {
-      const config = sessionStorage.getItem('config');
-      if (config) {
-        try {
-          const configObj = JSON.parse(config);
-          const configWrapper = new ConfigWrapper(configObj, defaultClientConfig);
-          loadFromConfig(configWrapper);
-        } catch (error) {
-          console.error('Failed to handle config update:', error);
-        }
-      }
-    };
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'config') {
-        handleConfigUpdate();
-      }
-    };
-
-    window.addEventListener('configUpdated', handleConfigUpdate);
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('configUpdated', handleConfigUpdate);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [loadFromConfig]);
+  // 配置更新现在由ExtendedConfigContext自动处理，无需手动监听
 
   const Provider = BackgroundContext.Provider as any;
   return (

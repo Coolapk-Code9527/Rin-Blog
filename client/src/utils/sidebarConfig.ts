@@ -98,6 +98,20 @@ export function getMusicConfig(config: ConfigWrapper): MusicConfig {
   };
 }
 
+// 背景配置接口
+export interface BackgroundConfig {
+  enabled: boolean;
+  url: string;
+}
+
+// 从配置包装器中获取背景配置
+export function getBackgroundConfig(config: ConfigWrapper): BackgroundConfig {
+  return {
+    enabled: config?.get<boolean>('background.enabled') === true,
+    url: config?.get<string>('background.url') || '',
+  };
+}
+
 // 从配置包装器中获取公告配置
 export function getAnnouncementConfig(config: ConfigWrapper): AnnouncementConfig {
   const announcementsData = config?.get<string>('announcements.data') || '[]';
