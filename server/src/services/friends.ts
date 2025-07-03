@@ -214,7 +214,7 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
 
         const promises = batch.map(async (friend) => {
             // 优化：移除调试日志，减少CPU消耗
-            let timeoutId: NodeJS.Timeout | null = null;
+            let timeoutId: ReturnType<typeof setTimeout> | null = null;
             try {
                 // 添加超时保护
                 const controller = new AbortController();
