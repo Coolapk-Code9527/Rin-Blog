@@ -92,8 +92,6 @@ export function useFeedsCache(config: UseFeedsCacheConfig = {}) {
     enabled = true
   } = config;
 
-
-
   // 智能检测：当limit=9999时启用分批获取模式
   const needsBatchMode = limit === 9999;
 
@@ -131,17 +129,12 @@ function useOriginalFeedsCache(config: UseFeedsCacheConfig) {
 
   // 数据获取函数
   const fetcher = useMemo(() => async (): Promise<FeedsData> => {
-    // 获取当前版本号
-    const stored = localStorage.getItem('cache_version');
-    const currentVersion = stored ? parseInt(stored) : 0;
-
     const response = await client.feed.index.get({
       query: {
         page,
         limit,
         type,
         lightweight: true,  // 修复：添加lightweight参数，优化性能并避免"暂无摘要"问题
-        version: currentVersion.toString(), // 添加版本参数
         ...(sortByTime && { sortByTime: true })
       },
       headers: headersWithAuth()
@@ -860,8 +853,6 @@ export const CacheManager = {
    * 清除所有文章相关缓存
    */
   clearAllFeeds: () => {
-    console.log('🧹 [DEBUG] FeedsCacheManager.clearAllFeeds() 开始执行');
-
     // 清除所有文章相关缓存，包含api_cache_前缀的模式
     const patterns = [
       'api_cache_feeds_',           // 文章列表缓存
@@ -875,14 +866,9 @@ export const CacheManager = {
       'api_cache_comments_',        // 评论缓存
     ];
 
-    let totalCleared = 0;
     patterns.forEach(pattern => {
-      const cleared = cacheManager.clearByPattern(pattern, 'session', true);
-      console.log(`🧹 [DEBUG] 清理模式 "${pattern}": ${cleared} 个缓存项`);
-      totalCleared += cleared;
+      cacheManager.clearByPattern(pattern, 'session', true);
     });
-
-    console.log(`🧹 [DEBUG] FeedsCacheManager.clearAllFeeds() 完成，总共清理 ${totalCleared} 个缓存项`);
   },
 
   /**

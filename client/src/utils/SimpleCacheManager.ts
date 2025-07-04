@@ -338,18 +338,13 @@ export class SimpleCacheManager {
    */
   clearByPattern(pattern: string, storage: StorageType = 'session', exact: boolean = false): number {
     try {
-      console.log(`🧹 [DEBUG] clearByPattern 开始 - 模式: "${pattern}", 存储: ${storage}, 精确匹配: ${exact}`);
-
       const storageObj = this.getStorage(storage);
       const keysToRemove: string[] = [];
-      const allKeys: string[] = [];
 
       // 遍历所有键
       for (let i = 0; i < storageObj.length; i++) {
         const key = storageObj.key(i);
         if (!key) continue;
-
-        allKeys.push(key);
 
         let shouldRemove = false;
 
@@ -368,17 +363,10 @@ export class SimpleCacheManager {
 
         if (shouldRemove && isOurCache) {
           keysToRemove.push(key);
-          console.log(`🧹 [DEBUG] 匹配到缓存键: "${key}"`);
         }
       }
 
-      console.log(`🧹 [DEBUG] 总共 ${allKeys.length} 个键，匹配到 ${keysToRemove.length} 个需要删除`);
-      console.log(`🧹 [DEBUG] 所有键:`, allKeys.filter(k => k.startsWith('api_cache_')));
-      console.log(`🧹 [DEBUG] 要删除的键:`, keysToRemove);
-
-      const removed = this.batchRemove(keysToRemove, storage);
-      console.log(`🧹 [DEBUG] clearByPattern 完成 - 实际删除: ${removed} 个`);
-      return removed;
+      return this.batchRemove(keysToRemove, storage);
     } catch (error) {
       console.warn(`Failed to clear cache by pattern: ${pattern}`, error);
       return 0;

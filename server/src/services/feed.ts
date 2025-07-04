@@ -131,44 +131,21 @@ import {extractImage} from "../utils/image";
 import {markdownToPlainText} from "../utils/markdown";
 import {bindTagToPost} from "./tag";
 import {safeParseId, safeParseInt, safeParsePage, safeParseLimit, createSafeErrorResponse} from "../utils/validation";
-import { getCacheVersionManager } from "../utils/cacheVersionManager";
 import { getR2FileMeta, setR2FileMeta } from '../utils/s3';
 import { getEnv } from '../utils/di';
 import { normalizePath } from '../utils/s3';
 
 export function FeedService() {
-    const versionManager = getCacheVersionManager();
-
     return new Elysia({ aot: false })
         .use(setup())
         .group('/feed', (group) =>
             group
-                // 版本检查API
-                .get('/version', async ({ query: { version } }) => {
-                    const clientVersion = version ? parseInt(version as string) : 0;
-                    return await versionManager.getVersionResponse(clientVersion);
-                }, {
-                    query: t.Object({
-                        version: t.Optional(t.String())
-                    })
-                })
-                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime, lightweight, version } }) => {
+                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime, lightweight } }) => {
                     const db: DB = getDB();
                     if ((type === 'draft' || type === 'unlisted') && !admin) {
                         set.status = 403;
                         return 'Permission denied';
                     }
-
-                    // 版本检查：如果客户端版本过期，返回304让客户端刷新缓存
-                    if (version) {
-                        const clientVersion = parseInt(version);
-                        const needsUpdate = await versionManager.needsUpdate(clientVersion, 'content');
-                        if (needsUpdate) {
-                            set.status = 304; // Not Modified - 告诉客户端刷新缓存
-                            return await versionManager.getVersionResponse(clientVersion);
-                        }
-                    }
-
                     const cache = PublicCache();
 
                     // 安全的limit参数解析
@@ -312,16 +289,11 @@ export function FeedService() {
 
                         const page_num = pageParseResult.value! - 1; // 转换为0基索引
                         cacheKey = `feeds_${type}_${page_num}_${limit_num}_${sortByTime ? 'time' : 'default'}`;
-
-                        console.log(`📄 [SERVER DEBUG] 文章列表API - 缓存键: "${cacheKey}"`);
-
+                        
                         const cached = await cache.get(cacheKey);
                         if (cached) {
-                            console.log(`📄 [SERVER DEBUG] 从缓存返回数据 - 键: "${cacheKey}"`);
                             return cached;
                         }
-
-                        console.log(`📄 [SERVER DEBUG] 缓存未命中，从数据库查询 - 键: "${cacheKey}"`);
                         
                         const feedsData2 = await db.query.feeds.findMany({
                         where: where,
@@ -421,9 +393,7 @@ export function FeedService() {
                     
                     if (type === undefined || type === 'normal' || type === '') {
                         // 性能优化：缓存正常文章数据
-                        console.log(`📄 [SERVER DEBUG] 设置缓存 - 键: "${cacheKey}", 数据包含 ${data.data.length} 篇文章`);
                         await cache.set(cacheKey, data);
-                        console.log(`📄 [SERVER DEBUG] 缓存设置完成 - 键: "${cacheKey}"`);
                     }
                     return data
                 }, {
@@ -433,8 +403,7 @@ export function FeedService() {
                         type: t.Optional(t.String()),
                         cursor: t.Optional(t.String()),
                         sortByTime: t.Optional(t.Boolean()),
-                        lightweight: t.Optional(t.Boolean()),
-                        version: t.Optional(t.String())
+                        lightweight: t.Optional(t.Boolean())
                     })
                 })
                 .get('/timeline', async () => {
@@ -500,9 +469,6 @@ export function FeedService() {
                         
                     // 使用统一的缓存清理系统
                     await unifiedCacheManager.clearAllContentCache();
-
-                    // 递增内容版本号，通知所有客户端更新
-                    await versionManager.incrementContentVersion();
                         
                     if (result.length === 0) {
                         set.status = 500;
@@ -789,10 +755,6 @@ export function FeedService() {
                         await bindTagToPost(db, id_num, tags);
                     }
                     await clearFeedCache(id_num, feed.alias, alias || null);
-
-                    // 递增内容版本号，通知所有客户端更新
-                    await versionManager.incrementContentVersion();
-
                     // 自动同步文件引用
                     if (content) {
                         await syncFeedFileReferences(db, id_num, content, uid);
@@ -843,10 +805,6 @@ export function FeedService() {
                         top
                     }).where(eq(feeds.id, feed.id));
                     await clearFeedCache(feed.id, null, null);
-
-                    // 递增内容版本号，通知所有客户端更新
-                    await versionManager.incrementContentVersion();
-
                     return 'Updated';
                 }, {
                     body: t.Object({
@@ -876,15 +834,8 @@ export function FeedService() {
                         return 'Permission denied';
                     }
                     try {
-                        console.log(`🗑️ [SERVER DEBUG] 开始删除文章 - ID: ${id_num}, alias: ${feed.alias}`);
                         await db.delete(feeds).where(eq(feeds.id, id_num));
-                        console.log(`🗑️ [SERVER DEBUG] 数据库删除完成，开始清理缓存 - ID: ${id_num}`);
                         await clearFeedCache(id_num, feed.alias, null);
-
-                        // 递增内容版本号，通知所有客户端更新
-                        await versionManager.incrementContentVersion();
-
-                        console.log(`🗑️ [SERVER DEBUG] 文章删除和缓存清理完成 - ID: ${id_num}`);
                         return 'Deleted';
                     } catch (error) {
                         console.error(`Error deleting feed ${id_num}:`, error);
@@ -1164,20 +1115,7 @@ class UnifiedCacheManager {
      * 清除特定文章相关的所有缓存
      */
     async clearFeedCache(id: number, alias: string | null = null, newAlias: string | null = null) {
-        console.log(`🧹 [SERVER DEBUG] clearFeedCache 开始 - 文章ID: ${id}, alias: ${alias}, newAlias: ${newAlias}`);
-
         const cache = this.getCache();
-
-        // 先检查缓存中有哪些键
-        const allCacheKeys = Array.from((cache as any).cache.keys()) as string[];
-        console.log(`🧹 [SERVER DEBUG] 当前缓存中的所有键 (${allCacheKeys.length}个):`, allCacheKeys);
-
-        // 检查要清理的键
-        const feedsKeys = allCacheKeys.filter((key: string) => key.startsWith('feeds_'));
-        const searchKeys = allCacheKeys.filter((key: string) => key.startsWith('search_'));
-        console.log(`🧹 [SERVER DEBUG] feeds_ 相关键 (${feedsKeys.length}个):`, feedsKeys);
-        console.log(`🧹 [SERVER DEBUG] search_ 相关键 (${searchKeys.length}个):`, searchKeys);
-
         await Promise.all([
             // 清除文章列表缓存
             cache.deletePrefix('feeds_'),
@@ -1201,12 +1139,6 @@ class UnifiedCacheManager {
         if (newAlias && newAlias !== alias) {
             await cache.delete(`feed_${newAlias}`, false);
         }
-
-        // 检查清理后的缓存
-        const remainingKeys = Array.from((cache as any).cache.keys()) as string[];
-        const remainingFeedsKeys = remainingKeys.filter((key: string) => key.startsWith('feeds_'));
-        console.log(`🧹 [SERVER DEBUG] 清理后剩余的 feeds_ 键 (${remainingFeedsKeys.length}个):`, remainingFeedsKeys);
-        console.log(`🧹 [SERVER DEBUG] clearFeedCache 完成 - 文章ID: ${id}`);
     }
 
     /**

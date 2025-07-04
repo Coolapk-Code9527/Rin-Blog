@@ -28,7 +28,6 @@ import { Tips, TipsPage } from './components/tips.tsx'
 import { useTranslation } from 'react-i18next'
 import { NotFoundPage } from './page/not-found.tsx'
 import { ToastProvider } from './components/toast/Toast'
-import { useAutoVersionCheck } from './hooks/useCacheVersion'
 import { GlobalDialogProvider } from './components/dialog'
 import { GlobalMusicPlayer } from './components/GlobalMusicPlayer'
 import { MusicProvider } from './context/MusicContext'
@@ -79,9 +78,6 @@ function App() {
   const ref = useRef(false)
   const { t } = useTranslation()
   const [profile, setProfile] = useState<Profile | undefined>()
-
-  // 启用自动版本检查，每分钟检查一次
-  useAutoVersionCheck(60000, true);
 
   // 立即同步读取sessionStorage配置，避免使用默认配置导致的闪现
   const [config, setConfig] = useState<ConfigWrapper>(() => {
