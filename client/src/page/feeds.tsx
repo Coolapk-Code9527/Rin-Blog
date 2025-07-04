@@ -17,7 +17,7 @@ import { ArticleManagementTabs, type ListState, type SortType } from '../compone
 import { ClientConfigContext } from "../state/config"
 import { getSidebarConfig } from "../utils/sidebarConfig"
 import { useSmartGrid } from "../hooks/useSmartGrid"
-import { useFeedsCache, FeedType } from "../hooks/useFeedsCache"
+import { useFeedsCache, FeedType, FeedsCacheManager } from "../hooks/useFeedsCache"
 
 import { generateGradient } from '../utils/placeholderUtils';
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety"
@@ -249,6 +249,14 @@ export function FeedsPage() {
     // 使用安全的缓存失效机制
     const safeInvalidateFeedsCache = useSafeCacheInvalidation(invalidateFeedsCache);
 
+    // 创建增强的缓存失效函数，同时清除所有相关缓存
+    const enhancedCacheInvalidation = useSafeCacheInvalidation(() => {
+        // 首先清除所有文章相关缓存
+        FeedsCacheManager.clearAllFeeds();
+        // 然后失效当前页面的缓存
+        invalidateFeedsCache();
+    });
+
     // 保存用户偏好到localStorage
     React.useEffect(() => {
         try {
@@ -267,7 +275,7 @@ export function FeedsPage() {
     }, [sortType]);
 
     // 使用统一的缓存事件管理器监听文章发布/更新/删除事件
-    useFeedCacheInvalidation(safeInvalidateFeedsCache);
+    useFeedCacheInvalidation(enhancedCacheInvalidation);
 
     // 获取配置加载状态
     const extendedConfig = useContext(ExtendedConfigContext);

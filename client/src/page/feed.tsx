@@ -114,8 +114,13 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
                 }));
               }
 
-              showAlert(t("delete.success"));
-              setLocation("/");
+              // 等待一小段时间确保事件被处理完成，然后再跳转
+              showAlert(t("delete.success"), () => {
+                // 使用setTimeout确保缓存失效操作完成后再跳转
+                setTimeout(() => {
+                  setLocation("/");
+                }, 100);
+              });
             }
           });
       })

@@ -7,7 +7,7 @@ import {useTranslation} from "react-i18next";
 import { PageContainer } from "../components/container";
 import { SimpleTimeline } from "../components/simple-timeline";
 import {useGlassEffect} from "../hooks/useGlassEffect";
-import { useTimelineCache } from "../hooks/useFeedsCache";
+import { useTimelineCache, FeedsCacheManager } from "../hooks/useFeedsCache";
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 
 // Object.groupBy polyfill（如原生不支持则自动挂载）
@@ -36,6 +36,14 @@ export function TimelinePage() {
     // 使用安全的缓存失效机制
     const safeInvalidateTimelineCache = useSafeCacheInvalidation(invalidateTimelineCache);
 
+    // 创建增强的缓存失效函数，同时清除所有相关缓存
+    const enhancedCacheInvalidation = useSafeCacheInvalidation(() => {
+        // 首先清除所有文章相关缓存
+        FeedsCacheManager.clearAllFeeds();
+        // 然后失效当前时间线缓存
+        invalidateTimelineCache();
+    });
+
     // 从缓存数据中提取feeds和length
     const feeds = timelineData?.data || [];
     const length = timelineData?.size || (Array.isArray(feeds) ? feeds.length : 0);
@@ -44,15 +52,15 @@ export function TimelinePage() {
     // 监听文章发布/更新/删除事件，失效缓存
     useEffect(() => {
         const handleFeedPublished = () => {
-            safeInvalidateTimelineCache();
+            enhancedCacheInvalidation();
         };
 
         const handleFeedUpdated = () => {
-            safeInvalidateTimelineCache();
+            enhancedCacheInvalidation();
         };
 
         const handleFeedDeleted = () => {
-            safeInvalidateTimelineCache();
+            enhancedCacheInvalidation();
         };
 
         window.addEventListener('feed-published', handleFeedPublished);

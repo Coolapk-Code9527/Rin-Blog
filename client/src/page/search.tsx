@@ -5,7 +5,7 @@ import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
-import { useSearchCache } from "../hooks/useFeedsCache"
+import { useSearchCache, FeedsCacheManager } from "../hooks/useFeedsCache"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { PageContainer } from "../components/container"
@@ -33,18 +33,26 @@ export function SearchPage({ keyword }: { keyword: string }) {
     // 使用安全的缓存失效机制
     const safeInvalidateSearchCache = useSafeCacheInvalidation(invalidateSearchCache);
 
+    // 创建增强的缓存失效函数，同时清除所有相关缓存
+    const enhancedCacheInvalidation = useSafeCacheInvalidation(() => {
+        // 首先清除所有文章相关缓存
+        FeedsCacheManager.clearAllFeeds();
+        // 然后失效当前搜索缓存
+        invalidateSearchCache();
+    });
+
     // 监听文章发布/更新事件，失效缓存
     React.useEffect(() => {
         const handleFeedPublished = () => {
-            safeInvalidateSearchCache();
+            enhancedCacheInvalidation();
         };
 
         const handleFeedUpdated = () => {
-            safeInvalidateSearchCache();
+            enhancedCacheInvalidation();
         };
 
         const handleFeedDeleted = () => {
-            safeInvalidateSearchCache();
+            enhancedCacheInvalidation();
         };
 
         window.addEventListener('feed-published', handleFeedPublished);
