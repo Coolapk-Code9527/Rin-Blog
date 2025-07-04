@@ -17,17 +17,6 @@ import { PublicCache } from "../utils/cache";
 const hashCache = new Map<string, string>();
 const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024; // 10MB阈值，大文件使用分块哈希
 
-/**
- * 清除文件相关缓存
- */
-async function clearFileCache() {
-    const cache = PublicCache();
-    await Promise.all([
-        cache.deletePrefix('files_'),
-        cache.delete('r2-capacity-stats', false),
-    ]);
-}
-
 // 优化：计算文件哈希的工具函数，支持缓存和大文件分块处理
 async function calculateFileHash(fileBuffer: ArrayBuffer | Uint8Array | Buffer, cacheKey?: string, fileSize?: number): Promise<string> {
     if (cacheKey && hashCache.has(cacheKey)) {
@@ -572,9 +561,6 @@ export function FileService() {
                                 thumbnailHash,
                             }).returning({ id: files.id });
                         }
-                        // 清除文件缓存
-                        await clearFileCache();
-
                         return {
                             id: result[0].id,
                             path: filePath,
@@ -728,10 +714,6 @@ export function FileService() {
                         await db.delete(feedFiles).where(eq(feedFiles.fileId, fileId));
                         // 删除文件记录
                         await db.delete(files).where(eq(files.id, fileId));
-
-                        // 清除文件缓存
-                        await clearFileCache();
-
                         return { success: true };
                     } catch (error: any) {
                         console.error(error);
@@ -846,10 +828,6 @@ export function FileService() {
                             if (!file.isFolder && file.name) {
                                 await setR2FileMeta(newPath, { filename: file.name });
                             }
-
-                            // 清除文件缓存
-                            await clearFileCache();
-
                             return { success: true, moved: true };
                         }
                         // 目录重命名逻辑

@@ -36,11 +36,6 @@ export function ConfigService() {
                             await config.set(key, body[key], false);
                         }
                         await config.save();
-
-                        // 清除配置相关缓存
-                        const cache = PublicCache();
-                        await cache.deletePrefix(`config_${type}_`);
-
                         return 'OK';
                     } catch (error: any) {
                         console.error(`Config save failed for type: ${type}`, error.message);

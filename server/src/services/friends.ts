@@ -12,14 +12,6 @@ import { getDB, getEnv } from "../utils/di";
 import { notify } from "../utils/webhook";
 import { safeParseId } from "../utils/validation";
 
-/**
- * 清除友情链接缓存
- */
-async function clearFriendCache() {
-    const cache = PublicCache();
-    await cache.deletePrefix('friends_');
-}
-
 export function FriendService() {
     const db: DB = getDB();
     const env: Env = getEnv();
@@ -186,10 +178,6 @@ export function FriendService() {
                         return 'Permission denied';
                     }
                     await db.delete(friends).where(eq(friends.id, friendId));
-
-                    // 清除友情链接缓存
-                    await clearFriendCache();
-
                     return 'OK';
                 })
         )

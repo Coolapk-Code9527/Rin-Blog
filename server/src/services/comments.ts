@@ -13,14 +13,6 @@ import { safeParseId, validateStringLength, validateEmail, createSafeErrorRespon
 // 匿名评论时使用的系统用户ID，通常是第一个用户
 const ANONYMOUS_USER_ID = 1;
 
-/**
- * 清除评论相关缓存
- */
-async function clearCommentCache(feedId: number) {
-    const cache = PublicCache();
-    await cache.deletePrefix(`comments_feed_${feedId}`);
-}
-
 export function CommentService() {
     const db: DB = getDB();
     const env: Env = getEnv();
@@ -239,10 +231,6 @@ export function CommentService() {
                             const webhookUrl = await ServerConfig().get(Config.webhookUrl) || env.WEBHOOK_URL;
                             // 通知
                             await notify(webhookUrl, `${env.FRONTEND_URL}/feed/${feedId}\n匿名用户 ${nickname} 评论了: ${exist.title}\n${content}`);
-
-                            // 清除评论缓存
-                            await clearCommentCache(feedId);
-
                             return 'OK';
                         }
                         
@@ -298,10 +286,6 @@ export function CommentService() {
                     const webhookUrl = await ServerConfig().get(Config.webhookUrl) || env.WEBHOOK_URL;
                         // 通知
                     await notify(webhookUrl, `${env.FRONTEND_URL}/feed/${feedId}\n${user.username} 评论了: ${exist.title}\n${content}`);
-
-                    // 清除评论缓存
-                    await clearCommentCache(feedId);
-
                     return 'OK';
                     } catch (error) {
                         console.error("Error posting comment:", error);
@@ -342,10 +326,6 @@ export function CommentService() {
                     }
                         
                     await db.delete(comments).where(eq(comments.id, id_num));
-
-                    // 清除评论缓存
-                    await clearCommentCache(comment.feedId);
-
                     return 'OK';
                     } catch (error) {
                         console.error("Error deleting comment:", error);

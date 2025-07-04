@@ -467,8 +467,7 @@ export function FeedService() {
                     await bindTagToPost(db, result[0].insertedId, tags);
                         }
                         
-                    // 使用统一的缓存清理系统
-                    await unifiedCacheManager.clearAllContentCache();
+                    await PublicCache().deletePrefix('feeds_');
                         
                     if (result.length === 0) {
                         set.status = 500;
@@ -1076,15 +1075,6 @@ export function FeedService() {
                 data: t.File()
             })
         })
-
-        // 添加缓存同步检查API
-        .get('/cache-version', async () => {
-            // 返回当前时间戳，用于客户端检查是否需要刷新缓存
-            return {
-                version: Date.now(),
-                timestamp: new Date().toISOString()
-            };
-        })
 }
 
 export { syncFeedFileReferences };
@@ -1099,87 +1089,18 @@ type FeedItem = {
     tags?: string[];
 }
 
-/**
- * 统一的缓存清理系统
- */
-class UnifiedCacheManager {
-    private getCache() {
-        return PublicCache();
-    }
-
-    /**
-     * 清除所有内容相关缓存（文章、评论、标签等）
-     */
-    async clearAllContentCache() {
-        const cache = this.getCache();
-        await Promise.all([
-            cache.deletePrefix('feeds_'),
-            cache.deletePrefix('search_'),
-            cache.deletePrefix('comments_'),
-            cache.deletePrefix('tags_'),
-        ]);
-    }
-
-    /**
-     * 清除特定文章相关的所有缓存
-     */
-    async clearFeedCache(id: number, alias: string | null = null, newAlias: string | null = null) {
-        const cache = this.getCache();
-        await Promise.all([
-            // 清除文章列表缓存
-            cache.deletePrefix('feeds_'),
-            // 清除搜索缓存
-            cache.deletePrefix('search_'),
-            // 清除单篇文章缓存
-            cache.delete(`feed_${id}`, false),
-            // 清除相邻文章缓存
-            cache.deletePrefix(`${id}_previous_feed`),
-            cache.deletePrefix(`${id}_next_feed`),
-            // 清除访问统计缓存
-            cache.delete(`visit_stats_${id}`, false),
-            // 清除预处理缓存
-            cache.deletePrefix(`feed_processed_${id}_`),
-        ]);
-
-        // 清除别名相关缓存
-        if (alias && alias !== newAlias) {
-            await cache.delete(`feed_${alias}`, false);
-        }
-        if (newAlias && newAlias !== alias) {
-            await cache.delete(`feed_${newAlias}`, false);
-        }
-    }
-
-    /**
-     * 清除评论相关缓存
-     */
-    async clearCommentCache(feedId: number) {
-        const cache = this.getCache();
-        await cache.deletePrefix(`comments_feed_${feedId}`);
-    }
-
-    /**
-     * 清除文件相关缓存
-     */
-    async clearFileCache() {
-        const cache = this.getCache();
-        await cache.deletePrefix('files_');
-    }
-
-    /**
-     * 清除友情链接缓存
-     */
-    async clearFriendCache() {
-        const cache = this.getCache();
-        await cache.deletePrefix('friends_');
-    }
-}
-
-const unifiedCacheManager = new UnifiedCacheManager();
-
-// 保持向后兼容
 async function clearFeedCache(id: number, alias: string | null, newAlias: string | null) {
-    await unifiedCacheManager.clearFeedCache(id, alias, newAlias);
+    const cache = PublicCache()
+    await cache.deletePrefix('feeds_');
+    await cache.deletePrefix('search_');
+    await cache.delete(`feed_${id}`, false);
+    await cache.deletePrefix(`${id}_previous_feed`);
+    await cache.deletePrefix(`${id}_next_feed`);
+    if (alias === newAlias) return;
+    if (alias)
+        await cache.delete(`feed_${alias}`, false);
+    if (newAlias)
+        await cache.delete(`feed_${newAlias}`, false);
 }
 
 import { CACHED_REGEX } from '../utils/regex-cache';

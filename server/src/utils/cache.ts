@@ -18,9 +18,13 @@ export class CacheImpl {
     cacheUrl: string;
     type: string;
     loaded: boolean = false;
+    lastLoadTime: number = 0; // 添加最后加载时间
     s3 = createS3Client();
     // 优化：批量保存机制，减少序列化频率
     private saveTimeout: any = null;
+
+    // 缓存TTL：5分钟，确保不同isolate能获取最新数据
+    private static readonly CACHE_TTL = 5 * 60 * 1000;
 
     constructor(type: string = "cache") {
         this.type = type;
@@ -51,6 +55,7 @@ export class CacheImpl {
                 this.cache.set('S3_ACCESS_HOST', this.env.S3_ACCESS_HOST);
             }
             this.loaded = true;
+            this.lastLoadTime = Date.now(); // 记录加载时间
         } catch (e: any) {
             if (this.env.S3_ACCESS_HOST) {
                 this.cache.set('S3_ACCESS_HOST', this.env.S3_ACCESS_HOST);
@@ -69,13 +74,16 @@ export class CacheImpl {
         return this.cache;
     }
     async get(key: string) {
-        if (!this.loaded) {
+        const now = Date.now();
+        // 检查是否需要重新加载：未加载过 或 超过TTL时间
+        if (!this.loaded || (now - this.lastLoadTime) > CacheImpl.CACHE_TTL) {
             await this.load();
         }
         return this.cache.get(key);
     }
     async getByPrefix(prefix: string): Promise<any[]> {
-        if (!this.loaded) {
+        const now = Date.now();
+        if (!this.loaded || (now - this.lastLoadTime) > CacheImpl.CACHE_TTL) {
             await this.load();
         }
         // 深度优化：预估结果大小，减少数组扩容
@@ -88,7 +96,8 @@ export class CacheImpl {
         return result;
     }
     async getBySuffix(suffix: string): Promise<any[]> {
-        if (!this.loaded) {
+        const now = Date.now();
+        if (!this.loaded || (now - this.lastLoadTime) > CacheImpl.CACHE_TTL) {
             await this.load();
         }
         // 深度优化：直接使用Map的entries迭代器，避免创建keys数组

@@ -14,7 +14,6 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import { ApiClient } from './types/api';
 import { StagewiseToolbar } from '@stagewise/toolbar-react';
 import { setupGlobalErrorHandlers } from './components/ErrorBoundary';
-import './utils/CacheSyncManager'; // 启动缓存同步管理器
 
 // 模拟API服务器类型，临时替代 'rin-server/src/server' 模块
 // 在实际使用中，应该导入正确的服务器类型
