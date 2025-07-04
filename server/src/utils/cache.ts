@@ -23,8 +23,8 @@ export class CacheImpl {
     // 优化：批量保存机制，减少序列化频率
     private saveTimeout: any = null;
 
-    // 缓存TTL：30秒，确保多用户快速同步最新数据
-    private static readonly CACHE_TTL = 30 * 1000;
+    // 缓存TTL：5分钟，确保不同isolate能获取最新数据
+    private static readonly CACHE_TTL = 5 * 60 * 1000;
 
     constructor(type: string = "cache") {
         this.type = type;
@@ -168,20 +168,7 @@ export class CacheImpl {
                 this.saveTimeout = null;
             }
             await this.save();
-
-            // 强制刷新：重置加载状态，让其他isolate立即重新加载
-            this.forceRefreshForContentChanges();
         }
-    }
-
-    /**
-     * 强制刷新机制：用于内容变更操作
-     * 重置加载状态，确保其他isolate能立即获取最新数据
-     */
-    private forceRefreshForContentChanges() {
-        // 重置加载时间，让其他isolate在下次访问时重新加载
-        this.lastLoadTime = 0;
-        // 注意：不重置this.loaded，避免影响当前isolate的性能
     }
     async deleteSuffix(suffix: string) {
         // 深度优化：收集要删除的键，避免在遍历时修改Map
@@ -205,9 +192,6 @@ export class CacheImpl {
                 this.saveTimeout = null;
             }
             await this.save();
-
-            // 强制刷新：重置加载状态，让其他isolate立即重新加载
-            this.forceRefreshForContentChanges();
         }
     }
     async clear() {
