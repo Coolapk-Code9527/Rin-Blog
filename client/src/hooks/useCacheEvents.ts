@@ -58,12 +58,17 @@ export function useCacheInvalidation(
 
     for (const eventType of eventTypes) {
       const listener: CacheEventListener = (event) => {
+        console.log(`🎧 [DEBUG] 收到缓存事件: ${eventType}`, event.detail);
+
         // 如果有条件函数，检查是否满足条件
         if (condition && !condition(event.detail)) {
+          console.log(`🎧 [DEBUG] 事件条件不匹配，跳过: ${eventType}`, event.detail);
           return;
         }
-        
+
+        console.log(`🎧 [DEBUG] 执行缓存失效函数: ${eventType}`, event.detail);
         invalidateFunction();
+        console.log(`🎧 [DEBUG] 缓存失效函数执行完成: ${eventType}`);
       };
 
       const unsubscribe = cacheEventManager.on(eventType, listener);

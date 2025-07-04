@@ -108,14 +108,18 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
+              console.log(`🗑️ [DEBUG] 文章删除成功，开始清理缓存 - 文章ID: ${feed.id}`);
+
               // 先触发缓存失效事件
               invalidateCache.onFeedDeleted(feed.id);
+              console.log(`📡 [DEBUG] 已触发 onFeedDeleted 事件 - 文章ID: ${feed.id}`);
 
               // 显示成功消息
               showAlert(t("delete.success"));
 
               // 短暂延迟后跳转，确保缓存失效事件被处理
               setTimeout(() => {
+                console.log(`🔄 [DEBUG] 延迟跳转到首页 - 文章ID: ${feed.id}`);
                 setLocation("/");
               }, 100);
             }

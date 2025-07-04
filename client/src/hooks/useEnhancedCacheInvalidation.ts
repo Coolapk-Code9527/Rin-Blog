@@ -12,10 +12,16 @@ import { FeedsCacheManager } from './useFeedsCache';
 export function useEnhancedCacheInvalidation(invalidateFunction: () => void) {
   // 创建增强的缓存失效函数，正确处理依赖
   const enhancedInvalidation = useCallback(() => {
+    console.log(`🔄 [DEBUG] useEnhancedCacheInvalidation 开始执行`);
+
     // 首先清除所有文章相关缓存
     FeedsCacheManager.clearAllFeeds();
+
     // 然后失效当前页面的缓存
+    console.log(`🔄 [DEBUG] 调用页面特定的 invalidateFunction`);
     invalidateFunction();
+
+    console.log(`🔄 [DEBUG] useEnhancedCacheInvalidation 执行完成`);
   }, [invalidateFunction]);
 
   // 使用安全的缓存失效机制

@@ -18,13 +18,9 @@ export class CacheImpl {
     cacheUrl: string;
     type: string;
     loaded: boolean = false;
-    lastLoadTime: number = 0;
     s3 = createS3Client();
     // 优化：批量保存机制，减少序列化频率
     private saveTimeout: any = null;
-
-    // TTL缓存刷新机制：30秒内保证数据一致性
-    private static readonly CACHE_TTL = 30000; // 30秒
 
     constructor(type: string = "cache") {
         this.type = type;
@@ -55,13 +51,10 @@ export class CacheImpl {
                 this.cache.set('S3_ACCESS_HOST', this.env.S3_ACCESS_HOST);
             }
             this.loaded = true;
-            this.lastLoadTime = Date.now();
         } catch (e: any) {
             if (this.env.S3_ACCESS_HOST) {
                 this.cache.set('S3_ACCESS_HOST', this.env.S3_ACCESS_HOST);
             }
-            this.loaded = true;
-            this.lastLoadTime = Date.now();
             console.error('Cache load failed');
             console.error(e.message);
         }
@@ -76,10 +69,7 @@ export class CacheImpl {
         return this.cache;
     }
     async get(key: string) {
-        const now = Date.now();
-        const needsReload = !this.loaded || (now - this.lastLoadTime) > CacheImpl.CACHE_TTL;
-
-        if (needsReload) {
+        if (!this.loaded) {
             await this.load();
         }
         return this.cache.get(key);

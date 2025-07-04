@@ -200,7 +200,9 @@ export const invalidateCache = {
    * 文章删除后失效相关缓存
    */
   onFeedDeleted: (feedId: number | string) => {
+    console.log(`📡 [DEBUG] invalidateCache.onFeedDeleted() 被调用 - 文章ID: ${feedId}`);
     cacheEventManager.emit('feed-deleted', { feedId });
+    console.log(`📡 [DEBUG] 已发送 feed-deleted 事件 - 文章ID: ${feedId}`);
   },
   
   /**
