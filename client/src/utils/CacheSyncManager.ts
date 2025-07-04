@@ -7,7 +7,7 @@
  * - 确保所有用户看到一致的数据
  */
 
-import { client } from '../main';
+// 延迟导入client，避免循环依赖
 import { cacheManager } from './SimpleCacheManager';
 
 class CacheSyncManager {
@@ -34,18 +34,21 @@ class CacheSyncManager {
    */
   private async checkCacheVersion() {
     if (this.isChecking) return;
-    
+
     try {
       this.isChecking = true;
       const now = Date.now();
-      
+
       // 避免频繁检查
       if (now - this.lastCheckTime < this.checkInterval) {
         return;
       }
-      
+
       this.lastCheckTime = now;
-      
+
+      // 动态导入client，避免循环依赖
+      const { client } = await import('../main');
+
       // 调用服务端API检查缓存版本
       const response = await client.feed['cache-version'].get();
       
