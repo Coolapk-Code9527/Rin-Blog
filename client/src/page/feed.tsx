@@ -32,6 +32,33 @@ import { useFeedCache, useCommentsCache, FeedsCacheManager } from "../hooks/useF
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 import { NotFoundPage } from './not-found';
 import { invalidateCache } from "../utils/CacheEventManager";
+import { SimpleCacheManager } from "../utils/SimpleCacheManager";
+
+// 统一的缓存清理工具函数 - 与writing.tsx保持一致
+function clearFeedRelatedCaches(feedId?: string | number) {
+  if (typeof window !== 'undefined') {
+    try {
+      // 使用统一的缓存管理器清理文章相关缓存
+      FeedsCacheManager.clearAllFeeds();
+
+      // 如果指定了feedId，清理特定文章的缓存
+      if (feedId) {
+        FeedsCacheManager.clearFeed(String(feedId));
+      }
+    } catch (error) {
+      console.warn('Failed to use cache manager, falling back to basic cleanup:', error);
+      // 简化的降级逻辑：只清理最关键的缓存
+      try {
+        sessionStorage.removeItem('api_cache_timeline_feeds');
+        if (feedId) {
+          sessionStorage.removeItem(`api_cache_feed_id:${feedId}`);
+        }
+      } catch (fallbackError) {
+        console.warn('Even basic cache cleanup failed:', fallbackError);
+      }
+    }
+  }
+}
 
 type Feed = {
   id: number;
@@ -108,9 +135,8 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
-              // 1. 主动清理前端缓存（与发布/更新操作保持一致）
-              FeedsCacheManager.clearAllFeeds();
-              FeedsCacheManager.clearFeed(String(feed.id));
+              // 1. 主动清理前端缓存（新增 - 与发布操作保持一致）
+              clearFeedRelatedCaches(feed.id);
 
               // 2. 显示成功消息
               showAlert(t("delete.success"));
@@ -118,7 +144,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               // 3. 立即跳转，避免组件继续渲染和API调用
               setLocation("/");
 
-              // 4. 在后台触发缓存失效事件，不阻塞跳转
+              // 4. 在后台触发缓存失效事件，不阻塞跳转（保持兼容性）
               setTimeout(() => {
                 invalidateCache.onFeedDeleted(feed.id);
               }, 0);
