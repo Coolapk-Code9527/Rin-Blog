@@ -28,7 +28,7 @@ import { RecentPosts } from "../components/recent_posts";
 import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
-import { useFeedCache, useCommentsCache } from "../hooks/useFeedsCache";
+import { useFeedCache, useCommentsCache, FeedsCacheManager } from "../hooks/useFeedsCache";
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 import { NotFoundPage } from './not-found';
 import { invalidateCache } from "../utils/CacheEventManager";
@@ -108,13 +108,16 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
-              // 显示成功消息
+              // 1. 主动清理前端缓存（新增）
+              FeedsCacheManager.clearAllFeeds();
+
+              // 2. 显示成功消息
               showAlert(t("delete.success"));
 
-              // 立即跳转，避免组件继续渲染和API调用
+              // 3. 立即跳转，避免组件继续渲染和API调用
               setLocation("/");
 
-              // 在后台触发缓存失效事件，不阻塞跳转
+              // 4. 在后台触发缓存失效事件，不阻塞跳转
               setTimeout(() => {
                 invalidateCache.onFeedDeleted(feed.id);
               }, 0);
