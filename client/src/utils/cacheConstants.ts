@@ -53,8 +53,8 @@ export const CACHE_CONFIG = {
   
   // 文章相关缓存
   FEEDS: {
-    /** 文章列表缓存 - 从15分钟缩短为5分钟，平衡性能和多用户数据一致性 */
-    LIST: SHORT_CACHE,
+    /** 文章列表缓存 - 验证阶段：缩短为30秒，快速验证多用户缓存同步问题 */
+    LIST: REALTIME_CACHE,
     /** 单篇文章缓存 */
     SINGLE: LONG_CACHE,
     /** 搜索结果缓存 */
