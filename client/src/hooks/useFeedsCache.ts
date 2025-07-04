@@ -505,16 +505,9 @@ export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
   const cacheKey = CACHE_KEY_PATTERNS.ADJACENT_FEEDS(id);
 
   const fetcher = useMemo(() => async (): Promise<AdjacentFeeds> => {
-    try {
-      const response = await client.feed.adjacent({ id }).get();
-      return ApiResponseUtils.handleResponse<AdjacentFeeds>(response, 'Adjacent feeds not found');
-    } catch (error: any) {
-      // 如果文章不存在（404），返回空的相邻文章数据而不是抛出错误
-      if (error.message?.includes('Not found') || error.message?.includes('404')) {
-        return { previousFeed: null, nextFeed: null };
-      }
-      throw error;
-    }
+    const response = await client.feed.adjacent({ id }).get();
+
+    return ApiResponseUtils.handleResponse<AdjacentFeeds>(response, 'Adjacent feeds not found');
   }, [id]);
 
   return useApiCache(cacheKey, fetcher, {

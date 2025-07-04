@@ -108,16 +108,16 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
-              // 先触发缓存失效事件
-              invalidateCache.onFeedDeleted(feed.id);
-
               // 显示成功消息
               showAlert(t("delete.success"));
 
-              // 短暂延迟后跳转，确保缓存失效事件被处理
+              // 立即跳转，避免组件继续渲染和API调用
+              setLocation("/");
+
+              // 在后台触发缓存失效事件，不阻塞跳转
               setTimeout(() => {
-                setLocation("/");
-              }, 100);
+                invalidateCache.onFeedDeleted(feed.id);
+              }, 0);
             }
           });
       })

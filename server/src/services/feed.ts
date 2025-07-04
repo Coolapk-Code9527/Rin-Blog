@@ -1076,6 +1076,15 @@ export function FeedService() {
                 data: t.File()
             })
         })
+
+        // 添加缓存同步检查API
+        .get('/cache-version', async () => {
+            // 返回当前时间戳，用于客户端检查是否需要刷新缓存
+            return {
+                version: Date.now(),
+                timestamp: new Date().toISOString()
+            };
+        })
 }
 
 export { syncFeedFileReferences };
