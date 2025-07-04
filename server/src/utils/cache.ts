@@ -138,13 +138,21 @@ export class CacheImpl {
     }
 
     async deletePrefix(prefix: string) {
+        console.log(`🧹 [SERVER CACHE DEBUG] deletePrefix 开始 - 前缀: "${prefix}", 缓存类型: ${this.type}`);
+
         // 深度优化：收集要删除的键，避免在遍历时修改Map
         const keysToDelete: string[] = [];
+        const allKeys = Array.from(this.cache.keys());
+        console.log(`🧹 [SERVER CACHE DEBUG] 当前缓存中所有键 (${allKeys.length}个):`, allKeys);
+
         for (const key of this.cache.keys()) {
             if (key.startsWith(prefix)) {
                 keysToDelete.push(key);
+                console.log(`🧹 [SERVER CACHE DEBUG] 匹配到要删除的键: "${key}"`);
             }
         }
+
+        console.log(`🧹 [SERVER CACHE DEBUG] 总共找到 ${keysToDelete.length} 个匹配的键:`, keysToDelete);
 
         // 批量删除，减少函数调用开销
         for (const key of keysToDelete) {
@@ -158,8 +166,14 @@ export class CacheImpl {
                 clearTimeout(this.saveTimeout);
                 this.saveTimeout = null;
             }
+            console.log(`🧹 [SERVER CACHE DEBUG] 开始保存到S3 - 删除了 ${keysToDelete.length} 个键`);
             await this.save();
+            console.log(`🧹 [SERVER CACHE DEBUG] S3保存完成`);
+        } else {
+            console.log(`🧹 [SERVER CACHE DEBUG] 没有找到匹配的键，跳过保存`);
         }
+
+        console.log(`🧹 [SERVER CACHE DEBUG] deletePrefix 完成 - 前缀: "${prefix}"`);
     }
     async deleteSuffix(suffix: string) {
         // 深度优化：收集要删除的键，避免在遍历时修改Map

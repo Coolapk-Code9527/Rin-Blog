@@ -289,11 +289,16 @@ export function FeedService() {
 
                         const page_num = pageParseResult.value! - 1; // 转换为0基索引
                         cacheKey = `feeds_${type}_${page_num}_${limit_num}_${sortByTime ? 'time' : 'default'}`;
-                        
+
+                        console.log(`📄 [SERVER DEBUG] 文章列表API - 缓存键: "${cacheKey}"`);
+
                         const cached = await cache.get(cacheKey);
                         if (cached) {
+                            console.log(`📄 [SERVER DEBUG] 从缓存返回数据 - 键: "${cacheKey}"`);
                             return cached;
                         }
+
+                        console.log(`📄 [SERVER DEBUG] 缓存未命中，从数据库查询 - 键: "${cacheKey}"`);
                         
                         const feedsData2 = await db.query.feeds.findMany({
                         where: where,
@@ -393,7 +398,9 @@ export function FeedService() {
                     
                     if (type === undefined || type === 'normal' || type === '') {
                         // 性能优化：缓存正常文章数据
+                        console.log(`📄 [SERVER DEBUG] 设置缓存 - 键: "${cacheKey}", 数据包含 ${data.data.length} 篇文章`);
                         await cache.set(cacheKey, data);
+                        console.log(`📄 [SERVER DEBUG] 缓存设置完成 - 键: "${cacheKey}"`);
                     }
                     return data
                 }, {
@@ -834,8 +841,11 @@ export function FeedService() {
                         return 'Permission denied';
                     }
                     try {
+                        console.log(`🗑️ [SERVER DEBUG] 开始删除文章 - ID: ${id_num}, alias: ${feed.alias}`);
                         await db.delete(feeds).where(eq(feeds.id, id_num));
+                        console.log(`🗑️ [SERVER DEBUG] 数据库删除完成，开始清理缓存 - ID: ${id_num}`);
                         await clearFeedCache(id_num, feed.alias, null);
+                        console.log(`🗑️ [SERVER DEBUG] 文章删除和缓存清理完成 - ID: ${id_num}`);
                         return 'Deleted';
                     } catch (error) {
                         console.error(`Error deleting feed ${id_num}:`, error);
@@ -1115,7 +1125,20 @@ class UnifiedCacheManager {
      * 清除特定文章相关的所有缓存
      */
     async clearFeedCache(id: number, alias: string | null = null, newAlias: string | null = null) {
+        console.log(`🧹 [SERVER DEBUG] clearFeedCache 开始 - 文章ID: ${id}, alias: ${alias}, newAlias: ${newAlias}`);
+
         const cache = this.getCache();
+
+        // 先检查缓存中有哪些键
+        const allCacheKeys = Array.from((cache as any).cache.keys()) as string[];
+        console.log(`🧹 [SERVER DEBUG] 当前缓存中的所有键 (${allCacheKeys.length}个):`, allCacheKeys);
+
+        // 检查要清理的键
+        const feedsKeys = allCacheKeys.filter((key: string) => key.startsWith('feeds_'));
+        const searchKeys = allCacheKeys.filter((key: string) => key.startsWith('search_'));
+        console.log(`🧹 [SERVER DEBUG] feeds_ 相关键 (${feedsKeys.length}个):`, feedsKeys);
+        console.log(`🧹 [SERVER DEBUG] search_ 相关键 (${searchKeys.length}个):`, searchKeys);
+
         await Promise.all([
             // 清除文章列表缓存
             cache.deletePrefix('feeds_'),
@@ -1139,6 +1162,12 @@ class UnifiedCacheManager {
         if (newAlias && newAlias !== alias) {
             await cache.delete(`feed_${newAlias}`, false);
         }
+
+        // 检查清理后的缓存
+        const remainingKeys = Array.from((cache as any).cache.keys()) as string[];
+        const remainingFeedsKeys = remainingKeys.filter((key: string) => key.startsWith('feeds_'));
+        console.log(`🧹 [SERVER DEBUG] 清理后剩余的 feeds_ 键 (${remainingFeedsKeys.length}个):`, remainingFeedsKeys);
+        console.log(`🧹 [SERVER DEBUG] clearFeedCache 完成 - 文章ID: ${id}`);
     }
 
     /**
