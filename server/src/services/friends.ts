@@ -6,11 +6,19 @@ import type { Env } from "../db/db";
 import * as schema from "../db/schema";
 import { friends } from "../db/schema";
 import { setup } from "../setup";
-import { ClientConfig, ServerConfig } from "../utils/cache";
+import { ClientConfig, ServerConfig, PublicCache } from "../utils/cache";
 import { Config } from "../utils/config";
 import { getDB, getEnv } from "../utils/di";
 import { notify } from "../utils/webhook";
 import { safeParseId } from "../utils/validation";
+
+/**
+ * 清除友情链接缓存
+ */
+async function clearFriendCache() {
+    const cache = PublicCache();
+    await cache.deletePrefix('friends_');
+}
 
 export function FriendService() {
     const db: DB = getDB();
@@ -178,6 +186,10 @@ export function FriendService() {
                         return 'Permission denied';
                     }
                     await db.delete(friends).where(eq(friends.id, friendId));
+
+                    // 清除友情链接缓存
+                    await clearFriendCache();
+
                     return 'OK';
                 })
         )
