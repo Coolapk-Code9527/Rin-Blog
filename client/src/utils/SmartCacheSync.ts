@@ -112,9 +112,9 @@ class SmartCacheSync {
         }
       });
 
-      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+      if (response.data && response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
         // 使用第一篇文章的更新时间作为版本号
-        const latestUpdateTime = new Date(response.data[0].created).getTime();
+        const latestUpdateTime = new Date(response.data.data[0].createdAt || response.data.data[0].updatedAt).getTime();
         
         // 如果服务端版本更新，清理本地缓存
         if (this.lastServerVersion > 0 && latestUpdateTime > this.lastServerVersion) {
