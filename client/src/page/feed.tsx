@@ -108,7 +108,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
-              // 1. 主动清理前端缓存（新增）
+              // 1. 主动清理前端缓存（修复多用户缓存不同步问题）
               FeedsCacheManager.clearAllFeeds();
 
               // 2. 显示成功消息
