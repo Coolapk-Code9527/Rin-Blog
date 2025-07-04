@@ -31,6 +31,7 @@ import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { useFeedCache, useCommentsCache } from "../hooks/useFeedsCache";
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 import { NotFoundPage } from './not-found';
+import { invalidateCache } from "../utils/CacheEventManager";
 
 type Feed = {
   id: number;
@@ -107,20 +108,18 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
-              // 触发文章删除事件，通知其他组件更新缓存
-              if (window.dispatchEvent) {
-                window.dispatchEvent(new CustomEvent('feed-deleted', {
-                  detail: { feedId: feed.id }
-                }));
-              }
+              console.log('🗑️ Feed deleted successfully, immediately navigating away');
 
-              // 等待一小段时间确保事件被处理完成，然后再跳转
-              showAlert(t("delete.success"), () => {
-                // 使用setTimeout确保缓存失效操作完成后再跳转
-                setTimeout(() => {
-                  setLocation("/");
-                }, 100);
-              });
+              // 立即跳转到首页，避免当前页面继续渲染
+              setLocation("/");
+
+              // 在后台触发缓存失效事件，不阻塞页面跳转
+              setTimeout(() => {
+                invalidateCache.onFeedDeleted(feed.id);
+                console.log('📡 feed-deleted event emitted in background for feed ID:', feed.id);
+              }, 0);
+
+              showAlert(t("delete.success"));
             }
           });
       })

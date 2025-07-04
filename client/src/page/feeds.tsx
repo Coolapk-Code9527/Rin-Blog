@@ -251,10 +251,12 @@ export function FeedsPage() {
 
     // 创建增强的缓存失效函数，同时清除所有相关缓存
     const enhancedCacheInvalidation = useSafeCacheInvalidation(() => {
+        console.log('🔄 Enhanced cache invalidation triggered in feeds.tsx');
         // 首先清除所有文章相关缓存
         FeedsCacheManager.clearAllFeeds();
         // 然后失效当前页面的缓存
         invalidateFeedsCache();
+        console.log('✅ Enhanced cache invalidation completed in feeds.tsx');
     });
 
     // 保存用户偏好到localStorage
