@@ -754,8 +754,7 @@ export function FeedService() {
                     if (tags) {
                         await bindTagToPost(db, id_num, tags);
                     }
-                    // 使用与文章发布相同的全面缓存清理策略
-                    await unifiedCacheManager.clearAllContentCache();
+                    await clearFeedCache(id_num, feed.alias, alias || null);
                     // 自动同步文件引用
                     if (content) {
                         await syncFeedFileReferences(db, id_num, content, uid);
@@ -805,8 +804,7 @@ export function FeedService() {
                     await db.update(feeds).set({
                         top
                     }).where(eq(feeds.id, feed.id));
-                    // 使用与文章发布相同的全面缓存清理策略
-                    await unifiedCacheManager.clearAllContentCache();
+                    await clearFeedCache(feed.id, null, null);
                     return 'Updated';
                 }, {
                     body: t.Object({
@@ -837,8 +835,7 @@ export function FeedService() {
                     }
                     try {
                         await db.delete(feeds).where(eq(feeds.id, id_num));
-                        // 使用与文章发布相同的全面缓存清理策略
-                        await unifiedCacheManager.clearAllContentCache();
+                        await clearFeedCache(id_num, feed.alias, null);
                         return 'Deleted';
                     } catch (error) {
                         console.error(`Error deleting feed ${id_num}:`, error);
@@ -1107,13 +1104,10 @@ class UnifiedCacheManager {
     async clearAllContentCache() {
         const cache = this.getCache();
         await Promise.all([
-            // 修正：使用正确的缓存键前缀
-            cache.deletePrefix('api_cache_feed'),           // 单篇文章和文章列表
-            cache.deletePrefix('api_cache_adjacent_feeds'), // 相邻文章
-            cache.deletePrefix('api_cache_comments_feed'),  // 评论
-            cache.deletePrefix('api_cache_recent_posts'),   // 最近文章
-            cache.deletePrefix('api_cache_search'),         // 搜索结果
-            cache.deletePrefix('api_cache_tags'),           // 标签相关
+            cache.deletePrefix('feeds_'),
+            cache.deletePrefix('search_'),
+            cache.deletePrefix('comments_'),
+            cache.deletePrefix('tags_'),
         ]);
     }
 
@@ -1123,22 +1117,27 @@ class UnifiedCacheManager {
     async clearFeedCache(id: number, alias: string | null = null, newAlias: string | null = null) {
         const cache = this.getCache();
         await Promise.all([
-            // 修正：使用正确的缓存键前缀和格式
-            cache.deletePrefix('api_cache_feed'),                    // 文章列表和单篇文章
-            cache.deletePrefix('api_cache_search'),                  // 搜索缓存
-            cache.deletePrefix(`api_cache_adjacent_feeds_id:${id}`), // 相邻文章缓存
-            cache.deletePrefix('api_cache_recent_posts'),            // 最近文章
-            cache.delete(`api_cache_feed_id:${id}`, false),         // 特定文章缓存
-            cache.delete(`visit_stats_${id}`, false),               // 访问统计缓存
-            cache.deletePrefix(`feed_processed_${id}_`),            // 预处理缓存
+            // 清除文章列表缓存
+            cache.deletePrefix('feeds_'),
+            // 清除搜索缓存
+            cache.deletePrefix('search_'),
+            // 清除单篇文章缓存
+            cache.delete(`feed_${id}`, false),
+            // 清除相邻文章缓存
+            cache.deletePrefix(`${id}_previous_feed`),
+            cache.deletePrefix(`${id}_next_feed`),
+            // 清除访问统计缓存
+            cache.delete(`visit_stats_${id}`, false),
+            // 清除预处理缓存
+            cache.deletePrefix(`feed_processed_${id}_`),
         ]);
 
         // 清除别名相关缓存
         if (alias && alias !== newAlias) {
-            await cache.delete(`api_cache_feed_${alias}`, false);
+            await cache.delete(`feed_${alias}`, false);
         }
         if (newAlias && newAlias !== alias) {
-            await cache.delete(`api_cache_feed_${newAlias}`, false);
+            await cache.delete(`feed_${newAlias}`, false);
         }
     }
 
@@ -1147,7 +1146,7 @@ class UnifiedCacheManager {
      */
     async clearCommentCache(feedId: number) {
         const cache = this.getCache();
-        await cache.deletePrefix(`api_cache_comments_feed:${feedId}`);
+        await cache.deletePrefix(`comments_feed_${feedId}`);
     }
 
     /**

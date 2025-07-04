@@ -18,7 +18,7 @@ const ANONYMOUS_USER_ID = 1;
  */
 async function clearCommentCache(feedId: number) {
     const cache = PublicCache();
-    await cache.deletePrefix(`api_cache_comments_feed:${feedId}`);
+    await cache.deletePrefix(`comments_feed_${feedId}`);
 }
 
 export function CommentService() {

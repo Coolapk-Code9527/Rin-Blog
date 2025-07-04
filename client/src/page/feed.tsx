@@ -32,7 +32,6 @@ import { useFeedCache, useCommentsCache } from "../hooks/useFeedsCache";
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 import { NotFoundPage } from './not-found';
 import { invalidateCache } from "../utils/CacheEventManager";
-import { FeedsCacheManager } from "../hooks/useFeedsCache";
 
 type Feed = {
   id: number;
@@ -109,19 +108,16 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
-              // 使用与文章发布相同的缓存清理策略
-
-              // 1. 主动清理前端缓存（与发布保持一致）
-              FeedsCacheManager.clearAllFeeds();
-
-              // 2. 触发文章删除事件（保持兼容性）
+              // 先触发缓存失效事件
               invalidateCache.onFeedDeleted(feed.id);
 
-              // 3. 显示成功消息
+              // 显示成功消息
               showAlert(t("delete.success"));
 
-              // 4. 立即跳转到首页（与发布保持一致）
-              setLocation("/");
+              // 短暂延迟后跳转，确保缓存失效事件被处理
+              setTimeout(() => {
+                setLocation("/");
+              }, 100);
             }
           });
       })
