@@ -1091,11 +1091,27 @@ type FeedItem = {
 
 async function clearFeedCache(id: number, alias: string | null, newAlias: string | null) {
     const cache = PublicCache()
+
+    // 清除文章列表缓存
     await cache.deletePrefix('feeds_');
+
+    // 清除搜索缓存
     await cache.deletePrefix('search_');
+
+    // 清除单篇文章缓存
     await cache.delete(`feed_${id}`, false);
+
+    // 清除相邻文章缓存
     await cache.deletePrefix(`${id}_previous_feed`);
     await cache.deletePrefix(`${id}_next_feed`);
+
+    // 清除访问统计缓存
+    await cache.delete(`visit_stats_${id}`, false);
+
+    // 清除预处理缓存（使用前缀匹配）
+    await cache.deletePrefix(`feed_processed_${id}_`);
+
+    // 清除别名相关缓存
     if (alias === newAlias) return;
     if (alias)
         await cache.delete(`feed_${alias}`, false);

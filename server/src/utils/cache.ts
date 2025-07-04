@@ -152,6 +152,12 @@ export class CacheImpl {
         }
 
         if (keysToDelete.length > 0) {
+            // 关键修复：立即保存，不使用延迟机制
+            // 清除任何待处理的延迟保存
+            if (this.saveTimeout) {
+                clearTimeout(this.saveTimeout);
+                this.saveTimeout = null;
+            }
             await this.save();
         }
     }
@@ -170,6 +176,12 @@ export class CacheImpl {
         }
 
         if (keysToDelete.length > 0) {
+            // 关键修复：立即保存，不使用延迟机制
+            // 清除任何待处理的延迟保存
+            if (this.saveTimeout) {
+                clearTimeout(this.saveTimeout);
+                this.saveTimeout = null;
+            }
             await this.save();
         }
     }

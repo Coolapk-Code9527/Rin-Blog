@@ -855,14 +855,15 @@ export const CacheManager = {
   clearAllFeeds: () => {
     // 清除所有文章相关缓存，包含api_cache_前缀的模式
     const patterns = [
-      'api_cache_feeds_',
-      'api_cache_recent_posts_',
-      'api_cache_timeline_feeds',
-      'api_cache_feed_',
-      'api_cache_hashtag_feeds_',
-      'api_cache_adjacent_feeds_',
-      'api_cache_search_',
-      'api_cache_tags_'
+      'api_cache_feeds_',           // 文章列表缓存
+      'api_cache_recent_posts_',    // 最近文章缓存
+      'api_cache_timeline_feeds',   // 时间线缓存
+      'api_cache_feed_',            // 单篇文章缓存
+      'api_cache_hashtag_feeds_',   // 标签文章缓存
+      'api_cache_adjacent_feeds_',  // 相邻文章缓存
+      'api_cache_search_',          // 搜索结果缓存
+      'api_cache_tags_',            // 标签列表缓存
+      'api_cache_comments_',        // 评论缓存
     ];
 
     patterns.forEach(pattern => {
