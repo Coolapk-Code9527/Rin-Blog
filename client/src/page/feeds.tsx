@@ -248,17 +248,6 @@ export function FeedsPage() {
     // 使用统一的增强缓存失效机制
     useEnhancedCacheInvalidation(invalidateFeedsCache);
 
-    // 监听智能缓存更新事件
-    React.useEffect(() => {
-        const handleSmartCacheUpdate = () => {
-            console.log('📡 收到智能缓存更新事件，刷新文章列表');
-            invalidateFeedsCache();
-        };
-
-        window.addEventListener('smart-cache-updated', handleSmartCacheUpdate);
-        return () => window.removeEventListener('smart-cache-updated', handleSmartCacheUpdate);
-    }, [invalidateFeedsCache]);
-
     // 保存用户偏好到localStorage
     React.useEffect(() => {
         try {

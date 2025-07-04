@@ -187,32 +187,20 @@ export const invalidateCache = {
    */
   onFeedPublished: (feedId: number | string, title?: string, tags?: string[]) => {
     cacheEventManager.emit('feed-published', { feedId, title, tags });
-    // 触发智能缓存检查，确保其他用户能快速同步
-    import('./SmartCacheSync').then(({ smartCacheSync }) => {
-      smartCacheSync.forceCheck();
-    });
   },
-
+  
   /**
    * 文章更新后失效相关缓存
    */
   onFeedUpdated: (feedId: number | string, title?: string, tags?: string[]) => {
     cacheEventManager.emit('feed-updated', { feedId, title, tags });
-    // 触发智能缓存检查，确保其他用户能快速同步
-    import('./SmartCacheSync').then(({ smartCacheSync }) => {
-      smartCacheSync.forceCheck();
-    });
   },
-
+  
   /**
    * 文章删除后失效相关缓存
    */
   onFeedDeleted: (feedId: number | string) => {
     cacheEventManager.emit('feed-deleted', { feedId });
-    // 触发智能缓存检查，确保其他用户能快速同步
-    import('./SmartCacheSync').then(({ smartCacheSync }) => {
-      smartCacheSync.forceCheck();
-    });
   },
   
   /**

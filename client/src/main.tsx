@@ -10,8 +10,6 @@ import App from './App'
 import './index.css'
 import './components.css'
 import { listenSystemMode, initializeTheme } from './utils/darkModeUtils'
-// 初始化智能缓存同步
-import './utils/SmartCacheSync'
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { ApiClient } from './types/api';
 import { StagewiseToolbar } from '@stagewise/toolbar-react';
