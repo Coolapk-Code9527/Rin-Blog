@@ -92,6 +92,8 @@ export function useFeedsCache(config: UseFeedsCacheConfig = {}) {
     enabled = true
   } = config;
 
+
+
   // 智能检测：当limit=9999时启用分批获取模式
   const needsBatchMode = limit === 9999;
 
@@ -129,12 +131,17 @@ function useOriginalFeedsCache(config: UseFeedsCacheConfig) {
 
   // 数据获取函数
   const fetcher = useMemo(() => async (): Promise<FeedsData> => {
+    // 获取当前版本号
+    const stored = localStorage.getItem('cache_version');
+    const currentVersion = stored ? parseInt(stored) : 0;
+
     const response = await client.feed.index.get({
       query: {
         page,
         limit,
         type,
         lightweight: true,  // 修复：添加lightweight参数，优化性能并避免"暂无摘要"问题
+        version: currentVersion.toString(), // 添加版本参数
         ...(sortByTime && { sortByTime: true })
       },
       headers: headersWithAuth()

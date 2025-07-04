@@ -131,21 +131,44 @@ import {extractImage} from "../utils/image";
 import {markdownToPlainText} from "../utils/markdown";
 import {bindTagToPost} from "./tag";
 import {safeParseId, safeParseInt, safeParsePage, safeParseLimit, createSafeErrorResponse} from "../utils/validation";
+import { getCacheVersionManager } from "../utils/cacheVersionManager";
 import { getR2FileMeta, setR2FileMeta } from '../utils/s3';
 import { getEnv } from '../utils/di';
 import { normalizePath } from '../utils/s3';
 
 export function FeedService() {
+    const versionManager = getCacheVersionManager();
+
     return new Elysia({ aot: false })
         .use(setup())
         .group('/feed', (group) =>
             group
-                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime, lightweight } }) => {
+                // 版本检查API
+                .get('/version', async ({ query: { version } }) => {
+                    const clientVersion = version ? parseInt(version as string) : 0;
+                    return await versionManager.getVersionResponse(clientVersion);
+                }, {
+                    query: t.Object({
+                        version: t.Optional(t.String())
+                    })
+                })
+                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime, lightweight, version } }) => {
                     const db: DB = getDB();
                     if ((type === 'draft' || type === 'unlisted') && !admin) {
                         set.status = 403;
                         return 'Permission denied';
                     }
+
+                    // 版本检查：如果客户端版本过期，返回304让客户端刷新缓存
+                    if (version) {
+                        const clientVersion = parseInt(version);
+                        const needsUpdate = await versionManager.needsUpdate(clientVersion, 'content');
+                        if (needsUpdate) {
+                            set.status = 304; // Not Modified - 告诉客户端刷新缓存
+                            return await versionManager.getVersionResponse(clientVersion);
+                        }
+                    }
+
                     const cache = PublicCache();
 
                     // 安全的limit参数解析
@@ -410,7 +433,8 @@ export function FeedService() {
                         type: t.Optional(t.String()),
                         cursor: t.Optional(t.String()),
                         sortByTime: t.Optional(t.Boolean()),
-                        lightweight: t.Optional(t.Boolean())
+                        lightweight: t.Optional(t.Boolean()),
+                        version: t.Optional(t.String())
                     })
                 })
                 .get('/timeline', async () => {
@@ -476,6 +500,9 @@ export function FeedService() {
                         
                     // 使用统一的缓存清理系统
                     await unifiedCacheManager.clearAllContentCache();
+
+                    // 递增内容版本号，通知所有客户端更新
+                    await versionManager.incrementContentVersion();
                         
                     if (result.length === 0) {
                         set.status = 500;
@@ -762,6 +789,10 @@ export function FeedService() {
                         await bindTagToPost(db, id_num, tags);
                     }
                     await clearFeedCache(id_num, feed.alias, alias || null);
+
+                    // 递增内容版本号，通知所有客户端更新
+                    await versionManager.incrementContentVersion();
+
                     // 自动同步文件引用
                     if (content) {
                         await syncFeedFileReferences(db, id_num, content, uid);
@@ -812,6 +843,10 @@ export function FeedService() {
                         top
                     }).where(eq(feeds.id, feed.id));
                     await clearFeedCache(feed.id, null, null);
+
+                    // 递增内容版本号，通知所有客户端更新
+                    await versionManager.incrementContentVersion();
+
                     return 'Updated';
                 }, {
                     body: t.Object({
@@ -845,6 +880,10 @@ export function FeedService() {
                         await db.delete(feeds).where(eq(feeds.id, id_num));
                         console.log(`🗑️ [SERVER DEBUG] 数据库删除完成，开始清理缓存 - ID: ${id_num}`);
                         await clearFeedCache(id_num, feed.alias, null);
+
+                        // 递增内容版本号，通知所有客户端更新
+                        await versionManager.incrementContentVersion();
+
                         console.log(`🗑️ [SERVER DEBUG] 文章删除和缓存清理完成 - ID: ${id_num}`);
                         return 'Deleted';
                     } catch (error) {
