@@ -833,21 +833,7 @@ export function FeedService() {
                         return 'Permission denied';
                     }
                     try {
-                        const deleteResult = await db.delete(feeds).where(eq(feeds.id, id_num));
-                        console.log(`Feed deletion result for ID ${id_num}:`, deleteResult);
-
-                        // 验证删除是否成功
-                        const verifyDeleted = await db.query.feeds.findFirst({
-                            where: eq(feeds.id, id_num)
-                        });
-
-                        if (verifyDeleted) {
-                            console.error(`Feed ${id_num} still exists after deletion!`);
-                            set.status = 500;
-                            return 'Failed to delete feed';
-                        }
-
-                        console.log(`Feed ${id_num} successfully deleted from database`);
+                        await db.delete(feeds).where(eq(feeds.id, id_num));
                         await clearFeedCache(id_num, feed.alias, null);
                         return 'Deleted';
                     } catch (error) {

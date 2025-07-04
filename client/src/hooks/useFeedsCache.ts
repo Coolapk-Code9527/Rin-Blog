@@ -853,16 +853,21 @@ export const CacheManager = {
    * 清除所有文章相关缓存
    */
   clearAllFeeds: () => {
-    console.log('🧹 FeedsCacheManager.clearAllFeeds() called');
-    // 注意：实际缓存键有api_cache_前缀，所以需要包含前缀的模式
-    const patterns = ['api_cache_feeds_', 'api_cache_recent_posts_', 'api_cache_timeline_feeds', 'api_cache_feed_', 'api_cache_hashtag_feeds_', 'api_cache_adjacent_feeds_'];
-    let totalCleared = 0;
+    // 清除所有文章相关缓存，包含api_cache_前缀的模式
+    const patterns = [
+      'api_cache_feeds_',
+      'api_cache_recent_posts_',
+      'api_cache_timeline_feeds',
+      'api_cache_feed_',
+      'api_cache_hashtag_feeds_',
+      'api_cache_adjacent_feeds_',
+      'api_cache_search_',
+      'api_cache_tags_'
+    ];
+
     patterns.forEach(pattern => {
-      const cleared = cacheManager.clearByPattern(pattern, 'session', true);
-      totalCleared += cleared;
-      console.log(`🧹 Cleared ${cleared} caches with pattern: ${pattern}`);
+      cacheManager.clearByPattern(pattern, 'session', true);
     });
-    console.log(`🧹 Total cleared: ${totalCleared} cache entries`);
   },
 
   /**

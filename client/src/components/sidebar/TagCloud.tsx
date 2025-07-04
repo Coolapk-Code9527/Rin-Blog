@@ -2,8 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
 import { useGlassEffect, GLASS_LAYERS } from '../../hooks/useGlassEffect';
 import { useTagsWithCache } from '../../hooks/useTagsWithCache';
-import { useFeedCacheInvalidation } from '../../hooks/useCacheEvents';
-import { useSafeCacheInvalidation } from '../../hooks/useComponentSafety';
+import { useEnhancedCacheInvalidation } from '../../hooks/useEnhancedCacheInvalidation';
 
 interface TagCloudProps {
   className?: string;
@@ -17,11 +16,8 @@ export function TagCloud({ className = '', maxTags = 10 }: TagCloudProps) {
   // 使用带缓存的标签数据Hook
   const { tags, loading, error, refreshTags } = useTagsWithCache(maxTags);
 
-  // 使用安全的缓存失效机制
-  const safeRefreshTags = useSafeCacheInvalidation(refreshTags);
-
-  // 监听文章发布/更新/删除事件，失效缓存
-  useFeedCacheInvalidation(safeRefreshTags);
+  // 使用统一的增强缓存失效机制
+  useEnhancedCacheInvalidation(refreshTags);
 
   // 计算标签字体大小（基于文章数量，但范围更小）- 移动端优化
   const getTagSize = (feedCount: number, maxCount: number) => {

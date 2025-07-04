@@ -7,8 +7,7 @@ import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
 import { useRecentPostsCache } from '../hooks/useFeedsCache';
 import { getBatchThumbnailUrls } from '../utils/thumbnailUtils';
-import { useFeedCacheInvalidation } from '../hooks/useCacheEvents';
-import { useSafeCacheInvalidation } from '../hooks/useComponentSafety';
+import { useEnhancedCacheInvalidation } from '../hooks/useEnhancedCacheInvalidation';
 
 // 移除了Post接口，直接使用API返回的数据类型
 
@@ -18,11 +17,8 @@ export function RecentPosts() {
   // 使用新的缓存Hook获取最近文章
   const { data: posts = [], loading, error, invalidate: invalidateRecentPosts } = useRecentPostsCache(3);
 
-  // 使用安全的缓存失效机制
-  const safeInvalidateRecentPosts = useSafeCacheInvalidation(invalidateRecentPosts);
-
-  // 监听文章发布/更新/删除事件，失效缓存
-  useFeedCacheInvalidation(safeInvalidateRecentPosts);
+  // 使用统一的增强缓存失效机制
+  useEnhancedCacheInvalidation(invalidateRecentPosts);
 
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);

@@ -7,8 +7,8 @@ import {useTranslation} from "react-i18next";
 import { PageContainer } from "../components/container";
 import { SimpleTimeline } from "../components/simple-timeline";
 import {useGlassEffect} from "../hooks/useGlassEffect";
-import { useTimelineCache, FeedsCacheManager } from "../hooks/useFeedsCache";
-import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
+import { useTimelineCache } from "../hooks/useFeedsCache";
+import { useEnhancedCacheInvalidation } from "../hooks/useEnhancedCacheInvalidation";
 
 // Object.groupBy polyfill（如原生不支持则自动挂载）
 if (!Object.groupBy) {
@@ -33,46 +33,15 @@ export function TimelinePage() {
     // 使用新的缓存Hook获取时间线数据
     const { data: timelineData, loading, error: cacheError, refetch, invalidate: invalidateTimelineCache } = useTimelineCache();
 
-    // 使用安全的缓存失效机制
-    const safeInvalidateTimelineCache = useSafeCacheInvalidation(invalidateTimelineCache);
-
-    // 创建增强的缓存失效函数，同时清除所有相关缓存
-    const enhancedCacheInvalidation = useSafeCacheInvalidation(() => {
-        // 首先清除所有文章相关缓存
-        FeedsCacheManager.clearAllFeeds();
-        // 然后失效当前时间线缓存
-        invalidateTimelineCache();
-    });
+    // 使用统一的增强缓存失效机制
+    useEnhancedCacheInvalidation(invalidateTimelineCache);
 
     // 从缓存数据中提取feeds和length
     const feeds = timelineData?.data || [];
     const length = timelineData?.size || (Array.isArray(feeds) ? feeds.length : 0);
     const error = cacheError;
 
-    // 监听文章发布/更新/删除事件，失效缓存
-    useEffect(() => {
-        const handleFeedPublished = () => {
-            enhancedCacheInvalidation();
-        };
-
-        const handleFeedUpdated = () => {
-            enhancedCacheInvalidation();
-        };
-
-        const handleFeedDeleted = () => {
-            enhancedCacheInvalidation();
-        };
-
-        window.addEventListener('feed-published', handleFeedPublished);
-        window.addEventListener('feed-updated', handleFeedUpdated);
-        window.addEventListener('feed-deleted', handleFeedDeleted);
-
-        return () => {
-            window.removeEventListener('feed-published', handleFeedPublished);
-            window.removeEventListener('feed-updated', handleFeedUpdated);
-            window.removeEventListener('feed-deleted', handleFeedDeleted);
-        };
-    }, [safeInvalidateTimelineCache]);
+    // 缓存失效已在useEnhancedCacheInvalidation中处理
 
     // 当路由变化时刷新数据
     useEffect(() => {

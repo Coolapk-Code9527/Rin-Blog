@@ -75,10 +75,8 @@ export class CacheEventManager {
    * 只通过window事件系统触发，避免重复处理
    */
   private emitImmediate(eventType: CacheEventType, detail?: CacheEventDetail): void {
-    console.log(`🚀 CacheEventManager.emitImmediate: ${eventType}`, detail);
     const event = new CustomEvent(eventType, { detail });
     window.dispatchEvent(event);
-    console.log(`📡 Window event dispatched: ${eventType}`);
   }
   
   /**

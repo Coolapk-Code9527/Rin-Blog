@@ -1,16 +1,16 @@
-import React from "react"
+
 import { Helmet } from 'react-helmet-async'
 import { useTranslation } from "react-i18next"
 import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
-import { useSearchCache, FeedsCacheManager } from "../hooks/useFeedsCache"
+import { useSearchCache } from "../hooks/useFeedsCache"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { PageContainer } from "../components/container"
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect"
-import { useSafeCacheInvalidation } from "../hooks/useComponentSafety"
+import { useEnhancedCacheInvalidation } from "../hooks/useEnhancedCacheInvalidation"
 
 type FeedsData = {
     size: number,
@@ -30,41 +30,8 @@ export function SearchPage({ keyword }: { keyword: string }) {
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
 
-    // 使用安全的缓存失效机制
-    const safeInvalidateSearchCache = useSafeCacheInvalidation(invalidateSearchCache);
-
-    // 创建增强的缓存失效函数，同时清除所有相关缓存
-    const enhancedCacheInvalidation = useSafeCacheInvalidation(() => {
-        // 首先清除所有文章相关缓存
-        FeedsCacheManager.clearAllFeeds();
-        // 然后失效当前搜索缓存
-        invalidateSearchCache();
-    });
-
-    // 监听文章发布/更新事件，失效缓存
-    React.useEffect(() => {
-        const handleFeedPublished = () => {
-            enhancedCacheInvalidation();
-        };
-
-        const handleFeedUpdated = () => {
-            enhancedCacheInvalidation();
-        };
-
-        const handleFeedDeleted = () => {
-            enhancedCacheInvalidation();
-        };
-
-        window.addEventListener('feed-published', handleFeedPublished);
-        window.addEventListener('feed-updated', handleFeedUpdated);
-        window.addEventListener('feed-deleted', handleFeedDeleted);
-
-        return () => {
-            window.removeEventListener('feed-published', handleFeedPublished);
-            window.removeEventListener('feed-updated', handleFeedUpdated);
-            window.removeEventListener('feed-deleted', handleFeedDeleted);
-        };
-    }, [safeInvalidateSearchCache]); // 使用安全的缓存失效函数
+    // 使用统一的增强缓存失效机制
+    useEnhancedCacheInvalidation(invalidateSearchCache);
     const title = t('article.search.title$keyword', { keyword })
     return (
         <>

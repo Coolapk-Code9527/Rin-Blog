@@ -108,15 +108,12 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
-              console.log('🗑️ Feed deleted successfully, immediately navigating away');
-
               // 立即跳转到首页，避免当前页面继续渲染
               setLocation("/");
 
               // 在后台触发缓存失效事件，不阻塞页面跳转
               setTimeout(() => {
                 invalidateCache.onFeedDeleted(feed.id);
-                console.log('📡 feed-deleted event emitted in background for feed ID:', feed.id);
               }, 0);
 
               showAlert(t("delete.success"));
