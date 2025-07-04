@@ -754,7 +754,8 @@ export function FeedService() {
                     if (tags) {
                         await bindTagToPost(db, id_num, tags);
                     }
-                    await clearFeedCache(id_num, feed.alias, alias || null);
+                    // 使用与文章发布相同的全面缓存清理策略
+                    await unifiedCacheManager.clearAllContentCache();
                     // 自动同步文件引用
                     if (content) {
                         await syncFeedFileReferences(db, id_num, content, uid);
@@ -804,7 +805,8 @@ export function FeedService() {
                     await db.update(feeds).set({
                         top
                     }).where(eq(feeds.id, feed.id));
-                    await clearFeedCache(feed.id, null, null);
+                    // 使用与文章发布相同的全面缓存清理策略
+                    await unifiedCacheManager.clearAllContentCache();
                     return 'Updated';
                 }, {
                     body: t.Object({
@@ -835,7 +837,8 @@ export function FeedService() {
                     }
                     try {
                         await db.delete(feeds).where(eq(feeds.id, id_num));
-                        await clearFeedCache(id_num, feed.alias, null);
+                        // 使用与文章发布相同的全面缓存清理策略
+                        await unifiedCacheManager.clearAllContentCache();
                         return 'Deleted';
                     } catch (error) {
                         console.error(`Error deleting feed ${id_num}:`, error);
