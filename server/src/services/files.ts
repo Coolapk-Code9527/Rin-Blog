@@ -23,7 +23,7 @@ const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024; // 10MB阈值，大文件使用�
 async function clearFileCache() {
     const cache = PublicCache();
     await Promise.all([
-        cache.deletePrefix('files_'),
+        cache.deletePrefix('api_cache_files'),
         cache.delete('r2-capacity-stats', false),
     ]);
 }

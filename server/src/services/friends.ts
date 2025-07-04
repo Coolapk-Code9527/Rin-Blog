@@ -17,7 +17,7 @@ import { safeParseId } from "../utils/validation";
  */
 async function clearFriendCache() {
     const cache = PublicCache();
-    await cache.deletePrefix('friends_');
+    await cache.deletePrefix('api_cache_friends');
 }
 
 export function FriendService() {
