@@ -107,6 +107,13 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
+              // 触发文章删除事件，通知其他组件更新缓存
+              if (window.dispatchEvent) {
+                window.dispatchEvent(new CustomEvent('feed-deleted', {
+                  detail: { feedId: feed.id }
+                }));
+              }
+
               showAlert(t("delete.success"));
               setLocation("/");
             }

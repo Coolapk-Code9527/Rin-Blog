@@ -53,7 +53,7 @@ export function HashtagPage({ name }: { name: string }) {
     // 使用安全的缓存失效机制
     const safeInvalidateHashtagCache = useSafeCacheInvalidation(invalidateHashtagCache);
 
-    // 监听文章发布/更新事件，失效缓存
+    // 监听文章发布/更新/删除事件，失效缓存
     React.useEffect(() => {
         const handleFeedPublished = () => {
             safeInvalidateHashtagCache();
@@ -63,12 +63,18 @@ export function HashtagPage({ name }: { name: string }) {
             safeInvalidateHashtagCache();
         };
 
+        const handleFeedDeleted = () => {
+            safeInvalidateHashtagCache();
+        };
+
         window.addEventListener('feed-published', handleFeedPublished);
         window.addEventListener('feed-updated', handleFeedUpdated);
+        window.addEventListener('feed-deleted', handleFeedDeleted);
 
         return () => {
             window.removeEventListener('feed-published', handleFeedPublished);
             window.removeEventListener('feed-updated', handleFeedUpdated);
+            window.removeEventListener('feed-deleted', handleFeedDeleted);
         };
     }, [safeInvalidateHashtagCache]); // 使用安全的缓存失效函数
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)

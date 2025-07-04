@@ -43,12 +43,18 @@ export function SearchPage({ keyword }: { keyword: string }) {
             safeInvalidateSearchCache();
         };
 
+        const handleFeedDeleted = () => {
+            safeInvalidateSearchCache();
+        };
+
         window.addEventListener('feed-published', handleFeedPublished);
         window.addEventListener('feed-updated', handleFeedUpdated);
+        window.addEventListener('feed-deleted', handleFeedDeleted);
 
         return () => {
             window.removeEventListener('feed-published', handleFeedPublished);
             window.removeEventListener('feed-updated', handleFeedUpdated);
+            window.removeEventListener('feed-deleted', handleFeedDeleted);
         };
     }, [safeInvalidateSearchCache]); // 使用安全的缓存失效函数
     const title = t('article.search.title$keyword', { keyword })

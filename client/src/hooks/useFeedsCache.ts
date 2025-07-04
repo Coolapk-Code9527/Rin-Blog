@@ -853,7 +853,8 @@ export const CacheManager = {
    * 清除所有文章相关缓存
    */
   clearAllFeeds: () => {
-    const patterns = ['feeds_', 'recent_posts_', 'timeline_feeds', 'feed_', 'hashtag_feeds_'];
+    // 注意：实际缓存键有api_cache_前缀，所以需要包含前缀的模式
+    const patterns = ['api_cache_feeds_', 'api_cache_recent_posts_', 'api_cache_timeline_feeds', 'api_cache_feed_', 'api_cache_hashtag_feeds_'];
     patterns.forEach(pattern => {
       cacheManager.clearByPattern(pattern, 'session', true);
     });

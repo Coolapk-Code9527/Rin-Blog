@@ -10,6 +10,8 @@ import React from "react";
 import { PageContainer } from "../components/container";
 import { useGlassEffect } from "../hooks/useGlassEffect";
 import { UnifiedContainer } from "../components/UnifiedContainer";
+import { useFeedCacheInvalidation } from '../hooks/useCacheEvents';
+import { useSafeCacheInvalidation } from '../hooks/useComponentSafety';
 
 // Hashtag类型由useTagsCache Hook提供
 
@@ -19,7 +21,13 @@ export function HashtagsPage() {
     const { t } = useTranslation();
 
     // 使用缓存Hook替代直接API调用
-    const { data: hashtags, loading } = useTagsCache();
+    const { data: hashtags, loading, invalidate: invalidateTagsCache } = useTagsCache();
+
+    // 使用安全的缓存失效机制
+    const safeInvalidateTagsCache = useSafeCacheInvalidation(invalidateTagsCache);
+
+    // 监听文章发布/更新/删除事件，失效缓存
+    useFeedCacheInvalidation(safeInvalidateTagsCache);
 
     const [sort, setSort] = useState<'count' | 'alpha'>('count');
 

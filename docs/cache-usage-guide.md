@@ -73,6 +73,8 @@ import { CACHE_KEY_PATTERNS } from '../utils/cacheConstants';
 
 const cacheKey = CACHE_KEY_PATTERNS.FEEDS('normal', 0, 10, 'default');
 // 结果: "feeds_type:normal_page:0_limit:10_sort:default"
+// 注意：SimpleCacheManager会自动添加"api_cache_"前缀
+// 实际存储键: "api_cache_feeds_type:normal_page:0_limit:10_sort:default"
 
 // ❌ 不推荐：手动构造键
 const cacheKey = `feeds_${type}_${page}_${limit}`;
@@ -151,10 +153,15 @@ const CACHE_STRATEGIES = {
 ### 2. 缓存键命名
 
 ```typescript
-// ✅ 好的命名：描述性强，层次清晰
+// ✅ 好的命名：描述性强，层次清晰（CACHE_KEY_PATTERNS生成的基础键）
 "feeds_type:normal_page:0_limit:10_sort:default"
 "tags_feeds_tag:技术"
 "config_type:client"
+
+// 实际存储时会自动添加前缀：
+"api_cache_feeds_type:normal_page:0_limit:10_sort:default"
+"api_cache_tags_feeds_tag:技术"
+"api_cache_config_type:client"
 
 // ❌ 不好的命名：模糊，难以理解
 "data_1_2_3"
@@ -257,7 +264,12 @@ useEffect(() => {
    - 使用invalidate()手动刷新
    - 确认refetchOnWindowFocus设置
 
-3. **内存占用过高**
+3. **缓存清理不生效**
+   - ⚠️ **重要**：确保清理模式包含正确的前缀
+   - 实际缓存键有`api_cache_`前缀，清理时需要包含此前缀
+   - 例如：使用`api_cache_feeds_`而不是`feeds_`来清理文章缓存
+
+4. **内存占用过高**
    - 定期清理过期缓存
    - 检查cacheTime设置
    - 使用cache.getStats()监控使用情况

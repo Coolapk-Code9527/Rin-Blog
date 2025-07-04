@@ -8,6 +8,7 @@ import { PageContainer } from "../components/container";
 import { SimpleTimeline } from "../components/simple-timeline";
 import {useGlassEffect} from "../hooks/useGlassEffect";
 import { useTimelineCache } from "../hooks/useFeedsCache";
+import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 
 // Object.groupBy polyfill（如原生不支持则自动挂载）
 if (!Object.groupBy) {
@@ -30,12 +31,40 @@ export function TimelinePage() {
     const [location] = useLocation();
 
     // 使用新的缓存Hook获取时间线数据
-    const { data: timelineData, loading, error: cacheError, refetch } = useTimelineCache();
+    const { data: timelineData, loading, error: cacheError, refetch, invalidate: invalidateTimelineCache } = useTimelineCache();
+
+    // 使用安全的缓存失效机制
+    const safeInvalidateTimelineCache = useSafeCacheInvalidation(invalidateTimelineCache);
 
     // 从缓存数据中提取feeds和length
     const feeds = timelineData?.data || [];
     const length = timelineData?.size || (Array.isArray(feeds) ? feeds.length : 0);
     const error = cacheError;
+
+    // 监听文章发布/更新/删除事件，失效缓存
+    useEffect(() => {
+        const handleFeedPublished = () => {
+            safeInvalidateTimelineCache();
+        };
+
+        const handleFeedUpdated = () => {
+            safeInvalidateTimelineCache();
+        };
+
+        const handleFeedDeleted = () => {
+            safeInvalidateTimelineCache();
+        };
+
+        window.addEventListener('feed-published', handleFeedPublished);
+        window.addEventListener('feed-updated', handleFeedUpdated);
+        window.addEventListener('feed-deleted', handleFeedDeleted);
+
+        return () => {
+            window.removeEventListener('feed-published', handleFeedPublished);
+            window.removeEventListener('feed-updated', handleFeedUpdated);
+            window.removeEventListener('feed-deleted', handleFeedDeleted);
+        };
+    }, [safeInvalidateTimelineCache]);
 
     // 当路由变化时刷新数据
     useEffect(() => {

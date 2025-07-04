@@ -128,8 +128,8 @@ export function FileManager({
     const pathToClean = targetPath || currentPath;
     const encodedPath = encodeURIComponent(pathToClean);
 
-    // 清除所有包含该路径的文件缓存键
-    const pattern = `files_path:${encodedPath}`;
+    // 清除所有包含该路径的文件缓存键（注意：需要包含api_cache_前缀）
+    const pattern = `api_cache_files_path:${encodedPath}`;
     const clearedCount = cacheManager.clearByPattern(pattern, 'session', false);
 
     console.log(`清除了 ${clearedCount} 个文件缓存键，路径: ${pathToClean}`);

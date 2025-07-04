@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { client } from '../../main';
 import { CACHE_CONFIG } from '../../utils/cacheConstants';
 import { cache } from '../../utils/SimpleCacheManager';
+import { useFeedCacheInvalidation } from '../../hooks/useCacheEvents';
+import { useSafeCacheInvalidation } from '../../hooks/useComponentSafety';
 
 /**
  * 网站统计数据接口
@@ -54,6 +56,18 @@ export function WebsiteStatsSection() {
   const [stats, setStats] = useState<WebsiteStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // 清除统计缓存的函数
+  const clearStatsCache = () => {
+    cache.remove(CACHE_KEY, { storage: 'local' });
+    fetchStats(true); // 强制刷新
+  };
+
+  // 使用安全的缓存失效机制
+  const safeClearStatsCache = useSafeCacheInvalidation(clearStatsCache);
+
+  // 监听文章发布/更新/删除事件，失效统计缓存
+  useFeedCacheInvalidation(safeClearStatsCache);
 
   // 格式化运行时间
   const formatRunningTime = (days: number): string => {
