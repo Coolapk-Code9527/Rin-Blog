@@ -114,13 +114,10 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               // 2. 显示成功消息
               showAlert(t("delete.success"));
 
-              // 3. 立即清理前端缓存（与发布操作保持一致）
-              FeedsCacheManager.clearAllFeeds();
-
-              // 4. 立即跳转，避免组件继续渲染和API调用
+              // 3. 立即跳转，避免组件继续渲染和API调用
               setLocation("/");
 
-              // 5. 在后台触发缓存失效事件，不阻塞跳转
+              // 4. 在后台触发缓存失效事件，不阻塞跳转
               setTimeout(() => {
                 invalidateCache.onFeedDeleted(feed.id);
               }, 0);
