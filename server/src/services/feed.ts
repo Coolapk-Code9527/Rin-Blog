@@ -124,7 +124,7 @@ async function processBatchVisitStats(db: any, feedIds: number[]): Promise<Map<n
 import type {DB} from "../_worker";
 import {feeds, visits, files, feedFiles} from "../db/schema";
 import {setup} from "../setup";
-import {ClientConfig, PublicCache} from "../utils/cache";
+import {ClientConfig, PublicCache, HttpCacheControl} from "../utils/cache";
 import { SERVER_CACHE_CONFIG } from "../utils/cacheConstants";
 import {getDB} from "../utils/di";
 import {extractImage} from "../utils/image";
@@ -140,7 +140,7 @@ export function FeedService() {
         .use(setup())
         .group('/feed', (group) =>
             group
-                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime, lightweight } }) => {
+                .get('/', async ({ admin, set, query: { page, limit, type, cursor, sortByTime, lightweight }, request }) => {
                     const db: DB = getDB();
                     if ((type === 'draft' || type === 'unlisted') && !admin) {
                         set.status = 403;
@@ -164,12 +164,20 @@ export function FeedService() {
                     
                     const size = await db.select({ count: count() }).from(feeds).where(where);
                     if (size[0].count === 0) {
-                        return {
+                        // 设置缓存控制头
+                        const maxAgeSeconds = Math.floor(SERVER_CACHE_CONFIG.FEEDS.LIST / 1000);
+                        const emptyResult = {
                             size: 0,
                             data: [],
                             hasNext: false,
                             cursor: null
-                        }
+                        };
+                        const headers = await HttpCacheControl.getFullCacheHeaders(emptyResult, maxAgeSeconds, true);
+                        Object.entries(headers).forEach(([key, value]) => {
+                            set.headers[key] = value;
+                        });
+                        
+                        return emptyResult;
                     }
                     
                     if (cursor) {
@@ -279,6 +287,24 @@ export function FeedService() {
                         );
 
                         feed_list = processedFeeds;
+                        
+                        // 判断是否有更多结果
+                        hasNext = feedsData.length > limit_num;
+                        const data = {
+                            size: size[0].count as number,
+                            data: feed_list.slice(0, limit_num),
+                            hasNext,
+                            cursor: feed_list.length > 0 ? `${feed_list[feed_list.length - 1]?.createdAt.getTime()}|${feed_list[feed_list.length - 1]?.id}` : null
+                        };
+
+                        // 添加HTTP缓存控制头
+                        const maxAgeSeconds = Math.floor(SERVER_CACHE_CONFIG.FEEDS.LIST / 1000);
+                        const headers = await HttpCacheControl.getFullCacheHeaders(data, maxAgeSeconds, true);
+                        Object.entries(headers).forEach(([key, value]) => {
+                            set.headers[key] = value;
+                        });
+
+                        return data;
                     } else {
                         // 安全的page参数解析
                         const pageParseResult = safeParsePage(page || '1');
@@ -290,12 +316,30 @@ export function FeedService() {
                         const page_num = pageParseResult.value! - 1; // 转换为0基索引
                         cacheKey = `feeds_${type}_${page_num}_${limit_num}_${sortByTime ? 'time' : 'default'}`;
                         
+                        // 检查缓存是否存在
                         const cached = await cache.get(cacheKey);
-                        if (cached) {
+                        
+                        // 如果存在缓存，检查If-None-Match和ETag是否匹配
+                        if (cached && cached.etag) {
+                            // 添加HTTP缓存控制头
+                            const maxAgeSeconds = Math.floor(SERVER_CACHE_CONFIG.FEEDS.LIST / 1000);
+                            const headers = HttpCacheControl.getCacheControlHeaders(maxAgeSeconds, true);
+                            headers['ETag'] = cached.etag;
+                            
+                            Object.entries(headers).forEach(([key, value]) => {
+                                set.headers[key] = value;
+                            });
+                            
+                            if (HttpCacheControl.isNotModified(request, cached.etag)) {
+                                set.status = 304;
+                                return null;
+                            }
+                            
                             return cached;
                         }
-                        
-                        const feedsData2 = await db.query.feeds.findMany({
+
+                        // 如果缓存不存在或已过期，从数据库获取
+                        const feedsData = await db.query.feeds.findMany({
                         where: where,
                         columns: admin ? undefined : {
                             draft: false,
@@ -319,12 +363,12 @@ export function FeedService() {
                     });
 
                     // 批量获取访问统计数据，避免N+1查询问题
-                    const feedIds2 = feedsData2.map(f => f.id);
+                    const feedIds2 = feedsData.map(f => f.id);
                     const visitStatsMap2 = await getBatchVisitStats(db, feedIds2);
 
                     // 性能优化：批量预计算avatar和summary，减少重复计算
                     const processedFeeds2 = await Promise.all(
-                        feedsData2.map(async ({ content, hashtags, summary, ...other }) => {
+                        feedsData.map(async ({ content, hashtags, summary, ...other }) => {
                             // 检查缓存中是否已有预计算的结果
                             // 优化：移除updatedAt依赖，使用内容哈希提高缓存命中率
                             const contentHash = content ? content.slice(0, 100) : '';
@@ -395,7 +439,30 @@ export function FeedService() {
                         // 性能优化：缓存正常文章数据
                         await cache.set(cacheKey, data);
                     }
-                    return data
+
+                    // 添加缓存控制头
+                    const result = {
+                        size: size[0].count as number,
+                        data: data.data,
+                        hasNext: data.hasNext,
+                        cursor: data.cursor
+                    };
+
+                    // 生成ETag并设置HTTP缓存控制头
+                    const maxAgeSeconds = Math.floor(SERVER_CACHE_CONFIG.FEEDS.LIST / 1000);
+                    const etag = await HttpCacheControl.generateETag(result);
+                    const headers = HttpCacheControl.getCacheControlHeaders(maxAgeSeconds, true);
+                    headers['ETag'] = etag;
+                    
+                    Object.entries(headers).forEach(([key, value]) => {
+                        set.headers[key] = value;
+                    });
+
+                    // 存储ETag到缓存中
+                    const resultWithEtag = { ...result, etag };
+                    await cache.set(cacheKey, resultWithEtag);
+
+                    return result;
                 }, {
                     query: t.Object({
                         page: t.Optional(t.Numeric()),
@@ -499,21 +566,46 @@ export function FeedService() {
                         tags: t.Array(t.String())
                     })
                 })
-                .get('/:id', async ({ uid, admin, set, headers, params: { id } }) => {
+                .get('/:id', async ({ params: { id }, set, headers, request }) => {
                     const db: DB = getDB();
-
+                    
                     // 安全的ID解析
                     const parseResult = safeParseId(id);
                     let id_num: number | undefined;
-
+ 
                     if (parseResult.success) {
                         id_num = parseResult.value;
                     }
 
                     const cache = PublicCache();
                     const cacheKey = `feed_${id}`;
-
-                    // 先直接查询文章，不使用缓存
+                    
+                    // 检查缓存中是否已有数据
+                    const cached = await cache.get(cacheKey);
+                    
+                    // 如果有缓存且包含etag，设置HTTP缓存控制头
+                    if (cached && (cached as any).etag) {
+                        const etag = (cached as any).etag;
+                        // 添加HTTP缓存控制头
+                        const maxAgeSeconds = Math.floor(SERVER_CACHE_CONFIG.FEEDS.SINGLE / 1000);
+                        const cacheHeaders = HttpCacheControl.getCacheControlHeaders(maxAgeSeconds, true);
+                        cacheHeaders['ETag'] = etag;
+                        
+                        Object.entries(cacheHeaders).forEach(([key, value]) => {
+                            if (value) {
+                                set.headers[key] = value;
+                            }
+                        });
+                        
+                        const ifNoneMatch = headers['if-none-match'];
+                        if (ifNoneMatch && ifNoneMatch === etag) {
+                            set.status = 304;
+                            return null;
+                        }
+                        
+                        return cached;
+                    }
+                    
                     // 支持通过ID或别名查询
                     const whereCondition = id_num
                         ? or(eq(feeds.id, id_num), eq(feeds.alias, id))
@@ -534,50 +626,80 @@ export function FeedService() {
                             }
                         }
                     });
-
+                    
                     if (!feed) {
                         set.status = 404;
                         return 'Not found';
                     }
-
+                    
                     // 权限检查 - 在缓存之前进行
                     if (feed.draft && feed.uid !== uid && !admin) {
                         set.status = 403;
                         return 'Permission denied';
                     }
 
-                    // 只有公开文章才进入公共缓存
-                    const shouldCache = !feed.draft;
-                    if (shouldCache) {
-                        await cache.set(cacheKey, feed);
-                    }
-
                     const { hashtags, ...other } = feed;
                     const hashtags_flatten = hashtags.map((f) => f.hashtag);
-
-                    const config = ClientConfig()
-                    const enableVisit = await config.getOrDefault('counter.enabled', true);
+                
+                    // 文章访问统计
+                    const enableVisit = feed.draft === 0 && feed.listed === 1;
                     let pv = 0;
                     let uv = 0;
                     if (enableVisit) {
                         const ip = headers['cf-connecting-ip'] || headers['x-real-ip'] || "UNK"
                         await db.insert(visits).values({
                             feedId: feed.id,
-                            ip: ip,
+                            ip,
                         });
-                        const visit = await db.query.visits.findMany({
-                            where: eq(visits.feedId, feed.id),
-                            columns: { id: true, ip: true }
-                        });
-                        pv = visit.length;
-                        uv = new Set(visit.map((v) => v.ip)).size;
+
+                        // 简化访问统计
+                        const stats = await db.select({
+                            pv: count(),
+                            uv: sql<number>`COUNT(DISTINCT ${visits.ip})`
+                        }).from(visits)
+                            .where(eq(visits.feedId, feed.id));
+
+                        if (stats && stats.length > 0) {
+                            pv = stats[0].pv;
+                            uv = stats[0].uv as number;
+                        }
                     }
+
                     const data = {
                         ...other,
                         hashtags: hashtags_flatten,
                         pv,
                         uv
                     };
+
+                    // 只有公开文章才进入公共缓存
+                    const shouldCache = !feed.draft;
+                    if (shouldCache) {
+                        // 计算缓存时间（秒）
+                        const maxAgeSeconds = Math.floor(SERVER_CACHE_CONFIG.FEEDS.SINGLE / 1000);
+                        
+                        // 生成ETag
+                        const etag = await HttpCacheControl.generateETag(data);
+                        
+                        // 设置缓存控制头
+                        set.headers['Cache-Control'] = HttpCacheControl.getCacheControlHeader(maxAgeSeconds, false);
+                        set.headers['ETag'] = etag;
+                        set.headers['Vary'] = 'Accept-Encoding';
+                        
+                        // 检查是否需要返回304
+                        if (HttpCacheControl.isETagMatched(headers, etag)) {
+                            set.status = 304;
+                            return;
+                        }
+                        
+                        // 为头部添加CORS相关配置
+                        set.headers['Access-Control-Expose-Headers'] = 'ETag, Cache-Control, Vary';
+                        
+                        // 存储ETag到缓存中
+                        const resultWithEtag = { ...data, etag };
+                        await cache.set(cacheKey, resultWithEtag);
+                    }
+                    
                     return data;
                 })
                 .get("/adjacent/:id", async ({ set, params: { id } }) => {
@@ -1091,11 +1213,36 @@ type FeedItem = {
 
 async function clearFeedCache(id: number, alias: string | null, newAlias: string | null) {
     const cache = PublicCache()
+    
+    // 全面清理与文章相关的所有缓存
+    
+    // 1. 文章列表缓存
     await cache.deletePrefix('feeds_');
+    
+    // 2. 搜索结果缓存
     await cache.deletePrefix('search_');
+    
+    // 3. 单篇文章缓存
     await cache.delete(`feed_${id}`, false);
+    
+    // 4. 相邻文章缓存
     await cache.deletePrefix(`${id}_previous_feed`);
     await cache.deletePrefix(`${id}_next_feed`);
+    await cache.deletePrefix('adjacent_feeds_');
+    
+    // 5. 标签相关缓存（文章可能关联多个标签）
+    await cache.deletePrefix('tags_feeds_');
+    
+    // 6. 时间线缓存
+    await cache.delete('timeline_feeds', false);
+    
+    // 7. 最近文章缓存
+    await cache.deletePrefix('recent_posts_');
+    
+    // 8. 文章统计缓存
+    await cache.deletePrefix('stats_');
+    
+    // 处理别名
     if (alias === newAlias) return;
     if (alias)
         await cache.delete(`feed_${alias}`, false);

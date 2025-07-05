@@ -20,17 +20,17 @@
 
 // 基础缓存时间常量（毫秒）
 export const CACHE_TIMES = {
-  /** 短期缓存：5分钟 - 用于列表数据、搜索结果 */
-  SHORT: 5 * 60 * 1000,
+  /** 实时缓存：1分钟 - 用于关键资源的快速验证 */
+  REALTIME: 1 * 60 * 1000,
   
-  /** 中期缓存：15分钟 - 用于内容数据、统计数据 */
-  MEDIUM: 15 * 60 * 1000,
+  /** 短期缓存：2分钟 - 用于列表数据、搜索结果 */
+  SHORT: 2 * 60 * 1000,
+  
+  /** 中期缓存：10分钟 - 用于内容数据、统计数据 */
+  MEDIUM: 10 * 60 * 1000,
   
   /** 长期缓存：30分钟 - 用于配置数据、稳定内容 */
-  LONG: 30 * 60 * 1000,
-  
-  /** 实时缓存：2分钟 - 用于状态数据（预留） */
-  REALTIME: 2 * 60 * 1000
+  LONG: 30 * 60 * 1000
 } as const;
 
 // 向后兼容的别名
@@ -45,7 +45,7 @@ export const REALTIME_CACHE = CACHE_TIMES.REALTIME;
 export const CACHE_CONFIG = {
   // API数据缓存
   API: {
-    /** 默认API缓存时间（15分钟） */
+    /** 默认API缓存时间（10分钟） */
     DEFAULT_STALE_TIME: MEDIUM_CACHE,
     /** 默认缓存保持时间（60分钟） */
     DEFAULT_CACHE_TIME: LONG_CACHE * 2, // 60分钟
@@ -53,10 +53,10 @@ export const CACHE_CONFIG = {
   
   // 文章相关缓存
   FEEDS: {
-    /** 文章列表缓存 - 从15分钟缩短为5分钟，平衡性能和多用户数据一致性 */
-    LIST: SHORT_CACHE,
-    /** 单篇文章缓存 */
-    SINGLE: LONG_CACHE,
+    /** 文章列表缓存 - 从5分钟进一步缩短为2分钟，优化多用户数据一致性 */
+    LIST: REALTIME_CACHE,
+    /** 单篇文章缓存 - 从30分钟缩短为10分钟，优化文章更新后的数据一致性 */
+    SINGLE: MEDIUM_CACHE,
     /** 搜索结果缓存 */
     SEARCH: SHORT_CACHE,
   },
@@ -66,7 +66,7 @@ export const CACHE_CONFIG = {
     /** 标签列表缓存 */
     LIST: MEDIUM_CACHE,
     /** 标签文章列表缓存 */
-    FEEDS: MEDIUM_CACHE,
+    FEEDS: SHORT_CACHE, // 从15分钟缩短为2分钟，提高数据一致性
   },
   
   // 文件管理缓存
@@ -96,19 +96,19 @@ export const CACHE_CONFIG = {
   // 评论数据缓存
   COMMENTS: {
     /** 评论列表缓存 */
-    LIST: MEDIUM_CACHE, // 15分钟，评论更新频率中等
+    LIST: MEDIUM_CACHE, // 10分钟，评论更新频率中等
   },
 
   // 友情链接缓存
   FRIENDS: {
     /** 友情链接列表缓存 */
-    LIST: MEDIUM_CACHE, // 15分钟，友情链接更新频率低
+    LIST: MEDIUM_CACHE, // 10分钟，友情链接更新频率低
   },
 
   // 时间线缓存
   TIMELINE: {
     /** 时间线数据缓存 */
-    LIST: MEDIUM_CACHE, // 15分钟，时间线更新频率中等
+    LIST: SHORT_CACHE, // 从15分钟缩短为2分钟，提高数据一致性
   }
 } as const;
 

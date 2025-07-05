@@ -28,6 +28,7 @@ interface CacheData<T> {
   timestamp: number;
   staleTime: number;
   cacheTime: number;
+  etag?: string; // 添加ETag支持
 }
 
 /**
@@ -108,7 +109,8 @@ export function useApiCache<T>(
         data: cacheResult.data,
         timestamp: cacheResult.timestamp, // 使用原始时间戳，确保stale检查正确
         staleTime,
-        cacheTime
+        cacheTime,
+        etag: (cacheResult as any).etag // 保存ETag
       };
     } catch (error) {
       console.warn('Failed to get cached data:', error);
@@ -121,9 +123,12 @@ export function useApiCache<T>(
   /**
    * 设置缓存数据 - 修复数据格式兼容性
    */
-  const setCachedData = useCallback((newData: T) => {
+  const setCachedData = useCallback((newData: T, etag?: string) => {
+    // 保存业务数据和ETag
+    const dataToCache = etag ? { ...newData, etag } : newData;
+    
     // 直接存储业务数据，让SimpleCacheManager处理包装
-    cacheManager.set(key, newData, {
+    cacheManager.set(key, dataToCache, {
       storage: 'session',
       expireTime: cacheTime,
       validate: true
@@ -140,6 +145,78 @@ export function useApiCache<T>(
   }, [staleTime]);
 
   /**
+   * 创建包含请求头的fetcher包装函数
+   * 支持HTTP缓存控制
+   */
+  const wrappedFetcher = useCallback(async (etag?: string): Promise<{data: T, etag?: string}> => {
+    // 如果原始fetcher是获取数据的函数，需要修改为支持HTTP缓存控制的版本
+    if (typeof fetcher === 'function' && fetcher.toString().includes('fetch(')) {
+      try {
+        // 重构为自定义fetcher，添加ETag支持
+        const response = await customFetch(fetcher.toString(), etag);
+        // 如果返回304 Not Modified，表示数据未变化
+        if (response.status === 304) {
+          // 如果数据未变化，抛出特殊错误，外部捕获后使用缓存数据
+          throw { notModified: true };
+        }
+        
+        // 从响应中提取ETag
+        const responseEtag = response.headers.get('ETag');
+        const data = await response.json();
+        return { data, etag: responseEtag || undefined };
+      } catch (error) {
+        if ((error as any).notModified) {
+          throw error; // 重新抛出，以便外部处理
+        }
+        // 其他错误，使用原始fetcher
+        const data = await fetcher();
+        return { data };
+      }
+    } else {
+      // 如果原始fetcher不是标准fetch调用，直接使用它
+      const data = await fetcher();
+      return { data };
+    }
+  }, [fetcher]);
+
+  /**
+   * 自定义fetch函数，支持HTTP缓存控制
+   */
+  const customFetch = useCallback(async (fetcherString: string, etag?: string) => {
+    // 从fetcher字符串中提取URL和配置
+    const urlMatch = fetcherString.match(/fetch\(['"]([^'"]+)['"]/);
+    if (!urlMatch) {
+      throw new Error('Cannot parse fetch URL from fetcher function');
+    }
+    
+    const url = urlMatch[1];
+    let options: RequestInit = {};
+    
+    // 尝试提取原始fetch的配置
+    const optionsMatch = fetcherString.match(/fetch\([^,]+,\s*({[^}]+})/);
+    if (optionsMatch) {
+      try {
+        // 这只是一个简单的尝试，不保证能正确解析所有配置
+        // eslint-disable-next-line no-eval
+        options = eval(`(${optionsMatch[1]})`);
+      } catch (e) {
+        console.warn('Failed to parse fetch options', e);
+      }
+    }
+    
+    // 添加ETag支持
+    if (etag) {
+      options.headers = {
+        ...options.headers,
+        'If-None-Match': etag
+      };
+    }
+    
+    // 执行fetch
+    return await fetch(url, options);
+  }, []);
+
+  /**
    * 执行数据获取
    */
   const fetchData = useCallback(async (useCache: boolean = true): Promise<void> => {
@@ -151,8 +228,9 @@ export function useApiCache<T>(
       }
 
       // 尝试从缓存获取数据
+      let cachedData: CacheData<T> | null = null;
       if (useCache) {
-        const cachedData = getCachedData();
+        cachedData = getCachedData();
         if (cachedData && mountedRef.current) {
           setData(cachedData.data);
           setIsStale(isDataStale(cachedData));
@@ -172,20 +250,41 @@ export function useApiCache<T>(
 
       fetchingRef.current = true;
 
-      // 从API获取数据
-      const newData = await fetcher();
+      try {
+        // 使用包含ETag的fetcher
+        const { data: newData, etag } = await wrappedFetcher(cachedData?.etag);
+        
+        // 只有组件仍然挂载时才更新状态
+        if (mountedRef.current) {
+          setData(newData);
+          setIsStale(false);
+          setError(null);
+          retryCountRef.current = 0;
 
-      // 只有组件仍然挂载时才更新状态
-      if (mountedRef.current) {
-        setData(newData);
-        setIsStale(false);
-        setError(null);
-        retryCountRef.current = 0;
-
-        // 保存到缓存
-        setCachedData(newData);
+          // 保存到缓存，包含ETag
+          setCachedData(newData, etag);
+        }
+      } catch (err) {
+        // 检查是否为304 Not Modified响应
+        if ((err as any).notModified && cachedData) {
+          // 数据未修改，使用缓存数据
+          if (mountedRef.current) {
+            setData(cachedData.data);
+            setIsStale(false);
+            setError(null);
+            // 更新时间戳，重置过期时间
+            const refreshedCache = {
+              ...cachedData,
+              timestamp: Date.now()
+            };
+            setCachedData(refreshedCache.data, refreshedCache.etag);
+          }
+          return;
+        }
+        
+        // 其他错误情况，执行原有逻辑
+        throw err;
       }
-
     } catch (err) {
       console.error(`API fetch failed for key: ${key}`, err);
 
@@ -212,7 +311,7 @@ export function useApiCache<T>(
       }
       fetchingRef.current = false;
     }
-  }, [enabled, key, fetcher, getCachedData, setCachedData, isDataStale, retryCount, retryDelay]);
+  }, [enabled, key, wrappedFetcher, getCachedData, setCachedData, isDataStale, retryCount, retryDelay]);
 
   /**
    * 强制刷新数据

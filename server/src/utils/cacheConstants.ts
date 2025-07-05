@@ -8,24 +8,25 @@
 /**
  * 缓存时间分类标准：
  * 
- * SHORT_CACHE (5分钟) - 列表数据、搜索结果
- * MEDIUM_CACHE (15分钟) - 内容数据、统计数据  
+ * REALTIME_CACHE (1分钟) - 关键资源的快速验证
+ * SHORT_CACHE (2分钟) - 列表数据、搜索结果
+ * MEDIUM_CACHE (10分钟) - 内容数据、统计数据  
  * LONG_CACHE (30分钟) - 配置数据、稳定内容
  */
 
 // 基础缓存时间常量（毫秒）
 export const CACHE_TIMES = {
-  /** 短期缓存：5分钟 - 用于列表数据、搜索结果 */
-  SHORT: 5 * 60 * 1000,
+  /** 实时缓存：1分钟 - 用于关键资源的快速验证 */
+  REALTIME: 1 * 60 * 1000,
   
-  /** 中期缓存：15分钟 - 用于内容数据、统计数据 */
-  MEDIUM: 15 * 60 * 1000,
+  /** 短期缓存：2分钟 - 用于列表数据、搜索结果 */
+  SHORT: 2 * 60 * 1000,
+  
+  /** 中期缓存：10分钟 - 用于内容数据、统计数据 */
+  MEDIUM: 10 * 60 * 1000,
   
   /** 长期缓存：30分钟 - 用于配置数据、稳定内容 */
-  LONG: 30 * 60 * 1000,
-  
-  /** 实时缓存：2分钟 - 用于状态数据 */
-  REALTIME: 2 * 60 * 1000
+  LONG: 30 * 60 * 1000
 } as const;
 
 // 向后兼容的别名
@@ -40,28 +41,28 @@ export const REALTIME_CACHE = CACHE_TIMES.REALTIME;
 export const SERVER_CACHE_CONFIG = {
   // 统计数据缓存
   STATS: {
-    /** 网站统计缓存 - 与客户端CACHE_CONFIG.STATS.WEBSITE保持一致 */
-    WEBSITE: MEDIUM_CACHE, // 15分钟
+    /** 网站统计缓存 */
+    WEBSITE: MEDIUM_CACHE, // 10分钟
     /** 访问统计缓存 */
-    VISITS: MEDIUM_CACHE, // 15分钟
+    VISITS: MEDIUM_CACHE, // 10分钟
   },
   
   // 文章相关缓存
   FEEDS: {
-    /** 文章列表缓存 */
-    LIST: MEDIUM_CACHE, // 15分钟
-    /** 单篇文章缓存 */
-    SINGLE: LONG_CACHE, // 30分钟
+    /** 文章列表缓存 - 从15分钟缩短为1分钟，确保HTTP缓存控制能快速生效 */
+    LIST: REALTIME_CACHE, // 1分钟
+    /** 单篇文章缓存 - 从30分钟缩短为10分钟 */
+    SINGLE: MEDIUM_CACHE, // 10分钟
     /** 搜索结果缓存 */
-    SEARCH: SHORT_CACHE, // 5分钟
+    SEARCH: SHORT_CACHE, // 2分钟
   },
   
   // 标签和分类缓存
   TAGS: {
     /** 标签列表缓存 */
-    LIST: MEDIUM_CACHE, // 15分钟
+    LIST: MEDIUM_CACHE, // 10分钟
     /** 标签文章列表缓存 */
-    FEEDS: MEDIUM_CACHE, // 15分钟
+    FEEDS: SHORT_CACHE, // 2分钟
   },
   
   // 配置数据缓存
@@ -75,21 +76,21 @@ export const SERVER_CACHE_CONFIG = {
   // 评论数据缓存
   COMMENTS: {
     /** 评论列表缓存 */
-    LIST: MEDIUM_CACHE, // 15分钟
+    LIST: MEDIUM_CACHE, // 10分钟
   },
 
   // 友情链接缓存
   FRIENDS: {
     /** 友情链接列表缓存 */
-    LIST: MEDIUM_CACHE, // 15分钟
+    LIST: MEDIUM_CACHE, // 10分钟
   },
 
   // 文件管理缓存
   FILES: {
     /** 文件列表缓存 */
-    LIST: SHORT_CACHE, // 5分钟
+    LIST: SHORT_CACHE, // 2分钟
     /** 文件详情缓存 */
-    DETAIL: MEDIUM_CACHE, // 15分钟
+    DETAIL: MEDIUM_CACHE, // 10分钟
   }
 } as const;
 

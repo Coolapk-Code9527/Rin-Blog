@@ -308,3 +308,213 @@ export class CacheImpl {
 export const PublicCache = () => Container.get<CacheImpl>("cache");
 export const ServerConfig = () => Container.get<CacheImpl>("server.config");
 export const ClientConfig = () => Container.get<CacheImpl>("client.config");
+
+/**
+ * HTTP缓存控制工具
+ * 
+ * 提供HTTP缓存控制头生成和ETag处理功能
+ * 用于解决跨用户/跨浏览器的缓存一致性问题
+ */
+export class HttpCacheControl {
+  /**
+   * 生成ETag
+   * 
+   * @param data 要生成ETag的数据
+   * @returns ETag字符串
+   */
+  static async generateETag(data: any): Promise<string> {
+    try {
+      // 优化的ETag生成逻辑，减少计算量
+      
+      // 对于数组，只使用关键字段计算
+      if (Array.isArray(data)) {
+        // 优化: 对于列表只使用ID、更新时间和数量计算哈希值
+        // 这样可以减少长列表的处理时间
+        const optimizedData = {
+          ids: data.map(item => item.id || '').join(','),
+          count: data.length,
+          lastUpdated: this.getLatestTimestamp(data)
+        };
+        
+        return this.computeETag(optimizedData);
+      }
+      
+      // 对于单个对象，使用ID和更新时间
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        // 检查对象是否有ID和更新时间
+        if (data.id && (data.updatedAt || data.modifiedAt || data.createdAt)) {
+          const timestamp = data.updatedAt || data.modifiedAt || data.createdAt;
+          const optimizedData = {
+            id: data.id,
+            timestamp: new Date(timestamp).getTime()
+          };
+          
+          return this.computeETag(optimizedData);
+        }
+      }
+      
+      // 对于其他类型，使用完整数据
+      return this.computeETag(data);
+    } catch (error) {
+      console.warn('Failed to generate ETag:', error);
+      return `"etag-${Date.now()}"`;
+    }
+  }
+  
+  /**
+   * 获取数据中最新的时间戳
+   */
+  private static getLatestTimestamp(items: any[]): number {
+    let latest = 0;
+    
+    for (const item of items) {
+      if (!item) continue;
+      
+      // 尝试获取时间戳，优先使用updatedAt
+      let timestamp: number | null = null;
+      
+      if (item.updatedAt) {
+        timestamp = new Date(item.updatedAt).getTime();
+      } else if (item.modifiedAt) {
+        timestamp = new Date(item.modifiedAt).getTime();
+      } else if (item.createdAt) {
+        timestamp = new Date(item.createdAt).getTime();
+      }
+      
+      if (timestamp && timestamp > latest) {
+        latest = timestamp;
+      }
+    }
+    
+    return latest || Date.now();
+  }
+  
+  /**
+   * 计算数据的ETag值
+   */
+  private static async computeETag(data: any): Promise<string> {
+    // 序列化数据
+    let serializeValue: string;
+    
+    if (typeof data === 'string') {
+      serializeValue = data;
+    } else {
+      try {
+        serializeValue = JSON.stringify(data);
+      } catch (e) {
+        serializeValue = String(data);
+      }
+    }
+    
+    // 对大型数据截断，避免过高的计算成本
+    const MAX_LENGTH = 10000;
+    if (serializeValue.length > MAX_LENGTH) {
+      serializeValue = serializeValue.substring(0, MAX_LENGTH);
+    }
+    
+    // 生成哈希值
+    try {
+      const encoder = new TextEncoder();
+      const data_buffer = encoder.encode(serializeValue);
+      const hashBuffer = await crypto.subtle.digest('SHA-1', data_buffer);
+      
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('');
+      
+      return `"${hashHex}"`;
+    } catch (e) {
+      // 浏览器可能不支持crypto.subtle
+      // 降级方案：使用简单哈希算法
+      const simpleHash = this.simpleHash(serializeValue);
+      return `"${simpleHash}"`;
+    }
+  }
+  
+  /**
+   * 简单的哈希算法，用于降级
+   */
+  private static simpleHash(str: string): string {
+    let hash = 0;
+    if (str.length === 0) return hash.toString(16);
+    
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash &= hash; // Convert to 32bit integer
+    }
+    
+    return Math.abs(hash).toString(16);
+  }
+  
+  /**
+   * 生成缓存控制头
+   * 
+   * @param maxAge 最大缓存时间（秒）
+   * @param isPublic 是否可以被CDN等缓存
+   * @returns 缓存控制头
+   */
+  static getCacheControlHeader(maxAge: number, isPublic: boolean = false): string {
+    // 根据资源类型选择合适的缓存策略
+    const publicity = isPublic ? 'public' : 'private';
+    return `${publicity}, max-age=${maxAge}, must-revalidate`;
+  }
+  
+  /**
+   * 验证请求中的ETag与资源当前ETag是否匹配
+   * 
+   * @param requestHeaders 请求头
+   * @param currentETag 当前资源的ETag
+   * @returns 如果匹配返回true，否则返回false
+   */
+  static isETagMatched(requestHeaders: Headers, currentETag: string): boolean {
+    const ifNoneMatch = requestHeaders.get('If-None-Match');
+    return ifNoneMatch === currentETag;
+  }
+  
+  /**
+   * 兼容性方法: 生成缓存控制头（旧API）
+   * 
+   * @deprecated 使用getCacheControlHeader代替
+   * @param maxAgeSeconds 最大缓存时间（秒）
+   * @param isPublic 是否可以被CDN等缓存
+   * @returns 缓存控制头对象
+   */
+  static getCacheControlHeaders(maxAgeSeconds: number, isPublic: boolean = false): Record<string, string> {
+    return {
+      'Cache-Control': this.getCacheControlHeader(maxAgeSeconds, isPublic),
+      'Vary': 'Accept-Encoding'
+    };
+  }
+  
+  /**
+   * 兼容性方法: 验证请求的If-None-Match头与ETag是否匹配
+   * 
+   * @deprecated 使用isETagMatched代替
+   * @param request 请求对象
+   * @param etag ETag值
+   * @returns 如果匹配返回true
+   */
+  static isNotModified(request: Request, etag: string): boolean {
+    const ifNoneMatch = request.headers.get('If-None-Match');
+    return !!ifNoneMatch && ifNoneMatch === etag;
+  }
+  
+  /**
+   * 兼容性方法: 生成完整的HTTP缓存头（包括ETag）
+   * 
+   * @deprecated 使用单独的方法生成ETag和缓存控制头
+   * @param data 要生成ETag的数据
+   * @param maxAgeSeconds 最大缓存时间（秒）
+   * @param isPublic 是否可以被CDN等缓存
+   * @returns 包含ETag和缓存控制头的对象
+   */
+  static async getFullCacheHeaders(data: any, maxAgeSeconds: number, isPublic: boolean = false): Promise<Record<string, string>> {
+    const etag = await this.generateETag(data);
+    return {
+      ...this.getCacheControlHeaders(maxAgeSeconds, isPublic),
+      'ETag': etag
+    };
+  }
+}
