@@ -108,17 +108,18 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
-              // 1. 主动清理前端缓存（新增）
+              // 1. 主动清理前端缓存
               FeedsCacheManager.clearAllFeeds();
               
-              // 2. 同步触发缓存失效事件（修复：改为同步执行，确保在页面跳转前完成）
+              // 2. 同步触发缓存失效事件
               invalidateCache.onFeedDeleted(feed.id);
 
               // 3. 显示成功消息
               showAlert(t("delete.success"));
 
-              // 4. 立即跳转，避免组件继续渲染和API调用
-              setLocation("/");
+              // 4. 强制刷新页面（而非客户端路由跳转）
+              // 这会绕过sessionStorage缓存，确保所有用户能获取新数据
+              window.location.href = "/";
             }
           });
       })
