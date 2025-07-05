@@ -566,7 +566,7 @@ export function FeedService() {
                         tags: t.Array(t.String())
                     })
                 })
-                .get('/:id', async ({ params: { id }, set, headers, request }) => {
+                .get('/:id', async ({ params: { id }, set, headers, request, uid, admin }) => {
                     const db: DB = getDB();
                     
                     // 安全的ID解析

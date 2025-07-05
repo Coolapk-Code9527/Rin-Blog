@@ -464,12 +464,22 @@ export class HttpCacheControl {
   /**
    * 验证请求中的ETag与资源当前ETag是否匹配
    * 
-   * @param requestHeaders 请求头
+   * @param requestHeaders 请求头（支持Headers对象或普通对象）
    * @param currentETag 当前资源的ETag
    * @returns 如果匹配返回true，否则返回false
    */
-  static isETagMatched(requestHeaders: Headers, currentETag: string): boolean {
-    const ifNoneMatch = requestHeaders.get('If-None-Match');
+  static isETagMatched(requestHeaders: Headers | Record<string, any>, currentETag: string): boolean {
+    let ifNoneMatch: string | null = null;
+    
+    if (typeof requestHeaders.get === 'function') {
+      // 标准Headers对象
+      ifNoneMatch = requestHeaders.get('If-None-Match');
+    } else {
+      // 普通JavaScript对象
+      const headers = requestHeaders as Record<string, any>;
+      ifNoneMatch = headers['if-none-match'] || null;
+    }
+    
     return ifNoneMatch === currentETag;
   }
   
