@@ -314,7 +314,7 @@ export function FeedService() {
                         }
 
                         const page_num = pageParseResult.value! - 1; // 转换为0基索引
-                        cacheKey = `feeds_${type}_${page_num}_${limit_num}_${sortByTime ? 'time' : 'default'}`;
+                        cacheKey = `feeds_type:${type}_page:${page_num}_limit:${limit_num}_sort:${sortByTime ? 'time' : 'default'}`;
                         
                         // 检查缓存是否存在
                         const cached = await cache.get(cacheKey);
@@ -1006,8 +1006,8 @@ export function FeedService() {
                 }
             }
 
-            // 优化：改进缓存键，包含管理员状态和分页信息
-            const cacheKey = `search_${keyword}_${admin ? 'admin' : 'public'}_${page_num}_${limit_num}`;
+            // 优化：改进缓存键，使用与客户端一致的格式，包含管理员状态
+            const cacheKey = `search_keyword:${encodeURIComponent(keyword)}_page:${page_num}_limit:${limit_num}_admin:${admin ? 'true' : 'false'}`;
             const searchKeyword = `%${keyword}%`;
 
             // 修复：恢复完整搜索范围，提高搜索精准度
@@ -1216,10 +1216,10 @@ async function clearFeedCache(id: number, alias: string | null, newAlias: string
     
     // 全面清理与文章相关的所有缓存
     
-    // 1. 文章列表缓存
+    // 1. 文章列表缓存 (格式: feeds_type:value_page:value_limit:value_sort:value)
     await cache.deletePrefix('feeds_');
-    
-    // 2. 搜索结果缓存
+
+    // 2. 搜索结果缓存 (格式: search_keyword:value_page:value_limit:value_admin:value)
     await cache.deletePrefix('search_');
     
     // 3. 单篇文章缓存
