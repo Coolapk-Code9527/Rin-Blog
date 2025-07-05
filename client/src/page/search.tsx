@@ -65,14 +65,14 @@ export function SearchPage({ keyword }: { keyword: string }) {
                         </div>
                         {/* 搜索结果列表区域 */}
                         <Waiting for={!loading}>
-                            {feeds?.data.length === 0 ? (
+                            {(!feeds?.data || feeds.data.length === 0) ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
                                     <i className="ri-search-line text-5xl mb-3 text-gray-300 dark:text-gray-600"></i>
                                     <div className="text-lg font-medium mb-2">{t('search.no_results')}</div>
                                 </div>
                             ) : (
                                 <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 lg:gap-5 xl:gap-6">
-                                    {feeds?.data.map(({ id, ...feed }: any) => (
+                                    {(feeds?.data || []).map(({ id, ...feed }: any) => (
                                         <div key={id} className="w-full max-w-md mx-auto md:max-w-none">
                                             <FeedCard id={id} {...feed} />
                                         </div>
@@ -85,7 +85,7 @@ export function SearchPage({ keyword }: { keyword: string }) {
             </PageContainer>
 
             {/* 分页控制 - 与其他页面保持一致 */}
-            {feeds?.data.length > 0 && (page > 1 || feeds?.hasNext) && (
+            {(feeds?.data && feeds.data.length > 0) && (page > 1 || feeds?.hasNext) && (
                 <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-8 transition-all duration-300">
                     <div className="flex justify-center mt-6 w-full">
                         <Pagination

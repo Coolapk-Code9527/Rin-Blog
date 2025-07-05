@@ -295,7 +295,8 @@ export function FeedsPage() {
 
     // 恢复前端排序逻辑 - 服务端没有实现复杂排序（特别是热度排序）
     const sortedFeeds = React.useMemo(() => {
-        const currentFeeds = feedsData?.data || [];
+        // 确保数据安全：feedsData可能是undefined，feedsData.data也可能是undefined
+        const currentFeeds = (feedsData?.data && Array.isArray(feedsData.data)) ? feedsData.data : [];
         if (!currentFeeds.length) return [];
 
         try {
@@ -488,7 +489,7 @@ export function FeedsPage() {
                             <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
                                 <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
                                 <span className="ml-1 sm:ml-1.5">
-                                    {t('article.total$count', { count: feedsData?.size || 0 })}
+                                    {t('article.total$count', { count: feedsData?.size || feedsData?.data?.length || 0 })}
                                     {listState === 'draft' && t('error.draft_only_visible')}
                                     {listState === 'unlisted' && t('error.unlisted_link_access')}
                                 </span>
