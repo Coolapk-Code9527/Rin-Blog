@@ -114,12 +114,8 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               // 2. 同步触发缓存失效事件
               invalidateCache.onFeedDeleted(feed.id);
 
-              // 3. 显示成功消息
-              showAlert(t("delete.success"));
-
-              // 4. 强制刷新页面（而非客户端路由跳转）
-              // 这会绕过sessionStorage缓存，确保所有用户能获取新数据
-              window.location.href = "/";
+              // 3. 直接跳转，不显示成功消息
+              window.location.replace("/");
             }
           });
       })
@@ -1312,7 +1308,7 @@ function CommentItem({
             {canReply && (
               <button
                 onClick={() => setShowReplyForm(!showReplyForm)}
-                title={t('comment.reply_to', { name: isAnonymous ? displayName : comment.user?.username || 'Unknown' })}
+                title={t('comment.reply_to', { name: isAnonymous ? displayName : comment.user?.username })}
                 className={`p-1.5 sm:p-2 rounded-lg text-xs sm:text-sm transition-all duration-300 transform hover:scale-110 active:scale-95 ${
                   showReplyForm
                     ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 shadow-md'
