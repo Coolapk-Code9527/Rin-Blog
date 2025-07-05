@@ -1,4 +1,5 @@
 import React from "react";
+import { cache as cacheManager } from "./SimpleCacheManager";
 
 export type Keys =
     | "title"
@@ -10,54 +11,38 @@ export type Keys =
     | "listed"
     | "preview"
     ;
+// keys数组已移除，现在使用SimpleCacheManager的模式清理功能
 
-/**
- * 简化的表单缓存类
- * 直接使用localStorage，避免复杂的缓存管理器依赖
- */
 export class Cache {
     static with(id?: number) {
         return new Cache(id);
     }
     private id: string;
     constructor(id?: number) {
-        this.id = `form_cache_${id ?? "new"}`;
+        this.id = `${id ?? "new"}`;
     }
-
     public get(key: Keys) {
-        try {
-            const cacheKey = `${this.id}/${key}`;
-            return localStorage.getItem(cacheKey);
-        } catch {
-            return null;
-        }
+        // 使用SimpleCacheManager作为底层实现，但保持原有接口
+        const cacheKey = `${this.id}/${key}`;
+        const cached = cacheManager.get(cacheKey, { storage: 'local' });
+        return cached || null;
     }
-
     public set(key: Keys, value: string) {
-        try {
-            const cacheKey = `${this.id}/${key}`;
-            if (value === "") {
-                localStorage.removeItem(cacheKey);
-            } else {
-                localStorage.setItem(cacheKey, value);
-            }
-        } catch {
-            // 静默失败，避免存储空间不足时的错误
+        const cacheKey = `${this.id}/${key}`;
+        if (value === "") {
+            cacheManager.remove(cacheKey, { storage: 'local' });
+        } else {
+            // 表单缓存设置长期过期时间，保持原有行为
+            cacheManager.set(cacheKey, value, {
+                storage: 'local',
+                expireTime: 365 * 24 * 60 * 60 * 1000 // 1年过期，实际上相当于永不过期
+            });
         }
     }
-
     clear() {
-        try {
-            const pattern = `${this.id}/`;
-            const keys = Object.keys(localStorage);
-            keys.forEach(key => {
-                if (key.startsWith(pattern)) {
-                    localStorage.removeItem(key);
-                }
-            });
-        } catch {
-            // 静默失败
-        }
+        // 使用SimpleCacheManager的模式清理功能
+        const pattern = `${this.id}/`;
+        cacheManager.clearByPattern(pattern, 'local');
     }
     public useCache<T>(key: Keys, initialValue: T) {
         const [value, setValue] = React.useState<T>(this.get(key) as T ?? initialValue);

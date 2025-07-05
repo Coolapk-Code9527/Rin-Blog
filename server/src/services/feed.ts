@@ -125,17 +125,7 @@ import type {DB} from "../_worker";
 import {feeds, visits, files, feedFiles} from "../db/schema";
 import {setup} from "../setup";
 import {ClientConfig, PublicCache, HttpCacheControl} from "../utils/cache";
-// 服务端缓存配置
-const SERVER_CACHE_CONFIG = {
-  FEEDS: {
-    LIST: 2 * 60 * 1000,      // 2分钟
-    SINGLE: 10 * 60 * 1000,   // 10分钟
-    SEARCH: 2 * 60 * 1000     // 2分钟
-  },
-  STATS: {
-    VISITS: 10 * 60 * 1000    // 10分钟
-  }
-};
+import { SERVER_CACHE_CONFIG } from "../utils/serverCacheConfig";
 import {getDB} from "../utils/di";
 import {extractImage} from "../utils/image";
 import {markdownToPlainText} from "../utils/markdown";

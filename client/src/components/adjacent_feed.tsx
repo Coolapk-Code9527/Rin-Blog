@@ -5,8 +5,10 @@ import {Link} from "wouter";
 import {useTranslation} from "react-i18next";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
-import { useAdjacentFeedsCache } from "../utils/unifiedCache";
+import { useAdjacentFeedsCache } from "../hooks/useFeedsCache";
 import { getAdjacentThumbnails } from '../utils/thumbnailUtils';
+import { useFeedCacheInvalidation } from '../hooks/useCacheEvents';
+import { useSafeCacheInvalidation } from '../hooks/useComponentSafety';
 
 export type AdjacentFeed = {
     id: number;
@@ -29,7 +31,13 @@ export type AdjacentFeeds = {
 
 export function AdjacentSection({id, setError}: { id: string, setError: (error: string) => void }) {
     // 使用缓存Hook替代直接API调用，避免重复请求
-    const { data: adjacentFeeds, isLoading: loading, error, invalidate: invalidateAdjacentFeeds } = useAdjacentFeedsCache(id, !!id);
+    const { data: adjacentFeeds, loading, error, invalidate: invalidateAdjacentFeeds } = useAdjacentFeedsCache(id, !!id);
+
+    // 使用安全的缓存失效机制
+    const safeInvalidateAdjacentFeeds = useSafeCacheInvalidation(invalidateAdjacentFeeds);
+
+    // 监听文章发布/更新/删除事件，失效缓存
+    useFeedCacheInvalidation(safeInvalidateAdjacentFeeds);
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -37,7 +45,7 @@ export function AdjacentSection({id, setError}: { id: string, setError: (error: 
     // 处理错误
     React.useEffect(() => {
         if (error) {
-            setError(error.message);
+            setError(error);
         }
     }, [error, setError]);
 

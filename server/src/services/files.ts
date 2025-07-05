@@ -10,13 +10,7 @@ import { listAllR2Files, getR2FileMeta, normalizePath, setR2FileMeta } from '../
 import { generateThumbnail } from '../utils/image';
 import { Container } from 'typedi';
 import { safeParseId, safeParsePage, safeParseLimit } from "../utils/validation";
-// 服务端缓存配置
-const SERVER_CACHE_CONFIG = {
-  FILES: {
-    LIST: 2 * 60 * 1000,      // 2分钟
-    DETAIL: 10 * 60 * 1000    // 10分钟
-  }
-};
+import { SERVER_CACHE_CONFIG } from "../utils/serverCacheConfig";
 import { PublicCache } from "../utils/cache";
 
 // 优化：哈希计算缓存，避免重复计算（扩大缓存容量）

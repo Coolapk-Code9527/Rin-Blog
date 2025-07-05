@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { client, endpoint } from '../../main';
 import { headersWithAuth } from '../../utils/auth';
-import { cache, useFilesCache } from '../../utils/unifiedCache';
+import { useFilesCache } from '../../hooks/useFeedsCache';
 import { MacOSSpinner } from "../loading";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -23,7 +23,7 @@ import { UnifiedContainer } from '../UnifiedContainer';
 // 导入FileItem类型
 import type { FileItem } from '../../types/api';
 import { uploadFiles } from '../../utils/fileUpload';
-// SimpleCacheManager已移除，使用unifiedCache
+import { cache as cacheManager } from '../../utils/SimpleCacheManager';
 
 // 文件大小格式化工具
 function formatFileSize(bytes: number): string {
@@ -110,7 +110,7 @@ export function FileManager({
   const [isPageChanging, setIsPageChanging] = useState<boolean>(false);
 
   // 使用缓存Hook替代直接API调用
-  const { data: filesData, isLoading, error: cacheError, invalidate: invalidateFilesCache } = useFilesCache(
+  const { data: filesData, loading: isLoading, error: cacheError, invalidate: invalidateFilesCache } = useFilesCache(
     currentPath,
     debouncedSearch,
     sortBy,
@@ -128,11 +128,11 @@ export function FileManager({
     const pathToClean = targetPath || currentPath;
     const encodedPath = encodeURIComponent(pathToClean);
 
-    // 清除所有包含该路径的文件缓存键
-    const pattern = `files_path:${encodedPath}`;
-    cache.clearByPrefix(pattern);
+    // 清除所有包含该路径的文件缓存键（注意：需要包含api_cache_前缀）
+    const pattern = `api_cache_files_path:${encodedPath}`;
+    const clearedCount = cacheManager.clearByPattern(pattern, 'session', false);
 
-    console.log(`清除了文件缓存键，路径: ${pathToClean}`);
+    console.log(`清除了 ${clearedCount} 个文件缓存键，路径: ${pathToClean}`);
   }, [currentPath]);
 
   // 刷新文件列表的函数（替代loadFiles）

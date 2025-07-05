@@ -17,13 +17,11 @@ import { ArticleManagementTabs, type ListState, type SortType } from '../compone
 import { ClientConfigContext } from "../state/config"
 import { getSidebarConfig } from "../utils/sidebarConfig"
 import { useSmartGrid } from "../hooks/useSmartGrid"
-import { useFeedsCache } from "../utils/unifiedCache"
+import { useFeedsCache, FeedType } from "../hooks/useFeedsCache"
 
 import { generateGradient } from '../utils/placeholderUtils';
 import { ErrorBoundary } from "../components/ErrorBoundary"
-
-// FeedType定义
-export type FeedType = 'all' | 'normal' | 'draft' | 'unlisted';
+import { useEnhancedCacheInvalidation } from "../hooks/useEnhancedCacheInvalidation"
 
 // FeedsData类型由useFeedsCache Hook提供
 // FeedType统一使用useFeedsCache中的定义
@@ -239,9 +237,16 @@ export function FeedsPage() {
     // 恢复批量获取模式，分批获取所有数据避免CPU超时
     const {
         data: feedsData,
-        isLoading: loading,
+        loading,
         invalidate: invalidateFeedsCache
-    } = useFeedsCache(listState as FeedType, page, 100, sortType === 'latest');
+    } = useFeedsCache({
+        type: listState as FeedType,
+        limit: 9999, // 触发useEnhancedFeedsCache批量获取模式
+        enabled: true
+    })
+
+    // 使用统一的增强缓存失效机制
+    useEnhancedCacheInvalidation(invalidateFeedsCache);
 
     // 保存用户偏好到localStorage
     React.useEffect(() => {
@@ -295,8 +300,7 @@ export function FeedsPage() {
 
     // 恢复前端排序逻辑 - 服务端没有实现复杂排序（特别是热度排序）
     const sortedFeeds = React.useMemo(() => {
-        // 确保数据安全：feedsData可能是undefined，feedsData.data也可能是undefined
-        const currentFeeds = (feedsData?.data && Array.isArray(feedsData.data)) ? feedsData.data : [];
+        const currentFeeds = feedsData?.data || [];
         if (!currentFeeds.length) return [];
 
         try {
@@ -489,7 +493,7 @@ export function FeedsPage() {
                             <div className={`py-1.5 px-2.5 sm:px-3 ${tagGlassClass} rounded-lg text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center font-medium border border-neutral-200/60 dark:border-neutral-700/60 flex-shrink-0`}>
                                 <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
                                 <span className="ml-1 sm:ml-1.5">
-                                    {t('article.total$count', { count: feedsData?.size || feedsData?.data?.length || 0 })}
+                                    {t('article.total$count', { count: feedsData?.size || 0 })}
                                     {listState === 'draft' && t('error.draft_only_visible')}
                                     {listState === 'unlisted' && t('error.unlisted_link_access')}
                                 </span>

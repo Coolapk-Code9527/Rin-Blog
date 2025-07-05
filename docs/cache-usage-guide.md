@@ -8,26 +8,26 @@
 
 ### 核心组件
 
-1. **UnifiedCacheManager** - 统一的缓存管理器
-2. **useCache** - 通用缓存Hook，替代所有其他缓存Hook
-3. **CACHE_CONFIG** - 统一的缓存配置
-4. **便捷Hook** - useFeedCache、useCommentsCache等专用Hook
+1. **SimpleCacheManager** - 统一的缓存管理器
+2. **useApiCache** - React Hook，提供SWR模式的API缓存
+3. **useFeedsCache** - 专门的文章缓存Hook
+4. **CACHE_CONFIG** - 统一的缓存配置
 
 ### 存储层级
 
 ```
 ┌─────────────────────────────────────┐
 │           应用层                     │
-│  useFeedCache, useCommentsCache等   │
+│  useFeedsCache, useTagsCache, etc.  │
 ├─────────────────────────────────────┤
 │           Hook层                    │
-│           useCache                  │
+│           useApiCache               │
 ├─────────────────────────────────────┤
 │          管理层                      │
-│      UnifiedCacheManager            │
+│        SimpleCacheManager           │
 ├─────────────────────────────────────┤
 │          存储层                      │
-│        sessionStorage               │
+│   sessionStorage / localStorage     │
 └─────────────────────────────────────┘
 ```
 
@@ -37,41 +37,43 @@
 
 ```typescript
 // ✅ 推荐：使用专门的Hook
-const { data, isLoading, error } = useFeedCache('123', true);
+const { data, isLoading, error } = useFeedsCache({
+  type: 'normal',
+  page: 0,
+  limit: 10
+});
 
-// 或使用通用Hook
-const { data, isLoading, error } = useCache(
-  'custom_key',
-  async () => fetchData(),
-  { staleTime: CACHE_CONFIG.FEEDS.SINGLE }
-);
+// ❌ 不推荐：直接使用useApiCache（除非有特殊需求）
+const { data } = useApiCache('feeds_custom', fetcher);
 ```
 
 ### 2. 使用统一的缓存配置
 
 ```typescript
 // ✅ 推荐：使用CACHE_CONFIG
-import { CACHE_CONFIG } from '../utils/unifiedCache';
+import { CACHE_CONFIG } from '../utils/clientCacheConfig';
 
 const cacheOptions = {
-  staleTime: CACHE_CONFIG.FEEDS.LIST
+  staleTime: CACHE_CONFIG.FEEDS.LIST,
+  cacheTime: CACHE_CONFIG.FEEDS.LIST
 };
 
 // ❌ 不推荐：硬编码时间
 const cacheOptions = {
-  staleTime: 15 * 60 * 1000 // 硬编码
+  staleTime: 15 * 60 * 1000, // 硬编码
+  cacheTime: 30 * 60 * 1000
 };
 ```
 
 ### 3. 使用标准的缓存键格式
 
 ```typescript
-// ✅ 推荐：使用CACHE_KEYS
-import { CACHE_KEYS } from '../utils/unifiedCache';
+// ✅ 推荐：使用CACHE_KEY_PATTERNS
+import { CACHE_KEY_PATTERNS } from '../utils/clientCacheConfig';
 
-const cacheKey = CACHE_KEYS.FEEDS('normal', 0, 10, 'default');
+const cacheKey = CACHE_KEY_PATTERNS.FEEDS('normal', 0, 10, 'default');
 // 结果: "feeds_type:normal_page:0_limit:10_sort:default"
-// 注意：UnifiedCacheManager会自动添加"api_cache_"前缀
+// 注意：SimpleCacheManager会自动添加"api_cache_"前缀
 // 实际存储键: "api_cache_feeds_type:normal_page:0_limit:10_sort:default"
 
 // ❌ 不推荐：手动构造键
@@ -80,16 +82,16 @@ const cacheKey = `feeds_${type}_${page}_${limit}`;
 
 ## 📚 API参考
 
-### UnifiedCacheManager
+### SimpleCacheManager
 
 ```typescript
-import { cache } from '../utils/unifiedCache';
+import { cache } from '../utils/SimpleCacheManager';
 
 // 基本操作
-cache.get<T>(key, maxAge?)           // 获取缓存
-cache.set<T>(key, data, maxAge?)     // 设置缓存
-cache.remove(key)                    // 删除缓存
-cache.has(key)                       // 检查缓存是否存在
+cache.get<T>(key, options?)          // 获取缓存
+cache.set<T>(key, data, options?)    // 设置缓存
+cache.remove(key, options?)          // 删除缓存
+cache.has(key, options?)             // 检查缓存是否存在
 
 // 批量操作
 cache.clearExpired(storage?)         // 清理过期缓存
@@ -191,13 +193,13 @@ if (data) {
 
 ```typescript
 // ✅ 推荐：使用统一的清理接口
-import { cache } from '../utils/unifiedCache';
+import { FeedsCacheManager } from '../hooks/useFeedsCache';
 
 // 清理特定类型的文章缓存
-cache.clearFeedsByType('normal');
+FeedsCacheManager.clearFeedsByType('normal');
 
 // 清理所有文章缓存
-cache.clearAllFeeds();
+FeedsCacheManager.clearAllFeeds();
 
 // ❌ 不推荐：直接操作sessionStorage
 sessionStorage.removeItem('api_cache_feeds_...');

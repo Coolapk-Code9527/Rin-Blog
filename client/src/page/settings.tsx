@@ -16,7 +16,8 @@ import {
     ServerConfigContext
 } from "../state/config.tsx";
 import {headersWithAuth} from "../utils/auth.ts";
-import { cache, useConfigCache } from "../utils/unifiedCache";
+import { useConfigCache } from "../hooks/useFeedsCache";
+import { ApiCacheManager } from "../hooks/useApiCache";
 import '../utils/thumb.css';
 import { useToast } from '../hooks/useToast';
 import { PageContainer } from "../components/container";
@@ -54,8 +55,8 @@ export function Settings() {
     const [msg, setMsg] = useState('');
     const [msgList, setMsgList] = useState<{ title: string, reason: string }[]>([]);
     // 使用缓存Hook替代直接API调用
-    const { data: clientConfigData, isLoading: clientLoading, invalidate: invalidateClientCache } = useConfigCache('client');
-    const { data: serverConfigData, isLoading: serverLoading, invalidate: invalidateServerCache } = useConfigCache('server');
+    const { data: clientConfigData, loading: clientLoading, invalidate: invalidateClientCache } = useConfigCache('client');
+    const { data: serverConfigData, loading: serverLoading, invalidate: invalidateServerCache } = useConfigCache('server');
 
     const [clientConfig, setClientConfig] = useState<ConfigWrapper>(defaultClientConfigWrapper);
     const [serverConfig, setServerConfig] = useState<ConfigWrapper>(defaultServerConfigWrapper);
@@ -229,7 +230,7 @@ export function Settings() {
                             });
 
                             // 清除前端缓存
-                            cache.clear();
+                            ApiCacheManager.clearAll();
 
                             showToast(t('settings.cache.clear.success', { defaultValue: '缓存清理成功' }));
                         } catch (error) {

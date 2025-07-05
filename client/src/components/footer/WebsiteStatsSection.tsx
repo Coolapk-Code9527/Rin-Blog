@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../main';
-import { CACHE_CONFIG, cache, CACHE_TIMES } from '../../utils/unifiedCache';
+import { CACHE_CONFIG } from '../../utils/clientCacheConfig';
+import { cache } from '../../utils/SimpleCacheManager';
+import { useFeedCacheInvalidation } from '../../hooks/useCacheEvents';
+import { useSafeCacheInvalidation } from '../../hooks/useComponentSafety';
 
 /**
  * 网站统计数据接口
@@ -56,9 +59,15 @@ export function WebsiteStatsSection() {
 
   // 清除统计缓存的函数
   const clearStatsCache = () => {
-    cache.remove(CACHE_KEY);
+    cache.remove(CACHE_KEY, { storage: 'local' });
     fetchStats(true); // 强制刷新
   };
+
+  // 使用安全的缓存失效机制
+  const safeClearStatsCache = useSafeCacheInvalidation(clearStatsCache);
+
+  // 监听文章发布/更新/删除事件，失效统计缓存
+  useFeedCacheInvalidation(safeClearStatsCache);
 
   // 格式化运行时间
   const formatRunningTime = (days: number): string => {
@@ -81,12 +90,19 @@ export function WebsiteStatsSection() {
 
   // 从缓存获取数据 - 使用统一缓存管理器
   const getCachedStats = (): WebsiteStats | null => {
-    return cache.get<WebsiteStats>(CACHE_KEY, CACHE_CONFIG.STATS.WEBSITE);
+    return cache.get<WebsiteStats>(CACHE_KEY, {
+      storage: 'local',
+      expireTime: CACHE_CONFIG.STATS.WEBSITE
+    });
   };
 
   // 缓存数据 - 使用统一缓存管理器
   const setCachedStats = (data: WebsiteStats) => {
-    cache.set(CACHE_KEY, data, CACHE_CONFIG.STATS.WEBSITE);
+    cache.set(CACHE_KEY, data, {
+      storage: 'local',
+      expireTime: CACHE_CONFIG.STATS.WEBSITE,
+      validate: true
+    });
   };
 
   // 获取统计数据 - 添加客户端缓存优化

@@ -5,11 +5,12 @@ import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
-import { useSearchCache } from "../utils/unifiedCache"
+import { useSearchCache } from "../hooks/useFeedsCache"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { PageContainer } from "../components/container"
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect"
+import { useEnhancedCacheInvalidation } from "../hooks/useEnhancedCacheInvalidation"
 
 type FeedsData = {
     size: number,
@@ -24,10 +25,13 @@ export function SearchPage({ keyword }: { keyword: string }) {
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
 
     // 使用缓存Hook替代直接API调用
-    const { data: feeds, isLoading: loading, invalidate: invalidateSearchCache } = useSearchCache(keyword, page, limit);
+    const { data: feeds, loading, invalidate: invalidateSearchCache } = useSearchCache(keyword, page, limit, !!keyword);
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
+
+    // 使用统一的增强缓存失效机制
+    useEnhancedCacheInvalidation(invalidateSearchCache);
     const title = t('article.search.title$keyword', { keyword })
     return (
         <>
@@ -65,14 +69,14 @@ export function SearchPage({ keyword }: { keyword: string }) {
                         </div>
                         {/* 搜索结果列表区域 */}
                         <Waiting for={!loading}>
-                            {(!feeds?.data || feeds.data.length === 0) ? (
+                            {feeds?.data.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
                                     <i className="ri-search-line text-5xl mb-3 text-gray-300 dark:text-gray-600"></i>
                                     <div className="text-lg font-medium mb-2">{t('search.no_results')}</div>
                                 </div>
                             ) : (
                                 <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 lg:gap-5 xl:gap-6">
-                                    {(feeds?.data || []).map(({ id, ...feed }: any) => (
+                                    {feeds?.data.map(({ id, ...feed }: any) => (
                                         <div key={id} className="w-full max-w-md mx-auto md:max-w-none">
                                             <FeedCard id={id} {...feed} />
                                         </div>
@@ -85,7 +89,7 @@ export function SearchPage({ keyword }: { keyword: string }) {
             </PageContainer>
 
             {/* 分页控制 - 与其他页面保持一致 */}
-            {(feeds?.data && feeds.data.length > 0) && (page > 1 || feeds?.hasNext) && (
+            {feeds?.data.length > 0 && (page > 1 || feeds?.hasNext) && (
                 <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-8 transition-all duration-300">
                     <div className="flex justify-center mt-6 w-full">
                         <Pagination
