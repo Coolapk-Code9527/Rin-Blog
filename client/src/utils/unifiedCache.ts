@@ -311,7 +311,7 @@ export function useCache<T>(
 
     setIsValidating(true);
     setError(null);
-    
+
     if (!isRetry) {
       setIsLoading(true);
     }
@@ -324,9 +324,16 @@ export function useCache<T>(
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error');
       setError(error);
-      
-      // 重试逻辑
-      if (retryAttempts < retryCount) {
+
+      // 改进的重试逻辑：只对网络错误和5xx错误重试，不对4xx错误重试
+      const shouldRetry = retryAttempts < retryCount &&
+        !error.message.includes('422') &&
+        !error.message.includes('400') &&
+        !error.message.includes('401') &&
+        !error.message.includes('403') &&
+        !error.message.includes('404');
+
+      if (shouldRetry) {
         setRetryAttempts(prev => prev + 1);
         setTimeout(() => fetchData(true), 1000 * Math.pow(2, retryAttempts));
       }
@@ -442,10 +449,10 @@ export function useFeedsCache(type = 'all', page = 1, limit = 10, sortByTime = f
     const { client, headersWithAuth } = await getApiClient();
     const response = await client.feed.get({
       query: {
-        type,
+        type: type === 'all' ? undefined : type,  // 修复：'all'类型应该不传type参数
         page: page.toString(),
         limit: limit.toString(),
-        sort: sortByTime ? 'time' : 'default'
+        sortByTime: sortByTime  // 修复：使用正确的参数名
       },
       headers: headersWithAuth()
     });
@@ -677,8 +684,8 @@ export function useFilesCache(
       query: {
         path,
         search,
-        sortBy,
-        sortOrder,
+        sort: sortBy,  // 修复：使用正确的参数名
+        order: sortOrder,  // 修复：使用正确的参数名
         page: page.toString(),
         limit: limit.toString()
       },

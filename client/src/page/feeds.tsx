@@ -241,7 +241,7 @@ export function FeedsPage() {
         data: feedsData,
         isLoading: loading,
         invalidate: invalidateFeedsCache
-    } = useFeedsCache(listState as FeedType, page, 9999, sortType === 'time' as any);
+    } = useFeedsCache(listState as FeedType, page, 100, sortType === 'latest');
 
     // 保存用户偏好到localStorage
     React.useEffect(() => {
