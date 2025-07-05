@@ -578,7 +578,7 @@ export function FeedService() {
                     }
 
                     const cache = PublicCache();
-                    const cacheKey = `feed_${id}`;
+                    const cacheKey = `feed_id:${id}`;
                     
                     // 检查缓存中是否已有数据
                     const cached = await cache.get(cacheKey);
@@ -1223,7 +1223,7 @@ async function clearFeedCache(id: number, alias: string | null, newAlias: string
     await cache.deletePrefix('search_');
     
     // 3. 单篇文章缓存
-    await cache.delete(`feed_${id}`, false);
+    await cache.delete(`feed_id:${id}`, false);
     
     // 4. 相邻文章缓存
     await cache.deletePrefix(`${id}_previous_feed`);
@@ -1245,9 +1245,9 @@ async function clearFeedCache(id: number, alias: string | null, newAlias: string
     // 处理别名
     if (alias === newAlias) return;
     if (alias)
-        await cache.delete(`feed_${alias}`, false);
+        await cache.delete(`feed_id:${alias}`, false);
     if (newAlias)
-        await cache.delete(`feed_${newAlias}`, false);
+        await cache.delete(`feed_id:${newAlias}`, false);
 }
 
 import { CACHED_REGEX } from '../utils/regex-cache';
