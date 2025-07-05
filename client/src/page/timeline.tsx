@@ -7,8 +7,7 @@ import {useTranslation} from "react-i18next";
 import { PageContainer } from "../components/container";
 import { SimpleTimeline } from "../components/simple-timeline";
 import {useGlassEffect} from "../hooks/useGlassEffect";
-import { useTimelineCache } from "../hooks/useFeedsCache";
-import { useEnhancedCacheInvalidation } from "../hooks/useEnhancedCacheInvalidation";
+import { useTimelineCache } from "../utils/unifiedCache";
 
 // Object.groupBy polyfill（如原生不支持则自动挂载）
 if (!Object.groupBy) {
@@ -31,10 +30,7 @@ export function TimelinePage() {
     const [location] = useLocation();
 
     // 使用新的缓存Hook获取时间线数据
-    const { data: timelineData, loading, error: cacheError, refetch, invalidate: invalidateTimelineCache } = useTimelineCache();
-
-    // 使用统一的增强缓存失效机制
-    useEnhancedCacheInvalidation(invalidateTimelineCache);
+    const { data: timelineData, isLoading: loading, error: cacheError, mutate: refetch, invalidate: invalidateTimelineCache } = useTimelineCache();
 
     // 从缓存数据中提取feeds和length
     const feeds = timelineData?.data || [];

@@ -28,10 +28,9 @@ import { RecentPosts } from "../components/recent_posts";
 import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
-import { useFeedCache, useCommentsCache, FeedsCacheManager } from "../hooks/useFeedsCache";
+import { cache, useFeedCache, useCommentsCache } from "../utils/unifiedCache";
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 import { NotFoundPage } from './not-found';
-import { invalidateCache } from "../utils/CacheEventManager";
 
 type Feed = {
   id: number;
@@ -60,7 +59,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
   const profile = React.useContext(ProfileContext);
 
   // 使用缓存Hook替代直接API调用
-  const { data: feed, loading, error, invalidate: invalidateFeedCache } = useFeedCache(id, !!id);
+  const { data: feed, isLoading, error, invalidate: invalidateFeedCache } = useFeedCache(id, !!id);
 
   const [headImage, setHeadImage] = React.useState<string>();
 
@@ -109,7 +108,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               showAlert(error.value as string);
             } else {
               // 1. 主动清理前端缓存（新增）
-              FeedsCacheManager.clearAllFeeds();
+              cache.clearAllFeeds();
 
               // 2. 显示成功消息
               showAlert(t("delete.success"));
@@ -117,9 +116,9 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               // 3. 立即跳转，避免组件继续渲染和API调用
               setLocation("/");
 
-              // 4. 在后台触发缓存失效事件，不阻塞跳转
+              // 4. 在后台清理特定文章缓存，不阻塞跳转
               setTimeout(() => {
-                invalidateCache.onFeedDeleted(feed.id);
+                cache.clearFeed(String(feed.id));
               }, 0);
             }
           });
@@ -215,7 +214,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
       <PageContainer className="flex flex-col lg:flex-row justify-center ani-show lg:gap-5">
         {error && (
           <>
-            {error === "Not found" ? (
+            {error?.message === "Not found" ? (
               // 404页面：全宽布局，不显示侧边栏
               <div className="w-full">
                 <NotFoundPage />
@@ -894,7 +893,7 @@ function Comments({ id }: { id: string }) {
   const commentsPerPage = 5; // 每页显示5条评论
 
   // 使用缓存Hook替代直接API调用，避免重复请求
-  const { data: comments = [], loading, error, invalidate: invalidateComments } = useCommentsCache(id, !!id);
+  const { data: comments = [], isLoading: commentsLoading, error: commentsError, invalidate: invalidateComments } = useCommentsCache(id, !!id);
 
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -942,20 +941,20 @@ function Comments({ id }: { id: string }) {
           
           <CommentInput id={id} onRefresh={loadComments} />
           
-          {loading ? (
+          {commentsLoading ? (
             <div className={`w-full ${glassClass} rounded-2xl p-8 flex justify-center shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}>
               <div className="flex items-center space-x-3">
                 <MacOSSpinner size="small" />
                 <p className="text-gray-500 dark:text-gray-300 text-sm">{t("loading")}</p>
               </div>
             </div>
-          ) : error ? (
+          ) : commentsError ? (
             <div className={`w-full rounded-2xl ${glassClass} p-6 shadow-enhanced hover:shadow-enhanced-lg transition-all duration-300 border border-neutral-200/60 dark:border-neutral-700/60`}>
               <div className="flex flex-col items-center">
                 <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-3">
                   <i className="ri-error-warning-line text-xl text-red-500 dark:text-red-400"></i>
                 </div>
-                <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{error}</h3>
+                <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">{commentsError?.message}</h3>
                 <button
                   className="mt-2 bg-theme text-white px-4 py-2 rounded-2xl hover:bg-theme-hover transition-colors flex items-center text-sm"
                   onClick={loadComments}

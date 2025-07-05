@@ -5,12 +5,11 @@ import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { Pagination } from "../components/pagination"
-import { useSearchCache } from "../hooks/useFeedsCache"
+import { useSearchCache } from "../utils/unifiedCache"
 import { siteName } from "../utils/constants"
 import { tryInt } from "../utils/int"
 import { PageContainer } from "../components/container"
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect"
-import { useEnhancedCacheInvalidation } from "../hooks/useEnhancedCacheInvalidation"
 
 type FeedsData = {
     size: number,
@@ -25,13 +24,10 @@ export function SearchPage({ keyword }: { keyword: string }) {
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
 
     // 使用缓存Hook替代直接API调用
-    const { data: feeds, loading, invalidate: invalidateSearchCache } = useSearchCache(keyword, page, limit, !!keyword);
+    const { data: feeds, isLoading: loading, invalidate: invalidateSearchCache } = useSearchCache(keyword, page, limit);
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
-
-    // 使用统一的增强缓存失效机制
-    useEnhancedCacheInvalidation(invalidateSearchCache);
     const title = t('article.search.title$keyword', { keyword })
     return (
         <>

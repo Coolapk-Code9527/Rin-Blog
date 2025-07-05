@@ -12,8 +12,7 @@ import { Link, useSearch } from "wouter"
 import { HashTag } from "../components/hashtag"
 import { Pagination } from "../components/pagination"
 import { tryInt } from "../utils/int"
-import { useHashtagFeedsCache, useTagsCache } from "../hooks/useFeedsCache"
-import { useSafeCacheInvalidation } from "../hooks/useComponentSafety"
+import { useHashtagFeedsCache, useTagsCache } from "../utils/unifiedCache"
 
 type FeedsData = {
     name: string;
@@ -45,38 +44,28 @@ export function HashtagPage({ name }: { name: string }) {
     const query = new URLSearchParams(useSearch());
 
     // 使用缓存Hook替代直接API调用
-    const { data: hashtag, loading, invalidate: invalidateHashtagCache } = useHashtagFeedsCache(name, !!name);
+    const { data: hashtag, isLoading: loading, invalidate: invalidateHashtagCache } = useHashtagFeedsCache(name, !!name);
 
     const [sort, setSort] = useState<'new' | 'old'>('new');
     const page = tryInt(1, query.get("page"))
 
-    // 使用安全的缓存失效机制
-    const safeInvalidateHashtagCache = useSafeCacheInvalidation(invalidateHashtagCache);
-
-    // 监听文章发布/更新/删除事件，失效缓存
+    // 简化的缓存失效机制
     React.useEffect(() => {
-        const handleFeedPublished = () => {
-            safeInvalidateHashtagCache();
+        const handleFeedChange = () => {
+            invalidateHashtagCache();
         };
 
-        const handleFeedUpdated = () => {
-            safeInvalidateHashtagCache();
-        };
-
-        const handleFeedDeleted = () => {
-            safeInvalidateHashtagCache();
-        };
-
-        window.addEventListener('feed-published', handleFeedPublished);
-        window.addEventListener('feed-updated', handleFeedUpdated);
-        window.addEventListener('feed-deleted', handleFeedDeleted);
+        // 监听自定义事件
+        window.addEventListener('feed-published', handleFeedChange);
+        window.addEventListener('feed-updated', handleFeedChange);
+        window.addEventListener('feed-deleted', handleFeedChange);
 
         return () => {
-            window.removeEventListener('feed-published', handleFeedPublished);
-            window.removeEventListener('feed-updated', handleFeedUpdated);
-            window.removeEventListener('feed-deleted', handleFeedDeleted);
+            window.removeEventListener('feed-published', handleFeedChange);
+            window.removeEventListener('feed-updated', handleFeedChange);
+            window.removeEventListener('feed-deleted', handleFeedChange);
         };
-    }, [safeInvalidateHashtagCache]); // 使用安全的缓存失效函数
+    }, [invalidateHashtagCache]);
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
 
     // 页面变化时滚动到顶部

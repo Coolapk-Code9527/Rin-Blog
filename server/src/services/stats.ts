@@ -3,7 +3,12 @@ import Elysia, { t } from "elysia";
 import { getDB } from "../utils/di";
 import { visits } from "../db/schema";
 import { PublicCache, ClientConfig } from "../utils/cache";
-import { SERVER_CACHE_CONFIG } from "../utils/cacheConstants";
+// 服务端缓存配置
+const SERVER_CACHE_CONFIG = {
+  STATS: {
+    WEBSITE: 10 * 60 * 1000    // 10分钟
+  }
+};
 
 /**
  * 网站统计数据接口

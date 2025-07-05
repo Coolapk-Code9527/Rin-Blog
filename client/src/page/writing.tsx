@@ -17,9 +17,8 @@ import {Markdown} from "../components/markdown";
 import { MacOSLoadingSpinner } from '../components/loading';
 import {client} from "../main";
 import {headersWithAuth} from "../utils/auth";
-import { useFeedCache, FeedsCacheManager } from "../hooks/useFeedsCache";
+import { cache, useFeedCache } from "../utils/unifiedCache";
 import {Cache, useCache} from '../utils/cache';
-import { cache as cacheManager } from "../utils/SimpleCacheManager";
 import {siteName} from "../utils/constants";
 import {useColorMode} from "../utils/darkModeUtils";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
@@ -58,15 +57,15 @@ function clearFeedRelatedCaches(feedId?: string | number) {
       // 使用静态导入的缓存管理器
 
       // 使用统一的缓存管理器清理文章相关缓存
-      FeedsCacheManager.clearAllFeeds();
+      cache.clearAllFeeds();
 
       // 如果指定了feedId，清理特定文章的缓存
       if (feedId) {
-        FeedsCacheManager.clearFeed(String(feedId));
+        cache.clearFeed(String(feedId));
       }
 
-      // 同时清理历史遗留的错误缓存键
-      cacheManager.cleanupLegacy();
+      // 同时清理过期缓存
+      cache.clearExpired();
     } catch (error) {
       console.warn('Failed to use cache manager, falling back to basic cleanup:', error);
       // 简化的降级逻辑：只清理最关键的缓存

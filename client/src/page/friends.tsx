@@ -13,7 +13,7 @@ import { ClientConfigContext } from "../state/config";
 import { ProfileContext } from "../state/profile";
 import { shuffleArray } from "../utils/array";
 import { headersWithAuth } from "../utils/auth";
-import { useFriendsCache } from "../hooks/useFeedsCache";
+import { useFriendsCache } from "../utils/unifiedCache";
 import { siteName } from "../utils/constants";
 import { PageContainer } from "../components/container";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
@@ -76,7 +76,7 @@ export function FriendsPage() {
     const [url, setUrl] = useState("")
     const profile = useContext(ProfileContext);
     // 使用缓存Hook替代直接API调用
-    const { processedData, loading, invalidate: invalidateFriendsCache } = useFriendsCache();
+    const { data: processedData, isLoading: loading, invalidate: invalidateFriendsCache } = useFriendsCache();
 
     const [friendsAvailable, setFriendsAvailable] = useState<FriendItem[]>([])
     const [waitList, setWaitList] = useState<FriendItem[]>([])

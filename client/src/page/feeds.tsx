@@ -17,11 +17,13 @@ import { ArticleManagementTabs, type ListState, type SortType } from '../compone
 import { ClientConfigContext } from "../state/config"
 import { getSidebarConfig } from "../utils/sidebarConfig"
 import { useSmartGrid } from "../hooks/useSmartGrid"
-import { useFeedsCache, FeedType } from "../hooks/useFeedsCache"
+import { useFeedsCache } from "../utils/unifiedCache"
 
 import { generateGradient } from '../utils/placeholderUtils';
 import { ErrorBoundary } from "../components/ErrorBoundary"
-import { useEnhancedCacheInvalidation } from "../hooks/useEnhancedCacheInvalidation"
+
+// FeedType定义
+export type FeedType = 'all' | 'normal' | 'draft' | 'unlisted';
 
 // FeedsData类型由useFeedsCache Hook提供
 // FeedType统一使用useFeedsCache中的定义
@@ -237,16 +239,9 @@ export function FeedsPage() {
     // 恢复批量获取模式，分批获取所有数据避免CPU超时
     const {
         data: feedsData,
-        loading,
+        isLoading: loading,
         invalidate: invalidateFeedsCache
-    } = useFeedsCache({
-        type: listState as FeedType,
-        limit: 9999, // 触发useEnhancedFeedsCache批量获取模式
-        enabled: true
-    })
-
-    // 使用统一的增强缓存失效机制
-    useEnhancedCacheInvalidation(invalidateFeedsCache);
+    } = useFeedsCache(listState as FeedType, page, 9999, sortType === 'time' as any);
 
     // 保存用户偏好到localStorage
     React.useEffect(() => {
