@@ -108,14 +108,19 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
-              // 1. 主动清理前端缓存
+              // 1. 主动清理前端缓存（新增）
               FeedsCacheManager.clearAllFeeds();
-              
-              // 2. 同步触发缓存失效事件
-              invalidateCache.onFeedDeleted(feed.id);
 
-              // 3. 直接跳转，不显示成功消息
-              window.location.replace("/");
+              // 2. 显示成功消息
+              showAlert(t("delete.success"));
+
+              // 3. 立即跳转，避免组件继续渲染和API调用
+              setLocation("/");
+
+              // 4. 在后台触发缓存失效事件，不阻塞跳转
+              setTimeout(() => {
+                invalidateCache.onFeedDeleted(feed.id);
+              }, 0);
             }
           });
       })
@@ -1308,7 +1313,7 @@ function CommentItem({
             {canReply && (
               <button
                 onClick={() => setShowReplyForm(!showReplyForm)}
-                title={t('comment.reply_to', { name: isAnonymous ? displayName : comment.user?.username })}
+                title={t('comment.reply_to', { name: isAnonymous ? displayName : comment.user?.username || 'Unknown' })}
                 className={`p-1.5 sm:p-2 rounded-lg text-xs sm:text-sm transition-all duration-300 transform hover:scale-110 active:scale-95 ${
                   showReplyForm
                     ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 shadow-md'
