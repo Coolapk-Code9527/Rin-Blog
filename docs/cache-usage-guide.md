@@ -51,7 +51,7 @@ const { data } = useApiCache('feeds_custom', fetcher);
 
 ```typescript
 // ✅ 推荐：使用CACHE_CONFIG
-import { CACHE_CONFIG } from '../utils/clientCacheConfig';
+import { CACHE_CONFIG } from '../utils/cacheConstants';
 
 const cacheOptions = {
   staleTime: CACHE_CONFIG.FEEDS.LIST,
@@ -69,7 +69,7 @@ const cacheOptions = {
 
 ```typescript
 // ✅ 推荐：使用CACHE_KEY_PATTERNS
-import { CACHE_KEY_PATTERNS } from '../utils/clientCacheConfig';
+import { CACHE_KEY_PATTERNS } from '../utils/cacheConstants';
 
 const cacheKey = CACHE_KEY_PATTERNS.FEEDS('normal', 0, 10, 'default');
 // 结果: "feeds_type:normal_page:0_limit:10_sort:default"

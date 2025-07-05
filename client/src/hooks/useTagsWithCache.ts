@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { client } from '../main';
-import { CACHE_CONFIG, CACHE_KEY_PATTERNS } from '../utils/clientCacheConfig';
+import { CACHE_CONFIG, CACHE_KEY_PATTERNS } from '../utils/cacheConstants';
 import { useApiCache } from './useApiCache';
 
 /**

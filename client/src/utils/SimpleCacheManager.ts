@@ -5,7 +5,7 @@
  * 主要目标：减少代码冗余，统一缓存接口，保持简单实用
  */
 
-import { CACHE_CONFIG } from './clientCacheConfig';
+import { CACHE_CONFIG } from './cacheConstants';
 
 /**
  * 缓存存储类型

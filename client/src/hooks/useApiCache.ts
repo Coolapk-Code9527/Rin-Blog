@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { CACHE_CONFIG } from '../utils/clientCacheConfig';
+import { CACHE_CONFIG } from '../utils/cacheConstants';
 import { cache as cacheManager } from '../utils/SimpleCacheManager';
 
 /**

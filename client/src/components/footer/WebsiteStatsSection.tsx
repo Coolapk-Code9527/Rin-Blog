@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../main';
-import { CACHE_CONFIG } from '../../utils/clientCacheConfig';
+import { CACHE_CONFIG } from '../../utils/cacheConstants';
 import { cache } from '../../utils/SimpleCacheManager';
 import { useFeedCacheInvalidation } from '../../hooks/useCacheEvents';
 import { useSafeCacheInvalidation } from '../../hooks/useComponentSafety';

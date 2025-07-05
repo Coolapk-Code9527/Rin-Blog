@@ -3,7 +3,7 @@ import Elysia, { t } from "elysia";
 import { getDB } from "../utils/di";
 import { visits } from "../db/schema";
 import { PublicCache, ClientConfig } from "../utils/cache";
-import { SERVER_CACHE_CONFIG } from "../utils/serverCacheConfig";
+import { SERVER_CACHE_CONFIG } from "../utils/cacheConstants";
 
 /**
  * 网站统计数据接口

@@ -3,7 +3,7 @@ import { useApiCache } from './useApiCache';
 import { client } from '../main';
 import { headersWithAuth } from '../utils/auth';
 import { ApiTypeChecker } from '../types/api';
-import { CACHE_CONFIG, CACHE_KEY_PATTERNS } from '../utils/clientCacheConfig';
+import { CACHE_CONFIG, CACHE_KEY_PATTERNS } from '../utils/cacheConstants';
 import { cache as cacheManager } from '../utils/SimpleCacheManager';
 
 /**

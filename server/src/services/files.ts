@@ -10,7 +10,7 @@ import { listAllR2Files, getR2FileMeta, normalizePath, setR2FileMeta } from '../
 import { generateThumbnail } from '../utils/image';
 import { Container } from 'typedi';
 import { safeParseId, safeParsePage, safeParseLimit } from "../utils/validation";
-import { SERVER_CACHE_CONFIG } from "../utils/serverCacheConfig";
+import { SERVER_CACHE_CONFIG } from "../utils/cacheConstants";
 import { PublicCache } from "../utils/cache";
 
 // 优化：哈希计算缓存，避免重复计算（扩大缓存容量）

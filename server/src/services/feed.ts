@@ -125,7 +125,7 @@ import type {DB} from "../_worker";
 import {feeds, visits, files, feedFiles} from "../db/schema";
 import {setup} from "../setup";
 import {ClientConfig, PublicCache, HttpCacheControl} from "../utils/cache";
-import { SERVER_CACHE_CONFIG } from "../utils/serverCacheConfig";
+import { SERVER_CACHE_CONFIG } from "../utils/cacheConstants";
 import {getDB} from "../utils/di";
 import {extractImage} from "../utils/image";
 import {markdownToPlainText} from "../utils/markdown";
