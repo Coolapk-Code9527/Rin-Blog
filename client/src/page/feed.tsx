@@ -110,17 +110,15 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             } else {
               // 1. 主动清理前端缓存（新增）
               FeedsCacheManager.clearAllFeeds();
+              
+              // 2. 同步触发缓存失效事件（修复：改为同步执行，确保在页面跳转前完成）
+              invalidateCache.onFeedDeleted(feed.id);
 
-              // 2. 显示成功消息
+              // 3. 显示成功消息
               showAlert(t("delete.success"));
 
-              // 3. 立即跳转，避免组件继续渲染和API调用
+              // 4. 立即跳转，避免组件继续渲染和API调用
               setLocation("/");
-
-              // 4. 在后台触发缓存失效事件，不阻塞跳转
-              setTimeout(() => {
-                invalidateCache.onFeedDeleted(feed.id);
-              }, 0);
             }
           });
       })
