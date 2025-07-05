@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../main';
-import { CACHE_CONFIG } from '../../utils/cacheConstants';
-import { cache } from '../../utils/SimpleCacheManager';
-import { useFeedCacheInvalidation } from '../../hooks/useCacheEvents';
-import { useSafeCacheInvalidation } from '../../hooks/useComponentSafety';
+// 移除旧的缓存依赖，使用简单的状态管理
 
 /**
  * 网站统计数据接口
@@ -57,17 +54,7 @@ export function WebsiteStatsSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 清除统计缓存的函数
-  const clearStatsCache = () => {
-    cache.remove(CACHE_KEY, { storage: 'local' });
-    fetchStats(true); // 强制刷新
-  };
-
-  // 使用安全的缓存失效机制
-  const safeClearStatsCache = useSafeCacheInvalidation(clearStatsCache);
-
-  // 监听文章发布/更新/删除事件，失效统计缓存
-  useFeedCacheInvalidation(safeClearStatsCache);
+  // 简化：移除复杂的缓存失效机制
 
   // 格式化运行时间
   const formatRunningTime = (days: number): string => {
@@ -88,21 +75,23 @@ export function WebsiteStatsSection() {
     }
   };
 
-  // 从缓存获取数据 - 使用统一缓存管理器
+  // 简化：使用localStorage直接缓存
   const getCachedStats = (): WebsiteStats | null => {
-    return cache.get<WebsiteStats>(CACHE_KEY, {
-      storage: 'local',
-      expireTime: CACHE_CONFIG.STATS.WEBSITE
-    });
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
   };
 
-  // 缓存数据 - 使用统一缓存管理器
+  // 简化：直接设置localStorage
   const setCachedStats = (data: WebsiteStats) => {
-    cache.set(CACHE_KEY, data, {
-      storage: 'local',
-      expireTime: CACHE_CONFIG.STATS.WEBSITE,
-      validate: true
-    });
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.warn('Failed to cache stats:', error);
+    }
   };
 
   // 获取统计数据 - 添加客户端缓存优化

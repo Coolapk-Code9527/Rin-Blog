@@ -5,7 +5,7 @@ import type { DB } from "../_worker";
 import type { Env } from "../db/db";
 import { getDB, getEnv } from "./di";
 import { createS3Client } from "./s3";
-import { MemoryUtils, ObjectPools } from "./memory-manager";
+// 移除复杂的内存管理器导入
 
 // Cache Utils for storing data in memory and persisting to S3
 // DO NOT USE THIS TO STORE SENSITIVE DATA
@@ -20,8 +20,7 @@ export class CacheImpl {
     loaded: boolean = false;
     lastLoadTime: number = 0; // 添加最后加载时间
     s3 = createS3Client();
-    // 优化：批量保存机制，减少序列化频率
-    private saveTimeout: any = null;
+    // 简化：移除复杂的批量保存机制
 
     // 缓存TTL：5分钟，确保不同isolate能获取最新数据
     private static readonly CACHE_TTL = 5 * 60 * 1000;
@@ -131,8 +130,8 @@ export class CacheImpl {
             await this.load();
         this.cache.set(key, value);
         if (save) {
-            // 优化：使用延迟保存减少CPU消耗
-            this.scheduleSave();
+            // 简化：直接保存，移除延迟机制
+            await this.save();
         }
     }
 
@@ -141,8 +140,8 @@ export class CacheImpl {
             await this.load();
         this.cache.delete(key);
         if (save) {
-            // 优化：使用延迟保存减少CPU消耗
-            this.scheduleSave();
+            // 简化：直接保存，移除延迟机制
+            await this.save();
         }
     }
 
@@ -161,12 +160,7 @@ export class CacheImpl {
         }
 
         if (keysToDelete.length > 0) {
-            // 关键修复：立即保存，不使用延迟机制
-            // 清除任何待处理的延迟保存
-            if (this.saveTimeout) {
-                clearTimeout(this.saveTimeout);
-                this.saveTimeout = null;
-            }
+            // 简化：直接保存
             await this.save();
         }
     }
@@ -185,12 +179,7 @@ export class CacheImpl {
         }
 
         if (keysToDelete.length > 0) {
-            // 关键修复：立即保存，不使用延迟机制
-            // 清除任何待处理的延迟保存
-            if (this.saveTimeout) {
-                clearTimeout(this.saveTimeout);
-                this.saveTimeout = null;
-            }
+            // 简化：直接保存
             await this.save();
         }
     }
@@ -199,79 +188,27 @@ export class CacheImpl {
         await this.save();
     }
 
-    // 优化：延迟保存机制，减少频繁的序列化和S3上传
-    private scheduleSave() {
-        if (this.saveTimeout) {
-            clearTimeout(this.saveTimeout);
-        }
-        this.saveTimeout = setTimeout(async () => {
-            await this.save();
-            this.saveTimeout = null;
-        }, 500); // 优化：500ms延迟批量保存，平衡性能和数据安全性
-    }
+    // 移除复杂的延迟保存机制
 
     async save() {
         const cacheKey = path.join(this.env.S3_CACHE_FOLDER, `${this.type}.json`);
 
-        // 深度优化：进一步优化序列化，减少CPU消耗和内存使用
+        // 简化的序列化逻辑
         let serializedData: string;
         try {
-            if (this.cache.size > 50) { // 统一配置：50个条目以上使用分块序列化
-                // 内存优化：使用对象池减少内存分配
-                const mergedData = ObjectPools.objects.acquire();
-                const chunkSize = 20; // 统一配置：批处理大小
-                let processed = 0;
-
-                try {
-                    for (const [key, value] of this.cache) {
-                        // 数据安全修复：不跳过大对象，而是进行安全处理
-                        if (typeof value === 'string' && value.length > 10000) {
-                            // 对大字符串进行截断并添加标记，而不是完全跳过
-                            mergedData[key] = {
-                                _truncated: true,
-                                _originalLength: value.length,
-                                _data: value.substring(0, 5000) + '...[TRUNCATED]'
-                            };
-                        } else {
-                            mergedData[key] = value;
-                        }
-                        processed++;
-
-                        // 深度优化：更频繁地让出控制权
-                        if (processed % chunkSize === 0) {
-                            await new Promise(resolve => setTimeout(resolve, 0));
-                        }
-                    }
-
-                    serializedData = JSON.stringify(mergedData);
-                } finally {
-                    // 内存优化：释放对象池中的对象
-                    MemoryUtils.releasePooledObject(mergedData);
-                }
-            } else {
-                // 小缓存直接序列化
-                serializedData = JSON.stringify(Object.fromEntries(this.cache));
-            }
+            // 直接序列化，移除复杂的分块和对象池逻辑
+            serializedData = JSON.stringify(Object.fromEntries(this.cache));
         } catch (error) {
             console.error('Cache serialization failed:', error);
             return; // 序列化失败时不进行保存
         }
 
-        // 优化：尝试同步保存，失败时异步重试
+        // 简化：直接同步保存
         try {
-            // 使用Promise.race实现超时保护，避免Cloudflare Workers超时
-            await Promise.race([
-                this.syncUpload(cacheKey, serializedData),
-                new Promise<void>((_, reject) =>
-                    setTimeout(() => reject(new Error('Save timeout')), 6000) // 6秒超时，平衡性能和可靠性
-                )
-            ]);
+            await this.syncUpload(cacheKey, serializedData);
         } catch (error: any) {
-            console.warn('Sync save failed, falling back to async:', error.message);
-            // 同步保存失败，使用异步保存作为备用
-            this.asyncUpload(cacheKey, serializedData);
-            // 重新抛出错误，让API知道保存可能有问题
-            throw new Error('Config save may be delayed due to sync failure');
+            console.error('Cache save failed:', error.message);
+            throw error;
         }
     }
 
@@ -291,18 +228,7 @@ export class CacheImpl {
         }
     }
 
-    // 异步上传方法（保留作为备用）
-    private asyncUpload(cacheKey: string, data: string): void {
-        // 使用setTimeout确保不阻塞当前执行
-        setTimeout(async () => {
-            try {
-                await this.syncUpload(cacheKey, data);
-            } catch (e: any) {
-                // 异步保存失败，记录错误
-                console.error('Async cache save failed:', e.message);
-            }
-        }, 0);
-    }
+    // 移除复杂的异步上传方法
 }
 
 export const PublicCache = () => Container.get<CacheImpl>("cache");

@@ -17,11 +17,10 @@ import { ArticleManagementTabs, type ListState, type SortType } from '../compone
 import { ClientConfigContext } from "../state/config"
 import { getSidebarConfig } from "../utils/sidebarConfig"
 import { useSmartGrid } from "../hooks/useSmartGrid"
-import { useFeedsCache, FeedType } from "../hooks/useFeedsCache"
+import { useFeedsCache, FeedType } from "../hooks/useQueries"
 
 import { generateGradient } from '../utils/placeholderUtils';
 import { ErrorBoundary } from "../components/ErrorBoundary"
-import { useEnhancedCacheInvalidation } from "../hooks/useEnhancedCacheInvalidation"
 
 // FeedsData类型由useFeedsCache Hook提供
 // FeedType统一使用useFeedsCache中的定义
@@ -237,16 +236,14 @@ export function FeedsPage() {
     // 恢复批量获取模式，分批获取所有数据避免CPU超时
     const {
         data: feedsData,
-        loading,
-        invalidate: invalidateFeedsCache
+        loading
     } = useFeedsCache({
         type: listState as FeedType,
-        limit: 9999, // 触发useEnhancedFeedsCache批量获取模式
+        limit: 9999, // 获取所有数据
         enabled: true
     })
 
-    // 使用统一的增强缓存失效机制
-    useEnhancedCacheInvalidation(invalidateFeedsCache);
+    // TanStack Query 自动处理缓存失效，不需要手动处理
 
     // 保存用户偏好到localStorage
     React.useEffect(() => {

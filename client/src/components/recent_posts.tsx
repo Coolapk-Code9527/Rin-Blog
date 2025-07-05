@@ -5,20 +5,16 @@ import { Link } from "wouter";
 import { timeago } from "../utils/timeago";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
 import { generatePlaceholderProps, PLACEHOLDER_PRESETS } from '../utils/placeholderUtils';
-import { useRecentPostsCache } from '../hooks/useFeedsCache';
+import { useRecentPostsCache } from '../hooks/useQueries';
 import { getBatchThumbnailUrls } from '../utils/thumbnailUtils';
-import { useEnhancedCacheInvalidation } from '../hooks/useEnhancedCacheInvalidation';
 
 // 移除了Post接口，直接使用API返回的数据类型
 
 export function RecentPosts() {
   const { t } = useTranslation();
 
-  // 使用新的缓存Hook获取最近文章
-  const { data: posts = [], loading, error, invalidate: invalidateRecentPosts } = useRecentPostsCache(3);
-
-  // 使用统一的增强缓存失效机制
-  useEnhancedCacheInvalidation(invalidateRecentPosts);
+  // 使用TanStack Query获取最近文章
+  const { data: posts = [], loading, error } = useRecentPostsCache(3);
 
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);

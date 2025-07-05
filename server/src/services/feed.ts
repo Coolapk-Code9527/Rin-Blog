@@ -880,6 +880,12 @@ export function FeedService() {
                     if (content) {
                         await syncFeedFileReferences(db, id_num, content, uid);
                     }
+
+                    // 设置简单的HTTP缓存控制头，确保更新操作立即生效
+                    set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                    set.headers['Pragma'] = 'no-cache';
+                    set.headers['Expires'] = '0';
+
                     return 'Updated';
                 }, {
                     body: t.Object({
@@ -957,6 +963,12 @@ export function FeedService() {
                     try {
                         await db.delete(feeds).where(eq(feeds.id, id_num));
                         await clearFeedCache(id_num, feed.alias, null);
+
+                        // 设置简单的HTTP缓存控制头，确保删除操作立即生效
+                        set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                        set.headers['Pragma'] = 'no-cache';
+                        set.headers['Expires'] = '0';
+
                         return 'Deleted';
                     } catch (error) {
                         console.error(`Error deleting feed ${id_num}:`, error);
@@ -1213,41 +1225,22 @@ type FeedItem = {
 
 async function clearFeedCache(id: number, alias: string | null, newAlias: string | null) {
     const cache = PublicCache()
-    
-    // 全面清理与文章相关的所有缓存
-    
-    // 1. 文章列表缓存 (格式: feeds_type:value_page:value_limit:value_sort:value)
+
+    // 简化的缓存清理策略 - 只清理核心缓存
+
+    // 1. 文章列表缓存
     await cache.deletePrefix('feeds_');
 
-    // 2. 搜索结果缓存 (格式: search_keyword:value_page:value_limit:value_admin:value)
-    await cache.deletePrefix('search_');
-    
-    // 3. 单篇文章缓存
+    // 2. 单篇文章缓存
     await cache.delete(`feed_id:${id}`, false);
-    
-    // 4. 相邻文章缓存
-    await cache.deletePrefix(`${id}_previous_feed`);
-    await cache.deletePrefix(`${id}_next_feed`);
-    await cache.deletePrefix('adjacent_feeds_');
-    
-    // 5. 标签相关缓存（文章可能关联多个标签）
-    await cache.deletePrefix('tags_feeds_');
-    
-    // 6. 时间线缓存
-    await cache.delete('timeline_feeds', false);
-    
-    // 7. 最近文章缓存
-    await cache.deletePrefix('recent_posts_');
-    
-    // 8. 文章统计缓存
-    await cache.deletePrefix('stats_');
-    
-    // 处理别名
-    if (alias === newAlias) return;
-    if (alias)
+
+    // 3. 处理别名缓存
+    if (alias && alias !== newAlias) {
         await cache.delete(`feed_id:${alias}`, false);
-    if (newAlias)
+    }
+    if (newAlias && newAlias !== alias) {
         await cache.delete(`feed_id:${newAlias}`, false);
+    }
 }
 
 import { CACHED_REGEX } from '../utils/regex-cache';

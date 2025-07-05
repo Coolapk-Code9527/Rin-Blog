@@ -28,10 +28,11 @@ import { RecentPosts } from "../components/recent_posts";
 import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
-import { useFeedCache, useCommentsCache, FeedsCacheManager } from "../hooks/useFeedsCache";
+import { useFeedCache, useCommentsCache } from "../hooks/useQueries";
+import { useQueryClient } from '@tanstack/react-query';
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 import { NotFoundPage } from './not-found';
-import { invalidateCache } from "../utils/CacheEventManager";
+// 移除CacheEventManager依赖，TanStack Query自动处理缓存失效
 
 type Feed = {
   id: number;
@@ -58,6 +59,7 @@ type Feed = {
 export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => JSX.Element, setContentReady?: (ready: boolean) => void }) {
   const { t } = useTranslation();
   const profile = React.useContext(ProfileContext);
+  const queryClient = useQueryClient();
 
   // 使用缓存Hook替代直接API调用
   const { data: feed, loading, error, invalidate: invalidateFeedCache } = useFeedCache(id, !!id);
@@ -109,7 +111,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               showAlert(error.value as string);
             } else {
               // 1. 主动清理前端缓存（新增）
-              FeedsCacheManager.clearAllFeeds();
+              queryClient.invalidateQueries({ queryKey: ['feeds'] });
 
               // 2. 显示成功消息
               showAlert(t("delete.success"));
@@ -117,10 +119,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               // 3. 立即跳转，避免组件继续渲染和API调用
               setLocation("/");
 
-              // 4. 在后台触发缓存失效事件，不阻塞跳转
-              setTimeout(() => {
-                invalidateCache.onFeedDeleted(feed.id);
-              }, 0);
+              // 4. TanStack Query已自动处理缓存失效，无需手动触发
             }
           });
       })
@@ -215,7 +214,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
       <PageContainer className="flex flex-col lg:flex-row justify-center ani-show lg:gap-5">
         {error && (
           <>
-            {error === "Not found" ? (
+            {error?.message === "Not found" ? (
               // 404页面：全宽布局，不显示侧边栏
               <div className="w-full">
                 <NotFoundPage />

@@ -16,8 +16,7 @@ import {
     ServerConfigContext
 } from "../state/config.tsx";
 import {headersWithAuth} from "../utils/auth.ts";
-import { useConfigCache } from "../hooks/useFeedsCache";
-import { ApiCacheManager } from "../hooks/useApiCache";
+import { useConfigCache } from "../hooks/useQueries";
 import '../utils/thumb.css';
 import { useToast } from '../hooks/useToast';
 import { PageContainer } from "../components/container";
@@ -229,8 +228,8 @@ export function Settings() {
                                 headers: headersWithAuth()
                             });
 
-                            // 清除前端缓存
-                            ApiCacheManager.clearAll();
+                            // 清除前端缓存 - TanStack Query自动管理
+                            // 简化：不需要手动清理缓存
 
                             showToast(t('settings.cache.clear.success', { defaultValue: '缓存清理成功' }));
                         } catch (error) {

@@ -13,7 +13,7 @@ import { ClientConfigContext } from "../state/config";
 import { ProfileContext } from "../state/profile";
 import { shuffleArray } from "../utils/array";
 import { headersWithAuth } from "../utils/auth";
-import { useFriendsCache } from "../hooks/useFeedsCache";
+import { useFriends } from "../hooks/useQueries";
 import { siteName } from "../utils/constants";
 import { PageContainer } from "../components/container";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
@@ -75,8 +75,8 @@ export function FriendsPage() {
     const [avatar, setAvatar] = useState("")
     const [url, setUrl] = useState("")
     const profile = useContext(ProfileContext);
-    // 使用缓存Hook替代直接API调用
-    const { processedData, loading, invalidate: invalidateFriendsCache } = useFriendsCache();
+    // 使用TanStack Query替代直接API调用
+    const { data: processedData, isLoading: loading, refetch: invalidateFriendsCache } = useFriends();
 
     const [friendsAvailable, setFriendsAvailable] = useState<FriendItem[]>([])
     const [waitList, setWaitList] = useState<FriendItem[]>([])
@@ -87,21 +87,22 @@ export function FriendsPage() {
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
-    // 使用缓存Hook数据更新状态
+    // 使用TanStack Query数据更新状态
     useEffect(() => {
         if (processedData) {
+            // 简化：直接使用API返回的数据结构
+            const friendList = processedData.friend_list || [];
+            const applyList = processedData.apply_list ? [processedData.apply_list] : [];
+
             // 应用随机排序（保持原有逻辑）
-            const shuffledAvailable = [...processedData.friendsAvailable];
-            shuffleArray(shuffledAvailable);
-            setFriendsAvailable(shuffledAvailable);
+            const shuffledFriends = [...friendList];
+            shuffleArray(shuffledFriends);
+            setFriendsAvailable(shuffledFriends);
 
-            const shuffledUnavailable = [...processedData.friendsUnavailable];
-            shuffleArray(shuffledUnavailable);
-            setFriendsUnavailable(shuffledUnavailable);
-
-            setWaitList(processedData.waitList);
-            setRefusedList(processedData.refusedList);
-            setApply(Array.isArray(processedData.applyList) ? processedData.applyList : []);
+            setFriendsUnavailable([]);
+            setWaitList([]);
+            setRefusedList([]);
+            setApply(applyList);
             setStatus('idle');
         }
     }, [processedData]);

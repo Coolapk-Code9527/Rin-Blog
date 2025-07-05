@@ -12,7 +12,7 @@ import { Link, useSearch } from "wouter"
 import { HashTag } from "../components/hashtag"
 import { Pagination } from "../components/pagination"
 import { tryInt } from "../utils/int"
-import { useHashtagFeedsCache, useTagsCache } from "../hooks/useFeedsCache"
+import { useHashtagFeedsCache, useTagsCache } from "../hooks/useQueries"
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety"
 
 type FeedsData = {
@@ -43,12 +43,12 @@ type FeedsData = {
 export function HashtagPage({ name }: { name: string }) {
     const { t } = useTranslation()
     const query = new URLSearchParams(useSearch());
+    const page = tryInt(1, query.get("page"))
 
-    // 使用缓存Hook替代直接API调用
-    const { data: hashtag, loading, invalidate: invalidateHashtagCache } = useHashtagFeedsCache(name, !!name);
+    // 使用TanStack Query替代直接API调用
+    const { data: hashtag, loading, invalidate: invalidateHashtagCache } = useHashtagFeedsCache(name, page, 10);
 
     const [sort, setSort] = useState<'new' | 'old'>('new');
-    const page = tryInt(1, query.get("page"))
 
     // 使用安全的缓存失效机制
     const safeInvalidateHashtagCache = useSafeCacheInvalidation(invalidateHashtagCache);
@@ -88,8 +88,8 @@ export function HashtagPage({ name }: { name: string }) {
 
     // 文章排序
     const sortedFeeds = React.useMemo(() => {
-      if (!hashtag?.feeds) return [];
-      const arr = [...hashtag.feeds];
+      if (!hashtag?.data) return [];
+      const arr = [...hashtag.data];
       if (sort === 'new') {
         arr.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       } else {
@@ -117,11 +117,11 @@ export function HashtagPage({ name }: { name: string }) {
 
     // 相关标签推荐（同一文章下的其他标签，去重）
     const relatedTags = React.useMemo(() => {
-      if (!hashtag?.feeds) return [];
+      if (!hashtag?.data) return [];
       const set = new Set<string>();
-      hashtag.feeds.forEach(feed => {
+      hashtag.data.forEach(feed => {
         feed.hashtags.forEach(tag => {
-          if (tag.name !== hashtag.name) set.add(tag.name);
+          if (tag.name !== name) set.add(tag.name);
         });
       });
       return Array.from(set).slice(0, 8);
@@ -130,16 +130,16 @@ export function HashtagPage({ name }: { name: string }) {
     return (
         <>
             <Helmet>
-                <title>{`${hashtag?.name} - ${process.env.NAME}`}</title>
+                <title>{`${name} - ${process.env.NAME}`}</title>
                 <meta property="og:site_name" content={siteName} />
-                <meta property="og:title" content={hashtag?.name} />
+                <meta property="og:title" content={name} />
                 <meta property="og:image" content={process.env.AVATAR} />
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
                 <meta name="description" content={t("hashtagDetail.metaDescription", {
-                    name: hashtag?.name,
-                    description: hashtag?.description ? `：${hashtag.description}` : '',
-                    count: hashtag?.feeds?.length || 0
+                    name: name,
+                    description: '',
+                    count: hashtag?.data?.length || 0
                 })} />
             </Helmet>
             <PageContainer maxWidth="max-w-6xl" className="w-full">
@@ -151,12 +151,12 @@ export function HashtagPage({ name }: { name: string }) {
                                 {/* 左侧：标签名称和文章数量 - 优化移动端布局 */}
                                 <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
                                     <h1 className="text-2xl font-bold text-gray-800 dark:text-white relative group flex-shrink-0 flex items-center">
-                                        <HashTag name={hashtag?.name || ''} />
+                                        <HashTag name={name || ''} />
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-theme group-hover:w-full transition-all duration-300"></span>
                                     </h1>
                                     <div className="py-1.5 px-2.5 sm:px-3 bg-gray-100/80 dark:bg-gray-800/80 rounded-lg text-xs sm:text-sm text-gray-600 dark:text-gray-400 flex items-center font-medium border border-gray-200/60 dark:border-gray-700/60 flex-shrink-0">
                                         <i className="ri-article-line text-theme text-xs sm:text-sm"></i>
-                                        <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: hashtag?.feeds?.length || 0 })}</span>
+                                        <span className="ml-1 sm:ml-1.5">{t('article.total$count', { count: hashtag?.data?.length || 0 })}</span>
                                     </div>
                                 </div>
 
@@ -178,14 +178,9 @@ export function HashtagPage({ name }: { name: string }) {
                                 </div>
                             </div>
 
-                            {/* 标签描述和相关标签 */}
-                            {(hashtag?.description || relatedTags.length > 0) && (
+                            {/* 相关标签 */}
+                            {relatedTags.length > 0 && (
                                 <div className="flex flex-col gap-2">
-                                    {hashtag?.description && (
-                                        <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50/80 dark:bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-200/60 dark:border-gray-700/60">
-                                            {hashtag.description}
-                                        </div>
-                                    )}
                                     {relatedTags.length > 0 && (
                                         <div className="flex flex-row flex-wrap gap-2 items-center">
                                             <span className="text-xs text-gray-400 font-medium">{t('hashtagDetail.relatedTags')}:</span>

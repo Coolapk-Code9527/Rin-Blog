@@ -17,9 +17,10 @@ import {Markdown} from "../components/markdown";
 import { MacOSLoadingSpinner } from '../components/loading';
 import {client} from "../main";
 import {headersWithAuth} from "../utils/auth";
-import { useFeedCache, FeedsCacheManager } from "../hooks/useFeedsCache";
+import { useFeed, usePublishFeed } from "../hooks/useQueries";
+import { useQueryClient } from '@tanstack/react-query';
 import {Cache, useCache} from '../utils/cache';
-import { cache as cacheManager } from "../utils/SimpleCacheManager";
+
 import {siteName} from "../utils/constants";
 import {useColorMode} from "../utils/darkModeUtils";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
@@ -51,34 +52,13 @@ declare const process: {
 const NAME = (process.env.NAME || '博客') as string;
 const AVATAR = (process.env.AVATAR || '') as string;
 
-// 统一的缓存清理工具函数 - 使用SimpleCacheManager
-function clearFeedRelatedCaches(feedId?: string | number) {
-  if (typeof window !== 'undefined') {
-    try {
-      // 使用静态导入的缓存管理器
-
-      // 使用统一的缓存管理器清理文章相关缓存
-      FeedsCacheManager.clearAllFeeds();
-
-      // 如果指定了feedId，清理特定文章的缓存
-      if (feedId) {
-        FeedsCacheManager.clearFeed(String(feedId));
-      }
-
-      // 同时清理历史遗留的错误缓存键
-      cacheManager.cleanupLegacy();
-    } catch (error) {
-      console.warn('Failed to use cache manager, falling back to basic cleanup:', error);
-      // 简化的降级逻辑：只清理最关键的缓存
-      try {
-        sessionStorage.removeItem('api_cache_timeline_feeds');
-        if (feedId) {
-          sessionStorage.removeItem(`api_cache_feed_id:${feedId}`);
-          sessionStorage.removeItem(`api_cache_adjacent_feeds_id:${feedId}`);
-        }
-      } catch (fallbackError) {
-        console.warn('Even fallback cleanup failed:', fallbackError);
-      }
+// TanStack Query 缓存清理函数
+function clearFeedRelatedCaches(feedId?: string | number, queryClient?: any) {
+  if (queryClient) {
+    // 使用 TanStack Query 的缓存失效机制
+    queryClient.invalidateQueries({ queryKey: ['feeds'] });
+    if (feedId) {
+      queryClient.invalidateQueries({ queryKey: ['feed', String(feedId)] });
     }
   }
 }
@@ -1553,7 +1533,8 @@ async function publish({
   draft,
   createdAt,
   onCompleted,
-  showAlert
+  showAlert,
+  queryClient
 }: {
   title: string;
   listed: boolean;
@@ -1565,6 +1546,7 @@ async function publish({
   createdAt?: Date;
   onCompleted?: () => void;
   showAlert: (msg: string) => void;
+  queryClient?: any;
 }) {
   const { data, error } = await client.feed.index.post(
     {
@@ -1590,7 +1572,7 @@ async function publish({
     const feedId = (data as any).insertedId;
 
     // 1. 主动清理前端缓存
-    clearFeedRelatedCaches();
+    clearFeedRelatedCaches(undefined, queryClient);
 
     // 2. 触发文章发布事件（保持兼容性）
     if (window.dispatchEvent) {
@@ -1623,7 +1605,8 @@ async function update({
   draft,
   createdAt,
   onCompleted,
-  showAlert
+  showAlert,
+  queryClient
 }: {
   id: number;
   listed: boolean;
@@ -1636,6 +1619,7 @@ async function update({
   createdAt?: Date;
   onCompleted?: () => void;
   showAlert: (msg: string) => void;
+  queryClient?: any;
 }) {
   const { error } = await client.feed({ id }).post(
     {
@@ -1660,7 +1644,7 @@ async function update({
   // 主动缓存失效方案：在跳转前直接清理相关缓存，避免时序竞争
 
   // 1. 主动清理前端缓存（包括当前文章的缓存）
-  clearFeedRelatedCaches(id);
+  clearFeedRelatedCaches(id, queryClient);
 
   // 2. 触发文章更新事件（保持兼容性）
   if (window.dispatchEvent) {
@@ -2054,6 +2038,7 @@ export function WritingPage({ id }: { id?: number }) {
   const colorMode = useColorMode();
   const profile = useContext(ProfileContext);
   const cache = Cache.with(id);
+  const queryClient = useQueryClient();
   const editorRef = useRef<editor.IStandaloneCodeEditor | undefined>(undefined);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -2358,7 +2343,8 @@ export function WritingPage({ id }: { id?: number }) {
           setPublishing(false)
           setIsPublishing(false); // 重置发布状态
         },
-        showAlert
+        showAlert,
+        queryClient
       });
     } else {
       if (!title) {
@@ -2384,7 +2370,8 @@ export function WritingPage({ id }: { id?: number }) {
           setPublishing(false)
           setIsPublishing(false); // 重置发布状态
         },
-        showAlert
+        showAlert,
+        queryClient
       });
     }
   }
@@ -2394,8 +2381,8 @@ export function WritingPage({ id }: { id?: number }) {
     handlePaste(event, editorRef, () => {}, showAlert);
   }, [showAlert]);
 
-  // 使用缓存Hook获取文章数据（仅编辑模式，id > 0时才启用）
-  const { data: feedData } = useFeedCache(String(id || 0), !!(id && id > 0));
+  // 使用TanStack Query获取文章数据（仅编辑模式，id > 0时才启用）
+  const { data: feedData } = useFeed(String(id || 0));
 
   useEffect(() => {
     // 只有当id存在且大于0时才从缓存或服务器加载文章内容

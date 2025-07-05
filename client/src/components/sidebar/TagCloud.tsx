@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
 import { useGlassEffect, GLASS_LAYERS } from '../../hooks/useGlassEffect';
-import { useTagsWithCache } from '../../hooks/useTagsWithCache';
-import { useEnhancedCacheInvalidation } from '../../hooks/useEnhancedCacheInvalidation';
+import { useTags } from '../../hooks/useQueries';
 
 interface TagCloudProps {
   className?: string;
@@ -13,11 +12,8 @@ export function TagCloud({ className = '', maxTags = 10 }: TagCloudProps) {
   const { t } = useTranslation();
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
 
-  // 使用带缓存的标签数据Hook
-  const { tags, loading, error, refreshTags } = useTagsWithCache(maxTags);
-
-  // 使用统一的增强缓存失效机制
-  useEnhancedCacheInvalidation(refreshTags);
+  // 使用TanStack Query获取标签数据
+  const { data: tags, isLoading: loading, error } = useTags();
 
   // 计算标签字体大小（基于文章数量，但范围更小）- 移动端优化
   const getTagSize = (feedCount: number, maxCount: number) => {

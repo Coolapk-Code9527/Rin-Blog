@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { getCookie } from 'typescript-cookie'
 import { DefaultParams, PathPattern, Route, Switch, useRoute } from 'wouter'
+import { QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import Footer from './components/footer'
 import { Header } from './components/header'
 import { Padding } from './components/padding'
@@ -32,8 +33,60 @@ import { GlobalDialogProvider } from './components/dialog'
 import { GlobalMusicPlayer } from './components/GlobalMusicPlayer'
 import { MusicProvider } from './context/MusicContext'
 import { ExtendedConfigProvider } from './context/ConfigContext'
+import { queryClient } from './lib/queryClient'
 
 import { SimpleClickEffectCanvas } from './components/effects/ClickEffectCanvas'
+
+// 多用户缓存同步组件
+function CacheSyncManager() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    let lastInvalidateTime = 0;
+    const INVALIDATE_COOLDOWN = 2000; // 2秒冷却时间，避免频繁失效
+
+    const invalidateQueries = () => {
+      const now = Date.now();
+      if (now - lastInvalidateTime < INVALIDATE_COOLDOWN) {
+        return; // 在冷却时间内，跳过失效操作
+      }
+
+      lastInvalidateTime = now;
+      // 页面变为可见时，重新验证关键数据以确保多用户缓存一致性
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feeds' });
+      queryClient.invalidateQueries({ queryKey: ['tags'] });
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline'] });
+      // 不失效单篇文章和配置，因为它们变化频率较低
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        invalidateQueries();
+      }
+    };
+
+    // 窗口焦点事件作为备用同步机制
+    const handleFocus = () => {
+      // 延迟检查，避免与visibilitychange重复
+      setTimeout(() => {
+        if (!document.hidden) {
+          invalidateQueries();
+        }
+      }, 500);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [queryClient]);
+
+  return null; // 这是一个逻辑组件，不渲染任何内容
+}
 
 // 返回顶部按钮组件
 function BackToTop() {
@@ -205,11 +258,13 @@ function App() {
   const favicon = `${process.env.API_URL}/favicon`;
 
   return (
-    <BackgroundProvider>
-      <BackgroundManager />
-      <div className="min-h-screen">
-      <GlobalDialogProvider>
-        <ToastProvider>
+    <QueryClientProvider client={queryClient}>
+      <CacheSyncManager />
+      <BackgroundProvider>
+        <BackgroundManager />
+        <div className="min-h-screen">
+        <GlobalDialogProvider>
+          <ToastProvider>
           {/* @ts-ignore - React Context Provider类型兼容性问题 */}
           <ClientConfigContext.Provider value={config}>
             <ExtendedConfigProvider value={{ config, configLoaded, initialLoading }}>
@@ -343,6 +398,7 @@ function App() {
       </GlobalDialogProvider>
       </div>
     </BackgroundProvider>
+    </QueryClientProvider>
   )
 }
 
