@@ -200,7 +200,7 @@ export const invalidateCache = {
    * 文章删除后失效相关缓存
    */
   onFeedDeleted: (feedId: number | string) => {
-    cacheEventManager.emit('feed-deleted', { feedId }, false); // 禁用防抖，立即触发
+    cacheEventManager.emit('feed-deleted', { feedId });
   },
   
   /**
