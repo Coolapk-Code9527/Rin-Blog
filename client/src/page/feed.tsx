@@ -91,12 +91,11 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
 
         deleteMutation.mutate(feed.id.toString(), {
           onSuccess: () => {
-            // 1. 显示成功消息
-            showAlert(t("delete.success"));
-
-            // 2. 使用强制页面刷新，确保多用户缓存同步
-            // 与发布操作保持一致，避免缓存问题
-            window.location.replace("/");
+            // 显示成功消息，等待用户确认后再跳转，确保缓存失效完成
+            showAlert(t("delete.success"), () => {
+              // 用户关闭弹窗后再跳转，避免时序竞争问题
+              window.location.replace("/");
+            });
           },
           onError: (error: any) => {
             showAlert(error.message || t("delete.error"));
