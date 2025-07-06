@@ -4,5 +4,11 @@ export const CACHE_KEYS = {
   comments: (feedId: string) => ['comments', feedId],
   config: (type: string) => ['config', type],
   friends: () => ['friends'],
-  tags: () => ['tags']
+  tags: () => ['tags'],
+  search: (keyword: string, page: number, limit: number) => ['search', keyword, page, limit],
+  adjacent: (id: string) => ['adjacent', id],
+  recentPosts: (limit: number) => ['recent-posts', limit],
+  hashtagFeeds: (tagName: string, page: number, limit: number) => ['hashtag-feeds', tagName, page, limit],
+  timeline: () => ['timeline'],
+  files: (page: number, limit: number) => ['files', page, limit]
 }

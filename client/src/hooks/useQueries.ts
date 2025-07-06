@@ -1,7 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CACHE_KEYS } from '../lib/cacheKeys'
+import { CACHE_TIMES } from '../lib/queryClient'
 import { client } from '../main'
 import { headersWithAuth } from '../utils/auth'
+
+// 安全的错误处理函数
+function createApiError(response: any, defaultMessage: string = 'API request failed'): Error {
+  if (response.error) {
+    // 安全地提取错误信息
+    const errorValue = response.error.value;
+    if (typeof errorValue === 'string') {
+      return new Error(errorValue);
+    } else if (typeof errorValue === 'object' && errorValue?.message) {
+      return new Error(errorValue.message);
+    } else {
+      return new Error(`${defaultMessage}: ${JSON.stringify(errorValue)}`);
+    }
+  }
+  return new Error(defaultMessage);
+}
 
 // 文章类型枚举 - 与现有useFeedsCache保持一致
 export type FeedType = 'draft' | 'unlisted' | 'normal' | 'all';
@@ -37,7 +54,7 @@ export function useFeeds(config: UseFeedsCacheConfig = {}) {
 
   const result = useQuery({
     queryKey: CACHE_KEYS.feeds(type),
-    staleTime: 1 * 60 * 1000,  // 文章列表1分钟过期，确保及时更新
+    staleTime: CACHE_TIMES.SHORT,  // 文章列表2分钟过期，确保及时更新
     queryFn: async (): Promise<FeedsData> => {
       const response = await client.feed.index.get({
         query: {
@@ -51,7 +68,7 @@ export function useFeeds(config: UseFeedsCacheConfig = {}) {
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch feeds');
       }
 
       if (!response.data || typeof response.data === 'string') {
@@ -92,14 +109,14 @@ export const useFeedsCache = useFeeds;
 export function useFeed(id: string) {
   return useQuery({
     queryKey: CACHE_KEYS.feed(id),
-    staleTime: 5 * 60 * 1000,  // 单篇文章5分钟过期，内容相对稳定
+    staleTime: CACHE_TIMES.MEDIUM,  // 单篇文章5分钟过期，内容相对稳定
     queryFn: async () => {
       const response = await client.feed({ id }).get({
         headers: headersWithAuth()
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch feed');
       }
 
       return response.data;
@@ -112,14 +129,14 @@ export function useFeed(id: string) {
 export function useComments(feedId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.comments(feedId),
-    staleTime: 30 * 1000,  // 评论30秒过期，确保实时性
+    staleTime: CACHE_TIMES.REALTIME,  // 评论30秒过期，确保实时性
     queryFn: async () => {
       const response = await client.feed.comment({ feed: feedId }).get({
         headers: headersWithAuth()
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch comments');
       }
 
       return response.data;
@@ -132,13 +149,14 @@ export function useComments(feedId: string) {
 export function useConfig(type: "client" | "server") {
   return useQuery({
     queryKey: CACHE_KEYS.config(type),
+    staleTime: CACHE_TIMES.LONG,  // 配置10分钟过期，变化频率低
     queryFn: async () => {
       const response = await client.config({ type }).get({
         headers: headersWithAuth()
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch config');
       }
 
       return response.data;
@@ -150,13 +168,14 @@ export function useConfig(type: "client" | "server") {
 export function useFriends() {
   return useQuery({
     queryKey: CACHE_KEYS.friends(),
+    staleTime: CACHE_TIMES.MEDIUM,  // 友情链接5分钟过期，变化不频繁
     queryFn: async () => {
       const response = await client.friend.index.get({
         headers: headersWithAuth()
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch friends');
       }
 
       return response.data;
@@ -168,11 +187,12 @@ export function useFriends() {
 export function useTags() {
   return useQuery({
     queryKey: CACHE_KEYS.tags(),
+    staleTime: CACHE_TIMES.MEDIUM,  // 标签列表5分钟过期，变化不频繁
     queryFn: async () => {
       const response = await client.tag.index.get();
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch tags');
       }
 
       return response.data;
@@ -191,7 +211,7 @@ export function useDeleteFeed() {
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to delete feed');
       }
 
       return response.data;
@@ -227,7 +247,7 @@ export function usePublishFeed() {
       }
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to publish feed');
       }
 
       return response.data;
@@ -255,7 +275,7 @@ export function usePublishComment() {
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to publish comment');
       }
 
       return response.data;
@@ -272,7 +292,8 @@ export function usePublishComment() {
 // 搜索文章
 export function useSearchFeeds(keyword: string, page: number = 1, limit: number = 10) {
   return useQuery({
-    queryKey: ['search', keyword, page, limit],
+    queryKey: CACHE_KEYS.search(keyword, page, limit),
+    staleTime: CACHE_TIMES.SHORT,  // 搜索结果2分钟过期，保持相对新鲜
     queryFn: async () => {
       const response = await client.search({ keyword }).get({
         query: { page, limit },
@@ -280,7 +301,7 @@ export function useSearchFeeds(keyword: string, page: number = 1, limit: number 
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to search feeds');
       }
 
       return response.data;
@@ -328,13 +349,13 @@ export function useFeedCache(id: string, enabled: boolean = true) {
 // 获取相邻文章
 export function useAdjacentFeeds(id: string) {
   return useQuery({
-    queryKey: ['adjacent', id],
-    staleTime: 5 * 60 * 1000,  // 相邻文章5分钟过期
+    queryKey: CACHE_KEYS.adjacent(id),
+    staleTime: CACHE_TIMES.MEDIUM,  // 相邻文章5分钟过期
     queryFn: async () => {
       const response = await client.feed.adjacent({ id }).get();
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch adjacent feeds');
       }
 
       return response.data;
@@ -358,8 +379,8 @@ export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
 // 获取最近文章
 export function useRecentPosts(limit: number = 5) {
   return useQuery({
-    queryKey: ['recent-posts', limit],
-    staleTime: 2 * 60 * 1000,  // 最近文章2分钟过期
+    queryKey: CACHE_KEYS.recentPosts(limit),
+    staleTime: CACHE_TIMES.SHORT,  // 最近文章2分钟过期
     queryFn: async () => {
       const response = await client.feed.index.get({
         query: {
@@ -371,7 +392,7 @@ export function useRecentPosts(limit: number = 5) {
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch recent posts');
       }
 
       return response.data;
@@ -394,26 +415,30 @@ export function useRecentPostsCache(limit: number = 5) {
 // 获取标签相关的文章
 export function useHashtagFeeds(tagName: string, page: number = 1, limit: number = 10) {
   return useQuery({
-    queryKey: ['hashtag-feeds', tagName, page, limit],
-    staleTime: 2 * 60 * 1000,  // 标签文章2分钟过期
+    queryKey: CACHE_KEYS.hashtagFeeds(tagName, page, limit),
+    staleTime: CACHE_TIMES.SHORT,  // 标签文章2分钟过期
     queryFn: async () => {
       const response = await client.tag({ name: tagName }).get({
         headers: headersWithAuth()
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch hashtag feeds');
       }
 
       // 服务端返回的是完整的标签信息，包含feeds数组
-      const tagData = response.data as { feeds?: any[]; [key: string]: any };
+      const tagData = response.data;
 
       // 安全检查：确保feeds是数组
-      const feeds = Array.isArray(tagData.feeds) ? tagData.feeds : [];
+      const feeds = Array.isArray(tagData?.feeds) ? tagData.feeds : [];
 
       // 模拟分页处理（服务端暂不支持分页）
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
+      // 边界检查：确保page和limit是有效值
+      const safePage = Math.max(1, Math.floor(page || 1));
+      const safeLimit = Math.max(1, Math.min(100, Math.floor(limit || 10))); // 限制最大100条
+
+      const startIndex = (safePage - 1) * safeLimit;
+      const endIndex = startIndex + safeLimit;
       const paginatedFeeds = feeds.slice(startIndex, endIndex);
 
       return {
@@ -453,15 +478,15 @@ export function useTagsCache() {
 // 获取时间线数据
 export function useTimeline() {
   return useQuery({
-    queryKey: ['timeline'],
-    staleTime: 5 * 60 * 1000,  // 时间线5分钟过期
+    queryKey: CACHE_KEYS.timeline(),
+    staleTime: CACHE_TIMES.MEDIUM,  // 时间线5分钟过期
     queryFn: async () => {
       const response = await client.feed.timeline.get({
         headers: headersWithAuth()
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch timeline');
       }
 
       return response.data;
@@ -485,8 +510,8 @@ export function useTimelineCache() {
 // 获取文件列表
 export function useFiles(page: number = 1, limit: number = 20) {
   return useQuery({
-    queryKey: ['files', page, limit],
-    staleTime: 2 * 60 * 1000,  // 文件列表2分钟过期
+    queryKey: CACHE_KEYS.files(page, limit),
+    staleTime: CACHE_TIMES.SHORT,  // 文件列表2分钟过期
     queryFn: async () => {
       const response = await client.files.index.get({
         query: { page, limit },
@@ -494,7 +519,7 @@ export function useFiles(page: number = 1, limit: number = 20) {
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch files');
       }
 
       return response.data;
@@ -519,14 +544,14 @@ export function useFilesCache(page: number = 1, limit: number = 20) {
 export function useConfigQuery(type: 'client' | 'server') {
   return useQuery({
     queryKey: ['config', type],
-    staleTime: 10 * 60 * 1000,  // 配置10分钟过期
+    staleTime: CACHE_TIMES.LONG,  // 配置10分钟过期
     queryFn: async () => {
       const response = await client.config[type].get({
         headers: headersWithAuth()
       });
 
       if (response.error) {
-        throw new Error(response.error.value as string);
+        throw createApiError(response, 'Failed to fetch config');
       }
 
       return response.data;
