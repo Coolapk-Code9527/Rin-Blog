@@ -10,5 +10,6 @@ export const CACHE_KEYS = {
   recentPosts: (limit: number) => ['recent-posts', limit],
   hashtagFeeds: (tagName: string, page: number, limit: number) => ['hashtag-feeds', tagName, page, limit],
   timeline: () => ['timeline'],
-  files: (page: number, limit: number) => ['files', page, limit]
+  files: (page: number, limit: number) => ['files', page, limit],
+  websiteStats: () => ['website-stats']
 }

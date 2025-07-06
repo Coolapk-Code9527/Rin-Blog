@@ -126,7 +126,7 @@ export function useFeed(id: string) {
 }
 
 // 获取评论
-export function useComments(feedId: string) {
+export function useComments(feedId: string, enabled: boolean = true) {
   return useQuery({
     queryKey: CACHE_KEYS.comments(feedId),
     staleTime: CACHE_TIMES.REALTIME,  // 评论30秒过期，确保实时性
@@ -141,7 +141,7 @@ export function useComments(feedId: string) {
 
       return response.data;
     },
-    enabled: !!feedId
+    enabled: enabled && !!feedId
   })
 }
 
@@ -290,7 +290,7 @@ export function usePublishComment() {
 }
 
 // 搜索文章
-export function useSearchFeeds(keyword: string, page: number = 1, limit: number = 10) {
+export function useSearchFeeds(keyword: string, page: number = 1, limit: number = 10, enabled: boolean = true) {
   return useQuery({
     queryKey: CACHE_KEYS.search(keyword, page, limit),
     staleTime: CACHE_TIMES.SHORT,  // 搜索结果2分钟过期，保持相对新鲜
@@ -306,13 +306,13 @@ export function useSearchFeeds(keyword: string, page: number = 1, limit: number 
 
       return response.data;
     },
-    enabled: !!keyword
+    enabled: enabled && !!keyword
   });
 }
 
 // 兼容现有useSearchCache接口的别名
 export function useSearchCache(keyword: string, page: number = 1, limit: number = 10, enabled: boolean = true) {
-  const result = useSearchFeeds(keyword, page, limit);
+  const result = useSearchFeeds(keyword, page, limit, enabled);
 
   return {
     data: result.data,
@@ -324,7 +324,7 @@ export function useSearchCache(keyword: string, page: number = 1, limit: number 
 
 // 兼容现有useCommentsCache接口的别名
 export function useCommentsCache(feedId: string, enabled: boolean = true) {
-  const result = useComments(feedId);
+  const result = useComments(feedId, enabled);
 
   return {
     data: result.data || [],
@@ -336,7 +336,23 @@ export function useCommentsCache(feedId: string, enabled: boolean = true) {
 
 // 兼容现有useFeedCache接口的别名
 export function useFeedCache(id: string, enabled: boolean = true) {
-  const result = useFeed(id);
+  // 需要创建一个支持enabled参数的查询
+  const result = useQuery({
+    queryKey: CACHE_KEYS.feed(id),
+    staleTime: CACHE_TIMES.MEDIUM,
+    queryFn: async () => {
+      const response = await client.feed({ id }).get({
+        headers: headersWithAuth()
+      });
+
+      if (response.error) {
+        throw createApiError(response, 'Failed to fetch feed');
+      }
+
+      return response.data;
+    },
+    enabled: enabled && !!id && id !== "0" && !isNaN(Number(id)) && Number(id) > 0
+  });
 
   return {
     data: result.data,
@@ -366,7 +382,21 @@ export function useAdjacentFeeds(id: string) {
 
 // 兼容现有useAdjacentFeedsCache接口的别名
 export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
-  const result = useAdjacentFeeds(id);
+  // 需要创建一个支持enabled参数的查询
+  const result = useQuery({
+    queryKey: CACHE_KEYS.adjacent(id),
+    staleTime: CACHE_TIMES.MEDIUM,
+    queryFn: async () => {
+      const response = await client.feed.adjacent({ id }).get();
+
+      if (response.error) {
+        throw createApiError(response, 'Failed to fetch adjacent feeds');
+      }
+
+      return response.data;
+    },
+    enabled: enabled && !!id && id !== "0" && !isNaN(Number(id)) && Number(id) > 0
+  });
 
   return {
     data: result.data,
@@ -499,7 +529,7 @@ export function useTimelineCache() {
   const result = useTimeline();
 
   return {
-    data: { data: result.data || [] },
+    data: { data: result.data || [] }, // 保持原有的数据结构包装
     loading: result.isLoading,
     error: result.error,
     refetch: result.refetch,
@@ -540,28 +570,9 @@ export function useFilesCache(page: number = 1, limit: number = 20) {
   };
 }
 
-// 获取配置
-export function useConfigQuery(type: 'client' | 'server') {
-  return useQuery({
-    queryKey: ['config', type],
-    staleTime: CACHE_TIMES.LONG,  // 配置10分钟过期
-    queryFn: async () => {
-      const response = await client.config[type].get({
-        headers: headersWithAuth()
-      });
-
-      if (response.error) {
-        throw createApiError(response, 'Failed to fetch config');
-      }
-
-      return response.data;
-    }
-  });
-}
-
 // 兼容现有useConfigCache接口的别名
 export function useConfigCache(type: 'client' | 'server') {
-  const result = useConfigQuery(type);
+  const result = useConfig(type);
 
   return {
     data: result.data,
@@ -583,7 +594,7 @@ interface WebsiteStats {
 // 获取网站统计数据
 export function useWebsiteStats() {
   return useQuery({
-    queryKey: ['website-stats'],
+    queryKey: CACHE_KEYS.websiteStats(),
     staleTime: CACHE_TIMES.LONG,  // 统计数据10分钟过期
     queryFn: async (): Promise<WebsiteStats> => {
       const response = await client.stats.website.get();

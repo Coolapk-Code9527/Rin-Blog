@@ -57,6 +57,7 @@ function CacheSyncManager() {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       queryClient.invalidateQueries({ queryKey: ['friends'] });
       queryClient.invalidateQueries({ queryKey: ['timeline'] });
+      queryClient.invalidateQueries({ queryKey: ['website-stats'] }); // 使用字面量保持一致性
       // 不失效单篇文章和配置，因为它们变化频率较低
     };
 
