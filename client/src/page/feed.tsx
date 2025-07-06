@@ -111,7 +111,7 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
               showAlert(error.value as string);
             } else {
               // 1. 主动清理前端缓存（新增）
-              queryClient.invalidateQueries({ queryKey: ['feeds'] });
+              queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feeds' });
 
               // 2. 显示成功消息
               showAlert(t("delete.success"));

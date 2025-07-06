@@ -135,7 +135,7 @@ export function useFeed(id: string) {
 
       return response.data;
     },
-    enabled: !!id && id !== "0" && !isNaN(Number(id)) && Number(id) > 0
+    enabled: !!id && id !== "0"  // 支持数字ID和字符串别名
   })
 }
 
@@ -233,9 +233,9 @@ export function useDeleteFeed() {
     onSuccess: (data, variables) => {
       // 删除成功后，失效相关查询 - 确保多用户缓存一致性
       queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feeds' });
-      queryClient.invalidateQueries({ queryKey: ['feed', variables] });
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.feed(variables) });
       // 也失效搜索结果，因为删除的文章可能在搜索结果中
-      queryClient.invalidateQueries({ queryKey: ['search'] });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'search' });
     }
   })
 }
@@ -270,10 +270,10 @@ export function usePublishFeed() {
       // 发布/更新成功后，失效相关查询 - 确保多用户缓存一致性
       queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feeds' });
       if (variables.id) {
-        queryClient.invalidateQueries({ queryKey: ['feed', variables.id.toString()] });
+        queryClient.invalidateQueries({ queryKey: CACHE_KEYS.feed(variables.id.toString()) });
       }
       // 失效搜索结果，因为新发布/更新的文章可能影响搜索结果
-      queryClient.invalidateQueries({ queryKey: ['search'] });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'search' });
     }
   })
 }
@@ -296,9 +296,9 @@ export function usePublishComment() {
     },
     onSuccess: (data, variables) => {
       // 发布评论成功后，失效相关查询 - 确保多用户缓存一致性
-      queryClient.invalidateQueries({ queryKey: ['comments', variables.feedId] });
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.comments(variables.feedId) });
       // 也失效对应的文章查询，因为评论数量可能影响文章显示
-      queryClient.invalidateQueries({ queryKey: ['feed', variables.feedId] });
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.feed(variables.feedId) });
     }
   })
 }
@@ -368,7 +368,7 @@ export function useFeedCache(id: string, enabled: boolean = true) {
 
       return response.data;
     },
-    enabled: enabled && !!id && id !== "0" && !isNaN(Number(id)) && Number(id) > 0
+    enabled: enabled && !!id && id !== "0"  // 支持数字ID和字符串别名
   });
 
   return {
@@ -393,7 +393,7 @@ export function useAdjacentFeeds(id: string) {
 
       return response.data;
     },
-    enabled: !!id && id !== "0" && !isNaN(Number(id)) && Number(id) > 0
+    enabled: !!id && id !== "0"  // 支持数字ID和字符串别名
   });
 }
 
@@ -412,7 +412,7 @@ export function useAdjacentFeedsCache(id: string, enabled: boolean = true) {
 
       return response.data;
     },
-    enabled: enabled && !!id && id !== "0" && !isNaN(Number(id)) && Number(id) > 0
+    enabled: enabled && !!id && id !== "0"  // 支持数字ID和字符串别名
   });
 
   return {

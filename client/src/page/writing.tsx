@@ -56,9 +56,9 @@ const AVATAR = (process.env.AVATAR || '') as string;
 function clearFeedRelatedCaches(feedId?: string | number, queryClient?: any) {
   if (queryClient) {
     // 使用 TanStack Query 的缓存失效机制
-    queryClient.invalidateQueries({ queryKey: ['feeds'] });
+    queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feeds' });
     if (feedId) {
-      queryClient.invalidateQueries({ queryKey: ['feed', String(feedId)] });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feed' && query.queryKey[1] === String(feedId) });
     }
   }
 }

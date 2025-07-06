@@ -54,10 +54,10 @@ function CacheSyncManager() {
       lastInvalidateTime = now;
       // 页面变为可见时，重新验证关键数据以确保多用户缓存一致性
       queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feeds' });
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
-      queryClient.invalidateQueries({ queryKey: ['timeline'] });
-      queryClient.invalidateQueries({ queryKey: ['website-stats'] }); // 使用字面量保持一致性
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'tags' });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'friends' });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'timeline' });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'website-stats' });
       // 不失效单篇文章和配置，因为它们变化频率较低
     };
 
