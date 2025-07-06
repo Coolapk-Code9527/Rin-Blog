@@ -714,6 +714,17 @@ export function FileService() {
                         await db.delete(feedFiles).where(eq(feedFiles.fileId, fileId));
                         // 删除文件记录
                         await db.delete(files).where(eq(files.id, fileId));
+
+                        // 清理文件缓存，确保多用户缓存同步
+                        const { PublicCache } = await import("../utils/cache");
+                        const cache = PublicCache();
+                        await cache.deletePrefix('files_');
+
+                        // 设置HTTP缓存控制头，确保文件删除立即生效
+                        set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                        set.headers['Pragma'] = 'no-cache';
+                        set.headers['Expires'] = '0';
+
                         return { success: true };
                     } catch (error: any) {
                         console.error(error);

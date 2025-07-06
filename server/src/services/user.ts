@@ -5,6 +5,7 @@ import { users } from "../db/schema";
 import { setup } from "../setup";
 import { getDB } from "../utils/di";
 import { safeParseId } from "../utils/validation";
+import { PublicCache } from "../utils/cache";
 
 export function UserService() {
     const db: DB = getDB();
@@ -51,6 +52,11 @@ export function UserService() {
                             if (user) {
                                 profile.permission = user.permission
                                 await db.update(users).set(profile).where(eq(users.id, user.id));
+
+                                // 清理用户相关缓存，确保多用户缓存同步
+                                const cache = PublicCache();
+                                await cache.delete(`user_profile_${user.id}`, false);
+
                                 token.set({
                                     value: await jwt.sign({ id: user.id }),
                                     expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
@@ -70,6 +76,10 @@ export function UserService() {
                                 if (!result || result.length === 0) {
                                     throw new Error('Failed to register');
                                 } else {
+                                    // 清理用户相关缓存，确保多用户缓存同步
+                                    const cache = PublicCache();
+                                    await cache.delete(`user_profile_${result[0].insertedId}`, false);
+
                                     token.set({
                                         value: await jwt.sign({ id: result[0].insertedId }),
                                         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
@@ -80,8 +90,13 @@ export function UserService() {
                         });
                     const redirect_host = redirect_to.value || ""
                     const redirect_url = (`${redirect_host}/callback?token=${token.value}`);
+
+                    // 设置HTTP缓存控制头，确保用户操作立即生效
                     set.headers = {
                         'Content-Type': 'text/html',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
                     }
                     set.redirect = redirect_url
                 }, {

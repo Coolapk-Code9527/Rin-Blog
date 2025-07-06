@@ -95,6 +95,17 @@ export function TagService() {
                         return 'Tag not found';
                     }
                     await db.update(hashtags).set({ description }).where(eq(hashtags.id, tag.id));
+
+                    // 清理标签缓存，确保多用户缓存同步
+                    const { PublicCache } = await import("../utils/cache");
+                    const cache = PublicCache();
+                    await cache.delete('tags_list', false);
+
+                    // 设置HTTP缓存控制头，确保标签更新立即生效
+                    set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                    set.headers['Pragma'] = 'no-cache';
+                    set.headers['Expires'] = '0';
+
                     return { success: true };
                 }, {
                     body: t.Object({

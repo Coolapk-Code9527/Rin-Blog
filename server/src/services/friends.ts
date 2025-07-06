@@ -84,6 +84,16 @@ export function FriendService() {
                         // notify
                         await notify(webhookUrl, content);
                     }
+
+                    // 清理友链缓存，确保多用户缓存同步
+                    const cache = PublicCache();
+                    await cache.delete('friends_list', false);
+
+                    // 设置HTTP缓存控制头，确保友链添加立即生效
+                    set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                    set.headers['Pragma'] = 'no-cache';
+                    set.headers['Expires'] = '0';
+
                     return 'OK';
                 }, {
                     body: t.Object({
@@ -142,6 +152,16 @@ export function FriendService() {
                         // notify
                         await notify(webhookUrl, content);
                     }
+
+                    // 清理友链缓存，确保多用户缓存同步
+                    const cache = PublicCache();
+                    await cache.delete('friends_list', false);
+
+                    // 设置HTTP缓存控制头，确保友链更新立即生效
+                    set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                    set.headers['Pragma'] = 'no-cache';
+                    set.headers['Expires'] = '0';
+
                     return 'OK';
                 }, {
                     body: t.Object({
@@ -178,6 +198,16 @@ export function FriendService() {
                         return 'Permission denied';
                     }
                     await db.delete(friends).where(eq(friends.id, friendId));
+
+                    // 清理友链缓存，确保多用户缓存同步
+                    const cache = PublicCache();
+                    await cache.delete('friends_list', false);
+
+                    // 设置HTTP缓存控制头，确保友链删除立即生效
+                    set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                    set.headers['Pragma'] = 'no-cache';
+                    set.headers['Expires'] = '0';
+
                     return 'OK';
                 })
         )
@@ -263,6 +293,10 @@ export async function friendCrontab(env: Env, ctx: ExecutionContext) {
             }
         });
     }
+
+    // 清理友链缓存，确保定时任务更新的健康状态能被用户看到
+    const cache = PublicCache();
+    await cache.delete('friends_list', false);
 
     // 优化：移除调试日志，减少CPU消耗
 }

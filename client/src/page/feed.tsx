@@ -94,8 +94,9 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             // 1. 显示成功消息
             showAlert(t("delete.success"));
 
-            // 2. 缓存失效完成后再跳转，确保多用户缓存同步
-            setLocation("/");
+            // 2. 使用强制页面刷新，确保多用户缓存同步
+            // 与发布操作保持一致，避免缓存问题
+            window.location.replace("/");
           },
           onError: (error: any) => {
             showAlert(error.message || t("delete.error"));

@@ -533,9 +533,10 @@ export function FeedService() {
                         if (tags && tags.length > 0) {
                     await bindTagToPost(db, result[0].insertedId, tags);
                         }
-                        
-                    await PublicCache().deletePrefix('feeds_');
-                        
+
+                    // 使用完整的缓存清理策略，确保多用户缓存同步
+                    await clearFeedCache(result[0].insertedId, alias || null, alias || null);
+
                     if (result.length === 0) {
                         set.status = 500;
                         return 'Failed to insert';
@@ -546,6 +547,12 @@ export function FeedService() {
                         } catch (e: any) {
                             console.error('syncFeedFileReferences自动同步失败:', e);
                         }
+
+                        // 设置HTTP缓存控制头，确保发布操作立即生效
+                        set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                        set.headers['Pragma'] = 'no-cache';
+                        set.headers['Expires'] = '0';
+
                         return result[0];
                         }
                     } catch (error) {
@@ -651,6 +658,11 @@ export function FeedService() {
                             feedId: feed.id,
                             ip,
                         });
+
+                        // 清理访问统计缓存，确保多用户缓存同步
+                        const cache = PublicCache();
+                        await cache.delete(`visit_stats_${feed.id}`, false);
+                        await cache.delete('website_stats', false);
 
                         // 简化访问统计
                         const stats = await db.select({
@@ -932,6 +944,12 @@ export function FeedService() {
                         top
                     }).where(eq(feeds.id, feed.id));
                     await clearFeedCache(feed.id, null, null);
+
+                    // 设置HTTP缓存控制头，确保置顶操作立即生效
+                    set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                    set.headers['Pragma'] = 'no-cache';
+                    set.headers['Expires'] = '0';
+
                     return 'Updated';
                 }, {
                     body: t.Object({
@@ -1199,6 +1217,12 @@ export function FeedService() {
                 }
             }
             PublicCache().deletePrefix('feeds_');
+
+            // 设置HTTP缓存控制头，确保WordPress导入立即生效
+            set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+            set.headers['Pragma'] = 'no-cache';
+            set.headers['Expires'] = '0';
+
             return {
                 success,
                 skipped,

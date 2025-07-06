@@ -286,6 +286,16 @@ export function CommentService() {
                     const webhookUrl = await ServerConfig().get(Config.webhookUrl) || env.WEBHOOK_URL;
                         // 通知
                     await notify(webhookUrl, `${env.FRONTEND_URL}/feed/${feedId}\n${user.username} 评论了: ${exist.title}\n${content}`);
+
+                    // 清理评论相关缓存，确保多用户缓存同步
+                    const cache = PublicCache();
+                    await cache.delete(`comments_feed:${feedId}`, false);
+
+                    // 设置HTTP缓存控制头，确保评论发布立即生效
+                    set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                    set.headers['Pragma'] = 'no-cache';
+                    set.headers['Expires'] = '0';
+
                     return 'OK';
                     } catch (error) {
                         console.error("Error posting comment:", error);
@@ -326,6 +336,16 @@ export function CommentService() {
                     }
                         
                     await db.delete(comments).where(eq(comments.id, id_num));
+
+                    // 清理评论相关缓存，确保多用户缓存同步
+                    const cache = PublicCache();
+                    await cache.delete(`comments_feed:${comment.feedId}`, false);
+
+                    // 设置HTTP缓存控制头，确保评论删除立即生效
+                    set.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                    set.headers['Pragma'] = 'no-cache';
+                    set.headers['Expires'] = '0';
+
                     return 'OK';
                     } catch (error) {
                         console.error("Error deleting comment:", error);
