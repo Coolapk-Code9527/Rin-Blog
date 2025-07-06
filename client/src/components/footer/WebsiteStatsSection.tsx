@@ -1,18 +1,8 @@
-import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { client } from '../../main';
-// 移除旧的缓存依赖，使用简单的状态管理
+import { useWebsiteStats } from '../../hooks/useQueries';
+// 使用TanStack Query替代旧的缓存系统
 
-/**
- * 网站统计数据接口
- */
-interface WebsiteStats {
-  totalViews: number;
-  totalVisitors: number;
-  todayViews: number;
-  todayVisitors: number;
-  runningDays: number;
-}
+// WebsiteStats接口已在useQueries.ts中定义
 
 /**
  * 统计标签组件 - 采用彩色标签样式
@@ -37,100 +27,40 @@ function StatTag({ icon, label, value, bgColor, textColor = 'text-white' }: Stat
   );
 }
 
-/**
- * 客户端缓存管理
- */
-const CACHE_KEY = 'website_stats_cache'; // 保持原有格式以确保向后兼容
+// TanStack Query自动处理缓存
 
 /**
  * 网站统计信息展示组件
  *
  * 显示网站运行统计数据，包括访问量、访客数等信息
- * 复用现有的图标系统和缓存机制，添加客户端缓存优化
+ * 使用TanStack Query进行数据管理
  */
 export function WebsiteStatsSection() {
   const { t } = useTranslation();
-  const [stats, setStats] = useState<WebsiteStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // 简化：移除复杂的缓存失效机制
+  // 使用TanStack Query获取统计数据
+  const { data: stats, isLoading: loading, error } = useWebsiteStats();
 
   // 格式化运行时间
   const formatRunningTime = (days: number): string => {
     const years = Math.floor(days / 365);
     const remainingDays = days % 365;
-    
+
     if (years > 0) {
-      return t('footer.stats.runningTime.withYears', { 
-        years, 
+      return t('footer.stats.runningTime.withYears', {
+        years,
         days: remainingDays,
         defaultValue: `${years}年${remainingDays}天`
       });
     } else {
-      return t('footer.stats.runningTime.daysOnly', { 
+      return t('footer.stats.runningTime.daysOnly', {
         days,
         defaultValue: `${days}天`
       });
     }
   };
 
-  // 简化：使用localStorage直接缓存
-  const getCachedStats = (): WebsiteStats | null => {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  // 简化：直接设置localStorage
-  const setCachedStats = (data: WebsiteStats) => {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-    } catch (error) {
-      console.warn('Failed to cache stats:', error);
-    }
-  };
-
-  // 获取统计数据 - 添加客户端缓存优化
-  const fetchStats = async (forceRefresh = false) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // 如果不是强制刷新，先检查缓存
-      if (!forceRefresh) {
-        const cachedData = getCachedStats();
-        if (cachedData) {
-          setStats(cachedData);
-          setLoading(false);
-          return;
-        }
-      }
-
-      const response = await client.stats.website.get();
-
-      if (response.data && response.data.success) {
-        const statsData = response.data.data;
-        setStats(statsData);
-        setCachedStats(statsData);
-      } else {
-        throw new Error(response.data?.error || 'Failed to fetch stats');
-      }
-    } catch (err: any) {
-      console.error('Error fetching website stats:', err);
-      setError(err.message || 'Failed to load statistics');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 组件挂载时获取数据
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  // TanStack Query自动处理缓存和数据获取
 
   // 加载状态
   if (loading) {

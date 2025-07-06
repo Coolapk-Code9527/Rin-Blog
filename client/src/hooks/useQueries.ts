@@ -121,7 +121,7 @@ export function useFeed(id: string) {
 
       return response.data;
     },
-    enabled: !!id
+    enabled: !!id && id !== "0" && !isNaN(Number(id)) && Number(id) > 0
   })
 }
 
@@ -360,7 +360,7 @@ export function useAdjacentFeeds(id: string) {
 
       return response.data;
     },
-    enabled: !!id
+    enabled: !!id && id !== "0" && !isNaN(Number(id)) && Number(id) > 0
   });
 }
 
@@ -569,4 +569,35 @@ export function useConfigCache(type: 'client' | 'server') {
     error: result.error,
     invalidate: result.refetch
   };
+}
+
+// 网站统计数据接口
+interface WebsiteStats {
+  totalViews: number;
+  totalVisitors: number;
+  todayViews: number;
+  todayVisitors: number;
+  runningDays: number;
+}
+
+// 获取网站统计数据
+export function useWebsiteStats() {
+  return useQuery({
+    queryKey: ['website-stats'],
+    staleTime: CACHE_TIMES.LONG,  // 统计数据10分钟过期
+    queryFn: async (): Promise<WebsiteStats> => {
+      const response = await client.stats.website.get();
+
+      if (response.error) {
+        throw createApiError(response, 'Failed to fetch website stats');
+      }
+
+      // 检查响应格式
+      if (!response.data || !response.data.success) {
+        throw new Error(response.data?.error || 'Invalid stats response');
+      }
+
+      return response.data.data as WebsiteStats;
+    }
+  });
 }

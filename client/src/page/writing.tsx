@@ -2382,7 +2382,7 @@ export function WritingPage({ id }: { id?: number }) {
   }, [showAlert]);
 
   // 使用TanStack Query获取文章数据（仅编辑模式，id > 0时才启用）
-  const { data: feedData } = useFeed(String(id || 0));
+  const { data: feedData } = useFeed(id && id > 0 ? String(id) : "");
 
   useEffect(() => {
     // 只有当id存在且大于0时才从缓存或服务器加载文章内容
