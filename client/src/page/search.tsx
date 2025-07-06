@@ -75,6 +75,24 @@ export function SearchPage({ keyword }: { keyword: string }) {
                             </div>
                         )}
 
+                        {/* 错误处理 */}
+                        {error && (
+                            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <i className="ri-error-warning-line text-red-500 mr-2"></i>
+                                        <span className="text-red-700 dark:text-red-300">{error}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => window.location.reload()}
+                                        className="px-3 py-1 text-sm bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+                                    >
+                                        {t('retry')}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* 搜索结果列表区域 */}
                         <Waiting for={!loading}>
                             {!error && feeds?.data.length === 0 ? (

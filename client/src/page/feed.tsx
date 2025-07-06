@@ -28,7 +28,7 @@ import { RecentPosts } from "../components/recent_posts";
 import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
-import { useFeedCache, useCommentsCache } from "../hooks/useQueries";
+import { useFeedCache, useCommentsCache, useDeleteFeed } from "../hooks/useQueries";
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
 import { NotFoundPage } from './not-found';
@@ -94,6 +94,9 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
   const config = React.useContext(ClientConfigContext);
   const counterEnabled = config.get<boolean>('counter.enabled');
   const [contentReady, setContentReadyState] = React.useState<boolean>(false);
+  // 使用TanStack Query的删除mutation
+  const deleteMutation = useDeleteFeed();
+
   function deleteFeed() {
     // Confirm
     showConfirm(
@@ -101,24 +104,19 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
       t("article.delete.confirm"),
       () => {
         if (!feed) return;
-        client
-          .feed({ id: feed.id })
-          .delete(null, {
-            headers: headersWithAuth(),
-          })
-          .then(({ error }) => {
-            if (error) {
-              showAlert(error.value as string);
-            } else {
-              // 1. 显示成功消息
-              showAlert(t("delete.success"));
 
-              // 2. 立即跳转，避免组件继续渲染和API调用
-              setLocation("/");
+        deleteMutation.mutate(feed.id.toString(), {
+          onSuccess: () => {
+            // 1. 显示成功消息
+            showAlert(t("delete.success"));
 
-              // 3. TanStack Query的useDeleteFeed onSuccess会自动处理缓存失效
-            }
-          });
+            // 2. 缓存失效完成后再跳转，确保多用户缓存同步
+            setLocation("/");
+          },
+          onError: (error: any) => {
+            showAlert(error.message || t("delete.error"));
+          }
+        });
       })
   }
   function topFeed() {

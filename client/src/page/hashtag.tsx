@@ -46,7 +46,7 @@ export function HashtagPage({ name }: { name: string }) {
     const page = tryInt(1, query.get("page"))
 
     // 使用TanStack Query替代直接API调用
-    const { data: hashtag, loading, invalidate: invalidateHashtagCache } = useHashtagFeedsCache(name, page, 10);
+    const { data: hashtag, loading, error, invalidate: invalidateHashtagCache } = useHashtagFeedsCache(name, page, 10);
 
     const [sort, setSort] = useState<'new' | 'old'>('new');
 
@@ -199,6 +199,24 @@ export function HashtagPage({ name }: { name: string }) {
                                 <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                             </div>
                         </div>
+                        {/* 错误处理 */}
+                        {error && (
+                            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <i className="ri-error-warning-line text-red-500 mr-2"></i>
+                                        <span className="text-red-700 dark:text-red-300">{error}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => invalidateHashtagCache()}
+                                        className="px-3 py-1 text-sm bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+                                    >
+                                        {t('retry')}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* 文章列表区域 */}
                         <Waiting for={!loading}>
                             {sortedFeeds.length === 0 ? (
