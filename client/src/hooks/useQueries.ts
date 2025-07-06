@@ -5,6 +5,29 @@ import { client } from '../main'
 import { headersWithAuth } from '../utils/auth'
 import { ApiTypeChecker } from '../types/api'
 
+// 类型定义
+interface PublishFeedData {
+  id?: number;
+  title: string;
+  content: string;
+  summary: string;
+  alias?: string;
+  tags: string[];
+  draft: boolean;
+  listed: boolean;
+  createdAt?: Date;
+}
+
+interface DeleteCommentData {
+  commentId: number;
+  feedId: string;
+}
+
+interface TopFeedData {
+  feedId: number;
+  top: number;
+}
+
 // 安全的错误处理函数 - 增强版本，包含类型验证
 function createApiError(response: any, defaultMessage: string = 'API request failed'): Error {
   // 首先验证响应结构
@@ -245,7 +268,7 @@ export function usePublishFeed() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: PublishFeedData) => {
       let response;
 
       if (data.id) {
@@ -299,6 +322,58 @@ export function usePublishComment() {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.comments(variables.feedId) });
       // 也失效对应的文章查询，因为评论数量可能影响文章显示
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.feed(variables.feedId) });
+    }
+  })
+}
+
+// 删除评论的mutation
+export function useDeleteComment() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: DeleteCommentData) => {
+      const response = await client.comment({ id: data.commentId }).delete(undefined, {
+        headers: headersWithAuth()
+      });
+
+      if (response.error) {
+        throw createApiError(response, 'Failed to delete comment');
+      }
+
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      // 删除评论成功后，失效相关查询 - 确保多用户缓存一致性
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.comments(variables.feedId) });
+      // 也失效对应的文章查询，因为评论数量可能影响文章显示
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.feed(variables.feedId) });
+    }
+  })
+}
+
+// 置顶/取消置顶文章的mutation
+export function useTopFeed() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: TopFeedData) => {
+      const response = await client.feed.top({ id: data.feedId }).post({
+        top: data.top
+      }, {
+        headers: headersWithAuth()
+      });
+
+      if (response.error) {
+        throw createApiError(response, 'Failed to update feed top status');
+      }
+
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      // 置顶操作成功后，失效相关查询 - 确保多用户缓存一致性
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feeds' });
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.feed(variables.feedId.toString()) });
+      // 注意：移除搜索结果失效，因为置顶操作不影响搜索结果内容，只影响文章列表排序
     }
   })
 }

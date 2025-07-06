@@ -18,7 +18,6 @@ import { MacOSLoadingSpinner } from '../components/loading';
 import {client} from "../main";
 import {headersWithAuth} from "../utils/auth";
 import { useFeed, usePublishFeed } from "../hooks/useQueries";
-import { useQueryClient } from '@tanstack/react-query';
 import {Cache, useCache} from '../utils/cache';
 
 import {siteName} from "../utils/constants";
@@ -52,16 +51,7 @@ declare const process: {
 const NAME = (process.env.NAME || '博客') as string;
 const AVATAR = (process.env.AVATAR || '') as string;
 
-// TanStack Query 缓存清理函数
-function clearFeedRelatedCaches(feedId?: string | number, queryClient?: any) {
-  if (queryClient) {
-    // 使用 TanStack Query 的缓存失效机制
-    queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feeds' });
-    if (feedId) {
-      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feed' && query.queryKey[1] === String(feedId) });
-    }
-  }
-}
+
 
 // 添加自定义滚动条样式
 const scrollbarStyles = `
@@ -1523,150 +1513,9 @@ function handlePaste(event: React.ClipboardEvent<HTMLDivElement>, editorRef: Rea
   }
 }
 
-async function publish({
-  title,
-  alias,
-  listed,
-  content,
-  summary,
-  tags,
-  draft,
-  createdAt,
-  onCompleted,
-  showAlert,
-  queryClient
-}: {
-  title: string;
-  listed: boolean;
-  content: string;
-  summary: string;
-  tags: string[];
-  draft: boolean;
-  alias?: string;
-  createdAt?: Date;
-  onCompleted?: () => void;
-  showAlert: (msg: string) => void;
-  queryClient?: any;
-}) {
-  const { data, error } = await client.feed.index.post(
-    {
-      title,
-      alias,
-      content,
-      summary,
-      tags,
-      listed,
-      draft,
-      createdAt,
-    },
-    {
-      headers: headersWithAuth(),
-    }
-  );
-  if (error) {
-    showAlert(error.value as string);
-    return; // 发生错误时提前返回
-  }
-  if (data && typeof data !== "string") {
-    // 主动缓存失效方案：在跳转前直接清理相关缓存，避免时序竞争
-    const feedId = (data as any).insertedId;
 
-    // 1. 主动清理前端缓存
-    clearFeedRelatedCaches(undefined, queryClient);
 
-    // 2. 触发文章发布事件（保持兼容性）
-    if (window.dispatchEvent) {
-      window.dispatchEvent(new CustomEvent('feed-published', {
-        detail: { feedId, title, tags }
-      }));
-      // 保持原有的file-upload-success事件以兼容现有功能
-      window.dispatchEvent(new CustomEvent('file-upload-success'));
-    }
 
-    // 3. 直接跳转到文章页面，不显示提示弹窗
-    Cache.with().set("content", content); // 将当前内容写入缓存，避免beforeunload触发
-    Cache.with().clear();
-    // 使用replace方法替换当前页面，避免返回按钮返回到编辑页
-    window.location.replace("/feed/" + feedId);
-  }
-  if (onCompleted) {
-    onCompleted();
-  }
-}
-
-async function update({
-  id,
-  title,
-  alias,
-  content,
-  summary,
-  tags,
-  listed,
-  draft,
-  createdAt,
-  onCompleted,
-  showAlert,
-  queryClient
-}: {
-  id: number;
-  listed: boolean;
-  title?: string;
-  alias?: string;
-  content?: string;
-  summary?: string;
-  tags?: string[];
-  draft?: boolean;
-  createdAt?: Date;
-  onCompleted?: () => void;
-  showAlert: (msg: string) => void;
-  queryClient?: any;
-}) {
-  const { error } = await client.feed({ id }).post(
-    {
-      title,
-      alias,
-      content,
-      summary,
-      tags,
-      listed,
-      draft,
-      createdAt,
-    },
-    {
-      headers: headersWithAuth(),
-    }
-  );
-  if (error) {
-    showAlert(error.value as string);
-    return; // 发生错误时提前返回
-  }
-
-  // 主动缓存失效方案：在跳转前直接清理相关缓存，避免时序竞争
-
-  // 1. 主动清理前端缓存（包括当前文章的缓存）
-  clearFeedRelatedCaches(id, queryClient);
-
-  // 2. 触发文章更新事件（保持兼容性）
-  if (window.dispatchEvent) {
-    window.dispatchEvent(new CustomEvent('feed-updated', {
-      detail: { feedId: id, title, tags }
-    }));
-    // 保持原有的file-upload-success事件以兼容现有功能
-    window.dispatchEvent(new CustomEvent('file-upload-success'));
-  }
-
-  // 3. 直接跳转到文章页面，不显示提示弹窗
-  if (content) {
-    Cache.with(id).set("content", content); // 将当前内容写入缓存，避免beforeunload触发
-  }
-  Cache.with(id).clear();
-  // 使用replace方法替换当前页面，避免返回按钮返回到编辑页
-  window.location.replace("/feed/" + id);
-
-  if (onCompleted) {
-    onCompleted();
-  }
-  }
 
 // 上传文件并为视频生成缩略图
 async function uploadFileWithThumbnail(file: File, onSuccess: (url: string, thumbnailUrl?: string) => void, showAlert: (msg: string) => void) {
@@ -2038,9 +1887,11 @@ export function WritingPage({ id }: { id?: number }) {
   const colorMode = useColorMode();
   const profile = useContext(ProfileContext);
   const cache = Cache.with(id);
-  const queryClient = useQueryClient();
   const editorRef = useRef<editor.IStandaloneCodeEditor | undefined>(undefined);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // 使用TanStack Query的发布/更新mutation
+  const publishFeedMutation = usePublishFeed();
 
   // 使用智能毛玻璃效果
   const editorGlassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -2320,60 +2171,69 @@ export function WritingPage({ id }: { id?: number }) {
   }, [content, cache, isPublishing]);
 
   function publishButton() {
-    if (publishing) return;
+    // 防止重复提交
+    if (publishing || publishFeedMutation.isPending) return;
+
     const tagsplit =
       tags
         .split("#")
         .filter((tag: string) => tag !== "")
         .map((tag: string) => tag.trim()) || [];
-    if (typeof id === 'number' && id > 0) {
-      setPublishing(true)
-      setIsPublishing(true); // 设置发布状态为true
-      update({
-        id,
-        title,
-        content,
-        summary,
-        alias,
-        tags: tagsplit,
-        draft,
-        listed,
-        createdAt,
-        onCompleted: () => {
-          setPublishing(false)
-          setIsPublishing(false); // 重置发布状态
-        },
-        showAlert,
-        queryClient
-      });
-    } else {
-      if (!title) {
-        showAlert(t("title_empty"))
-        return;
-      }
-      if (!content) {
-        showAlert(t("content.empty"))
-        return;
-      }
-      setPublishing(true)
-      setIsPublishing(true); // 设置发布状态为true
-      publish({
-        title,
-        content,
-        summary,
-        tags: tagsplit,
-        draft,
-        alias,
-        listed,
-        createdAt,
-        onCompleted: () => {
-          setPublishing(false)
-          setIsPublishing(false); // 重置发布状态
-        },
-        showAlert,
-        queryClient
-      });
+
+    // 验证必填字段
+    if (!title) {
+      showAlert(t("title_empty"))
+      return;
     }
+    if (!content) {
+      showAlert(t("content.empty"))
+      return;
+    }
+
+    setPublishing(true)
+    setIsPublishing(true); // 设置发布状态为true
+
+    // 使用TanStack Query mutation
+    publishFeedMutation.mutate({
+      id: typeof id === 'number' && id > 0 ? id : undefined,
+      title,
+      content,
+      summary,
+      alias,
+      tags: tagsplit,
+      draft,
+      listed,
+      createdAt,
+    }, {
+      onSuccess: (data) => {
+        setPublishing(false)
+        setIsPublishing(false); // 重置发布状态
+
+        // 获取文章ID - 类型安全的方式
+        const feedId = typeof id === 'number' && id > 0
+          ? id
+          : (data && typeof data === 'object' && 'insertedId' in data)
+            ? (data as { insertedId: number }).insertedId
+            : null;
+
+        if (!feedId) {
+          showAlert(t("notification.save_failed"));
+          return;
+        }
+
+        // 清理缓存并跳转
+        Cache.with().set("content", content); // 将当前内容写入缓存，避免beforeunload触发
+        Cache.with().clear();
+
+        // 跳转到文章页面
+        window.location.replace("/feed/" + feedId);
+      },
+      onError: (error: any) => {
+        setPublishing(false)
+        setIsPublishing(false); // 重置发布状态
+        showAlert(error.message || t("notification.save_failed"));
+      }
+    });
   }
 
   // 优化的粘贴处理函数

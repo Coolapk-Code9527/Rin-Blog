@@ -11,10 +11,8 @@ import {useGlobalDialog} from "../components/dialog";
 import {HashTag} from "../components/hashtag";
 import {Waiting} from "../components/loading";
 import {Markdown} from "../components/markdown";
-import {client} from "../main";
 import {ClientConfigContext} from "../state/config";
 import {ProfileContext} from "../state/profile";
-import {headersWithAuth} from "../utils/auth";
 import {siteName} from "../utils/constants";
 import {timeago} from "../utils/timeago";
 import {Button, IconButton} from "../components/button";
@@ -28,9 +26,7 @@ import { RecentPosts } from "../components/recent_posts";
 import { PageContainer } from "../components/container";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useGlassEffect, GLASS_LAYERS } from "../hooks/useGlassEffect";
-import { useFeedCache, useCommentsCache, useDeleteFeed } from "../hooks/useQueries";
-import { useQueryClient } from '@tanstack/react-query';
-import { useSafeCacheInvalidation } from "../hooks/useComponentSafety";
+import { useFeedCache, useCommentsCache, useDeleteFeed, usePublishComment, useDeleteComment, useTopFeed } from "../hooks/useQueries";
 import { NotFoundPage } from './not-found';
 // 移除CacheEventManager依赖，TanStack Query自动处理缓存失效
 
@@ -59,31 +55,13 @@ type Feed = {
 export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => JSX.Element, setContentReady?: (ready: boolean) => void }) {
   const { t } = useTranslation();
   const profile = React.useContext(ProfileContext);
-  const queryClient = useQueryClient();
 
   // 使用缓存Hook替代直接API调用
   const { data: feed, loading, error, invalidate: invalidateFeedCache } = useFeedCache(id, !!id);
 
   const [headImage, setHeadImage] = React.useState<string>();
 
-  // 使用安全的缓存失效机制
-  const safeInvalidateFeedCache = useSafeCacheInvalidation(invalidateFeedCache);
-
-  // 监听文章更新事件，失效当前文章缓存
-  React.useEffect(() => {
-    const handleFeedUpdated = (event: any) => {
-      // 只有当更新的文章是当前文章时才失效缓存
-      if (event.detail?.feedId === id) {
-        safeInvalidateFeedCache();
-      }
-    };
-
-    window.addEventListener('feed-updated', handleFeedUpdated);
-
-    return () => {
-      window.removeEventListener('feed-updated', handleFeedUpdated);
-    };
-  }, [id, safeInvalidateFeedCache]); // 使用安全的缓存失效函数
+  // 注意：移除了CustomEvent监听器，因为现在使用TanStack Query的自动缓存失效机制
 
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -97,7 +75,13 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
   // 使用TanStack Query的删除mutation
   const deleteMutation = useDeleteFeed();
 
+  // 使用TanStack Query的置顶mutation
+  const topMutation = useTopFeed();
+
   function deleteFeed() {
+    // 防止重复提交
+    if (deleteMutation.isPending) return;
+
     // Confirm
     showConfirm(
       t("article.delete.title"),
@@ -120,6 +104,9 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
       })
   }
   function topFeed() {
+    // 防止重复提交
+    if (topMutation.isPending) return;
+
     const isUnTop = !(top > 0)
     const topNew = isUnTop ? 1 : 0;
     // Confirm
@@ -128,21 +115,19 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
       isUnTop ? t("article.top.confirm") : t("article.untop.confirm"),
       () => {
         if (!feed) return;
-        client
-          .feed.top({ id: feed.id })
-          .post({
-            top: topNew,
-          }, {
-            headers: headersWithAuth(),
-          })
-          .then(({ error }) => {
-            if (error) {
-              showAlert(error.value as string);
-            } else {
-              showAlert(isUnTop ? t("article.top.success") : t("article.untop.success"));
-              setTop(topNew);
-            }
-          });
+
+        topMutation.mutate({
+          feedId: feed.id,
+          top: topNew
+        }, {
+          onSuccess: () => {
+            showAlert(isUnTop ? t("article.top.success") : t("article.untop.success"));
+            setTop(topNew);
+          },
+          onError: (error: any) => {
+            showAlert(error.message || t("notification.operation_failed", { defaultValue: "操作失败" }));
+          }
+        });
       })
   }
   // 处理头图提取和内容就绪状态
@@ -625,6 +610,9 @@ function CommentInput({
   const profile = React.useContext(ProfileContext);
   const { LoginModal, setIsOpened } = useLoginModal();
 
+  // 使用TanStack Query的评论发布mutation
+  const publishCommentMutation = usePublishComment();
+
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
   
@@ -643,21 +631,24 @@ function CommentInput({
   }
   
   function submit() {
+    // 防止重复提交
+    if (submitting || publishCommentMutation.isPending) return;
+
     if (!profile && !isAnonymous) {
       setIsOpened(true)
       return;
     }
-    
+
     if (isAnonymous && !nickname.trim()) {
       setError(t("comment.anonymous.nickname_empty"));
       return;
     }
-    
+
     if (!content.trim()) {
       setError(t("comment.empty_content"));
       return;
     }
-    
+
     // 验证邮箱格式
     if (email && !validateEmail(email)) {
       setEmailError(t("comment.invalid_email"));
@@ -665,44 +656,35 @@ function CommentInput({
     } else {
       setEmailError("");
     }
-    
+
     setSubmitting(true);
     setError("");
-    
-    client.feed
-      .comment({ feed: id })
-      .post(
-        {
-          content,
-          isAnonymous,
-          nickname: isAnonymous ? nickname : undefined,
-          email: isAnonymous && email.trim() ? email : undefined,
-          parentId: parentId ? parentId.toString() : undefined
-        },
-        {
-          headers: headersWithAuth(),
-        }
-      )
-      .then(({ error }) => {
+
+    publishCommentMutation.mutate({
+      feedId: id,
+      content,
+      isAnonymous,
+      nickname: isAnonymous ? nickname : undefined,
+      email: isAnonymous && email.trim() ? email : undefined,
+      parentId: parentId ? parentId.toString() : undefined
+    }, {
+      onSuccess: () => {
         setSubmitting(false);
-        if (error) {
-          setError(errorHumanize(error.value as string));
-        } else {
-          setContent("");
-          if (isAnonymous) {
-            setNickname("");
-            setEmail("");
-          }
-          setError("");
-          showAlert(t("comment.success"), () => {
-            onRefresh();
-          });
+        setContent("");
+        if (isAnonymous) {
+          setNickname("");
+          setEmail("");
         }
-      })
-      .catch((err) => {
+        setError("");
+        showAlert(t("comment.success"), () => {
+          onRefresh();
+        });
+      },
+      onError: (error: any) => {
         setSubmitting(false);
-        setError(String(err));
-      });
+        setError(errorHumanize(error.message || "Unknown error"));
+      }
+    });
   }
   
   return (
@@ -1035,12 +1017,15 @@ function CommentItem({
   feedId: string;
   depth?: number;
 }) {
-  const { showConfirm } = useGlobalDialog();
+  const { showAlert, showConfirm } = useGlobalDialog();
   const { t, i18n } = useTranslation();
   const profile = React.useContext(ProfileContext);
   const [showReplyForm, setShowReplyForm] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
   const [showAllReplies, setShowAllReplies] = React.useState(false);
+
+  // 使用TanStack Query的评论删除mutation
+  const deleteCommentMutation = useDeleteComment();
 
   // 使用智能毛玻璃效果
   const glassClass = useGlassEffect(GLASS_LAYERS.CARD);
@@ -1091,25 +1076,26 @@ function CommentItem({
   }
   
   function deleteComment() {
-    const { showAlert, showConfirm } = useGlobalDialog();
+    // 防止重复提交
+    if (deleteCommentMutation.isPending) return;
+
     showConfirm(
       t("delete.comment.title"),
       t("delete.comment.confirm"),
-      async () => {
-        client
-          .comment({ id: comment.id })
-          .delete(null, {
-            headers: headersWithAuth(),
-          })
-          .then(({ error }) => {
-            if (error) {
-              showAlert(error.value as string);
-            } else {
-              showAlert(t("delete.success"), () => {
-                onRefresh();
-              });
-            }
-          });
+      () => {
+        deleteCommentMutation.mutate({
+          commentId: comment.id,
+          feedId: feedId
+        }, {
+          onSuccess: () => {
+            showAlert(t("delete.success"), () => {
+              onRefresh();
+            });
+          },
+          onError: (error: any) => {
+            showAlert(error.message || t("notification.delete_failed"));
+          }
+        });
       }
     );
   }

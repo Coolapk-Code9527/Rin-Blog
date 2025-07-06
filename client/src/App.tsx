@@ -37,13 +37,13 @@ import { queryClient } from './lib/queryClient'
 
 import { SimpleClickEffectCanvas } from './components/effects/ClickEffectCanvas'
 
-// 多用户缓存同步组件
+// 优化的多用户缓存同步组件
 function CacheSyncManager() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
     let lastInvalidateTime = 0;
-    const INVALIDATE_COOLDOWN = 2000; // 2秒冷却时间，避免频繁失效
+    const INVALIDATE_COOLDOWN = 5000; // 增加到5秒冷却时间，减少频繁失效
 
     const invalidateQueries = () => {
       const now = Date.now();
@@ -52,37 +52,29 @@ function CacheSyncManager() {
       }
 
       lastInvalidateTime = now;
-      // 页面变为可见时，重新验证关键数据以确保多用户缓存一致性
-      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feeds' });
-      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'tags' });
-      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'friends' });
-      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'timeline' });
-      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'website-stats' });
-      // 不失效单篇文章和配置，因为它们变化频率较低
+      // 只失效最关键的数据，减少不必要的网络请求
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          // 只失效列表类数据，单篇文章和配置数据变化频率低
+          // 移除timeline失效，因为它变化频率较低
+          return key === 'feeds' || key === 'tags' || key === 'friends';
+        }
+      });
     };
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        invalidateQueries();
+        // 延迟执行，避免页面切换时的性能问题
+        setTimeout(invalidateQueries, 1000);
       }
     };
 
-    // 窗口焦点事件作为备用同步机制
-    const handleFocus = () => {
-      // 延迟检查，避免与visibilitychange重复
-      setTimeout(() => {
-        if (!document.hidden) {
-          invalidateQueries();
-        }
-      }, 500);
-    };
-
+    // 只监听页面可见性变化，移除窗口焦点事件避免重复触发
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
     };
   }, [queryClient]);
 

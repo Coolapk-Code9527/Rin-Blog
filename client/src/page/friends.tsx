@@ -239,7 +239,7 @@ function Friend(props: any & { invalidateCache?: () => void }) {
             t('delete.confirm'),
             () => {
                 setIsDeleting(true);
-                client.friend({ id: friend.id }).delete(friend.id, {
+                client.friend({ id: friend.id }).delete(undefined, {
                     headers: headersWithAuth()
                 }).then(({ error }) => {
                     setIsDeleting(false);
