@@ -3,21 +3,35 @@ import { CACHE_KEYS } from '../lib/cacheKeys'
 import { CACHE_TIMES } from '../lib/queryClient'
 import { client } from '../main'
 import { headersWithAuth } from '../utils/auth'
+import { ApiTypeChecker } from '../types/api'
 
-// 安全的错误处理函数
+// 安全的错误处理函数 - 增强版本，包含类型验证
 function createApiError(response: any, defaultMessage: string = 'API request failed'): Error {
+  // 首先验证响应结构
+  if (!ApiTypeChecker.isValidTreatyResponse(response) && !ApiTypeChecker.isValidSimpleResponse(response)) {
+    console.warn('Invalid API response structure:', response);
+    return new Error(`${defaultMessage}: Invalid response structure`);
+  }
+
   if (response.error) {
     // 安全地提取错误信息
     const errorValue = response.error.value;
     if (typeof errorValue === 'string') {
       return new Error(errorValue);
-    } else if (typeof errorValue === 'object' && errorValue?.message) {
-      return new Error(errorValue.message);
+    } else if (typeof errorValue === 'object' && errorValue !== null && 'message' in errorValue) {
+      return new Error((errorValue as any).message);
     } else {
       return new Error(`${defaultMessage}: ${JSON.stringify(errorValue)}`);
     }
   }
   return new Error(defaultMessage);
+}
+
+// 参数验证工具函数
+function validatePaginationParams(page: number, limit: number): { page: number; limit: number } {
+  const safePage = Math.max(1, Math.floor(page || 1));
+  const safeLimit = Math.max(1, Math.min(100, Math.floor(limit || 10))); // 限制最大100条
+  return { page: safePage, limit: safeLimit };
 }
 
 // 文章类型枚举 - 与现有useFeedsCache保持一致
@@ -291,12 +305,15 @@ export function usePublishComment() {
 
 // 搜索文章
 export function useSearchFeeds(keyword: string, page: number = 1, limit: number = 10, enabled: boolean = true) {
+  // 边界检查：确保page和limit是有效值
+  const { page: safePage, limit: safeLimit } = validatePaginationParams(page, limit);
+
   return useQuery({
-    queryKey: CACHE_KEYS.search(keyword, page, limit),
+    queryKey: CACHE_KEYS.search(keyword, safePage, safeLimit),
     staleTime: CACHE_TIMES.SHORT,  // 搜索结果2分钟过期，保持相对新鲜
     queryFn: async () => {
       const response = await client.search({ keyword }).get({
-        query: { page, limit },
+        query: { page: safePage, limit: safeLimit },
         headers: headersWithAuth()
       });
 
@@ -539,12 +556,15 @@ export function useTimelineCache() {
 
 // 获取文件列表
 export function useFiles(page: number = 1, limit: number = 20) {
+  // 边界检查：确保page和limit是有效值
+  const { page: safePage, limit: safeLimit } = validatePaginationParams(page, limit);
+
   return useQuery({
-    queryKey: CACHE_KEYS.files(page, limit),
+    queryKey: CACHE_KEYS.files(safePage, safeLimit),
     staleTime: CACHE_TIMES.SHORT,  // 文件列表2分钟过期
     queryFn: async () => {
       const response = await client.files.index.get({
-        query: { page, limit },
+        query: { page: safePage, limit: safeLimit },
         headers: headersWithAuth()
       });
 

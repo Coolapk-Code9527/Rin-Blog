@@ -45,27 +45,8 @@ interface BeforeUnloadEvent extends Event {
   returnValue: string;
 }
 
-// Treaty响应类型 - 与API返回数据结构对应
-interface TreatyResponse<T = any> {
-  data: T;
-  error: null | {
-    value: string;
-  };
-  response: Response;
-  status: number;
-  headers: HeadersInit | undefined;
-}
-
-// 自定义数据响应类型 - 兼容TreatyResponse
-interface ApiResponse<T = any> {
-  data?: T;
-  error?: {
-    value: string;
-  } | null;
-  response?: Response;
-  status?: number;
-  headers?: HeadersInit;
-}
+// 注意：TreatyResponse类型已移至 client/src/types/api.ts 统一管理
+// 避免重复定义导致类型冲突
 
 // 文章数据类型
 interface ArticleData {

@@ -25,7 +25,7 @@ export function SearchPage({ keyword }: { keyword: string }) {
     const limit = tryInt(10, query.get("limit"), process.env.PAGE_SIZE)
 
     // 使用缓存Hook替代直接API调用
-    const { data: feeds, loading } = useSearchCache(keyword, page, limit, !!keyword);
+    const { data: feeds, loading, error } = useSearchCache(keyword, page, limit, !!keyword);
 
     // 使用智能毛玻璃效果
     const glassClass = useGlassEffect(GLASS_LAYERS.LIGHT);
@@ -66,9 +66,18 @@ export function SearchPage({ keyword }: { keyword: string }) {
                                 <hr className="h-0.5 border-0 bg-gradient-to-r from-transparent via-theme/40 dark:via-theme/30 to-transparent" />
                             </div>
                         </div>
+                        {/* 错误处理 */}
+                        {error && (
+                            <div className="mb-4 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                                <p className="text-sm text-red-600 dark:text-red-400">
+                                    {t('error.search_failed')}: {error.message}
+                                </p>
+                            </div>
+                        )}
+
                         {/* 搜索结果列表区域 */}
                         <Waiting for={!loading}>
-                            {feeds?.data.length === 0 ? (
+                            {!error && feeds?.data.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
                                     <i className="ri-search-line text-5xl mb-3 text-gray-300 dark:text-gray-600"></i>
                                     <div className="text-lg font-medium mb-2">{t('search.no_results')}</div>

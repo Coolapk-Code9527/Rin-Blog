@@ -1,7 +1,18 @@
 // 定义应用的API类型
 
-// 基本响应类型
+// 基本响应类型 - 与Treaty实际返回结构一致
 export type TreatyResponse<T> = {
+  data: T;
+  error: null | {
+    value: string;
+  };
+  response: Response;
+  status: number;
+  headers: HeadersInit | undefined;
+};
+
+// 简化的API响应类型 - 用于内部处理
+export type SimpleApiResponse<T> = {
   data?: T;
   error?: {
     value: string | object;
@@ -20,16 +31,32 @@ export class ApiTypeChecker {
       return false;
     }
 
-    // 必须有data或error字段之一
-    if (!('data' in response) && !('error' in response)) {
+    // 检查必需字段
+    if (!('data' in response) || !('status' in response) || !('response' in response)) {
       return false;
     }
 
     // 如果有error字段，检查其结构
-    if ('error' in response && response.error) {
+    if ('error' in response && response.error !== null) {
       if (typeof response.error !== 'object' || !response.error.value) {
         return false;
       }
+    }
+
+    return true;
+  }
+
+  /**
+   * 检查是否为简化的API响应
+   */
+  static isValidSimpleResponse<T>(response: any): response is SimpleApiResponse<T> {
+    if (!response || typeof response !== 'object') {
+      return false;
+    }
+
+    // 必须有data或error字段之一
+    if (!('data' in response) && !('error' in response)) {
+      return false;
     }
 
     return true;

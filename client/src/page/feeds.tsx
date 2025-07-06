@@ -236,7 +236,8 @@ export function FeedsPage() {
     // 恢复批量获取模式，分批获取所有数据避免CPU超时
     const {
         data: feedsData,
-        loading
+        loading,
+        error
     } = useFeedsCache({
         type: listState as FeedType,
         limit: 9999, // 获取所有数据
@@ -528,12 +529,21 @@ export function FeedsPage() {
                     </div>
                 </div>
 
+            {/* 错误处理 */}
+            {error && (
+                <div className="mb-4 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                        {t('error.load_feeds_failed')}: {error.message}
+                    </p>
+                </div>
+            )}
+
             {/* 等待数据和配置加载完成，避免视图模式跳动 */}
             <Waiting for={!loading && !initialLoading && configLoaded}>
                 {/* 主内容布局 - 文章列表与侧边栏 */}
                 <ArticleListLayout>
                     {/* 文章列表内容 */}
-                    {paginatedFeeds.length > 0 && feedsData ? (
+                    {!error && paginatedFeeds.length > 0 && feedsData ? (
                         <>
                             <div className={viewMode === 'list'
                                 ? "flex flex-col gap-3 sm:gap-4 w-full view-transition-container"
