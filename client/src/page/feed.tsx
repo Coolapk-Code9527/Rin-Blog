@@ -110,16 +110,13 @@ export function FeedPage({ id, TOC, setContentReady }: { id: string, TOC: () => 
             if (error) {
               showAlert(error.value as string);
             } else {
-              // 1. 主动清理前端缓存（新增）
-              queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'feeds' });
-
-              // 2. 显示成功消息
+              // 1. 显示成功消息
               showAlert(t("delete.success"));
 
-              // 3. 立即跳转，避免组件继续渲染和API调用
+              // 2. 立即跳转，避免组件继续渲染和API调用
               setLocation("/");
 
-              // 4. TanStack Query已自动处理缓存失效，无需手动触发
+              // 3. TanStack Query的useDeleteFeed onSuccess会自动处理缓存失效
             }
           });
       })
